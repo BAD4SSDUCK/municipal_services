@@ -9,7 +9,7 @@ import 'package:get/get.dart';
 
 import 'map_user_badge.dart';
 
-///The lat,long information from the DB
+///The lat,long information from the DB per user when selected user
 const LatLng SOURCE_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);
 const LatLng DEST_LOCATION = LatLng(-29.562115515970493, 30.404004300313627);
 

@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -25,52 +26,58 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  bool isEmptyCheck(){
-    if(_emailController.text.isNotEmpty && _passwordController.text.isNotEmpty && _confirmPasswordController.text.isNotEmpty){
-      return false;
-    }
-    return true;
-  }
-
   Future signUp() async {
-    if(isEmptyCheck() == true) {
+
+    if(isEmptyCheck() == false) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Please enter correct email and password'),
+        content: Text('Please enter a correct email and password'),
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.all(20.0),
         duration: Duration(seconds: 5),
       ));
     } else {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return const Center(child: CircularProgressIndicator());
-        },
-      );
-
-      if (passwordConfirmed() == true) {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-        Navigator.of(context).pop();
-      } else if (passwordConfirmed() == false) {
-        Navigator.of(context).pop();
-
+      if (passwordLengthGood() == false) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Passwords entered do not match'),
+          content: Text('Password must be at least 6 characters'),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.all(20.0),
+          duration: Duration(seconds: 5),
         ));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Please fill in all details'),
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.all(20.0),
-        ));
+        showDialog(
+          context: context,
+          builder: (context) {
+            return const Center(child: CircularProgressIndicator());
+          },
+        );
+        if (passwordConfirmed() == true) {
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+          Navigator.of(context).pop();
+
+        } else if (passwordConfirmed() == false) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Passwords entered do not match'),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(20.0),
+          ));
+          Navigator.of(context).pop();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Please fill in all details'),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(20.0),
+          ));
+          Navigator.of(context).pop();
+        }
         Navigator.of(context).pop();
       }
-
       Navigator.of(context).pop();
     }
   }
@@ -80,6 +87,21 @@ class _RegisterPageState extends State<RegisterPage> {
       return true;
     } else {
       return false;
+    }
+  }
+
+  bool isEmptyCheck(){
+    if(_emailController.text.isNotEmpty || _passwordController.text.isNotEmpty && _confirmPasswordController.text.isNotEmpty){
+      return true;
+    }
+    return false;
+  }
+
+  bool passwordLengthGood(){
+    if(_passwordController.text.length < 6) {
+      return false;
+    } else{
+      return true;
     }
   }
 

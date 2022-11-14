@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
 
     // return const MaterialApp(
     //     debugShowCheckedModeBanner: false,
-    //     home: MapView() //MainPage(),
+    //     home: MapView()
     // );
   }
 }

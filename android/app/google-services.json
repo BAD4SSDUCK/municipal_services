@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "983443189535-sg43m47vivvcgmnicg0ebs0ctviaploo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.municipal_track",
+            "certificate_hash": "e227175bb49227092093b1ea78d2e9373cb1e78c"
+          }
+        },
+        {
           "client_id": "983443189535-ob6m2bo6d9vb1m41jv2rib5lcclk777q.apps.googleusercontent.com",
           "client_type": 3
         }
