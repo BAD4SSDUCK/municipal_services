@@ -39,7 +39,7 @@ class _MapPageState extends State<MapPage> {
   void setSourceAndDestinationMarkerIcons() async{
     sourceIcon = await BitmapDescriptor.fromAssetImage(
       ImageConfiguration(devicePixelRatio: 2.0),
-      'image/'
+      'assets/images/location/destination_pin.png'
     );
   }
 
