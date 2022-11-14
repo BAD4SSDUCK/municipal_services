@@ -8,7 +8,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
 
 const LatLng SOURCE_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);
-const LatLng DEST_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);
+const LatLng DEST_LOCATION = LatLng(-29.562115515970493, 30.404004300313627);
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);
@@ -25,6 +25,9 @@ class _MapPageState extends State<MapPage> {
 
   late LatLng currentLocation;
   late LatLng destinationLocation;
+  late double CAMERA_ZOOM = 16;
+  late double CAMERA_TILT = 50;
+  late double CAMERA_BEARING = 0;
 
   @override
   void initState(){
@@ -34,12 +37,17 @@ class _MapPageState extends State<MapPage> {
     this.setInitialLocation();
 
     //Set up the marker icons
+    this.setSourceAndDestinationMarkerIcons();
   }
 
   void setSourceAndDestinationMarkerIcons() async{
     sourceIcon = await BitmapDescriptor.fromAssetImage(
       ImageConfiguration(devicePixelRatio: 2.0),
-      'assets/images/location/destination_pin.png'
+      'assets/images/location/source_pin.png'
+    );
+    destinationIcon = await BitmapDescriptor.fromAssetImage(
+        ImageConfiguration(devicePixelRatio: 2.0),
+        'assets/images/location/destination_pin.png'
     );
   }
 
@@ -57,12 +65,54 @@ class _MapPageState extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
+
+    CameraPosition initialCameraPosition = CameraPosition(
+        zoom: CAMERA_ZOOM,
+        tilt: CAMERA_TILT,
+        bearing: CAMERA_BEARING,
+        target: SOURCE_LOCATION
+    );
+
     return Scaffold(
-      body: Container(
-        child: Center(
-          child: Text('Map Page!'),
-        ),
+      appBar: AppBar(
+        title: const Text('Maps Location View'),
+        backgroundColor: Colors.green[700],
+      ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: GoogleMap(
+              myLocationEnabled: true,
+              compassEnabled: false,
+              tiltGesturesEnabled: false,
+              markers: _markers,
+              mapType: MapType.normal,
+              initialCameraPosition: initialCameraPosition,
+              onMapCreated: (GoogleMapController controller){
+                _controller.complete(controller);
+
+                showPinsOnMap();
+            },
+          ),)
+        ],
       ),
     );
   }
+  void showPinsOnMap(){
+    setState(() {
+      _markers.add(Marker(
+          markerId: MarkerId('sourcePin'),
+          position: currentLocation,
+          icon: sourceIcon
+      ));
+
+      _markers.add(Marker(
+          markerId: MarkerId('destinationPin'),
+          position: destinationLocation,
+          icon: destinationIcon
+      ));
+    });
+  }
 }
+
+

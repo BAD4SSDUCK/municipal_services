@@ -35,7 +35,7 @@ class MainMenu extends StatefulWidget {
       //       fit: BoxFit.cover),
       // ),
       child: Scaffold(
-        backgroundColor: Colors.grey[300],
+        backgroundColor: Colors.grey[350],
         appBar: AppBar(
           title:
           Text('Signed in as: ${user.email!}'),
