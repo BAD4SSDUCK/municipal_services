@@ -83,7 +83,7 @@ class _LoginPageState extends State<LoginPage>{
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('images/logo.png',height: 200,width: 300,),
+                Image.asset('assets/images/logo.png',height: 200,width: 300,),
                 Text(
                   'Welcome!',
                   style: GoogleFonts.bebasNeue(
