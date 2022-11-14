@@ -7,6 +7,8 @@ import 'package:municipal_track/code/MapTools/location_search_dialogue.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
 
+import 'map_user_badge.dart';
+
 const LatLng SOURCE_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);
 const LatLng DEST_LOCATION = LatLng(-29.562115515970493, 30.404004300313627);
 
@@ -62,7 +64,6 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
 
@@ -93,7 +94,13 @@ class _MapPageState extends State<MapPage> {
 
                 showPinsOnMap();
             },
-          ),)
+          ),
+          ),
+          const Positioned(
+              top: 100,
+              left: 0,
+              right: 0,
+              child: MapUserBadge())
         ],
       ),
     );
@@ -101,18 +108,16 @@ class _MapPageState extends State<MapPage> {
   void showPinsOnMap(){
     setState(() {
       _markers.add(Marker(
-          markerId: MarkerId('sourcePin'),
+          markerId: const MarkerId('sourcePin'),
           position: currentLocation,
           icon: sourceIcon
       ));
 
       _markers.add(Marker(
-          markerId: MarkerId('destinationPin'),
+          markerId: const MarkerId('destinationPin'),
           position: destinationLocation,
           icon: destinationIcon
       ));
     });
   }
 }
-
-
