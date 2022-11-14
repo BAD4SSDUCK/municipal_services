@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "983443189535",
+    "project_id": "municipal-tracking",
+    "storage_bucket": "municipal-tracking.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:983443189535:android:c7c89d8151b39ad6218a2a",
+        "android_client_info": {
+          "package_name": "com.example.municipal_track"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "983443189535-ob6m2bo6d9vb1m41jv2rib5lcclk777q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALEpsAu0hiAJHrTHOXO7IxTbpPjNdhWx4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "983443189535-ob6m2bo6d9vb1m41jv2rib5lcclk777q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:983443189535:android:cdef6c263f4c6438218a2a",
+        "android_client_info": {
+          "package_name": "cyberfox.co.za.municipal_tracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "983443189535-ob6m2bo6d9vb1m41jv2rib5lcclk777q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALEpsAu0hiAJHrTHOXO7IxTbpPjNdhWx4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "983443189535-ob6m2bo6d9vb1m41jv2rib5lcclk777q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
