@@ -9,7 +9,7 @@ class MapUserBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.only(top: 10, bottom: 10, left: 20, right: 20),
+      margin: const EdgeInsets.only(top: 0, bottom: 20, left: 20, right: 20),
       decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(100),

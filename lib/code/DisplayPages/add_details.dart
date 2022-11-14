@@ -57,7 +57,6 @@ class _AddUserDetailsState extends State<AddUserDetails> {
       int.parse(_cellNumberController.text.trim()),
     );
 
-
     Navigator.of(context).pop();
   }
 
@@ -98,8 +97,6 @@ class _AddUserDetailsState extends State<AddUserDetails> {
       Navigator.of(context).pop();
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
