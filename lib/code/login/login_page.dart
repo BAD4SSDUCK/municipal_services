@@ -64,7 +64,7 @@ class _LoginPageState extends State<LoginPage>{
           case 'A network error (such as timeout, interrupted connection or unreachable host) has occurred.':
             errorType = authProblems.networkError;
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('The internet connection has timed out.'),
+              content: Text('The internet connection has timed out. Connect to the internet to login'),
               behavior: SnackBarBehavior.floating,
               margin: EdgeInsets.all(20.0),
               duration: Duration(seconds: 5),
@@ -119,7 +119,7 @@ class _LoginPageState extends State<LoginPage>{
                   ),
                 ),
                 const SizedBox(height: 10,),
-                const Text('Let\'s log in to manage your details.',
+                const Text('Let\'s log in to manage details.',
                   style: TextStyle(fontSize: 18),),
                 const SizedBox(height: 20,),
 

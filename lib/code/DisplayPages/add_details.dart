@@ -65,7 +65,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
     Navigator.of(context).pop();
   }
 
-  bool numberFieldsConfirmed(){
+  bool fieldsNotEmptyConfirmed(){
     if (_areaCodeController.text.isNotEmpty){
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Details are now being saved!'),
@@ -81,7 +81,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
 
   Future addUserDetails(String firstName, String lastName, String cellNumber,  String address, int areaCode, String idNumber, String accountNumber, String meterNumber) async{
 
-    if(numberFieldsConfirmed() == false){
+    if(fieldsNotEmptyConfirmed() == false){
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Please make sure the area code is entered'),
         behavior: SnackBarBehavior.floating,

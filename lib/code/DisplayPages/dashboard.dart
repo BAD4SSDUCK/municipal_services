@@ -38,7 +38,7 @@ class MainMenu extends StatefulWidget {
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
           title:
-          Text('Signed in as: ${user.email!}'),
+          Text('Signed in: '),///${user.email!}
           backgroundColor: Colors.black87,
         ),
         //drawer: const NavigationDrawer(),
