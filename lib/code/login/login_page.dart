@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,6 +15,8 @@ class LoginPage extends StatefulWidget{
   State<LoginPage> createState() => _LoginPageState();
 }
 
+enum authProblems { userNotFound, passwordNotValid, networkError }
+
 class _LoginPageState extends State<LoginPage>{
 
   // text controllers
@@ -20,6 +24,7 @@ class _LoginPageState extends State<LoginPage>{
   final _passwordController = TextEditingController();
 
   Future signIn() async{
+
     //loading circle
     showDialog(
       context: context,
@@ -27,43 +32,66 @@ class _LoginPageState extends State<LoginPage>{
         return const Center(child: CircularProgressIndicator());
       },
     );
+
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
     } on FirebaseAuthException catch (e) {
-      Navigator.of(context).pop();
-      switch (e.code) {
-        case "invalid-email":
-        //Thrown if the email address is not valid.
-          throw const AlertDialog(
-            content: Text('invalid-email',textAlign: TextAlign.center,),
-          );
-        case "user-disabled":
-        //Thrown if the user corresponding to the given email has been disabled.
-          throw const AlertDialog(
-            content: Text('User account Disabled',textAlign: TextAlign.center,),
-          );
-        case "user-not-found":
-        //Thrown if there is no user corresponding to the given email.
-          throw const AlertDialog(
-            content: Text('User account not found',textAlign: TextAlign.center,),
-          );
-        case "wrong-password":
-          throw const AlertDialog(
-            content: Text('User Password is incorrect',textAlign: TextAlign.center,),
-          );
-      //Thrown if the password is invalid for the given email, or the account corresponding to the email does not have a password set.
-        default:
-          throw const AlertDialog(
-            content: Text('An unknown error has occurred',textAlign: TextAlign.center,),
-          );
+
+      authProblems errorType;
+      if(Platform.isAndroid){
+        switch(e.message){
+          case 'There is no user record corresponding to this identifier. The user may have been deleted.':
+            errorType = authProblems.userNotFound;
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('There is no user record corresponding to this identifier. The user may have been deleted.'),
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.all(20.0),
+              duration: Duration(seconds: 5),
+            ));
+            break;
+          case 'The password is invalid or the user does not have a password.':
+            errorType = authProblems.passwordNotValid;
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('The password was incorrect. Enter correct password or reset your password.'),
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.all(20.0),
+              duration: Duration(seconds: 5),
+            ));
+            break;
+          case 'A network error (such as timeout, interrupted connection or unreachable host) has occurred.':
+            errorType = authProblems.networkError;
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('The internet connection has timed out.'),
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.all(20.0),
+              duration: Duration(seconds: 5),
+            ));
+            break;
+          default:
+            print('Case ${e.message} is not yet implemented');
+        }
+      } else if (Platform.isIOS) {
+        switch (e.code) {
+          case 'Error 17011':
+            errorType = authProblems.userNotFound;
+            break;
+          case 'Error 17009':
+            errorType = authProblems.passwordNotValid;
+            break;
+          case 'Error 17020':
+            errorType = authProblems.networkError;
+            break;
+        // ...
+          default:
+            print('Case ${e.message} is not yet implemented');
+        }
       }
     }
 
     Navigator.of(context).pop();
-
   }
 
   @override

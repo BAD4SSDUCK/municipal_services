@@ -59,7 +59,7 @@ class MainMenu extends StatefulWidget {
 
 
                       },
-                      buttonText: 'User Details',fSize: fontSize,
+                      buttonText: 'Users Details',fSize: fontSize,
                     ),
 
                     const SizedBox(height: 30),

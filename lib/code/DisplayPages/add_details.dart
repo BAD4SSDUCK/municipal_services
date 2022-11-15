@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -16,24 +17,26 @@ class _AddUserDetailsState extends State<AddUserDetails> {
   final _firstNameController = TextEditingController();
   final _secondNameController = TextEditingController();
   final _addressController = TextEditingController();
-  final _wardNumberController = TextEditingController();
-  final _idNumberController = TextEditingController();
-  final _cellNumberController = TextEditingController();
   final _areaCodeController = TextEditingController();
+  final _idNumberController = TextEditingController();
+  final _accountNumberController = TextEditingController();
+  final _meterNumberController = TextEditingController();
+  final _cellNumberController = TextEditingController();
 
   @override
   void dispose() {
     _firstNameController.dispose();
     _secondNameController.dispose();
     _addressController.dispose();
-    _wardNumberController.dispose();
-    _idNumberController.dispose();
-    _cellNumberController.dispose();
     _areaCodeController.dispose();
+    _idNumberController.dispose();
+    _accountNumberController.dispose();
+    _meterNumberController.dispose();
+    _cellNumberController.dispose();
     super.dispose();
   }
 
-  Future signUp() async {
+  Future dataAdd() async {
     // ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
     //   content: Text('Please enter correct email and password'),
     //   behavior: SnackBarBehavior.floating,
@@ -51,49 +54,54 @@ class _AddUserDetailsState extends State<AddUserDetails> {
     addUserDetails(
       _firstNameController.text.trim(),
       _secondNameController.text.trim(),
+      _cellNumberController.text.trim(),
       _addressController.text.trim(),
-      int.parse(_wardNumberController.text.trim()),
-      int.parse(_idNumberController.text.trim()),
-      int.parse(_cellNumberController.text.trim()),
+      int.parse(_areaCodeController.text.trim()),
+      _idNumberController.text.trim(),
+      _accountNumberController.text.trim(),
+      _meterNumberController.text.trim(),
     );
 
     Navigator.of(context).pop();
   }
 
   bool numberFieldsConfirmed(){
-    if (_areaCodeController == int && _wardNumberController == int && _idNumberController == int && _cellNumberController == int){
-      return false;
-    } else {
-      return false;
-    }
-  }
-
-  Future addUserDetails(String firstName, String lastName, String address, int ward, int idNumber, int cellNumber ) async{
-
-    if(numberFieldsConfirmed() == false){
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Please make sure the entered Area code, Ward, ID and your Cell are numbers'),
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.all(20.0),
-        duration: Duration(seconds: 5),
-      ));
-      Navigator.of(context).pop();
-    } else {
-      await FirebaseFirestore.instance.collection('users').add({
-        'first name': firstName,
-        'last name': lastName,
-        'address' : address,
-        'ward': ward,
-        'id number': idNumber,
-        'cell number': cellNumber,
-
-      });
+    if (_areaCodeController.text.isNotEmpty){
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Details are now being saved!'),
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.all(20.0),
         duration: Duration(seconds: 5),
       ));
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Future addUserDetails(String firstName, String lastName, String cellNumber,  String address, int areaCode, String idNumber, String accountNumber, String meterNumber) async{
+
+    if(numberFieldsConfirmed() == false){
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Please make sure the area code is entered'),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.all(20.0),
+        duration: Duration(seconds: 5),
+      ));
+
+    } else {
+      await FirebaseFirestore.instance.collection('users').add({
+        'first name': firstName,
+        'last name': lastName,
+        'cell number': cellNumber,
+        'address' : address,
+        'area code' : areaCode,
+        'id number': idNumber,
+        'account number': accountNumber,
+        'meter number': meterNumber,
+
+      });
+
       Navigator.of(context).pop();
     }
   }
@@ -117,7 +125,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
                   ),
                 ),
                 const SizedBox(height: 10,),
-                const Text('Enter your details bellow!',
+                const Text('Enter all details bellow!',
                   style: TextStyle(fontSize: 18),),
                 const SizedBox(height: 50,),
 
@@ -178,7 +186,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
                         borderSide: const BorderSide(color: Colors.green),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      hintText: 'Cellphone Number',
+                      hintText: 'Street Address',
                       fillColor: Colors.grey[200],
                       filled: true,
                     ),
@@ -190,7 +198,8 @@ class _AddUserDetailsState extends State<AddUserDetails> {
                 Padding(
                   padding:  const EdgeInsets.symmetric(horizontal: 25.0),
                   child: TextField(
-                    controller: _wardNumberController,
+                    controller: _areaCodeController,
+                    inputFormatters: <TextInputFormatter>[ FilteringTextInputFormatter.digitsOnly],
                     decoration: InputDecoration(
                       enabledBorder: OutlineInputBorder(
                         borderSide: const BorderSide(color: Colors.white),
@@ -200,7 +209,8 @@ class _AddUserDetailsState extends State<AddUserDetails> {
                         borderSide: const BorderSide(color: Colors.green),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      hintText: 'Street Address',
+                      hintText: 'Area Code',
+
                       fillColor: Colors.grey[200],
                       filled: true,
                     ),
@@ -222,7 +232,52 @@ class _AddUserDetailsState extends State<AddUserDetails> {
                         borderSide: const BorderSide(color: Colors.green),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      hintText: 'Neighbourhood',
+                      hintText: 'ID Number',
+                      fillColor: Colors.grey[200],
+                      filled: true,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10,),
+
+                Padding(
+                  padding:  const EdgeInsets.symmetric(horizontal: 25.0),
+                  child: TextField(
+                    controller: _accountNumberController,
+                    decoration: InputDecoration(
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.green),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      hintText: 'Account Number',
+                      fillColor: Colors.grey[200],
+                      filled: true,
+                    ),
+                  ),
+                ),
+
+
+                const SizedBox(height: 10,),
+
+                Padding(
+                  padding:  const EdgeInsets.symmetric(horizontal: 25.0),
+                  child: TextField(
+                    controller: _meterNumberController,
+                    decoration: InputDecoration(
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.green),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      hintText: 'Meter Number',
                       fillColor: Colors.grey[200],
                       filled: true,
                     ),
@@ -244,30 +299,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
                         borderSide: const BorderSide(color: Colors.green),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      hintText: 'City',
-                      fillColor: Colors.grey[200],
-                      filled: true,
-                    ),
-                  ),
-                ),
-
-
-                const SizedBox(height: 10,),
-
-                Padding(
-                  padding:  const EdgeInsets.symmetric(horizontal: 25.0),
-                  child: TextField(
-                    controller: _areaCodeController,
-                    decoration: InputDecoration(
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.white),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.green),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      hintText: 'Postal Code',
+                      hintText: 'Cellphone Number',
                       fillColor: Colors.grey[200],
                       filled: true,
                     ),
@@ -281,7 +313,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: GestureDetector(
-                    onTap: signUp,
+                    onTap: dataAdd,
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -290,7 +322,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
                       ),
                       child: const Center(
                         child: Text(
-                          'Save Details!',
+                          'Add Details!',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -303,7 +335,6 @@ class _AddUserDetailsState extends State<AddUserDetails> {
                 ),
 
                 const SizedBox(height: 25,),
-                
               ],
             ),
           ),
