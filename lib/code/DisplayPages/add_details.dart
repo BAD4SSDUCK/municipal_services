@@ -66,7 +66,9 @@ class _AddUserDetailsState extends State<AddUserDetails> {
   }
 
   bool fieldsNotEmptyConfirmed(){
-    if (_areaCodeController.text.isNotEmpty){
+    if (_areaCodeController.text.isNotEmpty && _firstNameController.text.isNotEmpty && _secondNameController.text.isNotEmpty && _cellNumberController.text.isNotEmpty &&
+        _addressController.text.isNotEmpty && _areaCodeController.text.isNotEmpty && _idNumberController.text.isNotEmpty && _accountNumberController.text.isNotEmpty &&
+        _meterNumberController.text.isNotEmpty){
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Details are now being saved!'),
         behavior: SnackBarBehavior.floating,
@@ -75,6 +77,12 @@ class _AddUserDetailsState extends State<AddUserDetails> {
       ));
       return true;
     } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Makes sure all fields are filled!'),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.all(20.0),
+        duration: Duration(seconds: 5),
+      ));
       return false;
     }
   }
@@ -82,6 +90,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
   Future addUserDetails(String firstName, String lastName, String cellNumber,  String address, int areaCode, String idNumber, String accountNumber, String meterNumber) async{
 
     if(fieldsNotEmptyConfirmed() == false){
+      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Please make sure the area code is entered'),
         behavior: SnackBarBehavior.floating,

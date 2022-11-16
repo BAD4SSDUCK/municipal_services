@@ -34,8 +34,10 @@ dependencies:
   url_launcher: ^6.1.5
   rflutter_alert: ^2.0.4
   http: ^0.13.5
+
   firebase_core: ^2.2.0
   firebase_auth: ^4.1.2
+  firebase_database: ^10.0.5
   google_sign_in: ^5.4.2
   google_fonts: ^3.0.1
   cloud_firestore: ^4.0.5

@@ -12,8 +12,15 @@ class UsersTableViewPage extends StatefulWidget {
 
 class _UsersTableViewPageState extends State<UsersTableViewPage> {
 // text fields' controllers
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _accountNumberController = TextEditingController();
+
+  final _accountNumberController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _areaCodeController = TextEditingController();
+  final _meterNumberController = TextEditingController();
+  final _cellNumberController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _idNumberController = TextEditingController();
 
   final CollectionReference _userList =
   FirebaseFirestore.instance.collection('users');
@@ -24,46 +31,72 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
         isScrollControlled: true,
         context: context,
         builder: (BuildContext ctx) {
-          return Padding(
-            padding: EdgeInsets.only(
-                top: 20,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: _firstNameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                ),
-                TextField(
-                  keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-                  controller: _accountNumberController,
-                  decoration: const InputDecoration(
-                    labelText: 'Account Number',
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: 20,
+                  left: 20,
+                  right: 20,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _accountNumberController,
+                    decoration: const InputDecoration(labelText: 'Account Number'),
                   ),
-                ),
-                const SizedBox(
-                  height: 20,
-                ),
-                ElevatedButton(
-                  child: const Text('Create'),
-                  onPressed: () async {
-                    final String firstName = _firstNameController.text;
-                    final String accountNumber =_accountNumberController.text;
-                    if (accountNumber != null) {
-                      await _userList.add({"first name": firstName, "account number": accountNumber});
+                  TextField(
+                    controller: _addressController,
+                    decoration: const InputDecoration(labelText: 'Street Address'),
+                  ),
+                  TextField(
+                    keyboardType:
+                    const TextInputType.numberWithOptions(),
+                    controller: _areaCodeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Area Code',
+                    ),
+                  ),
+                  TextField(
+                    controller: _meterNumberController,
+                    decoration: const InputDecoration(labelText: 'Meter Number'),
+                  ),
+                  TextField(
+                    controller: _cellNumberController,
+                    decoration: const InputDecoration(labelText: 'Phone Number'),
+                  ),
+                  TextField(
+                    controller: _firstNameController,
+                    decoration: const InputDecoration(labelText: 'First Name'),
+                  ),
+                  TextField(
+                    controller: _lastNameController,
+                    decoration: const InputDecoration(labelText: 'Last Name'),
+                  ),
+                  TextField(
+                    controller: _idNumberController,
+                    decoration: const InputDecoration(labelText: 'ID Number'),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  ElevatedButton(
+                    child: const Text('Create'),
+                    onPressed: () async {
+                      final String firstName = _firstNameController.text;
+                      final String accountNumber =_accountNumberController.text;
+                      if (accountNumber != null) {
+                        await _userList.add({"first name": firstName, "account number": accountNumber});
 
-                      _firstNameController.text = '';
-                      _accountNumberController.text = '';
-                      Navigator.of(context).pop();
-                    }
-                  },
-                )
-              ],
+                        _firstNameController.text = '';
+                        _accountNumberController.text = '';
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  )
+                ],
+              ),
             ),
           );
 
@@ -71,57 +104,103 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   }
   Future<void> _update([DocumentSnapshot? documentSnapshot]) async {
     if (documentSnapshot != null) {
-
+      _accountNumberController.text = documentSnapshot['account number'];
+      _addressController.text = documentSnapshot['address'];
+      _areaCodeController.text = documentSnapshot['area code'].toString();
+      _meterNumberController.text = documentSnapshot['meter number'];
+      _cellNumberController.text = documentSnapshot['cell number'];
       _firstNameController.text = documentSnapshot['first name'];
-      _accountNumberController.text = documentSnapshot['account number'].toString();
+      _lastNameController.text = documentSnapshot['last name'];
+      _idNumberController.text = documentSnapshot['id number'];
     }
 
     await showModalBottomSheet(
         isScrollControlled: true,
         context: context,
         builder: (BuildContext ctx) {
-          return Padding(
-            padding: EdgeInsets.only(
-                top: 20,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: _firstNameController,
-                  decoration: const InputDecoration(labelText: 'First Name'),
-                ),
-                TextField(
-                  keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-                  controller: _accountNumberController,
-                  decoration: const InputDecoration(
-                    labelText: 'Account Number',
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: 20,
+                  left: 20,
+                  right: 20,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _accountNumberController,
+                    decoration: const InputDecoration(labelText: 'Account Number'),
                   ),
-                ),
-                const SizedBox(
-                  height: 20,
-                ),
-                ElevatedButton(
-                  child: const Text( 'Update'),
-                  onPressed: () async {
-                    final String firstName = _firstNameController.text;
-                    final String accountNumber = _accountNumberController.text;
-                    if (accountNumber != null) {
+                  TextField(
+                    controller: _addressController,
+                    decoration: const InputDecoration(labelText: 'Street Address'),
+                  ),
+                  TextField(
+                    keyboardType:
+                    const TextInputType.numberWithOptions(),
+                    controller: _areaCodeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Area Code',
+                    ),
+                  ),
+                  TextField(
+                    controller: _meterNumberController,
+                    decoration: const InputDecoration(labelText: 'Meter Number'),
+                  ),
+                  TextField(
+                    controller: _cellNumberController,
+                    decoration: const InputDecoration(labelText: 'Phone Number'),
+                  ),
+                  TextField(
+                    controller: _firstNameController,
+                    decoration: const InputDecoration(labelText: 'First Name'),
+                  ),
+                  TextField(
+                    controller: _lastNameController,
+                    decoration: const InputDecoration(labelText: 'Last Name'),
+                  ),
+                  TextField(
+                    controller: _idNumberController,
+                    decoration: const InputDecoration(labelText: 'ID Number'),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  ElevatedButton(
+                    child: const Text( 'Update'),
+                    onPressed: () async {
 
-                      await _userList
-                          .doc(documentSnapshot!.id)
-                          .update({"first name": firstName, "account number": accountNumber});
-                      _firstNameController.text = '';
-                      _accountNumberController.text = '';
-                      Navigator.of(context).pop();
-                    }
-                  },
-                )
-              ],
+                      final String accountNumber = _accountNumberController.text;
+                      final String address = _addressController.text;
+                      final int areaCode = int.parse(_areaCodeController.text);
+                      final String meterNumber = _meterNumberController.text;
+                      final String cellNumber = _cellNumberController.text;
+                      final String firstName = _firstNameController.text;
+                      final String lastName = _lastNameController.text;
+                      final String idNumber = _idNumberController.text;
+
+                      if (accountNumber != null) {
+                        await _userList
+                            .doc(documentSnapshot!.id)
+                            .update({"account number": accountNumber,"address": address, "area code": areaCode, "meter number": meterNumber, "cell number": cellNumber,
+                          "first name": firstName, "last name": lastName, "id number": idNumber });
+
+                        _accountNumberController.text = '';
+                        _addressController.text = '';
+                        _areaCodeController.text = '';
+                        _meterNumberController.text = '';
+                        _cellNumberController.text = '';
+                        _firstNameController.text = '';
+                        _lastNameController.text = '';
+                        _idNumberController.text = '';
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  )
+                ],
+              ),
             ),
           );
         });
@@ -137,6 +216,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        backgroundColor: Colors.grey[350],
         appBar: AppBar(
           title: Text('Municipal Accounts'),
           backgroundColor: Colors.green,
@@ -150,29 +230,115 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                 itemBuilder: (context, index) {
                   final DocumentSnapshot documentSnapshot =
                   streamSnapshot.data!.docs[index];
+
+                  ///this card is to display all details for users
                   return Card(
                     margin: const EdgeInsets.all(10),
-                    child: ListTile(
-                      title: Text(documentSnapshot['first name']),
-                      subtitle: Text(documentSnapshot['account number'].toString()),
-                      trailing: SizedBox(
-                        width: 50,
-                        child: Row(
-                          children: [
-                            // IconButton(
-                            //     icon: const Icon(Icons.edit),
-                            //     onPressed: () =>
-                            //         _update(documentSnapshot)),
-                            IconButton(
-                                icon: const Icon(Icons.supervised_user_circle),
-                                onPressed: () {
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            documentSnapshot['account number'],
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                          Text(
+                            documentSnapshot['address'],
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                          Text(
+                            documentSnapshot['area code'].toString(),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                          Text(
+                            documentSnapshot['meter number'],
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                          Text(
+                            documentSnapshot['cell number'],
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                          Text(
+                            documentSnapshot['first name'],
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                          Text(
+                            documentSnapshot['last name'],
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                          Text(
+                            documentSnapshot['id number'],
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
 
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  _update(documentSnapshot);
                                 },
-                            )
-                          ],
-                        ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.edit,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 6,),
+                              GestureDetector(
+                                onTap: () {
+                                  _delete(documentSnapshot.id);
+                                },
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.delete,
+                                      color: Colors.red[700],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          )
+                        ],
                       ),
                     ),
+
+                    ///this listtile is to display just two fields per person
+                    // child: ListTile(
+                    //   title: Text(documentSnapshot['first name']),
+                    //   subtitle: Text(documentSnapshot['account number'].toString()),
+                    //   trailing: SizedBox(
+                    //     width: 50,
+                    //     child: Row(
+                    //       children: [
+                    //         // IconButton(
+                    //         //     icon: const Icon(Icons.edit),
+                    //         //     onPressed: () =>
+                    //         //         _update(documentSnapshot)),
+                    //         IconButton(
+                    //             icon: const Icon(Icons.supervised_user_circle),
+                    //             onPressed: () {
+                    //
+                    //             },
+                    //         )
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ),
                   );
                 },
               );
