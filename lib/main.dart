@@ -25,14 +25,12 @@ class MyApp extends StatelessWidget {
     Get.put(LocationController());
     return const GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      home: MainPage() //LoginScreen(),
+      home: MainPage(),
     );
 
-    // return const MaterialApp(
-    //     debugShowCheckedModeBanner: false,
     ///startup any 3 of these pages, MainPage is for staff to use, Register is for citizens
     //     home: MapView(), MainPage(), RegisterScreen()
-    // );
+
   }
 }
 

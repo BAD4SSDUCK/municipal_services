@@ -3,14 +3,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 
-class UsersTableViewPage extends StatefulWidget {
-  const UsersTableViewPage({Key? key}) : super(key: key);
+class UsersTableEditPage extends StatefulWidget {
+  const UsersTableEditPage({Key? key}) : super(key: key);
 
   @override
-  _UsersTableViewPageState createState() => _UsersTableViewPageState();
+  _UsersTableEditPageState createState() => _UsersTableEditPageState();
 }
 
-class _UsersTableViewPageState extends State<UsersTableViewPage> {
+class _UsersTableEditPageState extends State<UsersTableEditPage> {
 // text fields' controllers
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _accountNumberController = TextEditingController();
@@ -138,7 +138,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('Municipal Accounts'),
+          title: Text('Edit Or Delete Accounts'),
           backgroundColor: Colors.green,
         ),
         body: StreamBuilder(
@@ -156,19 +156,17 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                       title: Text(documentSnapshot['first name']),
                       subtitle: Text(documentSnapshot['account number'].toString()),
                       trailing: SizedBox(
-                        width: 50,
+                        width: 100,
                         child: Row(
                           children: [
-                            // IconButton(
-                            //     icon: const Icon(Icons.edit),
-                            //     onPressed: () =>
-                            //         _update(documentSnapshot)),
                             IconButton(
-                                icon: const Icon(Icons.supervised_user_circle),
-                                onPressed: () {
-
-                                },
-                            )
+                                icon: const Icon(Icons.edit),
+                                onPressed: () =>
+                                    _update(documentSnapshot)),
+                            IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () =>
+                                    _delete(documentSnapshot.id)),
                           ],
                         ),
                       ),

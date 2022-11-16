@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 import '../Reuseables/map_component.dart';
 import '../Reuseables/menu_reusable_elevated_button.dart';
 import 'add_details.dart';
+import 'display_info.dart';
+import 'display_info_edit.dart';
 
 class MainMenu extends StatefulWidget {
   const MainMenu({Key? key}) : super(key: key);
@@ -56,8 +58,8 @@ class MainMenu extends StatefulWidget {
                     const SizedBox(height: 100),
                     ReusableElevatedButton(
                       onPress: (){
-
-
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) => const UsersTableViewPage()));
                       },
                       buttonText: 'Users Details',fSize: fontSize,
                     ),
@@ -65,8 +67,8 @@ class MainMenu extends StatefulWidget {
                     const SizedBox(height: 30),
                     ReusableElevatedButton(
                       onPress: (){
-
-
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) => const UsersTableEditPage()));
                       },
                       buttonText: 'Edit Details',fSize: fontSize,
                     ),
