@@ -1,12 +1,9 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
-
 import 'package:municipal_track/code/MapTools/location_controller.dart';
 import 'package:municipal_track/code/MapTools/location_search_dialogue.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
-
 import 'map_user_badge.dart';
 
 ///The lat,long information from the DB per user when selected user
@@ -46,7 +43,7 @@ class _MapPageState extends State<MapPage> {
   void setSourceAndDestinationMarkerIcons() async{
     sourceIcon = await BitmapDescriptor.fromAssetImage(
       ImageConfiguration(devicePixelRatio: 2.0),
-      'assets/images/location/source_pin.png'
+      'assets/images/location/source_pin_android.png'
     );
     destinationIcon = await BitmapDescriptor.fromAssetImage(
         ImageConfiguration(devicePixelRatio: 2.0),
@@ -111,7 +108,7 @@ class _MapPageState extends State<MapPage> {
       _markers.add(Marker(
           markerId: const MarkerId('sourcePin'),
           position: currentLocation,
-          icon: sourceIcon
+          icon: sourceIcon,
       ));
 
       _markers.add(Marker(

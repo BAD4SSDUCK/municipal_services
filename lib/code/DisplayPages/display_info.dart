@@ -297,20 +297,20 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: 6,),
-                              GestureDetector(
-                                onTap: () {
-                                  _delete(documentSnapshot.id);
-                                },
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.delete,
-                                      color: Colors.red[700],
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              // const SizedBox(width: 6,),
+                              // GestureDetector(
+                              //   onTap: () {
+                              //     _delete(documentSnapshot.id);
+                              //   },
+                              //   child: Row(
+                              //     children: [
+                              //       Icon(
+                              //         Icons.delete,
+                              //         color: Colors.red[700],
+                              //       ),
+                              //     ],
+                              //   ),
+                              // ),
                             ],
                           )
                         ],
