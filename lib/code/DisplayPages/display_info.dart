@@ -84,13 +84,26 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                   ElevatedButton(
                     child: const Text('Create'),
                     onPressed: () async {
-                      final String firstName = _firstNameController.text;
                       final String accountNumber =_accountNumberController.text;
+                      final String address =_accountNumberController.text;
+                      final String areaCode =_accountNumberController.text;
+                      final String meterNumber =_accountNumberController.text;
+                      final String cellNumber = _firstNameController.text;
+                      final String firstName = _firstNameController.text;
+                      final String lastName =_accountNumberController.text;
+                      final String idNumber =_accountNumberController.text;
                       if (accountNumber != null) {
-                        await _userList.add({"first name": firstName, "account number": accountNumber});
+                        await _userList.add({"account number": accountNumber, "address": address, "area code": areaCode , "meter number": meterNumber, "cell number": cellNumber, "first name": firstName, "last name": lastName, "id number": idNumber});
 
-                        _firstNameController.text = '';
                         _accountNumberController.text = '';
+                        _addressController.text = '';
+                        _areaCodeController.text = '';
+                        _meterNumberController.text = '';
+                        _cellNumberController.text = '';
+                        _firstNameController.text = '';
+                        _lastNameController.text = '';
+                        _idNumberController.text = '';
+
                         Navigator.of(context).pop();
                       }
                     },
@@ -241,45 +254,53 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
+                            'Account Number: '+
                             documentSnapshot['account number'],
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
+                            'Street Address: '+
                             documentSnapshot['address'],
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
+                            'Area Code: '+
                             documentSnapshot['area code'].toString(),
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
+                            'Meter Number: '+
                             documentSnapshot['meter number'],
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
+                            'Phone Number: '+
                             documentSnapshot['cell number'],
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
+                            'First Name: '+
                             documentSnapshot['first name'],
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
+                            'Surname: '+
                             documentSnapshot['last name'],
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
+                            'ID Number: '+
                             documentSnapshot['id number'],
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
-
+                          const SizedBox(height: 5,),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             crossAxisAlignment: CrossAxisAlignment.center,
@@ -350,12 +371,12 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
           },
         ),
 // Add new product
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _create(),
-          child: const Icon(Icons.add),
-
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat
+//         floatingActionButton: FloatingActionButton(
+//           onPressed: () => _create(),
+//           child: const Icon(Icons.add),
+//
+//         ),
+//         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat
     );
   }
 }

@@ -35,6 +35,11 @@ dependencies:
   rflutter_alert: ^2.0.4
   http: ^0.13.5
 
+  image_picker: ^0.8.6
+  permission_handler: ^10.2.0
+  path: ^1.8.2
+  firebase_storage: ^11.0.5
+
   firebase_core: ^2.2.0
   firebase_auth: ^4.1.2
   firebase_database: ^10.0.5
@@ -46,6 +51,9 @@ dependencies:
   flutter_google_places: ^0.3.0
   geolocator: ^9.0.2
   geocoding: ^2.0.0
+
+  #flutter_google_places_hoc081098: ^1.1.0
+  #rxdart: ^0.27.7
 
   intl_phone_field: ^3.1.0
   pin_code_fields: ^7.4.0
