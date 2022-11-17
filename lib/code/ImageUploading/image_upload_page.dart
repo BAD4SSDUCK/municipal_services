@@ -106,7 +106,7 @@ class _ImageUploadsState extends State<ImageUploads> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 25.0),
             child: GestureDetector(
-              ///the following function goes in the on tap directly and the (){} must be removed after the 'onTap:' todo is make sure the upload feild is added on the firebase DB
+              ///the following function goes in the on tap directly and the (){} must be removed after the 'onTap:' TODO is make sure the upload feild is added on the firebase DB
               //uploadFile();
               onTap: (){},
 
