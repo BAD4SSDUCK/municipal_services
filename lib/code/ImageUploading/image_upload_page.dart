@@ -21,7 +21,7 @@ class _ImageUploadsState extends State<ImageUploads> {
   final ImagePicker _picker = ImagePicker();
 
   Future imgFromGallery() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80,);
 
     setState(() {
       if (pickedFile != null) {
@@ -34,7 +34,7 @@ class _ImageUploadsState extends State<ImageUploads> {
   }
 
   Future imgFromCamera() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.camera);
+    final pickedFile = await _picker.pickImage(source: ImageSource.camera, imageQuality: 80,);
 
     setState(() {
       if (pickedFile != null) {
@@ -106,7 +106,10 @@ class _ImageUploadsState extends State<ImageUploads> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 25.0),
             child: GestureDetector(
+              ///the following function goes in the on tap directly and the (){} must be removed after the 'onTap:' todo is make sure the upload feild is added on the firebase DB
+              //uploadFile();
               onTap: (){},
+
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
