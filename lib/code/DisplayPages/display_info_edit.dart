@@ -29,6 +29,15 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
 
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
 
+    _accountNumberController.text = '';
+    _addressController.text = '';
+    _areaCodeController.text = '';
+    _meterNumberController.text = '';
+    _cellNumberController.text = '';
+    _firstNameController.text = '';
+    _lastNameController.text = '';
+    _idNumberController.text = '';
+
     await showModalBottomSheet(
         isScrollControlled: true,
         context: context,
@@ -90,7 +99,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                       final String address =_accountNumberController.text;
                       final String areaCode =_accountNumberController.text;
                       final String meterNumber =_accountNumberController.text;
-                      final String cellNumber = _firstNameController.text;
+                      final String cellNumber = _cellNumberController.text;
                       final String firstName = _firstNameController.text;
                       final String lastName =_accountNumberController.text;
                       final String idNumber =_accountNumberController.text;
