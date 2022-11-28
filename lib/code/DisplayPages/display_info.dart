@@ -94,13 +94,13 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                     child: const Text('Create'),
                     onPressed: () async {
                       final String accountNumber =_accountNumberController.text;
-                      final String address =_accountNumberController.text;
-                      final String areaCode =_accountNumberController.text;
-                      final String meterNumber =_accountNumberController.text;
+                      final String address =_addressController.text;
+                      final String areaCode =_areaCodeController.text;
+                      final String meterNumber =_meterNumberController.text;
                       final String cellNumber = _cellNumberController.text;
                       final String firstName = _firstNameController.text;
-                      final String lastName =_accountNumberController.text;
-                      final String idNumber =_accountNumberController.text;
+                      final String lastName =_lastNameController.text;
+                      final String idNumber =_idNumberController.text;
                       if (accountNumber != null) {
                         await _userList.add({"account number": accountNumber, "address": address, "area code": areaCode , "meter number": meterNumber, "cell number": cellNumber, "first name": firstName, "last name": lastName, "id number": idNumber});
 
