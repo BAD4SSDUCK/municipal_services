@@ -72,7 +72,7 @@ class MainMenu extends StatefulWidget {
                     //   buttonText: 'Users Details',fSize: fontSize,
                     // ),
 
-                    const SizedBox(height: 100),
+                    const SizedBox(height: 60),
                     ReusableElevatedButton(
                       onPress: (){
                         Navigator.push(context,
@@ -81,7 +81,7 @@ class MainMenu extends StatefulWidget {
                       buttonText: 'View Details',fSize: fontSize,
                     ),
 
-                    const SizedBox(height: 50),
+                    const SizedBox(height: 30),
 
                     ReusableElevatedButton(
                       onPress: (){
@@ -90,7 +90,7 @@ class MainMenu extends StatefulWidget {
                       },
                       buttonText: 'Add New Details',fSize: fontSize,
                     ),
-                    const SizedBox(height: 50),
+                    const SizedBox(height: 30),
 
                     ReusableElevatedButton(
                       onPress: (){
@@ -101,7 +101,7 @@ class MainMenu extends StatefulWidget {
                       buttonText: 'Map Viewer',fSize: fontSize,
                     ),
 
-                    const SizedBox(height: 50),
+                    const SizedBox(height: 30),
                     // ReusableElevatedButton(
                     //   onPress: (){
                     //     FirebaseAuth.instance.signOut();
@@ -115,7 +115,7 @@ class MainMenu extends StatefulWidget {
                         Navigator.push(context,
                             MaterialPageRoute(builder: (context) => ImageUploads()));
                       },
-                      buttonText: 'Upload Meter Image',fSize: fontSize,
+                      buttonText: 'Upload Image',fSize: fontSize,
                     ),
 
                     const SizedBox(height: 30),

@@ -150,6 +150,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
       _firstNameController.text = documentSnapshot['first name'];
       _lastNameController.text = documentSnapshot['last name'];
       _idNumberController.text = documentSnapshot['id number'];
+      userID = documentSnapshot['user id'];
     }
 
     await showModalBottomSheet(
@@ -270,7 +271,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                 itemBuilder: (context, index) {
                   final DocumentSnapshot documentSnapshot =
                   streamSnapshot.data!.docs[index];
-                  ///this card is to display all details for users
+
 
 
                   // Stream<DocumentSnapshot> getData()async*{
@@ -278,7 +279,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                   //   yield* Firestore.instance.collection('users').document(user.uid).snapshots();
                   // }
 
-
+                  ///this card is to display all details for users
                   return Card(
                     margin: const EdgeInsets.all(10),
                     child: Padding(
@@ -436,7 +437,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
             );
           },
         ),
-// Add new account, removed because it was not necessary
+      /// Add new account, removed because it was not necessary
 //         floatingActionButton: FloatingActionButton(
 //           onPressed: () => _create(),
 //           child: const Icon(Icons.add),

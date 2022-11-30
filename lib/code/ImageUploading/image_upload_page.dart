@@ -61,6 +61,8 @@ class _ImageUploadsState extends State<ImageUploads> {
     final uid = user?.uid;
     String userID = uid as String;
 
+    final String photoName;
+
     ///'files/$userID/$fileName' is used specifically for adding the user id to a table
     if (_photo == null) return;
     final fileName = basename(_photo!.path);
@@ -71,9 +73,11 @@ class _ImageUploadsState extends State<ImageUploads> {
           .ref(destination)
           .child('file/');
       await ref.putFile(_photo!);
+      photoName = _photo!.toString();
+      print(destination);
       ScaffoldMessenger.of(this.context).showSnackBar(
-        const SnackBar(
-          content: Text('Image Successfully Uploaded'),
+         SnackBar(
+          content: Text(destination +'Image Successfully Uploaded'),
         ),
       );
     } catch (e) {
