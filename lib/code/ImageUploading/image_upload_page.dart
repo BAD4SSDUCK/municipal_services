@@ -1,13 +1,18 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:path/path.dart';
 
 class ImageUploads extends StatefulWidget {
   ImageUploads({Key? key}) : super(key: key);
+
+
 
   @override
   _ImageUploadsState createState() => _ImageUploadsState();
@@ -17,11 +22,13 @@ class _ImageUploadsState extends State<ImageUploads> {
   firebase_storage.FirebaseStorage storage =
       firebase_storage.FirebaseStorage.instance;
 
+  final GlobalKey<ScaffoldState> _key = GlobalKey();
+
   File? _photo;
   final ImagePicker _picker = ImagePicker();
 
   Future imgFromGallery() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80,);
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 60,);
 
     setState(() {
       if (pickedFile != null) {
@@ -34,7 +41,7 @@ class _ImageUploadsState extends State<ImageUploads> {
   }
 
   Future imgFromCamera() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.camera, imageQuality: 80,);
+    final pickedFile = await _picker.pickImage(source: ImageSource.camera, imageQuality: 60,);
 
     setState(() {
       if (pickedFile != null) {
@@ -47,15 +54,28 @@ class _ImageUploadsState extends State<ImageUploads> {
   }
 
   Future uploadFile() async {
+
+    ///This is the method to get the user id for reference in data saving
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? user = auth.currentUser;
+    final uid = user?.uid;
+    String userID = uid as String;
+
+    ///'files/$userID/$fileName' is used specifically for adding the user id to a table
     if (_photo == null) return;
     final fileName = basename(_photo!.path);
-    final destination = 'files/$fileName';
+    final destination = 'files/$userID/$fileName';
 
     try {
       final ref = firebase_storage.FirebaseStorage.instance
           .ref(destination)
           .child('file/');
       await ref.putFile(_photo!);
+      ScaffoldMessenger.of(this.context).showSnackBar(
+        const SnackBar(
+          content: Text('Image Successfully Uploaded'),
+        ),
+      );
     } catch (e) {
       print('error occured');
     }
@@ -65,7 +85,7 @@ class _ImageUploadsState extends State<ImageUploads> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Electric Meter Image'),
+        title: const Text('Required Meter Image'),
         backgroundColor: Colors.green,
     ),
       body: Column(
@@ -106,9 +126,21 @@ class _ImageUploadsState extends State<ImageUploads> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 25.0),
             child: GestureDetector(
-              ///the following function goes in the on tap directly and the (){} must be removed after the 'onTap:' TODO is make sure the upload feild is added on the firebase DB
-              //uploadFile();
-              onTap: (){},
+              onTap: () {
+                if (_photo != null) {
+                  uploadFile();
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Image Successfully Uploaded!'),
+                    ),);
+                  Navigator.of(context).pop();
+                } else {
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please select image to upload!'),
+                    ),);
+                }
+                },
 
               child: Container(
                 padding: const EdgeInsets.all(20),

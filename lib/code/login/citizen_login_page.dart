@@ -89,24 +89,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 alignment: Alignment.topCenter,
                 child: Padding(
                   padding: EdgeInsets.only(top: screenHeight / 8),
-                  child: Column(
-                    children: [
-                      Text(
-                        "JOIN US",
-                        style: GoogleFonts.montserrat(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: screenWidth / 8,
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Text(
+                          "GET DETAILS",
+                          style: GoogleFonts.montserrat(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: screenWidth / 10,
+                          ),
                         ),
-                      ),
-                      Text(
-                        "Create an account today!",
-                        style: GoogleFonts.montserrat(
-                          color: Colors.white,
-                          fontSize: screenWidth / 30,
+                        Text(
+                          "Sign in with your mobile number!",
+                          style: GoogleFonts.montserrat(
+                            color: Colors.white,
+                            fontSize: screenWidth / 30,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -145,12 +147,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         GestureDetector(
                           onTap: () {
                             if(screenState == 0) {
-                              if(usernameController.text.isEmpty) {
-                                showSnackBarText("Username is still empty!");
-                              } else if(phoneController.text.isEmpty) {
-                                showSnackBarText("Phone number is still empty!");
+                              // if(usernameController.text.isEmpty) {
+                              //   showSnackBarText("Username is still empty!");
+                              // } else
+                              if(phoneController.text.isEmpty) {
+                                  showSnackBarText("Phone number is still empty!");
                               } else {
-                                verifyPhone(countryDial + phoneController.text);
+                                  showSnackBarText("Now verifying your phone number!");
+                                  verifyPhone(countryDial + phoneController.text);
                               }
                             } else {
                               if(otpPin.length >= 6) {
@@ -205,25 +209,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Username",
-          style: GoogleFonts.montserrat(
-            color: Colors.black87,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8,),
-        TextFormField(
-          controller: usernameController,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-            ),
-          ),
-        ),
+        // Text(
+        //   "Username",
+        //   style: GoogleFonts.montserrat(
+        //     color: Colors.black87,
+        //     fontWeight: FontWeight.bold,
+        //   ),
+        // ),
+        // const SizedBox(height: 8,),
+        // TextFormField(
+        //   controller: usernameController,
+        //   decoration: InputDecoration(
+        //     border: OutlineInputBorder(
+        //       borderRadius: BorderRadius.circular(16),
+        //     ),
+        //     contentPadding: const EdgeInsets.symmetric(
+        //       horizontal: 16,
+        //     ),
+        //   ),
+        // ),
         const SizedBox(height: 16,),
         Text(
           "Phone number",
@@ -233,13 +237,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
         IntlPhoneField(
+          textAlign: TextAlign.start,
+          style: const TextStyle(fontSize: 14,),
           controller: phoneController,
           showCountryFlag: false,
           showDropdownIcon: false,
           initialValue: countryDial,
           onCountryChanged: (country) {
             setState(() {
-              countryDial = "+" + country.dialCode;
+              countryDial = "+"+country.dialCode;
             });
           },
           decoration: InputDecoration(
@@ -279,7 +285,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               TextSpan(
-                text: "\nEnter the code here and we can continue!",
+                text: "\nEnter the code here to finish logging in!",
                 style: GoogleFonts.montserrat(
                   color: Colors.black87,
                   fontSize: 12,

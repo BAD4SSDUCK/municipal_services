@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:municipal_track/code/ImageUploading/image_upload_page.dart';
 import 'package:municipal_track/code/Reuseables/main_menu_reusable_button.dart';
 
 import 'package:municipal_track/code/Reuseables/nav_drawer.dart';
@@ -55,25 +56,33 @@ class MainMenu extends StatefulWidget {
                   //  crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
 
-                    const SizedBox(height: 100),
-                    ReusableElevatedButton(
-                      onPress: (){
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (context) => const UsersTableViewPage()));
-                      },
-                      buttonText: 'Users Details',fSize: fontSize,
-                    ),
-
                     const SizedBox(height: 30),
+
+                    Image.asset(
+                      'images/logo.png',
+                      height: 200,
+                      width: 200,
+                    ), //
+
+                    // ReusableElevatedButton(
+                    //   onPress: (){
+                    //     Navigator.push(context,
+                    //         MaterialPageRoute(builder: (context) => const UsersTableViewPage()));
+                    //   },
+                    //   buttonText: 'Users Details',fSize: fontSize,
+                    // ),
+
+                    const SizedBox(height: 100),
                     ReusableElevatedButton(
                       onPress: (){
                         Navigator.push(context,
                             MaterialPageRoute(builder: (context) => const UsersTableEditPage()));
                       },
-                      buttonText: 'Edit Details',fSize: fontSize,
+                      buttonText: 'View Details',fSize: fontSize,
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 50),
+
                     ReusableElevatedButton(
                       onPress: (){
                         Navigator.push(context,
@@ -81,8 +90,8 @@ class MainMenu extends StatefulWidget {
                       },
                       buttonText: 'Add New Details',fSize: fontSize,
                     ),
+                    const SizedBox(height: 50),
 
-                    const SizedBox(height: 30),
                     ReusableElevatedButton(
                       onPress: (){
 
@@ -92,13 +101,23 @@ class MainMenu extends StatefulWidget {
                       buttonText: 'Map Viewer',fSize: fontSize,
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 50),
+                    // ReusableElevatedButton(
+                    //   onPress: (){
+                    //     FirebaseAuth.instance.signOut();
+                    //   },
+                    //   buttonText: 'Sign Out',fSize: fontSize,
+                    // ),
+
                     ReusableElevatedButton(
                       onPress: (){
-                        FirebaseAuth.instance.signOut();
+
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) => ImageUploads()));
                       },
-                      buttonText: 'Sign Out',fSize: fontSize,
+                      buttonText: 'Upload Meter Image',fSize: fontSize,
                     ),
+
                     const SizedBox(height: 30),
                   ],
                 ),

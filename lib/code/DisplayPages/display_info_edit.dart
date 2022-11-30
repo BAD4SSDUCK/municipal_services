@@ -1,8 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 
 import '../ImageUploading/image_upload_page.dart';
+import '../Reuseables/map_component.dart';
 
 
 class UsersTableEditPage extends StatefulWidget {
@@ -12,9 +16,17 @@ class UsersTableEditPage extends StatefulWidget {
   _UsersTableEditPageState createState() => _UsersTableEditPageState();
 }
 
-class _UsersTableEditPageState extends State<UsersTableEditPage> {
-// text fields' controllers
+final FirebaseAuth auth = FirebaseAuth.instance;
+final User? user = auth.currentUser;
+final uid = user?.uid;
+String userID = uid as String;
 
+final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
+
+
+class _UsersTableEditPageState extends State<UsersTableEditPage> {
+
+  // text fields' controllers
   final _accountNumberController = TextEditingController();
   final _addressController = TextEditingController();
   final _areaCodeController = TextEditingController();
@@ -23,6 +35,8 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _idNumberController = TextEditingController();
+
+  final _userIDController = userID;
 
   final CollectionReference _userList =
   FirebaseFirestore.instance.collection('users');
@@ -250,12 +264,21 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
           builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
             if (streamSnapshot.hasData) {
               return ListView.builder(
+
+                ///this call is to display all details for users
                 itemCount: streamSnapshot.data!.docs.length,
                 itemBuilder: (context, index) {
                   final DocumentSnapshot documentSnapshot =
                   streamSnapshot.data!.docs[index];
-
                   ///this card is to display all details for users
+
+
+                  // Stream<DocumentSnapshot> getData()async*{
+                  //   FirebaseUser user = await FirebaseAuth.instance.currentUser();
+                  //   yield* Firestore.instance.collection('users').document(user.uid).snapshots();
+                  // }
+
+
                   return Card(
                     margin: const EdgeInsets.all(10),
                     child: Padding(
@@ -319,21 +342,6 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                             children: [
                               GestureDetector(
                                 onTap: () {
-                                  Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) => ImageUploads()));
-                                },
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.camera_alt,
-                                      color: Colors.green[700],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 6,),
-                              GestureDetector(
-                                onTap: () {
                                   _update(documentSnapshot);
                                 },
                                 child: Row(
@@ -348,17 +356,48 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                               const SizedBox(width: 6,),
                               GestureDetector(
                                 onTap: () {
-                                  _delete(documentSnapshot.id);
+                                  Navigator.push(context,
+                                      MaterialPageRoute(builder: (context) => MapPage()));
                                 },
                                 child: Row(
                                   children: [
                                     Icon(
-                                      Icons.delete,
-                                      color: Colors.red[700],
+                                      Icons.map,
+                                      color: Colors.green[700],
                                     ),
                                   ],
                                 ),
                               ),
+                              const SizedBox(width: 6,),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(context,
+                                      MaterialPageRoute(builder: (context) => ImageUploads()));
+                                },
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.camera_alt,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 6,),
+
+                              // GestureDetector(
+                              //   onTap: () {
+                              //     _delete(documentSnapshot.id);
+                              //   },
+                              //   child: Row(
+                              //     children: [
+                              //       Icon(
+                              //         Icons.delete,
+                              //         color: Colors.red[700],
+                              //       ),
+                              //     ],
+                              //   ),
+                              // ),
                             ],
                           )
                         ],
@@ -397,13 +436,12 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
             );
           },
         ),
-// Add new product
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _create(),
-          child: const Icon(Icons.add),
-
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat
+// Add new account, removed because it was not necessary
+//         floatingActionButton: FloatingActionButton(
+//           onPressed: () => _create(),
+//           child: const Icon(Icons.add),
+//         ),
+//         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat
     );
   }
 }
