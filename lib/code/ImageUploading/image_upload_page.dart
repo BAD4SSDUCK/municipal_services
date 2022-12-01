@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:municipal_track/code/DisplayPages/display_info_edit.dart';
 import 'package:path/path.dart';
 
 class ImageUploads extends StatefulWidget {
@@ -66,7 +67,7 @@ class _ImageUploadsState extends State<ImageUploads> {
     ///'files/$userID/$fileName' is used specifically for adding the user id to a table
     if (_photo == null) return;
     final fileName = basename(_photo!.path);
-    final destination = 'files/$userID/$fileName';
+    final destination = 'files/$userID'; // /$fileName
 
     try {
       final ref = firebase_storage.FirebaseStorage.instance
@@ -75,11 +76,6 @@ class _ImageUploadsState extends State<ImageUploads> {
       await ref.putFile(_photo!);
       photoName = _photo!.toString();
       print(destination);
-      ScaffoldMessenger.of(this.context).showSnackBar(
-         SnackBar(
-          content: Text(destination +'Image Successfully Uploaded'),
-        ),
-      );
     } catch (e) {
       print('error occured');
     }
