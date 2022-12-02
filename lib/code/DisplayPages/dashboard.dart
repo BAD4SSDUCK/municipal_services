@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_page.dart';
@@ -24,6 +25,10 @@ class MainMenu extends StatefulWidget {
   class _MainMenuState extends State<MainMenu>{
   final user = FirebaseAuth.instance.currentUser!;
 
+  bool currentVis1 = true;
+  bool currentVis2 = false;
+
+
   @override
   Widget build(BuildContext context) {
     const double fontSize = 30.0;
@@ -41,7 +46,7 @@ class MainMenu extends StatefulWidget {
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
           title:
-          Text('Signed in: '),///${user.email!}
+          Text('Signed in from: ${user.phoneNumber!}'),///${user.email!}
           backgroundColor: Colors.black87,
         ),
         //drawer: const NavigationDrawer(),
@@ -73,35 +78,43 @@ class MainMenu extends StatefulWidget {
                     // ),
 
                     const SizedBox(height: 60),
-                    ReusableElevatedButton(
-                      onPress: (){
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (context) => const UsersTableEditPage()));
-                      },
-                      buttonText: 'View Details',fSize: fontSize,
+                    Visibility(
+                      visible: currentVis1,
+                      child: ReusableElevatedButton(
+                        onPress: (){
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) => const UsersTableEditPage()));
+                        },
+                        buttonText: 'View Details',fSize: fontSize,
+                      ),
                     ),
 
                     const SizedBox(height: 30),
-
-                    ReusableElevatedButton(
-                      onPress: (){
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (context) => const AddUserDetails()));
-                      },
-                      buttonText: 'Add New Details',fSize: fontSize,
-                    ),
-                    const SizedBox(height: 30),
-
-                    ReusableElevatedButton(
-                      onPress: (){
-
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (context) => MapPage()));
-                      },
-                      buttonText: 'Map Viewer',fSize: fontSize,
+                    Visibility(
+                      visible: currentVis1,
+                      child: ReusableElevatedButton(
+                        onPress: (){
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) => const AddUserDetails()));
+                        },
+                        buttonText: 'Add New Details',fSize: fontSize,
+                      ),
                     ),
 
                     const SizedBox(height: 30),
+                    Visibility(
+                      visible: currentVis1,
+                      child: ReusableElevatedButton(
+                        onPress: (){
+
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) => MapPage()));
+                        },
+                        buttonText: 'Map Viewer',fSize: fontSize,
+                      ),
+                    ),
+
+                    //const SizedBox(height: 30),
                     // ReusableElevatedButton(
                     //   onPress: (){
                     //     FirebaseAuth.instance.signOut();
@@ -109,13 +122,17 @@ class MainMenu extends StatefulWidget {
                     //   buttonText: 'Sign Out',fSize: fontSize,
                     // ),
 
-                    ReusableElevatedButton(
-                      onPress: (){
+                    const SizedBox(height: 30),
+                    Visibility(
+                      visible: currentVis1,
+                      child: ReusableElevatedButton(
+                        onPress: (){
 
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (context) => ImageUploads()));
-                      },
-                      buttonText: 'Upload Image',fSize: fontSize,
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) => ImageUploads()));
+                        },
+                        buttonText: 'Upload Image',fSize: fontSize,
+                      ),
                     ),
 
                     const SizedBox(height: 30),
