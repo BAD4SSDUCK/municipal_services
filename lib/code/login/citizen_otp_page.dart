@@ -5,14 +5,14 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:municipal_track/code/DisplayPages/dashboard.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
-class LoginCitScreen extends StatefulWidget {
-  const LoginCitScreen({Key? key}) : super(key: key);
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({Key? key}) : super(key: key);
 
   @override
-  State<LoginCitScreen> createState() => _LoginCitScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginCitScreenState extends State<LoginCitScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   TextEditingController usernameController = TextEditingController();
   TextEditingController phoneController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
@@ -29,10 +29,7 @@ class _LoginCitScreenState extends State<LoginCitScreen> {
 
   Color blue = const Color(0xff8cccff);
 
-  Future<void> loginPhone(String number) async {
-
-    ///todo change this to a password login
-
+  Future<void> verifyPhone(String number) async {
     await FirebaseAuth.instance.verifyPhoneNumber(
       phoneNumber: number,
       timeout: const Duration(seconds: 20),
@@ -65,6 +62,7 @@ class _LoginCitScreenState extends State<LoginCitScreen> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => const MainMenu(),
+          //todo send user to a password creation page if they have not logged in before
         ),
       );
     });
@@ -152,18 +150,17 @@ class _LoginCitScreenState extends State<LoginCitScreen> {
                         GestureDetector(
                           onTap: () {
                             if(screenState == 0) {
-                              if(passwordController.text.isEmpty) {
-                                showSnackBarText("Enter your password!");
-                              } else
+                              // if(usernameController.text.isEmpty) {
+                              //   showSnackBarText("Username is still empty!");
+                              // } else
                               if(phoneController.text.isEmpty) {
                                   showSnackBarText("Phone number is still empty!");
                               } else {
                                   showSnackBarText("Now verifying your phone number!");
-                                  loginPhone(countryDial + phoneController.text);
+                                  verifyPhone(countryDial + phoneController.text);
                               }
                             } else {
                               if(otpPin.length >= 6) {
-                                ///todo add password login method here
                                 verifyOTP();
                               } else {
                                 showSnackBarText("Enter OTP correctly!");
@@ -180,7 +177,7 @@ class _LoginCitScreenState extends State<LoginCitScreen> {
                             ),
                             child: Center(
                               child: Text(
-                                "Login",
+                                "CONTINUE",
                                 style: GoogleFonts.montserrat(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -215,6 +212,25 @@ class _LoginCitScreenState extends State<LoginCitScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Text(
+        //   "Username",
+        //   style: GoogleFonts.montserrat(
+        //     color: Colors.black87,
+        //     fontWeight: FontWeight.bold,
+        //   ),
+        // ),
+        // const SizedBox(height: 8,),
+        // TextFormField(
+        //   controller: usernameController,
+        //   decoration: InputDecoration(
+        //     border: OutlineInputBorder(
+        //       borderRadius: BorderRadius.circular(16),
+        //     ),
+        //     contentPadding: const EdgeInsets.symmetric(
+        //       horizontal: 16,
+        //     ),
+        //   ),
+        // ),
         const SizedBox(height: 16,),
         Text(
           "Phone number",
@@ -235,26 +251,6 @@ class _LoginCitScreenState extends State<LoginCitScreen> {
               countryDial = "+"+country.dialCode;
             });
           },
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-            ),
-          ),
-        ),
-        const SizedBox(height: 16,),
-        Text(
-          "Password",
-          style: GoogleFonts.montserrat(
-            color: Colors.black87,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8,),
-        TextFormField(
-          controller: passwordController,
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),

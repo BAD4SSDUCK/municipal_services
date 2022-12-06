@@ -101,8 +101,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                     keyboardType:
                     const TextInputType.numberWithOptions(),
                     controller: _areaCodeController,
-                    decoration: const InputDecoration(labelText: 'Area Code',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Area Code',),
                   ),
                   TextField(
                     controller: _meterNumberController,
@@ -261,7 +260,8 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                           "cell number": cellNumber,
                           "first name": firstName,
                           "last name": lastName,
-                          "id number": idNumber
+                          "id number": idNumber,
+                          "user id" : userID,
                         });
 
                         _accountNumberController.text = '';

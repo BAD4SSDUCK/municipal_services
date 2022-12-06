@@ -11,7 +11,7 @@ class ReusableElevatedButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       style: TextButton.styleFrom(
-        minimumSize: const Size(280,70),
+        minimumSize: const Size(350,70),
         primary: Colors.black, //foreground
         backgroundColor: Colors.white,
         onSurface: Colors.red,

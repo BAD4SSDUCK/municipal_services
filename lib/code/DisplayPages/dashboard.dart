@@ -3,17 +3,21 @@ import 'dart:collection';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_page.dart';
 import 'package:municipal_track/code/Reuseables/main_menu_reusable_button.dart';
-
 import 'package:municipal_track/code/Reuseables/nav_drawer.dart';
-import 'package:flutter/services.dart';
 
 import '../Reuseables/map_component.dart';
 import '../Reuseables/menu_reusable_elevated_button.dart';
 import 'add_details.dart';
 import 'display_info.dart';
 import 'display_info_edit.dart';
+
+// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+// import 'package:quickblox_sdk/push/constants.dart';
+// import 'package:quickblox_sdk/quickblox_sdk.dart';
+// import 'package:firebase_messaging/firebase_messaging.dart';
 
 class MainMenu extends StatefulWidget {
   const MainMenu({Key? key}) : super(key: key);
@@ -89,9 +93,9 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    //const SizedBox(height: 30),
                     Visibility(
-                      visible: currentVis1,
+                      visible: currentVis2,
                       child: ReusableElevatedButton(
                         onPress: (){
                           Navigator.push(context,
@@ -136,6 +140,20 @@ class MainMenu extends StatefulWidget {
                     ),
 
                     const SizedBox(height: 30),
+                    Visibility(
+                      visible: currentVis1,
+                      child: ReusableElevatedButton(
+                        onPress: (){
+                          //initSubscription;
+
+                          // Navigator.push(context,
+                          //     MaterialPageRoute(builder: (context) => MapPage()));
+                        },
+                        buttonText: 'Notification Center',fSize: fontSize,
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
                   ],
                 ),
               )
@@ -146,3 +164,35 @@ class MainMenu extends StatefulWidget {
     );
   }
 }
+
+///Added code for push notifications
+// void initSubscription() async {
+//   FirebaseMessaging.instance.getToken().then((token) {
+//     QB.subscriptions.create(token!, QBPushChannelNames.GCM);
+//   });
+//
+//   try {
+//     FirebaseMessaging.onMessage.listen((message) {
+//       showNotification(message);
+//     });
+//   } on PlatformException catch (e) {
+//     //some error occurred
+//   }
+// }
+//
+// void showNotification(RemoteMessage message) {
+//   AndroidNotificationChannel channel = const AndroidNotificationChannel(
+//       'channel_id', 'some_title', //'some_description',
+//       importance: Importance.high);
+//
+//   AndroidNotificationDetails details = AndroidNotificationDetails(
+//       channel.id, channel.name, //channel.description,
+//       icon: 'launch_background');
+//
+//   FlutterLocalNotificationsPlugin plugin = FlutterLocalNotificationsPlugin();
+//   int id = message.hashCode;
+//   String title = "some message title";
+//   String body = message.data["message"];
+//
+//   plugin.show(id, title, body, NotificationDetails(android: details));
+// }
