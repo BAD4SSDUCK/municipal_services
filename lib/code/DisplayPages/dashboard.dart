@@ -1,12 +1,18 @@
 import 'dart:collection';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_page.dart';
 import 'package:municipal_track/code/Reuseables/main_menu_reusable_button.dart';
 import 'package:municipal_track/code/Reuseables/nav_drawer.dart';
+import 'package:municipal_track/main.dart';
+import 'package:http/http.dart' as http;
 
 import '../Reuseables/map_component.dart';
 import '../Reuseables/menu_reusable_elevated_button.dart';
@@ -28,6 +34,135 @@ class MainMenu extends StatefulWidget {
 
   class _MainMenuState extends State<MainMenu>{
   final user = FirebaseAuth.instance.currentUser!;
+
+  ///Methods and implementation for push notifications with firebase and specific device token saving
+  late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  TextEditingController username = TextEditingController();
+  TextEditingController title = TextEditingController();
+  TextEditingController body = TextEditingController();
+  String? mtoken = " ";
+
+  @override
+  void initState() {
+    super.initState();
+    requestPermission();
+    getToken();
+    initInfo();
+  }
+
+  void requestPermission() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized){
+      print('User granted permission');
+    } else if (settings.authorizationStatus == AuthorizationStatus.provisional){
+      print('User granted provisional permissions');
+    } else {
+      print('User declined or has not accepted permissions');
+    }
+
+  }
+///todo finish this
+  void sendPushMessage(String token, String body, String title) async{
+    try{
+      await http.post(
+        Uri.parse('https://fcm.googleapis.com/fcm/send'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'key=AAAA5PnILx8:APA91bFrXK321LraFWsbh6er8bWta0ggbvb0pxUhVnzYfjYbP6rDMecElIu0pAYnKOWthddgsZUxXMEPPXxT1EguNdkGYZsrm3fjjlGeY2EP4bxjgvn9IZQvgxKzv6w8ES2f_g9Idlv5',
+        },
+        body: jsonEncode(
+          <String, dynamic>{
+            'priority': 'high',
+            'data': <String, dynamic>{
+              'click_action':'FLUTTER_NOTIFICATION_CLICK',
+              'status': 'done',
+              'body': body,
+              'title': title,
+            },
+
+            "notification": <String, dynamic>{
+              "title": title,
+              "body": body,
+              "android_channel_id": "User"
+            },
+            "to": token,
+          },
+        ),
+      );
+    } catch(e) {
+      if(kDebugMode){
+        print("error push notification");
+      }
+    }
+  }
+
+  void getToken() async{
+    await FirebaseMessaging.instance.getToken().then(
+        (token){
+          setState((){
+            mtoken = token;
+            print("My token is $mtoken");
+          });
+          saveToken(token!);
+        }
+    );
+  }
+
+  void saveToken(String token) async{
+    await FirebaseFirestore.instance.collection("UserToken").doc(user.phoneNumber).set({
+      'token': token,
+    });
+  }
+
+  initInfo(){
+    var androidInitialize = const AndroidInitializationSettings('@mipmap/ic_launcher');
+    //var iOSInitialize = const IOSInitializationSettings();
+    var initializationSettings = InitializationSettings(android: androidInitialize,);
+    flutterLocalNotificationsPlugin.initialize(initializationSettings, //onDidReceiveNotificationResponse:(String? payload) async{
+    //   try{
+    //     if(payload != null && payload.isNotEmpty){
+    //
+    //     } else {
+    //
+    //     }
+    //   } catch (e){
+    //
+    //   }
+    //   return;
+    // }
+    );
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async{
+      print("..........onMessage..........");
+      print("onMessage: ${message.notification?.title}/${message.notification?.body}}");
+
+      BigTextStyleInformation bigTextStyleInformation = BigTextStyleInformation(
+        message.notification!.body.toString(), htmlFormatBigText: true,
+        contentTitle: message.notification!.title.toString(), htmlFormatContentTitle: true,
+      );
+      AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
+          'User', 'User', importance: Importance.high,
+        styleInformation: bigTextStyleInformation, priority: Priority.high, playSound: true,
+
+      );
+      NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
+      await flutterLocalNotificationsPlugin.show(0, message.notification?.title, message.notification?.body, platformChannelSpecifics,
+      payload: message.data['body']);
+
+    });
+  }
+  ///end of methods for push notifications with firebase and the device specific token
 
   bool currentVis1 = true;
   bool currentVis2 = false;
@@ -143,8 +278,18 @@ class MainMenu extends StatefulWidget {
                     Visibility(
                       visible: currentVis1,
                       child: ReusableElevatedButton(
-                        onPress: (){
+                        onPress: () async {
                           //initSubscription;
+
+                          if(user.phoneNumber! != ""){
+                            DocumentSnapshot snap =
+                            await FirebaseFirestore.instance.collection("UserToken").doc(user.phoneNumber!).get();
+
+                            String token = snap['token'];
+                            print(token);
+                          }
+
+                          // sendPushMessage(token, titleText, bodyText);
 
                           // Navigator.push(context,
                           //     MaterialPageRoute(builder: (context) => MapPage()));
