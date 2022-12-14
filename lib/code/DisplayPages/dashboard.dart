@@ -207,12 +207,7 @@ class MainMenu extends StatefulWidget {
                   children: <Widget>[
 
                     const SizedBox(height: 30),
-
-                    Image.asset(
-                      'assets/images/logo.png',
-                      height: 200,
-                      width: 200,
-                    ),
+                    Image.asset('assets/images/logo.png', height: 200, width: 200,),
 
                     //const SizedBox(height: 30),
                     // ReusableElevatedButton(
@@ -281,7 +276,6 @@ class MainMenu extends StatefulWidget {
                         onPress: () async {
                           ///this onPress code bellow is used to set the message information and pop it up to the user,
                           ///It can be changed to the firebase notification
-                          String name = user.phoneNumber!;
                           String titleText = title.text;
                           String bodyText = body.text;
 
@@ -310,21 +304,21 @@ class MainMenu extends StatefulWidget {
                           // final url = 'pdfs/$FirebaseAuth.instance.currentUser!/Advert.pdf';
                           // final file = await PDFApi.loadFirebase(url);
                           // openPDF(context, file);
-
                         },
                         buttonText: 'Document download',fSize: fontSize,
                       ),
                     ),
-
                     const SizedBox(height: 30),
-                    ReusableElevatedButton(
-                      onPress: (){
-                        FirebaseAuth.instance.signOut();
-                      },
-                      buttonText: 'Sign Out',fSize: fontSize,
+                    Visibility(
+                      visible: currentVis1,
+                      child: ReusableElevatedButton(
+                        onPress: (){
+                          FirebaseAuth.instance.signOut();
+                        },
+                        buttonText: 'Sign Out',fSize: fontSize,
+                      ),
                     ),
                     const SizedBox(height: 30),
-
                   ],
                 ),
               )
