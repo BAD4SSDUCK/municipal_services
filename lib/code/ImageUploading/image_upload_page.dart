@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -13,8 +12,6 @@ import 'package:path/path.dart';
 class ImageUploads extends StatefulWidget {
   ImageUploads({Key? key}) : super(key: key);
 
-
-
   @override
   _ImageUploadsState createState() => _ImageUploadsState();
 }
@@ -24,7 +21,6 @@ class _ImageUploadsState extends State<ImageUploads> {
       firebase_storage.FirebaseStorage.instance;
 
   final GlobalKey<ScaffoldState> _key = GlobalKey();
-
   File? _photo;
   final ImagePicker _picker = ImagePicker();
 
@@ -61,7 +57,6 @@ class _ImageUploadsState extends State<ImageUploads> {
     final User? user = auth.currentUser;
     final uid = user?.uid;
     String userID = uid as String;
-
     final String photoName;
 
     ///'files/$userID/$fileName' is used specifically for adding the user id to a table
@@ -87,7 +82,7 @@ class _ImageUploadsState extends State<ImageUploads> {
       appBar: AppBar(
         title: const Text('Required Meter Image'),
         backgroundColor: Colors.green,
-    ),
+      ),
       body: Column(
         children: <Widget>[
           SizedBox(height: 100,),
@@ -111,18 +106,14 @@ class _ImageUploadsState extends State<ImageUploads> {
                     : Container(
                   decoration: BoxDecoration(
                       color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(10)),width: 250, height: 250,
-                  child: Icon(
-                    Icons.camera_alt,
-                    color: Colors.grey[800],
-                  ),
+                      borderRadius: BorderRadius.circular(10)), width: 250, height: 250,
+                  child: Icon(Icons.camera_alt, color: Colors.grey[800],),
                 ),
               ),
             ),
           ),
 
-          const SizedBox( height: 150,),
-
+          const SizedBox(height: 150,),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 25.0),
             child: GestureDetector(
@@ -140,7 +131,7 @@ class _ImageUploadsState extends State<ImageUploads> {
                       content: Text('Please select image to upload!'),
                     ),);
                 }
-                },
+              },
 
               child: Container(
                 padding: const EdgeInsets.all(20),
@@ -161,7 +152,6 @@ class _ImageUploadsState extends State<ImageUploads> {
               ),
             ),
           ),
-
         ],
       ),
     );

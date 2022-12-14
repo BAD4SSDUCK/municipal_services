@@ -9,21 +9,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_page.dart';
+import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_track/code/Reuseables/main_menu_reusable_button.dart';
 import 'package:municipal_track/code/Reuseables/nav_drawer.dart';
 import 'package:municipal_track/main.dart';
 import 'package:http/http.dart' as http;
 
+import '../PDFViewer/view_pdf.dart';
 import '../Reuseables/map_component.dart';
 import '../Reuseables/menu_reusable_elevated_button.dart';
 import 'add_details.dart';
 import 'display_info.dart';
 import 'display_info_edit.dart';
 
-// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-// import 'package:quickblox_sdk/push/constants.dart';
-// import 'package:quickblox_sdk/quickblox_sdk.dart';
-// import 'package:firebase_messaging/firebase_messaging.dart';
 
 class MainMenu extends StatefulWidget {
   const MainMenu({Key? key}) : super(key: key);
@@ -40,6 +38,8 @@ class MainMenu extends StatefulWidget {
   TextEditingController username = TextEditingController();
   TextEditingController title = TextEditingController();
   TextEditingController body = TextEditingController();
+  String title2 = "Outstanding Utilities Payment";
+  String body2 = "Make sure you pay utilities before the end of this month or your services will be disconnected";
   String? mtoken = " ";
 
   @override
@@ -72,7 +72,7 @@ class MainMenu extends StatefulWidget {
     }
 
   }
-///todo finish this
+
   void sendPushMessage(String token, String body, String title) async{
     try{
       await http.post(
@@ -92,8 +92,8 @@ class MainMenu extends StatefulWidget {
             },
 
             "notification": <String, dynamic>{
-              "title": title,
-              "body": body,
+              "title": title2,
+              "body": body2,
               "android_channel_id": "User"
             },
             "to": token,
@@ -129,18 +129,22 @@ class MainMenu extends StatefulWidget {
     var androidInitialize = const AndroidInitializationSettings('@mipmap/ic_launcher');
     //var iOSInitialize = const IOSInitializationSettings();
     var initializationSettings = InitializationSettings(android: androidInitialize,);
-    flutterLocalNotificationsPlugin.initialize(initializationSettings, //onDidReceiveNotificationResponse:(String? payload) async{
-    //   try{
-    //     if(payload != null && payload.isNotEmpty){
-    //
-    //     } else {
-    //
-    //     }
-    //   } catch (e){
-    //
-    //   }
-    //   return;
-    // }
+    flutterLocalNotificationsPlugin.initialize(initializationSettings, onSelectNotification:(String? payload) async{
+      try{
+        if(payload != null && payload.isNotEmpty){
+          Navigator.push(context, MaterialPageRoute(builder: (BuildContext context){
+            return const UsersTableEditPage();
+          }
+          ));
+
+        } else {
+
+        }
+      } catch (e){
+
+      }
+      return;
+    }
     );
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async{
@@ -167,6 +171,8 @@ class MainMenu extends StatefulWidget {
   bool currentVis1 = true;
   bool currentVis2 = false;
 
+  final CollectionReference _userList =
+  FirebaseFirestore.instance.collection('users');
 
   @override
   Widget build(BuildContext context) {
@@ -203,11 +209,12 @@ class MainMenu extends StatefulWidget {
                     const SizedBox(height: 30),
 
                     Image.asset(
-                      'images/logo.png',
+                      'assets/images/logo.png',
                       height: 200,
                       width: 200,
-                    ), //
+                    ),
 
+                    //const SizedBox(height: 30),
                     // ReusableElevatedButton(
                     //   onPress: (){
                     //     Navigator.push(context,
@@ -228,6 +235,7 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
+                    ///Add new details will not be available to anyone as it will all be details pulled from the server when SQL is implemented
                     //const SizedBox(height: 30),
                     Visibility(
                       visible: currentVis2,
@@ -253,14 +261,6 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    //const SizedBox(height: 30),
-                    // ReusableElevatedButton(
-                    //   onPress: (){
-                    //     FirebaseAuth.instance.signOut();
-                    //   },
-                    //   buttonText: 'Sign Out',fSize: fontSize,
-                    // ),
-
                     const SizedBox(height: 30),
                     Visibility(
                       visible: currentVis1,
@@ -279,26 +279,52 @@ class MainMenu extends StatefulWidget {
                       visible: currentVis1,
                       child: ReusableElevatedButton(
                         onPress: () async {
-                          //initSubscription;
+                          ///this onPress code bellow is used to set the message information and pop it up to the user,
+                          ///It can be changed to the firebase notification
+                          String name = user.phoneNumber!;
+                          String titleText = title.text;
+                          String bodyText = body.text;
 
+                          //initSubscription;
                           if(user.phoneNumber! != ""){
                             DocumentSnapshot snap =
                             await FirebaseFirestore.instance.collection("UserToken").doc(user.phoneNumber!).get();
 
                             String token = snap['token'];
                             print(token);
+
+                            sendPushMessage(token, titleText, bodyText);
                           }
-
-                          // sendPushMessage(token, titleText, bodyText);
-
-                          // Navigator.push(context,
-                          //     MaterialPageRoute(builder: (context) => MapPage()));
                         },
-                        buttonText: 'Notification Center',fSize: fontSize,
+                        buttonText: 'Notification Checker',fSize: fontSize,
                       ),
                     ),
 
                     const SizedBox(height: 30),
+                    Visibility(
+                      visible: currentVis1,
+                      child: ReusableElevatedButton(
+                        onPress: () async {
+                          ///code for loading the pdf is breaking with dependency clashes on dart:io and dart:html
+                          // final user = FirebaseAuth.instance.currentUser!;
+                          // final url = 'pdfs/$FirebaseAuth.instance.currentUser!/Advert.pdf';
+                          // final file = await PDFApi.loadFirebase(url);
+                          // openPDF(context, file);
+
+                        },
+                        buttonText: 'Document download',fSize: fontSize,
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+                    ReusableElevatedButton(
+                      onPress: (){
+                        FirebaseAuth.instance.signOut();
+                      },
+                      buttonText: 'Sign Out',fSize: fontSize,
+                    ),
+                    const SizedBox(height: 30),
+
                   ],
                 ),
               )
@@ -308,36 +334,10 @@ class MainMenu extends StatefulWidget {
       ),
     );
   }
-}
 
-///Added code for push notifications
-// void initSubscription() async {
-//   FirebaseMessaging.instance.getToken().then((token) {
-//     QB.subscriptions.create(token!, QBPushChannelNames.GCM);
-//   });
-//
-//   try {
-//     FirebaseMessaging.onMessage.listen((message) {
-//       showNotification(message);
-//     });
-//   } on PlatformException catch (e) {
-//     //some error occurred
-//   }
-// }
-//
-// void showNotification(RemoteMessage message) {
-//   AndroidNotificationChannel channel = const AndroidNotificationChannel(
-//       'channel_id', 'some_title', //'some_description',
-//       importance: Importance.high);
-//
-//   AndroidNotificationDetails details = AndroidNotificationDetails(
-//       channel.id, channel.name, //channel.description,
-//       icon: 'launch_background');
-//
-//   FlutterLocalNotificationsPlugin plugin = FlutterLocalNotificationsPlugin();
-//   int id = message.hashCode;
-//   String title = "some message title";
-//   String body = message.data["message"];
-//
-//   plugin.show(id, title, body, NotificationDetails(android: details));
-// }
+  ///Need to fix the pdf view loader
+  // void openPDF(BuildContext context, File file) => Navigator.of(context).push(
+  //   MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
+  // );
+
+}

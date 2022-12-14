@@ -14,6 +14,7 @@ class MainPage extends StatelessWidget {
   Widget build(BuildContext context) {
 
     ///code for sign in using user created email and password
+    ///AuthPage determines the login type between email or phone number otp
     return Scaffold(
       body: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),

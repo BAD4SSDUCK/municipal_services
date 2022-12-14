@@ -13,7 +13,7 @@ import firebase_messaging
 import firebase_storage
 import flutter_local_notifications
 import geolocator_apple
-import package_info_plus
+import package_info_plus_macos
 import path_provider_macos
 import url_launcher_macos
 

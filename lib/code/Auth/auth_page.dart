@@ -4,6 +4,9 @@ import 'package:municipal_track/code/Auth/auth_page.dart';
 import 'package:municipal_track/code/login/login_page.dart';
 import 'package:municipal_track/code/Login/register_page.dart';
 
+import '../login/citizen_otp_page.dart';
+import '../login/citizen_register_page.dart';
+
 class AuthPage extends StatefulWidget {
   const AuthPage({Key? key}) : super(key: key);
 
@@ -24,10 +27,19 @@ class _AuthPageState extends State<AuthPage> {
 
   @override
   Widget build(BuildContext context) {
+
+    ///The following is for email login version
+    // if (showLoginPage){
+    //   return LoginPage(showRegisterPage: toggleScreens);
+    // } else {
+    //   return RegisterPage(showLoginPage: toggleScreens);
+    // }
+
+    ///the following is for login using phone number and otp
     if (showLoginPage){
-      return LoginPage(showRegisterPage: toggleScreens);
+      return RegisterScreen();
     } else {
-      return RegisterPage(showLoginPage: toggleScreens);
+      return RegisterPasswordScreen();
     }
   }
 }

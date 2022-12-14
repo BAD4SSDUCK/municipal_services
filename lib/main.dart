@@ -63,7 +63,7 @@ class MyApp extends StatelessWidget {
     Get.put(LocationController());
     return const GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      home: RegisterScreen(),
+      home: MainPage(),
     );
 
     ///startup any 3 of these pages, MainPage is for staff to use, Register is for citizens
