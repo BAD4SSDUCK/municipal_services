@@ -52,14 +52,14 @@ class _ImageUploadsState extends State<ImageUploads> {
 
   Future uploadFile() async {
 
-    ///This is the method to get the user id for reference in data saving
+    ///This is the method to get the user id for reference in data upload
     final FirebaseAuth auth = FirebaseAuth.instance;
     final User? user = auth.currentUser;
     final uid = user?.uid;
     String userID = uid as String;
     final String photoName;
 
-    ///'files/$userID/$fileName' is used specifically for adding the user id to a table
+    ///'files/$userID/$fileName' is used specifically for adding the user id to a table in order to split the users per account
     if (_photo == null) return;
     final fileName = basename(_photo!.path);
     final destination = 'files/$userID'; // /$fileName
@@ -128,7 +128,7 @@ class _ImageUploadsState extends State<ImageUploads> {
                 } else {
                   ScaffoldMessenger.of(this.context).showSnackBar(
                     const SnackBar(
-                      content: Text('Please select image to upload!'),
+                      content: Text('Please tap on the image area and select the image to upload!'),
                     ),);
                 }
               },

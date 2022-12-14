@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -243,9 +244,9 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    //const SizedBox(height: 30),
                     Visibility(
-                      visible: currentVis1,
+                      visible: currentVis2,
                       child: ReusableElevatedButton(
                         onPress: (){
 
@@ -261,7 +262,11 @@ class MainMenu extends StatefulWidget {
                       visible: currentVis1,
                       child: ReusableElevatedButton(
                         onPress: (){
-
+                          ScaffoldMessenger.of(this.context).showSnackBar(
+                            SnackBar(
+                              content: Text('Uploading a new image will replace existing image if this is not your first upload!'),
+                            ),
+                          );
                           Navigator.push(context,
                               MaterialPageRoute(builder: (context) => ImageUploads()));
                         },
@@ -279,7 +284,7 @@ class MainMenu extends StatefulWidget {
                           String titleText = title.text;
                           String bodyText = body.text;
 
-                          //initSubscription;
+                          ///gets users phone token to send notification to this phone
                           if(user.phoneNumber! != ""){
                             DocumentSnapshot snap =
                             await FirebaseFirestore.instance.collection("UserToken").doc(user.phoneNumber!).get();
@@ -294,16 +299,28 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    //const SizedBox(height: 30),
                     Visibility(
-                      visible: currentVis1,
+                      visible: currentVis2,
                       child: ReusableElevatedButton(
                         onPress: () async {
-                          ///code for loading the pdf is breaking with dependency clashes on dart:io and dart:html
-                          // final user = FirebaseAuth.instance.currentUser!;
-                          // final url = 'pdfs/$FirebaseAuth.instance.currentUser!/Advert.pdf';
-                          // final file = await PDFApi.loadFirebase(url);
-                          // openPDF(context, file);
+                          ScaffoldMessenger.of(this.context).showSnackBar(
+                            SnackBar(
+                              content: Text('Now downloading your statement! Pease wait a few seconds!'),
+                            ),
+                          );
+
+                          final FirebaseAuth auth = FirebaseAuth.instance;
+                          final User? user = auth.currentUser;
+                          final uid = user?.uid;
+                          String userID = uid as String;
+
+                          ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
+                          ///no pdfs are uploaded by users
+                          print(FirebaseAuth.instance.currentUser);
+                          final url = 'pdfs/$userID/Advert.pdf';
+                          final file = await PDFApi.loadFirebase(url);
+                          openPDF(context, file);
                         },
                         buttonText: 'Document download',fSize: fontSize,
                       ),
@@ -329,9 +346,9 @@ class MainMenu extends StatefulWidget {
     );
   }
 
-  ///Need to fix the pdf view loader
-  // void openPDF(BuildContext context, File file) => Navigator.of(context).push(
-  //   MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
-  // );
+  ///pdf view loader getting file name onPress/onTap that passes filename to this class
+  void openPDF(BuildContext context, File file) => Navigator.of(context).push(
+    MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
+  );
 
 }

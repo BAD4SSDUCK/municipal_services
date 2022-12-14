@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +8,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 
 import '../ImageUploading/image_upload_page.dart';
+import '../PDFViewer/pdf_api.dart';
+import '../PDFViewer/view_pdf.dart';
 import '../Reuseables/map_component.dart';
 
 
@@ -211,8 +215,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                     keyboardType:
                     const TextInputType.numberWithOptions(),
                     controller: _areaCodeController,
-                    decoration: const InputDecoration(labelText: 'Area Code',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Area Code'),
                   ),
                   TextField(
                     controller: _meterNumberController,
@@ -304,7 +307,8 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
         builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
           if (streamSnapshot.hasData) {
             return ListView.builder(
-              ///this call is to display all details for users
+              ///this call is to display all details for all users but is only displaying for the current user account.
+              ///it can be changed to display all users for the staff to see if the role is set to all later on.
               itemCount: streamSnapshot.data!.docs.length,
               itemBuilder: (context, index) {
                 final DocumentSnapshot documentSnapshot =
@@ -312,13 +316,13 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
 
                 String billMessage;///A check for if payment is outstanding or not
                 if(documentSnapshot['eBill'] != ''){
-                  billMessage = 'Electric bill outstanding: '+documentSnapshot['eBill'];
+                  billMessage = 'Utilities bill outstanding: '+documentSnapshot['eBill'];
                 } else {
                   billMessage = 'No outstanding payments';
                 }
 
+                ///Check for only user information, this displays only for the users details and not all users in the database.
                 if(streamSnapshot.data!.docs[index]['user id'] == userID){
-                  ///Check for only user information
                   return Card(
                     margin: const EdgeInsets.all(10),
                     child: Padding(
@@ -370,10 +374,12 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
 
                           ///Image display item needs to get the reference from the firestore using the users uploaded meter connection
                           InkWell(
+                            ///onTap allows to open image upload page if user taps on the image.
+                            ///Can be later changed to display the picture zoomed in if user taps on it.
                             onTap: () {
                               ScaffoldMessenger.of(this.context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Uploading a new image will replace current image'),
+                                  content: Text('Uploading a new image will replace current image!'),
                                 ),
                               );
                               Navigator.push(context,
@@ -421,7 +427,6 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
 
                           const SizedBox(height: 5,),
                           Text(
-                            // 'Electric bill outstanding: ' + documentSnapshot['eBill'],
                             billMessage,
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
@@ -463,10 +468,47 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                               ),
                               const SizedBox(width: 6,),
                               GestureDetector(
+                                onTap: () async {
+                                  ScaffoldMessenger.of(this.context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Now downloading your statement! Pease wait a few seconds!'),
+                                    ),
+                                  );
+                                  final FirebaseAuth auth = FirebaseAuth.instance;
+                                  final User? user = auth.currentUser;
+                                  final uid = user?.uid;
+                                  String userID = uid as String;
+
+                                  ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
+                                  ///no pdfs are uploaded by users
+                                  print(FirebaseAuth.instance.currentUser);
+                                  final url = 'pdfs/$userID/ds_wirelessp2p.pdf';
+                                  final file = await PDFApi.loadFirebase(url);
+                                  try{
+                                    openPDF(context, file);
+                                  } catch(e){
+                                    ScaffoldMessenger.of(this.context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Unable to download statement. Please connect to the internet!'),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.picture_as_pdf,
+                                      color: Colors.orange[200],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 6,),
+                              GestureDetector(
                                 onTap: () {
                                   ScaffoldMessenger.of(this.context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Uploading a new image will replace current image'),
+                                      content: Text('Uploading a new image will replace current image!'),
                                     ),
                                   );
                                   Navigator.push(context,
@@ -501,9 +543,9 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                       ),
                     ),
                   );
-                }///end of single check
-                else { ///TODO remove else if when it does not work
-                  ///this card is to display ALL details for users
+                }///end of single user information display.
+                else {
+                  ///this card is to display ALL details for all users when role is set.
                   return Card();//(
                   //   margin: const EdgeInsets.all(10),
                   //   child: Padding(
@@ -569,7 +611,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                   //             ScaffoldMessenger.of(this.context).showSnackBar(
                   //               SnackBar(
                   //                 content: Text(
-                  //                     'Uploading a new image will replace current image'),
+                  //                     'Uploading a new image will replace current image!'),
                   //               ),
                   //             );
                   //             Navigator.push(context,
@@ -658,7 +700,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                   //                     .showSnackBar(
                   //                   SnackBar(
                   //                     content: Text(
-                  //                         'Uploading a new image will replace current image'),
+                  //                         'Uploading a new image will replace current image!'),
                   //                   ),
                   //                 );
                   //                 Navigator.push(context,
@@ -705,13 +747,17 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
         },
       ),
 
-      /// Add new account, removed because it was not necessary
-//         floatingActionButton: FloatingActionButton(
-//           onPressed: () => _create(),
-//           child: const Icon(Icons.add),
-//         ),
-//         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat
+      /// Add new account, removed because it was not necessary for non-staff users.
+      //   floatingActionButton: FloatingActionButton(
+      //     onPressed: () => _create(),
+      //     child: const Icon(Icons.add),
+      //   ),
+      //   floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat
 
     );
   }
+  ///pdf view loader getting file name onPress/onTap that passes pdf filename to this class.
+  void openPDF(BuildContext context, File file) => Navigator.of(context).push(
+    MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
+  );
 }
