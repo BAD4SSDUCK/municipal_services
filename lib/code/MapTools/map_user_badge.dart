@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../DisplayPages/display_info_edit.dart';
+
 class MapUserBadge extends StatelessWidget {
   const MapUserBadge({
     Key? key,
+
+    required final String locationGiven,
+    required final String accountNumber,
+
   }) : super(key: key);
 
   @override
@@ -42,15 +48,15 @@ class MapUserBadge extends StatelessWidget {
           Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text('Individual',
-                    style: TextStyle(
+                children: [
+                  Text('Account Number: $accountNumber',
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.grey,
                     ),
                   ),
-                  Text('Location',
-                    style: TextStyle(
+                  Text('Address: $locationGiven',
+                    style: const TextStyle(
                       color: Colors.green,
                     ),),
                 ],

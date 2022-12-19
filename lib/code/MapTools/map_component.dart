@@ -1,17 +1,19 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:municipal_track/code/MapTools/location_controller.dart';
-import 'package:municipal_track/code/MapTools/location_search_dialogue.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
+import 'package:municipal_track/code/DisplayPages/display_info_edit.dart';
 import 'map_user_badge.dart';
 
-///The lat,long information from the DB per user when selected user
+///TODO The lat,long information from the DB per user when selected account number that has an address. The address must be converted to lat long in order to show on map
+///given latLng is initial location
 const LatLng SOURCE_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);
-const LatLng DEST_LOCATION = LatLng(-29.562115515970493, 30.404004300313627);
 
 class MapPage extends StatefulWidget {
-  const MapPage({Key? key}) : super(key: key);
+  const MapPage({
+    Key? key,
+
+  }) : super(key: key);
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -20,11 +22,9 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   Completer<GoogleMapController> _controller = Completer();
   late BitmapDescriptor sourceIcon;
-  late BitmapDescriptor destinationIcon;
   Set<Marker> _markers = Set<Marker>();
 
   late LatLng currentLocation;
-  late LatLng destinationLocation;
   late double CAMERA_ZOOM = 16;
   late double CAMERA_TILT = 50;
   late double CAMERA_BEARING = 0;
@@ -45,20 +45,12 @@ class _MapPageState extends State<MapPage> {
       ImageConfiguration(devicePixelRatio: 2.0),
       'assets/images/location/source_pin_android.png'
     );
-    destinationIcon = await BitmapDescriptor.fromAssetImage(
-        ImageConfiguration(devicePixelRatio: 2.0),
-        'assets/images/location/destination_pin.png'
-    );
   }
 
   void setInitialLocation(){
     currentLocation = LatLng(
         SOURCE_LOCATION.latitude,
         SOURCE_LOCATION.longitude
-    );
-    destinationLocation = LatLng(
-        DEST_LOCATION.latitude,
-        DEST_LOCATION.longitude
     );
   }
 
@@ -94,15 +86,16 @@ class _MapPageState extends State<MapPage> {
             },
           ),
           ),
-          const Positioned(
+           Positioned(
               top: 100,
               left: 0,
               right: 0,
-              child: MapUserBadge())
+              child: MapUserBadge(locationGiven: locationGiven, accountNumber: accountNumber,))
         ],
       ),
     );
   }
+
   void showPinsOnMap(){
     setState(() {
       _markers.add(Marker(
@@ -110,12 +103,9 @@ class _MapPageState extends State<MapPage> {
           position: currentLocation,
           icon: sourceIcon,
       ));
-
-      _markers.add(Marker(
-          markerId: const MarkerId('destinationPin'),
-          position: destinationLocation,
-          icon: destinationIcon
-      ));
     });
   }
+
+
+
 }

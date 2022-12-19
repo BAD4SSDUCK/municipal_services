@@ -17,7 +17,7 @@ import 'package:municipal_track/main.dart';
 import 'package:http/http.dart' as http;
 
 import '../PDFViewer/view_pdf.dart';
-import '../Reuseables/map_component.dart';
+import '../MapTools/map_component.dart';
 import '../Reuseables/menu_reusable_elevated_button.dart';
 import 'add_details.dart';
 import 'display_info.dart';

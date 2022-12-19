@@ -10,7 +10,7 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import '../ImageUploading/image_upload_page.dart';
 import '../PDFViewer/pdf_api.dart';
 import '../PDFViewer/view_pdf.dart';
-import '../Reuseables/map_component.dart';
+import '../MapTools/map_component.dart';
 
 
 class UsersTableEditPage extends StatefulWidget {
@@ -27,7 +27,9 @@ final User? user = auth.currentUser;
 final uid = user?.uid;
 String userID = uid as String;
 
-///Jehans User ID 'xqNdKCCovQcsRajgWANNhiM6mKs2'
+String accountNumber = ' ';
+String locationGiven = ' ';
+
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
 
@@ -454,6 +456,12 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                               const SizedBox(width: 6,),
                               GestureDetector(
                                 onTap: () {
+                                  accountNumber = documentSnapshot['account number'];
+                                  locationGiven = documentSnapshot['address'];
+
+                                  // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  //     content: Text('$accountNumber $locationGiven ')));
+
                                   Navigator.push(context,
                                       MaterialPageRoute(builder: (context) => MapPage()));
                                 },
