@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 
 import '../ImageUploading/image_upload_page.dart';
+import '../MapTools/map_screen.dart';
 import '../PDFViewer/pdf_api.dart';
 import '../PDFViewer/view_pdf.dart';
 import '../MapTools/map_component.dart';
@@ -463,7 +464,9 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                                   //     content: Text('$accountNumber $locationGiven ')));
 
                                   Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) => MapPage()));
+                                      MaterialPageRoute(builder: (context) => MapScreen()
+                                          //MapPage()
+                                      ));
                                 },
                                 child: Row(
                                   children: [

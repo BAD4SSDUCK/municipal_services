@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
+import 'package:municipal_track/code/MapTools/location_controller.dart';
 import 'package:municipal_track/code/login/citizen_otp_page.dart';
 import 'package:municipal_track/code/login/login_page.dart';
 
@@ -38,6 +39,8 @@ void main() async{
     sound: true,
   );
   ///notification section ended
+
+  Get.put(LocationController());
 
   runApp(const MyApp());
 }

@@ -9,6 +9,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_page.dart';
 import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_track/code/Reuseables/main_menu_reusable_button.dart';
@@ -16,6 +18,8 @@ import 'package:municipal_track/code/Reuseables/nav_drawer.dart';
 import 'package:municipal_track/main.dart';
 import 'package:http/http.dart' as http;
 
+import '../MapTools/location_controller.dart';
+import '../MapTools/map_screen.dart';
 import '../PDFViewer/view_pdf.dart';
 import '../MapTools/map_component.dart';
 import '../Reuseables/menu_reusable_elevated_button.dart';
@@ -175,8 +179,10 @@ class MainMenu extends StatefulWidget {
   final CollectionReference _userList =
   FirebaseFirestore.instance.collection('users');
 
+
   @override
   Widget build(BuildContext context) {
+    Get.put(LocationController());
     const double fontSize = 30.0;
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -244,14 +250,15 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    //const SizedBox(height: 30),
+                    const SizedBox(height: 30),
                     Visibility(
-                      visible: currentVis2,
+                      visible: currentVis1,
                       child: ReusableElevatedButton(
                         onPress: (){
 
                           Navigator.push(context,
-                              MaterialPageRoute(builder: (context) => MapPage()));
+                              MaterialPageRoute(builder: (context) => const MapScreen()));
+                          //MapPage()
                         },
                         buttonText: 'Map Viewer',fSize: fontSize,
                       ),
