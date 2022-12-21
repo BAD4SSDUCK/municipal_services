@@ -250,9 +250,9 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    //const SizedBox(height: 30),
                     Visibility(
-                      visible: currentVis1,
+                      visible: currentVis2,
                       child: ReusableElevatedButton(
                         onPress: (){
 
