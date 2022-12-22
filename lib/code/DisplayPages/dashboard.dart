@@ -238,9 +238,9 @@ class MainMenu extends StatefulWidget {
                     ),
 
                     ///Add new details will not be available to anyone as it will all be details pulled from the server when SQL is implemented
-                    //const SizedBox(height: 30),
+                    const SizedBox(height: 30),
                     Visibility(
-                      visible: currentVis2,
+                      visible: currentVis1,
                       child: ReusableElevatedButton(
                         onPress: (){
                           Navigator.push(context,

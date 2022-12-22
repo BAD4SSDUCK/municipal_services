@@ -58,6 +58,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
   final _addressController = TextEditingController();
   final _areaCodeController = TextEditingController();
   final _meterNumberController = TextEditingController();
+  final _meterReadingController = TextEditingController();
   final _cellNumberController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -73,6 +74,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
     _addressController.text = '';
     _areaCodeController.text = '';
     _meterNumberController.text = '';
+    _meterReadingController.text = '';
     _cellNumberController.text = '';
     _firstNameController.text = '';
     _lastNameController.text = '';
@@ -115,6 +117,10 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                     decoration: const InputDecoration(labelText: 'Meter Number'),
                   ),
                   TextField(
+                    controller: _meterReadingController,
+                    decoration: const InputDecoration(labelText: 'Meter Reading'),
+                  ),
+                  TextField(
                     controller: _cellNumberController,
                     decoration: const InputDecoration(labelText: 'Phone Number'),
                   ),
@@ -140,6 +146,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                       final String address = _addressController.text;
                       final String areaCode = _areaCodeController.text;
                       final String meterNumber = _meterNumberController.text;
+                      final String meterReading = _meterReadingController.text;
                       final String cellNumber = _cellNumberController.text;
                       final String firstName = _firstNameController.text;
                       final String lastName = _lastNameController.text;
@@ -150,6 +157,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                           "address": address,
                           "area code": areaCode,
                           "meter number": meterNumber,
+                          "meter reading": meterReading,
                           "cell number": cellNumber,
                           "first name": firstName,
                           "last name": lastName,
@@ -159,6 +167,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                         _addressController.text = '';
                         _areaCodeController.text = '';
                         _meterNumberController.text = '';
+                        _meterReadingController.text = '';
                         _cellNumberController.text = '';
                         _firstNameController.text = '';
                         _lastNameController.text = '';
@@ -175,19 +184,21 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
         });
   }
 
+  /// on update the only info necessary to change should be meter reading
   Future<void> _update([DocumentSnapshot? documentSnapshot]) async {
     if (documentSnapshot != null) {
       _accountNumberController.text = documentSnapshot['account number'];
       _addressController.text = documentSnapshot['address'];
       _areaCodeController.text = documentSnapshot['area code'].toString();
       _meterNumberController.text = documentSnapshot['meter number'];
+      _meterReadingController.text = documentSnapshot['meter reading'];
       _cellNumberController.text = documentSnapshot['cell number'];
       _firstNameController.text = documentSnapshot['first name'];
       _lastNameController.text = documentSnapshot['last name'];
       _idNumberController.text = documentSnapshot['id number'];
       userID = documentSnapshot['user id'];
     }
-
+    /// on update the only info necessary to change should be meter reading bottom modal sheet to only specify that information but let all data stat the same
     await showModalBottomSheet(
         isScrollControlled: true,
         context: context,
@@ -225,6 +236,10 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                     decoration: const InputDecoration(labelText: 'Meter Number'),
                   ),
                   TextField(
+                    controller: _meterReadingController,
+                    decoration: const InputDecoration(labelText: 'Meter Reading'),
+                  ),
+                  TextField(
                     controller: _cellNumberController,
                     decoration: const InputDecoration(labelText: 'Phone Number'),
                   ),
@@ -250,6 +265,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                       final String address = _addressController.text;
                       final int areaCode = int.parse(_areaCodeController.text);
                       final String meterNumber = _meterNumberController.text;
+                      final String meterReading = _meterReadingController.text;
                       final String cellNumber = _cellNumberController.text;
                       final String firstName = _firstNameController.text;
                       final String lastName = _lastNameController.text;
@@ -263,6 +279,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                           "address": address,
                           "area code": areaCode,
                           "meter number": meterNumber,
+                          "meter reading": meterReading,
                           "cell number": cellNumber,
                           "first name": firstName,
                           "last name": lastName,
@@ -274,6 +291,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                         _addressController.text = '';
                         _areaCodeController.text = '';
                         _meterNumberController.text = '';
+                        _meterReadingController.text = '';
                         _cellNumberController.text = '';
                         _firstNameController.text = '';
                         _lastNameController.text = '';
@@ -351,6 +369,11 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                           const SizedBox(height: 5,),
                           Text(
                             'Meter Number: ' + documentSnapshot['meter number'],
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                          Text(
+                            'Meter Reading: ' + documentSnapshot['meter reading'],
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
@@ -482,7 +505,7 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                                 onTap: () async {
                                   ScaffoldMessenger.of(this.context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Now downloading your statement! Pease wait a few seconds!'),
+                                      content: Text('Now downloading your statement! Please wait a few seconds!'),
                                     ),
                                   );
                                   final FirebaseAuth auth = FirebaseAuth.instance;

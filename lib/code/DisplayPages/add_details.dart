@@ -31,6 +31,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
   final _idNumberController = TextEditingController();
   final _accountNumberController = TextEditingController();
   final _meterNumberController = TextEditingController();
+  final _meterReadingController = TextEditingController();
   final _cellNumberController = TextEditingController();
 
   final _userIDController = userID;
@@ -44,6 +45,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
     _idNumberController.dispose();
     _accountNumberController.dispose();
     _meterNumberController.dispose();
+    _meterReadingController.dispose();
     _cellNumberController.dispose();
     super.dispose();
   }
@@ -72,6 +74,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
       _idNumberController.text.trim(),
       _accountNumberController.text.trim(),
       _meterNumberController.text.trim(),
+      _meterReadingController.text.trim(),
       _userIDController,
     );
 
@@ -100,7 +103,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
     }
   }
 
-  Future addUserDetails(String firstName, String lastName, String cellNumber,  String address, int areaCode, String idNumber, String accountNumber, String meterNumber, String userid) async{
+  Future addUserDetails(String firstName, String lastName, String cellNumber,  String address, int areaCode, String idNumber, String accountNumber, String meterNumber, String meterReading, String userid) async{
 
     if(fieldsNotEmptyConfirmed() == false){
       Navigator.of(context).pop();
@@ -121,6 +124,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
         'id number': idNumber,
         'account number': accountNumber,
         'meter number': meterNumber,
+        'meter reading': meterReading,
         'user id':userid,
 
       });
@@ -301,6 +305,28 @@ class _AddUserDetailsState extends State<AddUserDetails> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       hintText: 'Meter Number',
+                      fillColor: Colors.grey[200],
+                      filled: true,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10,),
+
+                Padding(
+                  padding:  const EdgeInsets.symmetric(horizontal: 25.0),
+                  child: TextField(
+                    controller: _meterReadingController,
+                    decoration: InputDecoration(
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.green),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      hintText: 'Meter Reading',
                       fillColor: Colors.grey[200],
                       filled: true,
                     ),
