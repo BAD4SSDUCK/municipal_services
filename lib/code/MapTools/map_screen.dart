@@ -94,7 +94,7 @@ class _MapScreenState extends State<MapScreen> {
 
       ScaffoldMessenger.of(this.context).showSnackBar(
         SnackBar(
-          content: Text('Address not found, Default map location City Hall!'),
+          content: Text('Address not found! Default map location City Hall!'),
         ),
       );
 
