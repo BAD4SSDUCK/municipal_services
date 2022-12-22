@@ -92,6 +92,12 @@ class _MapScreenState extends State<MapScreen> {
 
       showPinOnMap();
 
+      ScaffoldMessenger.of(this.context).showSnackBar(
+        SnackBar(
+          content: Text('Address not found, Default map location City Hall!'),
+        ),
+      );
+
     }
     print('$currentLocation this is the change');
 
