@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../DisplayPages/display_info_edit.dart';
+import '../DisplayPages/display_info_electricity.dart';
 
 class MapUserBadge extends StatelessWidget {
   const MapUserBadge({

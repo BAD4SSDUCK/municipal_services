@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
-import 'package:municipal_track/code/DisplayPages/display_info_edit.dart';
+import 'package:municipal_track/code/DisplayPages/display_info_electricity.dart';
 import 'map_user_badge.dart';
 
 ///This is the old map page, currently using the mapPage

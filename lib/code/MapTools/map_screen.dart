@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:municipal_track/code/MapTools/location_controller.dart';
 
-import '../DisplayPages/display_info_edit.dart';
+import '../DisplayPages/display_info_electricity.dart';
 import 'location_search_dialogue.dart';
 import 'map_user_badge.dart';
 

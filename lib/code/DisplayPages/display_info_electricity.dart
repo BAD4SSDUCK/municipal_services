@@ -14,11 +14,11 @@ import '../PDFViewer/view_pdf.dart';
 import '../MapTools/map_component.dart';
 
 
-class UsersTableEditPage extends StatefulWidget {
-  const UsersTableEditPage({Key? key}) : super(key: key);
+class UsersTableElectricityPage extends StatefulWidget {
+  const UsersTableElectricityPage({Key? key}) : super(key: key);
 
   @override
-  _UsersTableEditPageState createState() => _UsersTableEditPageState();
+  _UsersTableElectricityPageState createState() => _UsersTableElectricityPageState();
 }
 
 final FirebaseAuth auth = FirebaseAuth.instance;
@@ -30,6 +30,9 @@ String userID = uid as String;
 
 String accountNumber = ' ';
 String locationGiven = ' ';
+
+bool visibilityState1 = true;
+bool visibilityState2 = false;
 
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
@@ -51,7 +54,7 @@ Future<Widget> _getImage(BuildContext context, String imageName) async{
   return image;
 }
 
-class _UsersTableEditPageState extends State<UsersTableEditPage> {
+class _UsersTableElectricityPageState extends State<UsersTableElectricityPage> {
 
   // text fields' controllers
   final _accountNumberController = TextEditingController();
@@ -98,43 +101,70 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextField(
-                    controller: _accountNumberController,
-                    decoration: const InputDecoration(labelText: 'Account Number'),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
+                      controller: _accountNumberController,
+                      decoration: const InputDecoration(labelText: 'Account Number'),
+                    ),
                   ),
-                  TextField(
-                    controller: _addressController,
-                    decoration: const InputDecoration(labelText: 'Street Address'),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
+                      controller: _addressController,
+                      decoration: const InputDecoration(labelText: 'Street Address'),
+                    ),
                   ),
-                  TextField(
-                    keyboardType:
-                    const TextInputType.numberWithOptions(),
-                    controller: _areaCodeController,
-                    decoration: const InputDecoration(labelText: 'Area Code',),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
+                      keyboardType:
+                      const TextInputType.numberWithOptions(),
+                      controller: _areaCodeController,
+                      decoration: const InputDecoration(labelText: 'Area Code',),
+                    ),
                   ),
-                  TextField(
-                    controller: _meterNumberController,
-                    decoration: const InputDecoration(labelText: 'Meter Number'),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
+                      controller: _meterNumberController,
+                      decoration: const InputDecoration(labelText: 'Meter Number'),
+                    ),
                   ),
-                  TextField(
-                    controller: _meterReadingController,
-                    decoration: const InputDecoration(labelText: 'Meter Reading'),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
+                      controller: _meterReadingController,
+                      decoration: const InputDecoration(labelText: 'Meter Reading'),
+                    ),
                   ),
-                  TextField(
-                    controller: _cellNumberController,
-                    decoration: const InputDecoration(labelText: 'Phone Number'),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
+                      controller: _cellNumberController,
+                      decoration: const InputDecoration(labelText: 'Phone Number'),
+                    ),
                   ),
-                  TextField(
-                    controller: _firstNameController,
-                    decoration: const InputDecoration(labelText: 'First Name'),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
+                      controller: _firstNameController,
+                      decoration: const InputDecoration(labelText: 'First Name'),
+                    ),
                   ),
-                  TextField(
-                    controller: _lastNameController,
-                    decoration: const InputDecoration(labelText: 'Last Name'),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
+                      controller: _lastNameController,
+                      decoration: const InputDecoration(labelText: 'Last Name'),
+                    ),
                   ),
-                  TextField(
-                    controller: _idNumberController,
-                    decoration: const InputDecoration(labelText: 'ID Number'),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
+                      controller: _idNumberController,
+                      decoration: const InputDecoration(labelText: 'ID Number'),
+                    ),
                   ),
                   const SizedBox(
                     height: 20,
@@ -217,43 +247,70 @@ class _UsersTableEditPageState extends State<UsersTableEditPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextField(
-                    controller: _accountNumberController,
-                    decoration: const InputDecoration(labelText: 'Account Number'),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _accountNumberController,
+                      decoration: const InputDecoration(labelText: 'Account Number'),
+                    ),
                   ),
-                  TextField(
-                    controller: _addressController,
-                    decoration: const InputDecoration(labelText: 'Street Address'),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _addressController,
+                      decoration: const InputDecoration(labelText: 'Street Address'),
+                    ),
                   ),
-                  TextField(
-                    keyboardType:
-                    const TextInputType.numberWithOptions(),
-                    controller: _areaCodeController,
-                    decoration: const InputDecoration(labelText: 'Area Code'),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      keyboardType:
+                      const TextInputType.numberWithOptions(),
+                      controller: _areaCodeController,
+                      decoration: const InputDecoration(labelText: 'Area Code',),
+                    ),
                   ),
-                  TextField(
-                    controller: _meterNumberController,
-                    decoration: const InputDecoration(labelText: 'Meter Number'),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _meterNumberController,
+                      decoration: const InputDecoration(labelText: 'Meter Number'),
+                    ),
                   ),
-                  TextField(
-                    controller: _meterReadingController,
-                    decoration: const InputDecoration(labelText: 'Meter Reading'),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
+                      controller: _meterReadingController,
+                      decoration: const InputDecoration(labelText: 'Meter Reading'),
+                    ),
                   ),
-                  TextField(
-                    controller: _cellNumberController,
-                    decoration: const InputDecoration(labelText: 'Phone Number'),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _cellNumberController,
+                      decoration: const InputDecoration(labelText: 'Phone Number'),
+                    ),
                   ),
-                  TextField(
-                    controller: _firstNameController,
-                    decoration: const InputDecoration(labelText: 'First Name'),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _firstNameController,
+                      decoration: const InputDecoration(labelText: 'First Name'),
+                    ),
                   ),
-                  TextField(
-                    controller: _lastNameController,
-                    decoration: const InputDecoration(labelText: 'Last Name'),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _lastNameController,
+                      decoration: const InputDecoration(labelText: 'Last Name'),
+                    ),
                   ),
-                  TextField(
-                    controller: _idNumberController,
-                    decoration: const InputDecoration(labelText: 'ID Number'),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _idNumberController,
+                      decoration: const InputDecoration(labelText: 'ID Number'),
+                    ),
                   ),
                   const SizedBox(
                     height: 20,
