@@ -226,7 +226,7 @@ class MainMenu extends StatefulWidget {
                     //   buttonText: 'Users Details',fSize: fontSize,
                     // ),
 
-                    const SizedBox(height: 60),
+                    const SizedBox(height: 40),
                     ///Display information for electricity meter information
                     Visibility(
                       visible: currentVis1,
@@ -239,10 +239,10 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 60),
+                    const SizedBox(height: 30),
                     ///Display information for water meter information
                     Visibility(
-                      visible: currentVis2,
+                      visible: currentVis1,
                       child: ReusableElevatedButton(
                         onPress: (){
                           Navigator.push(context,
@@ -279,9 +279,9 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    //const SizedBox(height: 30),
                     Visibility(
-                      visible: currentVis1,
+                      visible: currentVis2,
                       child: ReusableElevatedButton(
                         onPress: (){
                           ScaffoldMessenger.of(this.context).showSnackBar(

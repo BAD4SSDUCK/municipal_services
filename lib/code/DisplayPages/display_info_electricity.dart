@@ -228,7 +228,7 @@ class _UsersTableElectricityPageState extends State<UsersTableElectricityPage> {
       _idNumberController.text = documentSnapshot['id number'];
       userID = documentSnapshot['user id'];
     }
-    /// on update the only info necessary to change should be meter reading bottom modal sheet to only specify that information but let all data stat the same
+    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
     await showModalBottomSheet(
         isScrollControlled: true,
         context: context,
