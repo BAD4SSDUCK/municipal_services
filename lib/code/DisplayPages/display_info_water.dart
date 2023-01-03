@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 
 import '../ImageUploading/image_upload_page.dart';
+import '../ImageUploading/image_upload_water.dart';
 import '../MapTools/map_screen.dart';
 import '../PDFViewer/pdf_api.dart';
 import '../PDFViewer/view_pdf.dart';
@@ -30,6 +31,7 @@ String userID = uid as String;
 
 String accountNumber = ' ';
 String locationGiven = ' ';
+String meterNumber = ' ';
 
 bool visibilityState1 = true;
 bool visibilityState2 = false;
@@ -484,7 +486,8 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                                   margin: EdgeInsets.all(10.0),
                                   child: FutureBuilder(
                                       future: _getImage(
-                                          context, 'files/$userID/file'),
+                                        ///Firebase image location must be changed to display image based on the meter number
+                                          context, 'files/$userID/file'),//$meterNumber
                                       builder: (context, snapshot) {
                                         if (snapshot.hasError) {
                                           return Text('${snapshot.error}');
@@ -597,13 +600,17 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                               const SizedBox(width: 6,),
                               GestureDetector(
                                 onTap: () {
+
+                                  meterNumber = documentSnapshot['water meter number'];
+
                                   ScaffoldMessenger.of(this.context).showSnackBar(
                                     SnackBar(
                                       content: Text('Uploading a new image will replace current image!'),
                                     ),
                                   );
                                   Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) => ImageUploads()));
+                                      MaterialPageRoute(builder: (context) => ImageUploadWater(meterNumber: meterNumber,)));
+                                  print('This is the meter number ----- '+meterNumber);
                                 },
                                 child: Row(
                                   children: [

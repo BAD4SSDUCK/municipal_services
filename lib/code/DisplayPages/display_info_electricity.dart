@@ -30,6 +30,7 @@ String userID = uid as String;
 
 String accountNumber = ' ';
 String locationGiven = ' ';
+String meterNumber = ' ';
 
 bool visibilityState1 = true;
 bool visibilityState2 = false;
@@ -484,6 +485,7 @@ class _UsersTableElectricityPageState extends State<UsersTableElectricityPage> {
                                   margin: EdgeInsets.all(10.0),
                                   child: FutureBuilder(
                                       future: _getImage(
+                                        ///Firebase image location must be changed to display image based on the meter number
                                           context, 'files/$userID/file'),
                                       builder: (context, snapshot) {
                                         if (snapshot.hasError) {
@@ -597,6 +599,9 @@ class _UsersTableElectricityPageState extends State<UsersTableElectricityPage> {
                               const SizedBox(width: 6,),
                               GestureDetector(
                                 onTap: () {
+
+                                  meterNumber = documentSnapshot['meter number'];
+
                                   ScaffoldMessenger.of(this.context).showSnackBar(
                                     SnackBar(
                                       content: Text('Uploading a new image will replace current image!'),
