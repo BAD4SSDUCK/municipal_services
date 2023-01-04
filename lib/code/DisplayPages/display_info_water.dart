@@ -31,7 +31,7 @@ String userID = uid as String;
 
 String accountNumber = ' ';
 String locationGiven = ' ';
-String meterNumber = ' ';
+String wMeterNumber = ' ';
 
 bool visibilityState1 = true;
 bool visibilityState2 = false;
@@ -379,7 +379,7 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: Text('Municipal Accounts'),
+        title: const Text('Account Details'),
         backgroundColor: Colors.green,
       ),
       body: StreamBuilder(
@@ -395,6 +395,9 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                 streamSnapshot.data!.docs[index];
 
                 String billMessage;///A check for if payment is outstanding or not
+
+                wMeterNumber = documentSnapshot['water meter number'];
+
                 if(documentSnapshot['eBill'] != ''){
                   billMessage = 'Utilities bill outstanding: '+documentSnapshot['eBill'];
                 } else {
@@ -487,10 +490,10 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                                   child: FutureBuilder(
                                       future: _getImage(
                                         ///Firebase image location must be changed to display image based on the meter number
-                                          context, 'files/$userID/file'),//$meterNumber
+                                          context, 'files/$userID/water/$wMeterNumber'),//$meterNumber
                                       builder: (context, snapshot) {
                                         if (snapshot.hasError) {
-                                          return Text('${snapshot.error}');
+                                          return Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
                                         }
                                         if (snapshot.connectionState ==
                                             ConnectionState.done) {
@@ -601,16 +604,16 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                               GestureDetector(
                                 onTap: () {
 
-                                  meterNumber = documentSnapshot['water meter number'];
+                                  wMeterNumber = documentSnapshot['water meter number'];
 
                                   ScaffoldMessenger.of(this.context).showSnackBar(
                                     SnackBar(
                                       content: Text('Uploading a new image will replace current image!'),
                                     ),
                                   );
+                                  print('This is the meter number ----- $wMeterNumber');
                                   Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) => ImageUploadWater(meterNumber: meterNumber,)));
-                                  print('This is the meter number ----- '+meterNumber);
+                                      MaterialPageRoute(builder: (context) => ImageUploadWater()));
                                 },
                                 child: Row(
                                   children: [

@@ -12,9 +12,6 @@ import 'package:path/path.dart';
 class ImageUploadMeter extends StatefulWidget {
   ImageUploadMeter({
     Key? key,
-
-    required final String meterNumber,
-
   }) : super(key: key);
 
   @override
@@ -67,12 +64,12 @@ class _ImageUploadMeterState extends State<ImageUploadMeter> {
     ///'files/$userID/$fileName' is used specifically for adding the user id to a table in order to split the users per account
     if (_photo == null) return;
     final fileName = basename(_photo!.path);
-    final destination = 'files/$userID/$meterNumber'; // /$fileName
+    final destination = 'files/$userID/electricity/'; // /$fileName  $meterNumber
 
     try {
       final ref = firebase_storage.FirebaseStorage.instance
           .ref(destination)
-          .child('file/');
+          .child('$eMeterNumber/');   ///this is the jpg filename which needs to be named something on the db in order to display in the display screen
       await ref.putFile(_photo!);
       photoName = _photo!.toString();
       print(destination);
@@ -85,79 +82,82 @@ class _ImageUploadMeterState extends State<ImageUploadMeter> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Required Meter Image'),
+        title: const Text('Electricity Meter Image'),
         backgroundColor: Colors.green,
       ),
-      body: Column(
-        children: <Widget>[
-          SizedBox(height: 100,),
-          Center(
-            child: GestureDetector(
-              onTap: () {
-                _showPicker(context);
-              },
-              child: CircleAvatar(
-                radius: 190,
-                backgroundColor: Colors.grey[400],
-                child: _photo != null ? ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.file(
-                    _photo!,
-                    width: 250,
-                    height: 250,
-                    fit: BoxFit.cover,
+      body: SingleChildScrollView(
+        child: Column(
+          children: <Widget>[
+            SizedBox(height: 100,),
+            Center(
+              child: GestureDetector(
+                onTap: () {
+                  _showPicker(context);
+                },
+                child: CircleAvatar(
+                  radius: 190,
+                  backgroundColor: Colors.grey[400],
+                  child: _photo != null ? ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.file(
+                      _photo!,
+                      width: 250,
+                      height: 250,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                      : Container(
+                    decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(10)), width: 250, height: 250,
+                    child: Icon(Icons.camera_alt, color: Colors.grey[800],),
                   ),
-                )
-                    : Container(
-                  decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(10)), width: 250, height: 250,
-                  child: Icon(Icons.camera_alt, color: Colors.grey[800],),
                 ),
               ),
             ),
-          ),
 
-          const SizedBox(height: 150,),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 25.0),
-            child: GestureDetector(
-              onTap: () {
-                if (_photo != null) {
-                  uploadFile();
-                  ScaffoldMessenger.of(this.context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Image Successfully Uploaded!'),
-                    ),);
-                  Navigator.of(context).pop();
-                } else {
-                  ScaffoldMessenger.of(this.context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please tap on the image area and select the image to upload!'),
-                    ),);
-                }
-              },
+            const SizedBox(height: 100,),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25.0),
+              child: GestureDetector(
+                onTap: () {
+                  if (_photo != null) {
+                    uploadFile();
+                    ScaffoldMessenger.of(this.context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Image Successfully Uploaded!'),
+                      ),);
+                    Navigator.of(context).pop();
+                  } else {
+                    ScaffoldMessenger.of(this.context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please tap on the image area and select the image to upload!'),
+                      ),);
+                  }
+                },
 
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: Text(
-                    'Upload Image',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'Upload Image',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 10,),
+          ],
+        ),
       ),
     );
   }

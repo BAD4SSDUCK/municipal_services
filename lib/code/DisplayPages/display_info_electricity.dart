@@ -7,6 +7,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 
+import '../ImageUploading/image_upload_meter.dart';
 import '../ImageUploading/image_upload_page.dart';
 import '../MapTools/map_screen.dart';
 import '../PDFViewer/pdf_api.dart';
@@ -30,7 +31,7 @@ String userID = uid as String;
 
 String accountNumber = ' ';
 String locationGiven = ' ';
-String meterNumber = ' ';
+String eMeterNumber = ' ';
 
 bool visibilityState1 = true;
 bool visibilityState2 = false;
@@ -378,7 +379,7 @@ class _UsersTableElectricityPageState extends State<UsersTableElectricityPage> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: Text('Municipal Accounts'),
+        title: const Text('Account Details'),
         backgroundColor: Colors.green,
       ),
       body: StreamBuilder(
@@ -392,6 +393,8 @@ class _UsersTableElectricityPageState extends State<UsersTableElectricityPage> {
               itemBuilder: (context, index) {
                 final DocumentSnapshot documentSnapshot =
                 streamSnapshot.data!.docs[index];
+
+                eMeterNumber = documentSnapshot['meter number'];
 
                 String billMessage;///A check for if payment is outstanding or not
                 if(documentSnapshot['eBill'] != ''){
@@ -486,10 +489,10 @@ class _UsersTableElectricityPageState extends State<UsersTableElectricityPage> {
                                   child: FutureBuilder(
                                       future: _getImage(
                                         ///Firebase image location must be changed to display image based on the meter number
-                                          context, 'files/$userID/file'),
+                                          context, 'files/$userID/electricity/$eMeterNumber'),
                                       builder: (context, snapshot) {
                                         if (snapshot.hasError) {
-                                          return Text('${snapshot.error}');
+                                          return Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
                                         }
                                         if (snapshot.connectionState ==
                                             ConnectionState.done) {
@@ -600,7 +603,7 @@ class _UsersTableElectricityPageState extends State<UsersTableElectricityPage> {
                               GestureDetector(
                                 onTap: () {
 
-                                  meterNumber = documentSnapshot['meter number'];
+                                  eMeterNumber = documentSnapshot['meter number'];
 
                                   ScaffoldMessenger.of(this.context).showSnackBar(
                                     SnackBar(
@@ -608,7 +611,7 @@ class _UsersTableElectricityPageState extends State<UsersTableElectricityPage> {
                                     ),
                                   );
                                   Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) => ImageUploads()));
+                                      MaterialPageRoute(builder: (context) => ImageUploadMeter()));
                                 },
                                 child: Row(
                                   children: [
