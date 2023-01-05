@@ -184,7 +184,7 @@ class MainMenu extends StatefulWidget {
   @override
   Widget build(BuildContext context) {
     Get.put(LocationController());
-    const double fontSize = 30.0;
+    const double fontSize = 28.0;
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -235,7 +235,7 @@ class MainMenu extends StatefulWidget {
                           Navigator.push(context,
                               MaterialPageRoute(builder: (context) => const UsersTableElectricityPage()));
                         },
-                        buttonText: 'Electric Meter Info',fSize: fontSize,
+                        buttonText: 'Manage Electric Meter',fSize: fontSize,
                       ),
                     ),
 
@@ -248,7 +248,7 @@ class MainMenu extends StatefulWidget {
                           Navigator.push(context,
                               MaterialPageRoute(builder: (context) => const UsersTableWaterPage()));
                         },
-                        buttonText: 'Water Meter Info',fSize: fontSize,
+                        buttonText: 'Manage Water Meter',fSize: fontSize,
                       ),
                     ),
 

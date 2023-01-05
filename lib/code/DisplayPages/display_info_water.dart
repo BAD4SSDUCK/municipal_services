@@ -532,6 +532,7 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                                 },
                                 child: Row(
                                   children: [
+                                    Text('[Update]',style: TextStyle(fontWeight: FontWeight.w600 ,backgroundColor: Colors.grey[350],),),
                                     Icon(
                                       Icons.edit,
                                       color: Theme
@@ -560,6 +561,7 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                                 },
                                 child: Row(
                                   children: [
+                                    Text('[Map]',style: TextStyle(fontWeight: FontWeight.w600, backgroundColor: Colors.grey[350],),),
                                     Icon(
                                       Icons.map,
                                       color: Colors.green[700],
@@ -597,6 +599,7 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                                 },
                                 child: Row(
                                   children: [
+                                    Text('[Statement]',style: TextStyle(fontWeight: FontWeight.w600 ,backgroundColor: Colors.grey[350],),),
                                     Icon(
                                       Icons.picture_as_pdf,
                                       color: Colors.orange[200],
@@ -621,6 +624,7 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                                 },
                                 child: Row(
                                   children: [
+                                    Text('[Image]',style: TextStyle(fontWeight: FontWeight.w600 ,backgroundColor: Colors.grey[350],),),
                                     Icon(
                                       Icons.camera_alt,
                                       color: Colors.grey[700],

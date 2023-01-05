@@ -95,19 +95,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Center(
                     child: Column(
                       children: [
+                        const SizedBox(height: 30),
                         Text(
-                          "GET DETAILS",
+                          "MANAGE DETAILS",
                           style: GoogleFonts.montserrat(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: screenWidth / 10,
+                            fontSize: screenWidth / 12,
                           ),
                         ),
                         Text(
-                          "Sign in with your mobile number!",
+                          "Sign in with mobile number!",
                           style: GoogleFonts.montserrat(
                             color: Colors.white,
-                            fontSize: screenWidth / 30,
+                            fontWeight: FontWeight.w500 ,
+                            fontSize: screenWidth / 23,
                           ),
                         ),
                       ],
