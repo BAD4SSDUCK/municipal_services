@@ -30,7 +30,7 @@ class _MapScreenState extends State<MapScreen> {
 
     ///This is the circular loading widget in this future.delayed call
     _isLoading = true;
-    Future.delayed(const Duration(seconds: 2),(){
+    Future.delayed(const Duration(seconds: 5),(){
       setState(() {
         _isLoading = false;
       });

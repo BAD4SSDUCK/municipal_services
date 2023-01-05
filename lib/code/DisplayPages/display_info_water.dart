@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:municipal_track/code/DisplayPages/display_info_electricity.dart';
 
 import '../ImageUploading/image_upload_page.dart';
 import '../ImageUploading/image_upload_water.dart';
@@ -29,8 +30,8 @@ final User? user = auth.currentUser;
 final uid = user?.uid;
 String userID = uid as String;
 
-String accountNumber = ' ';
-String locationGiven = ' ';
+String accountNumberW = ' ';
+String locationGivenW = ' ';
 String wMeterNumber = ' ';
 
 bool visibilityState1 = true;
@@ -543,11 +544,14 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                               const SizedBox(width: 6,),
                               GestureDetector(
                                 onTap: () {
-                                  accountNumber = documentSnapshot['account number'];
-                                  locationGiven = documentSnapshot['address'];
+                                  accountNumberW = documentSnapshot['account number'];
+                                  locationGivenW = documentSnapshot['address'];
 
                                   // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                   //     content: Text('$accountNumber $locationGiven ')));
+
+                                  accountNumber = accountNumberW;
+                                  locationGiven = locationGivenW;
 
                                   Navigator.push(context,
                                       MaterialPageRoute(builder: (context) => MapScreen()

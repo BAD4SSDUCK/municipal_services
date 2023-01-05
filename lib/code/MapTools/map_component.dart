@@ -4,6 +4,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
 import 'package:municipal_track/code/DisplayPages/display_info_electricity.dart';
+import '../DisplayPages/display_info_water.dart';
 import 'map_user_badge.dart';
 
 ///This is the old map page, currently using the mapPage
@@ -40,6 +41,20 @@ class _MapPageState extends State<MapPage> {
     this.setInitialLocation();
     //Set up the marker icons
     this.setSourceAndDestinationMarkerIcons();
+
+    this.setBadgeInformation();
+  }
+
+  void setBadgeInformation(){
+    if(locationGiven == ' '){
+      locationGiven = locationGivenW;
+      if(locationGivenW == ' '){
+        locationGiven = 'Chief Albert Luthuli St, Pietermaritzburg';
+      }
+    }
+    if(accountNumber == ' '){
+      accountNumber = accountNumberW;
+    }
   }
 
   void setSourceAndDestinationMarkerIcons() async{
@@ -109,7 +124,8 @@ class _MapPageState extends State<MapPage> {
               left: 0,
               right: 0,
               child: MapUserBadge(
-                locationGiven: locationGiven, accountNumber: accountNumber,)),
+                locationGiven: locationGiven, accountNumber: accountNumber,
+              )),
 
         ],
       ),
