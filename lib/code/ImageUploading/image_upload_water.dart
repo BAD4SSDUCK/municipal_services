@@ -94,7 +94,7 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
     print('the meter number ----- '+wMeterNumber);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Water Meter Image'),
+        title: const Text('Water Meter Reading Upload'),
         backgroundColor: Colors.green,
       ),
       body: SingleChildScrollView(
@@ -139,7 +139,7 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                       const SnackBar(
                         content: Text('Image Successfully Uploaded!'),
                       ),);
-                    Navigator.of(context).pop();
+                    Navigator.of(context).pop(context);
                   } else {
                     ScaffoldMessenger.of(this.context).showSnackBar(
                       const SnackBar(

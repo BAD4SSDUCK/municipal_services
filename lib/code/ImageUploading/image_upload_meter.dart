@@ -82,7 +82,7 @@ class _ImageUploadMeterState extends State<ImageUploadMeter> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Electricity Meter Image'),
+        title: const Text('Electricity Meter Reading Upload'),
         backgroundColor: Colors.green,
       ),
       body: SingleChildScrollView(
@@ -127,7 +127,7 @@ class _ImageUploadMeterState extends State<ImageUploadMeter> {
                       const SnackBar(
                         content: Text('Image Successfully Uploaded!'),
                       ),);
-                    Navigator.of(context).pop();
+                    Navigator.of(context).pop(context);
                   } else {
                     ScaffoldMessenger.of(this.context).showSnackBar(
                       const SnackBar(

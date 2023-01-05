@@ -457,7 +457,7 @@ class _UsersTableElectricityPageState extends State<UsersTableElectricityPage> {
                             'ID Number: ' + documentSnapshot['id number'],
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
-                          const SizedBox(height: 5,),
+                          const SizedBox(height: 10,),
 
                           ///Image display item needs to get the reference from the firestore using the users uploaded meter connection
                           InkWell(
@@ -513,13 +513,13 @@ class _UsersTableElectricityPageState extends State<UsersTableElectricityPage> {
                             ),
                           ),
 
-                          const SizedBox(height: 5,),
+                          const SizedBox(height: 10,),
                           Text(
                             billMessage,
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
 
-                          const SizedBox(height: 10,),
+                          const SizedBox(height: 20,),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             crossAxisAlignment: CrossAxisAlignment.center,
@@ -585,7 +585,7 @@ class _UsersTableElectricityPageState extends State<UsersTableElectricityPage> {
                                   } catch(e){
                                     ScaffoldMessenger.of(this.context).showSnackBar(
                                       SnackBar(
-                                        content: Text('Unable to download statement. Please connect to the internet!'),
+                                        content: Text('Unable to download statement.'),
                                       ),
                                     );
                                   }
