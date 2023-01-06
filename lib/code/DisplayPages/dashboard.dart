@@ -239,7 +239,7 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
                     ///Display information for water meter information
                     Visibility(
                       visible: currentVis1,
@@ -252,8 +252,8 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
+                    const SizedBox(height: 20),
                     ///Add new details will not be available to anyone as it will all be details pulled from the server when SQL is implemented
-                    const SizedBox(height: 30),
                     Visibility(
                       visible: currentVis1,
                       child: ReusableElevatedButton(
@@ -265,7 +265,7 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    //const SizedBox(height: 30),
+                    //const SizedBox(height: 20),
                     Visibility(
                       visible: currentVis2,
                       child: ReusableElevatedButton(
@@ -279,13 +279,13 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    //const SizedBox(height: 30),
+                    //const SizedBox(height: 20),
                     Visibility(
                       visible: currentVis2,
                       child: ReusableElevatedButton(
                         onPress: (){
                           ScaffoldMessenger.of(this.context).showSnackBar(
-                            SnackBar(
+                            const SnackBar(
                               content: Text('Uploading a new image will replace existing image if this is not your first upload!'),
                             ),
                           );
@@ -296,12 +296,13 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
+                    ///this onPress code bellow is used to set the message information and pop it up to the user
                     Visibility(
                       visible: currentVis1,
                       child: ReusableElevatedButton(
                         onPress: () async {
-                          ///this onPress code bellow is used to set the message information and pop it up to the user,
+
                           ///It can be changed to the firebase notification
                           String titleText = title.text;
                           String bodyText = body.text;
@@ -321,14 +322,14 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    //const SizedBox(height: 30),
+                    //const SizedBox(height: 20),
                     Visibility(
                       visible: currentVis2,
                       child: ReusableElevatedButton(
                         onPress: () async {
                           ScaffoldMessenger.of(this.context).showSnackBar(
-                            SnackBar(
-                              content: Text('Now downloading your statement! Pease wait a few seconds!'),
+                            const SnackBar(
+                              content: Text('Now downloading your statement! Please wait a few seconds!'),
                             ),
                           );
 
@@ -347,7 +348,7 @@ class MainMenu extends StatefulWidget {
                         buttonText: 'Document download',fSize: fontSize,
                       ),
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
                     Visibility(
                       visible: currentVis1,
                       child: ReusableElevatedButton(

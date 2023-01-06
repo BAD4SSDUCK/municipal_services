@@ -100,7 +100,7 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            SizedBox(height: 100,),
+            const SizedBox(height: 100,),
             Center(
               child: GestureDetector(
                 onTap: () {
@@ -139,6 +139,7 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                       const SnackBar(
                         content: Text('Image Successfully Uploaded!'),
                       ),);
+                    Navigator.of(context).pop(context);
                     Navigator.of(context).pop(context);
                   } else {
                     ScaffoldMessenger.of(this.context).showSnackBar(

@@ -88,7 +88,7 @@ class _ImageUploadMeterState extends State<ImageUploadMeter> {
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            SizedBox(height: 100,),
+            const SizedBox(height: 100,),
             Center(
               child: GestureDetector(
                 onTap: () {
@@ -127,6 +127,7 @@ class _ImageUploadMeterState extends State<ImageUploadMeter> {
                       const SnackBar(
                         content: Text('Image Successfully Uploaded!'),
                       ),);
+                    Navigator.of(context).pop(context);
                     Navigator.of(context).pop(context);
                   } else {
                     ScaffoldMessenger.of(this.context).showSnackBar(

@@ -467,7 +467,7 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                             ///Can be later changed to display the picture zoomed in if user taps on it.
                             onTap: () {
                               ScaffoldMessenger.of(this.context).showSnackBar(
-                                SnackBar(
+                                const SnackBar(
                                   content: Text('Uploading a new image will replace current image!'),
                                 ),
                               );
@@ -487,7 +487,7 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                                     borderRadius: BorderRadius.circular(10.0),
                                   ),
                                   elevation: 0,
-                                  margin: EdgeInsets.all(10.0),
+                                  margin: const EdgeInsets.all(10.0),
                                   child: FutureBuilder(
                                       future: _getImage(
                                         ///Firebase image location must be changed to display image based on the meter number
@@ -518,7 +518,7 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                           const SizedBox(height: 10,),
                           Text(
                             billMessage,
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
 
                           const SizedBox(height: 20,),
@@ -573,7 +573,7 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                               GestureDetector(
                                 onTap: () async {
                                   ScaffoldMessenger.of(this.context).showSnackBar(
-                                    SnackBar(
+                                    const SnackBar(
                                       content: Text('Now downloading your statement! Please wait a few seconds!'),
                                     ),
                                   );
@@ -591,7 +591,7 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                                     openPDF(context, file);
                                   } catch(e){
                                     ScaffoldMessenger.of(this.context).showSnackBar(
-                                      SnackBar(
+                                      const SnackBar(
                                         content: Text('Unable to download statement.'),
                                       ),
                                     );
@@ -614,7 +614,7 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                                   wMeterNumber = documentSnapshot['water meter number'];
 
                                   ScaffoldMessenger.of(this.context).showSnackBar(
-                                    SnackBar(
+                                    const SnackBar(
                                       content: Text('Uploading a new image will replace current image!'),
                                     ),
                                   );
