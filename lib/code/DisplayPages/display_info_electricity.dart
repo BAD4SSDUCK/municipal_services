@@ -471,7 +471,7 @@ class _UsersTableElectricityPageState extends State<UsersTableElectricityPage> {
                               );
                               Navigator.push(context,
                                   MaterialPageRoute(
-                                      builder: (context) => ImageUploads()));
+                                      builder: (context) => ImageUploadMeter()));
                             },
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 5),

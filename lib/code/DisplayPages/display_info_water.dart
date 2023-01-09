@@ -473,7 +473,7 @@ class _UsersTableWaterPageState extends State<UsersTableWaterPage> {
                               );
                               Navigator.push(context,
                                   MaterialPageRoute(
-                                      builder: (context) => ImageUploads()));
+                                      builder: (context) => ImageUploadWater()));
                             },
                             child: Container(
                               margin: EdgeInsets.only(bottom: 5),

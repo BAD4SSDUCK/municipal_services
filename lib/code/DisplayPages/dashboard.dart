@@ -233,16 +233,29 @@ class MainMenu extends StatefulWidget {
                       child: ReusableElevatedButton(
                         onPress: (){
                           Navigator.push(context,
+                              MaterialPageRoute(builder: (context) => const UsersTableViewPage()));
+                        },
+                        buttonText: 'View Details',fSize: fontSize,
+                      ),
+                    ),
+
+                    //const SizedBox(height: 20),
+                    ///Display information for electricity meter information
+                    Visibility(
+                      visible: currentVis2,
+                      child: ReusableElevatedButton(
+                        onPress: (){
+                          Navigator.push(context,
                               MaterialPageRoute(builder: (context) => const UsersTableElectricityPage()));
                         },
                         buttonText: 'Manage Electric Meter',fSize: fontSize,
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    //const SizedBox(height: 20),
                     ///Display information for water meter information
                     Visibility(
-                      visible: currentVis1,
+                      visible: currentVis2,
                       child: ReusableElevatedButton(
                         onPress: (){
                           Navigator.push(context,
@@ -252,10 +265,10 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    //const SizedBox(height: 20),
                     ///Add new details will not be available to anyone as it will all be details pulled from the server when SQL is implemented
                     Visibility(
-                      visible: currentVis1,
+                      visible: currentVis2,
                       child: ReusableElevatedButton(
                         onPress: (){
                           Navigator.push(context,
@@ -319,6 +332,18 @@ class MainMenu extends StatefulWidget {
                           }
                         },
                         buttonText: 'Notification Checker',fSize: fontSize,
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+                    Visibility(
+                      visible: currentVis1,
+                      child: ReusableElevatedButton(
+                        onPress: () async {
+
+
+                        },
+                        buttonText: 'Message Administrator',fSize: fontSize,
                       ),
                     ),
 
