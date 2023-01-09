@@ -666,23 +666,25 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  GestureDetector(
-                                    onTap: () {
+                                  ElevatedButton(
+                                    onPressed: () {
                                       _update(documentSnapshot);
                                     },
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(103, 10),),
                                     child: Row(
                                       children: [
-                                        Text('[Update]',style: TextStyle(fontWeight: FontWeight.w600 ,backgroundColor: Colors.grey[350],),),
                                         Icon(
                                           Icons.edit,
                                           color: Theme.of(context).primaryColor,
                                         ),
+                                        const SizedBox(width: 2,),
+                                        Text('Update',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(width: 25,),
-                                  GestureDetector(
-                                    onTap: () {
+                                  const SizedBox(width: 10,),
+                                  ElevatedButton(
+                                    onPressed: () {
                                       accountNumber = documentSnapshot['account number'];
                                       locationGiven = documentSnapshot['address'];
 
@@ -694,19 +696,21 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                             //MapPage()
                                           ));
                                     },
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(90, 10),),
                                     child: Row(
                                       children: [
-                                        Text('[Map]',style: TextStyle(fontWeight: FontWeight.w600, backgroundColor: Colors.grey[350],),),
                                         Icon(
                                           Icons.map,
                                           color: Colors.green[700],
                                         ),
+                                        const SizedBox(width: 2,),
+                                        Text('Map',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(width: 25,),
-                                  GestureDetector(
-                                    onTap: () {
+                                  const SizedBox(width: 10,),
+                                  ElevatedButton(
+                                    onPressed: () {
 
                                       eMeterNumber = documentSnapshot['meter number'];
 
@@ -718,17 +722,18 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       Navigator.push(context,
                                           MaterialPageRoute(builder: (context) => ImageUploadMeter()));
                                     },
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(110, 10),),
                                     child: Row(
                                       children: [
-                                        Text('[E-Meter]',style: TextStyle(fontWeight: FontWeight.w600 ,backgroundColor: Colors.grey[350],),),
                                         Icon(
                                           Icons.camera_alt,
                                           color: Colors.grey[700],
                                         ),
+                                        const SizedBox(width: 2,),
+                                        Text('E-Meter',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(width: 6,),
                                   // GestureDetector(
                                   //   onTap: () {
                                   //     _delete(documentSnapshot.id);
@@ -746,15 +751,15 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 10,),
+                          const SizedBox(height: 0,),
                           Column(
                             children: [
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  GestureDetector(
-                                    onTap: () async {
+                                  ElevatedButton(
+                                    onPressed: () async {
                                       ScaffoldMessenger.of(this.context).showSnackBar(
                                         const SnackBar(
                                           content: Text('Now downloading your statement! Please wait a few seconds!'),
@@ -780,19 +785,21 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                         );
                                       }
                                     },
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350] ),
                                     child: Row(
                                       children: [
-                                        Text('[Statement]',style: TextStyle(fontWeight: FontWeight.w600 ,backgroundColor: Colors.grey[350],),),
                                         Icon(
                                           Icons.picture_as_pdf,
                                           color: Colors.orange[200],
                                         ),
+                                        const SizedBox(width: 2,),
+                                        Text('Statement',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black),),
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(width: 25,),
-                                  GestureDetector(
-                                    onTap: () {
+                                  const SizedBox(width: 20,),
+                                  ElevatedButton(
+                                    onPressed: () {
 
                                       wMeterNumber = documentSnapshot['water meter number'];
 
@@ -805,15 +812,18 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       Navigator.push(context,
                                           MaterialPageRoute(builder: (context) => ImageUploadWater()));
                                     },
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350] ),
                                     child: Row(
                                       children: [
-                                        Text('[W-Meter]',style: TextStyle(fontWeight: FontWeight.w600 ,backgroundColor: Colors.grey[350],),),
-                                        Icon(
-                                          Icons.camera_alt,
-                                          color: Colors.grey[700],
-                                        ),
+                                      Icon(
+                                      Icons.camera_alt,
+                                      color: Colors.grey[700],
+                                    ),
+                                        const SizedBox(width: 2,),
+                                        Text('W-Meter' ,style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black),),
                                       ],
                                     ),
+
                                   ),
                                   const SizedBox(width: 6,),
                                   // GestureDetector(
