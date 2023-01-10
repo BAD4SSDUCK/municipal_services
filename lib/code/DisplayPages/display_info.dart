@@ -475,6 +475,13 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          const Center(
+                            child: Text(
+                              'Property Information',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          const SizedBox(height: 10,),
                           Text(
                             'Account Number: ' + documentSnapshot['account number'],
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
@@ -670,7 +677,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                     onPressed: () {
                                       _update(documentSnapshot);
                                     },
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(103, 10),),
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(108, 10),),
                                     child: Row(
                                       children: [
                                         Icon(
@@ -722,7 +729,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       Navigator.push(context,
                                           MaterialPageRoute(builder: (context) => ImageUploadMeter()));
                                     },
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(110, 10),),
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(115, 10),),
                                     child: Row(
                                       children: [
                                         Icon(
