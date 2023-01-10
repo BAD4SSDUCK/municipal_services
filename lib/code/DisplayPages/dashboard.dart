@@ -344,7 +344,7 @@ class MainMenu extends StatefulWidget {
                         onPress: () async {
                           String id = '{user.phoneNumber!}';
 
-                          Navigator.pushNamed(context, ChatScreen.id);
+                          //Navigator.pushNamed(context, ChatScreen.id);
                         },
                         buttonText: 'Message Administrator',fSize: fontSize,
                       ),
