@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
+import 'package:municipal_track/code/Chat/chat_screen.dart';
 import 'package:municipal_track/code/DisplayPages/display_info_water.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_page.dart';
 import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
@@ -335,13 +336,15 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
+                    ///button for chat
                     const SizedBox(height: 20),
                     Visibility(
                       visible: currentVis1,
                       child: ReusableElevatedButton(
                         onPress: () async {
+                          String id = '{user.phoneNumber!}';
 
-
+                          Navigator.pushNamed(context, ChatScreen.id);
                         },
                         buttonText: 'Message Administrator',fSize: fontSize,
                       ),
