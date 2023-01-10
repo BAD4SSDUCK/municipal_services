@@ -689,7 +689,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(width: 10,),
+                                  const SizedBox(width: 5,),
                                   ElevatedButton(
                                     onPressed: () {
                                       accountNumber = documentSnapshot['account number'];
@@ -715,7 +715,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(width: 10,),
+                                  const SizedBox(width: 5,),
                                   ElevatedButton(
                                     onPressed: () {
 
@@ -804,7 +804,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(width: 20,),
+                                  const SizedBox(width: 5,),
                                   ElevatedButton(
                                     onPressed: () {
 

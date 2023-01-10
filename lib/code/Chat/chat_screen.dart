@@ -93,7 +93,7 @@
 //       stream: _firestore.collection('messages').snapshots(),
 //       builder: (context, snapshot) {
 //         if (!snapshot.hasData) {
-//           return Center(
+//           return const Center(
 //             child: CircularProgressIndicator(
 //               backgroundColor: Colors.lightBlueAccent,
 //             ),
@@ -161,7 +161,7 @@
 //               topRight: Radius.circular(30.0),
 //             ),
 //             elevation: 5.0,
-//             color: isMe ? Colors.lightBlueAccent : Colors.white,
+//             color: isMe ? Colors.greenAccent : Colors.black54,
 //             child: Padding(
 //               padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
 //               child: Text(
