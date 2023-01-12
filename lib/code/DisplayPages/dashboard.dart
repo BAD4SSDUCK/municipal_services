@@ -12,7 +12,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:municipal_track/code/Chat/chat_screen.dart';
-import 'package:municipal_track/code/DisplayPages/display_info_water.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_page.dart';
 import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_track/code/Reuseables/main_menu_reusable_button.dart';
@@ -23,11 +22,9 @@ import 'package:http/http.dart' as http;
 import '../MapTools/location_controller.dart';
 import '../MapTools/map_screen.dart';
 import '../PDFViewer/view_pdf.dart';
-import '../MapTools/map_component.dart';
 import '../Reuseables/menu_reusable_elevated_button.dart';
 import 'add_details.dart';
 import 'display_info.dart';
-import 'display_info_electricity.dart';
 
 
 class MainMenu extends StatefulWidget {
@@ -140,7 +137,7 @@ class MainMenu extends StatefulWidget {
       try{
         if(payload != null && payload.isNotEmpty){
           Navigator.push(context, MaterialPageRoute(builder: (BuildContext context){
-            return const UsersTableElectricityPage();
+            return const UsersTableViewPage();
           }
           ));
 
@@ -178,7 +175,7 @@ class MainMenu extends StatefulWidget {
   bool currentVis1 = true;
   bool currentVis2 = false;
 
-  final CollectionReference _userList =
+  final CollectionReference _propList =
   FirebaseFirestore.instance.collection('users');
 
 
@@ -246,8 +243,8 @@ class MainMenu extends StatefulWidget {
                       visible: currentVis2,
                       child: ReusableElevatedButton(
                         onPress: (){
-                          Navigator.push(context,
-                              MaterialPageRoute(builder: (context) => const UsersTableElectricityPage()));
+                          // Navigator.push(context,
+                          //     MaterialPageRoute(builder: (context) => const UsersTableElectricityPage()));
                         },
                         buttonText: 'Manage Electric Meter',fSize: fontSize,
                       ),
@@ -259,8 +256,8 @@ class MainMenu extends StatefulWidget {
                       visible: currentVis2,
                       child: ReusableElevatedButton(
                         onPress: (){
-                          Navigator.push(context,
-                              MaterialPageRoute(builder: (context) => const UsersTableWaterPage()));
+                          // Navigator.push(context,
+                          //     MaterialPageRoute(builder: (context) => const UsersTableWaterPage()));
                         },
                         buttonText: 'Manage Water Meter',fSize: fontSize,
                       ),
@@ -273,7 +270,7 @@ class MainMenu extends StatefulWidget {
                       child: ReusableElevatedButton(
                         onPress: (){
                           Navigator.push(context,
-                              MaterialPageRoute(builder: (context) => const AddUserDetails()));
+                              MaterialPageRoute(builder: (context) => const AddPropertyDetails()));
                         },
                         buttonText: 'Add New Details',fSize: fontSize,
                       ),

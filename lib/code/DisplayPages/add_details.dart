@@ -10,11 +10,11 @@ import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
 
-class AddUserDetails extends StatefulWidget {
-  const AddUserDetails({Key? key}) : super(key: key);
+class AddPropertyDetails extends StatefulWidget {
+  const AddPropertyDetails({Key? key}) : super(key: key);
 
   @override
-  State<AddUserDetails> createState() => _AddUserDetailsState();
+  State<AddPropertyDetails> createState() => _AddPropertyDetailsState();
 }
 
 final FirebaseAuth auth = FirebaseAuth.instance;
@@ -22,7 +22,7 @@ final User? user = auth.currentUser;
 final uid = user?.uid;
 String userID = uid as String;
 
-class _AddUserDetailsState extends State<AddUserDetails> {
+class _AddPropertyDetailsState extends State<AddPropertyDetails> {
 
   final _firstNameController = TextEditingController();
   final _secondNameController = TextEditingController();
@@ -69,7 +69,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
       },
     );
 
-    addUserDetails(
+    addPropertyDetails(
       _firstNameController.text.trim(),
       _secondNameController.text.trim(),
       _cellNumberController.text.trim(),
@@ -109,7 +109,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
     }
   }
 
-  Future addUserDetails(String firstName, String lastName, String cellNumber,  String address, int areaCode, String idNumber, String accountNumber, String meterNumber, String meterReading, String waterMeterNumber, String waterMeterReading, String userid) async{
+  Future addPropertyDetails(String firstName, String lastName, String cellNumber,  String address, int areaCode, String idNumber, String accountNumber, String meterNumber, String meterReading, String waterMeterNumber, String waterMeterReading, String userid) async{
 
     if(fieldsNotEmptyConfirmed() == false){
       Navigator.of(context).pop();
@@ -121,7 +121,7 @@ class _AddUserDetailsState extends State<AddUserDetails> {
       ));
 
     } else {
-      await FirebaseFirestore.instance.collection('users').add({
+      await FirebaseFirestore.instance.collection('properties').add({
         'first name': firstName,
         'last name': lastName,
         'cell number': cellNumber,

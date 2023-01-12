@@ -88,7 +88,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
 
   final _userIDController = userID;
 
-  final CollectionReference _userList =
+  final CollectionReference _propList =
   FirebaseFirestore.instance.collection('users');
 
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
@@ -219,7 +219,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                       final String lastName = _lastNameController.text;
                       final String idNumber = _idNumberController.text;
                       if (accountNumber != null) {
-                        await _userList.add({
+                        await _propList.add({
                           "account number": accountNumber,
                           "address": address,
                           "area code": areaCode,
@@ -388,7 +388,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                       final String idNumber = _idNumberController.text;
 
                       if (accountNumber != null) {
-                        await _userList
+                        await _propList
                             .doc(documentSnapshot!.id)
                             .update({
                           "account number": accountNumber,
@@ -429,7 +429,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   }
 
   Future<void> _delete(String users) async {
-    await _userList.doc(users).delete();
+    await _propList.doc(users).delete();
 
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('You have successfully deleted an account')));
@@ -444,7 +444,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
         backgroundColor: Colors.green,
       ),
       body: StreamBuilder(
-        stream: _userList.snapshots(),
+        stream: _propList.snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
           if (streamSnapshot.hasData) {
             return ListView.builder(
