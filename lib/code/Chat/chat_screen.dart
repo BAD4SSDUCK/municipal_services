@@ -233,23 +233,23 @@ class DatabaseMethods {
     });
   }
 
-  // getUserInfo(String phone) async {
-  //   return FirebaseFirestore.instance
-  //       .collection("users")
-  //       .where("cell number", isEqualTo: phone)
-  //       .getDocuments()
-  //       .catchError((e) {
-  //     print(e.toString());
-  //   });
-  // }
-  //
-  // searchByName(String searchField) {
-  //   return FirebaseFirestore.instance
-  //       .collection("users")
-  //       .where('first name', isEqualTo: searchField)
-  //       .getDocuments();
-  // }
-  //
+  getUserInfo(String phone) async {
+    return FirebaseFirestore.instance
+        .collection("users")
+        .where("cell number", isEqualTo: phone)
+        .get()
+        .catchError((e) {
+      print(e.toString());
+    });
+  }
+
+  searchByName(String searchField) {
+    return FirebaseFirestore.instance
+        .collection("users")
+        .where('first name', isEqualTo: searchField)
+        .get();
+  }
+
   // Future<bool> addChatRoom(chatRoom, chatRoomId) {
   //   FirebaseFirestore.instance
   //       .collection("chatRoom")

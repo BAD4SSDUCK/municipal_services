@@ -377,14 +377,43 @@ class MainMenu extends StatefulWidget {
                         buttonText: 'Document download',fSize: fontSize,
                       ),
                     ),
+
                     const SizedBox(height: 20),
                     Visibility(
                       visible: currentVis1,
                       child: ReusableElevatedButton(
                         onPress: (){
-                          FirebaseAuth.instance.signOut();
+                          showDialog(
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: const Text("Logout"),
+                                  content: const Text("Are you sure you want to logout?"),
+                                  actions: [
+                                    IconButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(
+                                        Icons.cancel,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () async {
+                                        FirebaseAuth.instance.signOut();
+                                      },
+                                      icon: const Icon(
+                                        Icons.done,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              });
                         },
-                        buttonText: 'Sign Out',fSize: fontSize,
+                        buttonText: 'Logout',fSize: fontSize,
                       ),
                     ),
                     const SizedBox(height: 30),

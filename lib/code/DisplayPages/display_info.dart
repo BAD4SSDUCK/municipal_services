@@ -550,14 +550,42 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                             ///onTap allows to open image upload page if user taps on the image.
                             ///Can be later changed to display the picture zoomed in if user taps on it.
                             onTap: () {
-                              ScaffoldMessenger.of(this.context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Uploading a new image will replace current image!'),
-                                ),
-                              );
-                              Navigator.push(context,
-                                  MaterialPageRoute(
-                                      builder: (context) => ImageUploadMeter()));
+                              eMeterNumber = documentSnapshot['meter number'];
+                              showDialog(
+                                  barrierDismissible: false,
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: const Text("Upload Meter Image"),
+                                      content: const Text("Uploading a new image will replace current image! Are you sure?"),
+                                      actions: [
+                                        IconButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          icon: const Icon(
+                                            Icons.cancel,
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed: () async {
+                                            ScaffoldMessenger.of(this.context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('Uploading a new image will replace current image!'),
+                                              ),
+                                            );
+                                            Navigator.push(context,
+                                                MaterialPageRoute(builder: (context) => ImageUploadMeter()));
+                                          },
+                                          icon: const Icon(
+                                            Icons.done,
+                                            color: Colors.green,
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  });
                             },
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 5),
@@ -611,14 +639,42 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                             ///onTap allows to open image upload page if user taps on the image.
                             ///Can be later changed to display the picture zoomed in if user taps on it.
                             onTap: () {
-                              ScaffoldMessenger.of(this.context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Uploading a new image will replace current image!'),
-                                ),
-                              );
-                              Navigator.push(context,
-                                  MaterialPageRoute(
-                                      builder: (context) => ImageUploadWater()));
+                              wMeterNumber = documentSnapshot['water meter number'];
+                              showDialog(
+                                  barrierDismissible: false,
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: const Text("Upload Water Meter Image"),
+                                      content: const Text("Uploading a new image will replace current image! Are you sure?"),
+                                      actions: [
+                                        IconButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          icon: const Icon(
+                                            Icons.cancel,
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed: () async {
+                                            ScaffoldMessenger.of(this.context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('Uploading a new image will replace current image!'),
+                                              ),
+                                            );
+                                            Navigator.push(context,
+                                                MaterialPageRoute(builder: (context) => ImageUploadWater()));
+                                          },
+                                          icon: const Icon(
+                                            Icons.done,
+                                            color: Colors.green,
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  });
                             },
                             child: Container(
                               margin: EdgeInsets.only(bottom: 5),
@@ -718,16 +774,42 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                   const SizedBox(width: 5,),
                                   ElevatedButton(
                                     onPressed: () {
-
                                       eMeterNumber = documentSnapshot['meter number'];
-
-                                      ScaffoldMessenger.of(this.context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Uploading a new image will replace current image!'),
-                                        ),
-                                      );
-                                      Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) => ImageUploadMeter()));
+                                      showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text("Upload Meter Image"),
+                                              content: const Text("Uploading a new image will replace current image! Are you sure?"),
+                                              actions: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.cancel,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () async {
+                                                    ScaffoldMessenger.of(this.context).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text('Uploading a new image will replace current image!'),
+                                                      ),
+                                                    );
+                                                    Navigator.push(context,
+                                                        MaterialPageRoute(builder: (context) => ImageUploadMeter()));
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.done,
+                                                    color: Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          });
                                     },
                                     style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(115, 10),),
                                     child: Row(
@@ -807,17 +889,42 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                   const SizedBox(width: 5,),
                                   ElevatedButton(
                                     onPressed: () {
-
                                       wMeterNumber = documentSnapshot['water meter number'];
-
-                                      ScaffoldMessenger.of(this.context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Uploading a new image will replace current image!'),
-                                        ),
-                                      );
-                                      print('This is the meter number ----- $wMeterNumber');
-                                      Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) => ImageUploadWater()));
+                                      showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text("Upload Water Meter Image"),
+                                              content: const Text("Uploading a new image will replace current image! Are you sure?"),
+                                              actions: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.cancel,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () async {
+                                                    ScaffoldMessenger.of(this.context).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text('Uploading a new image will replace current image!'),
+                                                      ),
+                                                    );
+                                                    Navigator.push(context,
+                                                        MaterialPageRoute(builder: (context) => ImageUploadWater()));
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.done,
+                                                    color: Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          });
                                     },
                                     style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350] ),
                                     child: Row(
