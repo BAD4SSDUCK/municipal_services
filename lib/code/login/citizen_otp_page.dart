@@ -13,7 +13,8 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  TextEditingController usernameController = TextEditingController();
+  TextEditingController fullNameController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
   TextEditingController phoneController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
@@ -152,8 +153,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         GestureDetector(
                           onTap: () {
                             if(screenState == 0) {
-                              // if(usernameController.text.isEmpty) {
-                              //   showSnackBarText("Username is still empty!");
+
+                              // if(fullNameController.text.isEmpty) {
+                              //   showSnackBarText("Full Name is still empty!");
+                              // } else if(emailController.text.isEmpty) {
+                              //   showSnackBarText("Email address is still empty!");
                               // } else
                               if(phoneController.text.isEmpty) {
                                   showSnackBarText("Phone number is still empty!");
@@ -214,8 +218,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+
         // Text(
-        //   "Username",
+        //   "Full Name",
         //   style: GoogleFonts.montserrat(
         //     color: Colors.black87,
         //     fontWeight: FontWeight.bold,
@@ -223,7 +228,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
         // ),
         // const SizedBox(height: 8,),
         // TextFormField(
-        //   controller: usernameController,
+        //   controller: fullNameController,
+        //   decoration: InputDecoration(
+        //     border: OutlineInputBorder(
+        //       borderRadius: BorderRadius.circular(16),
+        //     ),
+        //     contentPadding: const EdgeInsets.symmetric(
+        //       horizontal: 16,
+        //     ),
+        //   ),
+        // const SizedBox(height: 16,),
+        // Text(
+        //   "Email",
+        //   style: GoogleFonts.montserrat(
+        //     color: Colors.black87,
+        //     fontWeight: FontWeight.bold,
+        //   ),
+        // ),
+        // const SizedBox(height: 8,),
+        // TextFormField(
+        //   controller: emailController,
         //   decoration: InputDecoration(
         //     border: OutlineInputBorder(
         //       borderRadius: BorderRadius.circular(16),
@@ -348,6 +372,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       ],
     );
+  }
+
+  void addUser(){
+
   }
 
   Widget circle(double size) {

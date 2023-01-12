@@ -176,7 +176,7 @@ class MainMenu extends StatefulWidget {
   bool currentVis2 = false;
 
   final CollectionReference _propList =
-  FirebaseFirestore.instance.collection('users');
+  FirebaseFirestore.instance.collection('properties');
 
 
   @override
@@ -400,6 +400,7 @@ class MainMenu extends StatefulWidget {
                                     IconButton(
                                       onPressed: () async {
                                         FirebaseAuth.instance.signOut();
+                                        SystemNavigator.pop();
                                       },
                                       icon: const Icon(
                                         Icons.done,

@@ -73,7 +73,7 @@
 //   final _userIDController = userID;
 //
 //   final CollectionReference _propList =
-//   FirebaseFirestore.instance.collection('users');
+//   FirebaseFirestore.instance.collection('properties');
 //
 //   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
 //     _accountNumberController.text = '';
