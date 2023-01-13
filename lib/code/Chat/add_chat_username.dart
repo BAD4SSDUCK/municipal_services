@@ -111,7 +111,7 @@ class _AddChatUsernameState extends State<AddChatUsername> {
         'fullName': fullName,
         'cell number': cellNumber,
         'profilePic': profilePic,
-        'user id': userid,
+        'uid': userid,
 
       });
 
