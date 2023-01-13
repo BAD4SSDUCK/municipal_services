@@ -9,6 +9,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
+import '../QueryChat/pages/chat_home_page.dart';
+
 
 class AddChatUsername extends StatefulWidget {
   const AddChatUsername({Key? key}) : super(key: key);
@@ -63,6 +65,11 @@ class _AddChatUsernameState extends State<AddChatUsername> {
     );
 
     Navigator.of(context).pop();
+
+    //todo
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => ChatHomePage()));
+
   }
 
   bool fieldsNotEmptyConfirmed(){
