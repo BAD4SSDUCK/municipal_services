@@ -17,6 +17,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isLoading = false;
   final formKey = GlobalKey<FormState>();
   String email = "";
+  String phoneNumber = "";
   String password = "";
   String fullName = "";
   AuthService authService = AuthService();
@@ -71,6 +72,22 @@ class _RegisterPageState extends State<RegisterPage> {
                         const SizedBox(
                           height: 15,
                         ),
+
+                        TextFormField(
+                          decoration: textInputDecoration.copyWith(
+                              labelText: "Phone Number",
+                              prefixIcon: const Icon(
+                                Icons.phone_android,
+                                color: Colors.green,
+                              )),
+                          onChanged: (val) {
+                            setState(() {
+                              phoneNumber = val;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 15),
+
                         TextFormField(
                           decoration: textInputDecoration.copyWith(
                               labelText: "Email",
@@ -94,6 +111,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           },
                         ),
                         const SizedBox(height: 15),
+
                         TextFormField(
                           obscureText: true,
                           decoration: textInputDecoration.copyWith(

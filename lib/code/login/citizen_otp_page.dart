@@ -14,7 +14,6 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   TextEditingController fullNameController = TextEditingController();
-  TextEditingController emailController = TextEditingController();
   TextEditingController phoneController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
@@ -60,6 +59,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         smsCode: otpPin,
       ),
     ).whenComplete(() {
+
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => const MainMenu(),
@@ -156,8 +156,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                               // if(fullNameController.text.isEmpty) {
                               //   showSnackBarText("Full Name is still empty!");
-                              // } else if(emailController.text.isEmpty) {
-                              //   showSnackBarText("Email address is still empty!");
                               // } else
                               if(phoneController.text.isEmpty) {
                                   showSnackBarText("Phone number is still empty!");
@@ -237,26 +235,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         //       horizontal: 16,
         //     ),
         //   ),
-        // const SizedBox(height: 16,),
-        // Text(
-        //   "Email",
-        //   style: GoogleFonts.montserrat(
-        //     color: Colors.black87,
-        //     fontWeight: FontWeight.bold,
-        //   ),
         // ),
-        // const SizedBox(height: 8,),
-        // TextFormField(
-        //   controller: emailController,
-        //   decoration: InputDecoration(
-        //     border: OutlineInputBorder(
-        //       borderRadius: BorderRadius.circular(16),
-        //     ),
-        //     contentPadding: const EdgeInsets.symmetric(
-        //       horizontal: 16,
-        //     ),
-        //   ),
-        // ),
+
         const SizedBox(height: 16,),
         Text(
           "Phone number",

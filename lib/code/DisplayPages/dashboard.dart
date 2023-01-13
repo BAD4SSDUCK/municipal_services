@@ -19,6 +19,7 @@ import 'package:municipal_track/code/Reuseables/nav_drawer.dart';
 import 'package:municipal_track/main.dart';
 import 'package:http/http.dart' as http;
 
+import '../Chat/add_chat_username.dart';
 import '../MapTools/location_controller.dart';
 import '../MapTools/map_screen.dart';
 import '../PDFViewer/view_pdf.dart';
@@ -361,7 +362,7 @@ class MainMenu extends StatefulWidget {
 
                           ///sending through new chat app in query chat folder
                           // Navigator.push(context,
-                          //     MaterialPageRoute(builder: (context) => ChatHomePage()));
+                          //     MaterialPageRoute(builder: (context) => AddChatUsername()));
 
                           Navigator.push(context,
                               MaterialPageRoute(builder: (context) => _isSignedIn ? const ChatHomePage() : const LoginPage(),));

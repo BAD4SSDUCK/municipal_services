@@ -19,6 +19,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final formKey = GlobalKey<FormState>();
   String email = "";
+  String phoneNumber = "";
   String password = "";
   bool _isLoading = false;
   AuthService authService = AuthService();
@@ -50,6 +51,22 @@ class _LoginPageState extends State<LoginPage> {
                             style: TextStyle(
                                 fontSize: 15, fontWeight: FontWeight.w400)),
                         Image.asset("assets/images/logo.png", height: 200, width: 200,),
+
+                        TextFormField(
+                          decoration: textInputDecoration.copyWith(
+                              labelText: "Phone Number",
+                              prefixIcon: Icon(
+                                Icons.phone_android,
+                                color: Colors.green,
+                              )),
+                          onChanged: (val) {
+                            setState(() {
+                              phoneNumber = val;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 15),
+
                         TextFormField(
                           decoration: textInputDecoration.copyWith(
                               labelText: "Email",
@@ -141,6 +158,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  ///need to change this login state to only use phone number
   login() async {
     if (formKey.currentState!.validate()) {
       setState(() {
