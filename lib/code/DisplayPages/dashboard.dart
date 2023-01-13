@@ -22,6 +22,9 @@ import 'package:http/http.dart' as http;
 import '../MapTools/location_controller.dart';
 import '../MapTools/map_screen.dart';
 import '../PDFViewer/view_pdf.dart';
+import '../QueryChat/helper/helper_function.dart';
+import '../QueryChat/pages/auth/login_page.dart';
+import '../QueryChat/pages/chat_home_page.dart';
 import '../Reuseables/menu_reusable_elevated_button.dart';
 import 'add_details.dart';
 import 'display_info.dart';
@@ -52,6 +55,21 @@ class MainMenu extends StatefulWidget {
     requestPermission();
     getToken();
     initInfo();
+    ///checking chat login status
+    // getUserLoggedInStatus();
+  }
+
+  ///added login status for chat
+  bool _isSignedIn = false;
+
+  getUserLoggedInStatus() async {
+    await HelperFunctions.getUserLoggedInStatus().then((value) {
+      if (value != null) {
+        setState(() {
+          _isSignedIn = value;
+        });
+      }
+    });
   }
 
   void requestPermission() async {
@@ -341,8 +359,16 @@ class MainMenu extends StatefulWidget {
                         onPress: () async {
                           String id = 'User ${user.phoneNumber!}';
 
+                          ///sending through new chat app in query chat folder
+                          // Navigator.push(context,
+                          //     MaterialPageRoute(builder: (context) => ChatHomePage()));
+
                           Navigator.push(context,
-                              MaterialPageRoute(builder: (context) => Chat(chatRoomId: id,)));
+                              MaterialPageRoute(builder: (context) => _isSignedIn ? const ChatHomePage() : const LoginPage(),));
+
+                          // Navigator.push(context,
+                          //     MaterialPageRoute(builder: (context) => Chat(chatRoomId: id,)));
+
                         },
                         buttonText: 'Message Administrator',fSize: fontSize,
                       ),
