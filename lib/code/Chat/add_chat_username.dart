@@ -24,21 +24,37 @@ final User? user = auth.currentUser;
 final uid = user?.uid;
 String userID = uid as String;
 
+final pn = user?.phoneNumber;
+String currentPhoneNum = pn as String;
+
+
 class _AddChatUsernameState extends State<AddChatUsername> {
 
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _cellNumberController = TextEditingController();
+  final _cellNumberController = currentPhoneNum;
   final _profilePicController = TextEditingController();
   final _userIDController = userID;
+
+  bool sentItem = false;
 
   @override
   void dispose() {
     _fullNameController.dispose();
     _emailController.dispose();
-    _cellNumberController.dispose();
+    //_cellNumberController.dispose();
     _profilePicController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState(){
+    settingPreFilled();
+  }
+
+  void settingPreFilled(){
+    print(currentPhoneNum);
+
   }
 
   Future dataAdd() async {
@@ -56,26 +72,27 @@ class _AddChatUsernameState extends State<AddChatUsername> {
       },
     );
 
-    addUserDetails(
-      _fullNameController.text.trim(),
-      _emailController.text.trim(),
-      _cellNumberController.text.trim(),
-      _profilePicController.text.trim(),
-      _userIDController,
-    );
+    if(fieldsNotEmptyConfirmed() == true) {
+      addUserDetails(
+        _fullNameController.text.trim(),
+        _emailController.text.trim(),
+        _cellNumberController,
+        _profilePicController.text.trim(),
+        _userIDController,
+      );
 
-    Navigator.of(context).pop();
+      sentItem = true;
 
-    //todo
-    Navigator.push(context,
-        MaterialPageRoute(builder: (context) => ChatHomePage()));
+    } else {
+      Navigator.of(context).pop();
+    }
 
   }
 
   bool fieldsNotEmptyConfirmed(){
-    if (_fullNameController.text.isNotEmpty && _emailController.text.isNotEmpty && _cellNumberController.text.isNotEmpty){
+    if (_fullNameController.text.isNotEmpty && _emailController.text.isNotEmpty ){//&& _cellNumberController.text.isNotEmpty
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Chat details are being saved!'),
+        content: Text('Chat details are saved!'),
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.all(20.0),
         duration: Duration(seconds: 5),
@@ -99,7 +116,7 @@ class _AddChatUsernameState extends State<AddChatUsername> {
     if(fieldsNotEmptyConfirmed() == false){
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Please make sure the area code is entered'),
+        content: Text('Please make sure all necessary information is entered'),
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.all(20.0),
         duration: Duration(seconds: 5),
@@ -107,7 +124,6 @@ class _AddChatUsernameState extends State<AddChatUsername> {
 
     } else {
       await FirebaseFirestore.instance.collection('users').add({
-        'email': email,
         'fullName': fullName,
         'cell number': cellNumber,
         'profilePic': profilePic,
@@ -139,8 +155,12 @@ class _AddChatUsernameState extends State<AddChatUsername> {
                   ),
                 ),
                 const SizedBox(height: 10,),
-                const Text('Enter all details bellow!',
-                  style: TextStyle(fontSize: 18),),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 30.0),
+                  child: Text('Enter all details bellow to make a query or follow an existing one!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 18,),),
+                ),
                 const SizedBox(height: 40,),
 
                 Padding(
@@ -187,34 +207,41 @@ class _AddChatUsernameState extends State<AddChatUsername> {
 
                 const SizedBox(height: 10,),
 
-                Padding(
-                  padding:  const EdgeInsets.symmetric(horizontal: 25.0),
-                  child: TextField(
-                    controller: _cellNumberController,
-                    decoration: InputDecoration(
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.white),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.green),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      hintText: 'Cellphone Number',
-                      fillColor: Colors.grey[200],
-                      filled: true,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 10,),
+                // Padding(
+                //   padding:  const EdgeInsets.symmetric(horizontal: 25.0),
+                //   child: TextField(
+                //     controller: _cellNumberController,
+                //     decoration: InputDecoration(
+                //       enabledBorder: OutlineInputBorder(
+                //         borderSide: const BorderSide(color: Colors.white),
+                //         borderRadius: BorderRadius.circular(12),
+                //       ),
+                //       focusedBorder: OutlineInputBorder(
+                //         borderSide: const BorderSide(color: Colors.green),
+                //         borderRadius: BorderRadius.circular(12),
+                //       ),
+                //       hintText: 'Cellphone Number',
+                //       fillColor: Colors.grey[200],
+                //       filled: true,
+                //     ),
+                //   ),
+                // ),
+                //
+                // const SizedBox(height: 10,),
 
 
                 // login button
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: GestureDetector(
-                    onTap: dataAdd,
+                    onTap: () {
+                      dataAdd();
+                      if(sentItem == true) {
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) =>
+                                const ChatHomePage()));
+                      }
+                      },
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(

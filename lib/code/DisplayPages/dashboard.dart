@@ -326,10 +326,10 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    //const SizedBox(height: 20),
                     ///this onPress code bellow is used to set the message information and pop it up to the user
                     Visibility(
-                      visible: currentVis1,
+                      visible: currentVis2,
                       child: ReusableElevatedButton(
                         onPress: () async {
 
@@ -364,11 +364,11 @@ class MainMenu extends StatefulWidget {
                           // Navigator.push(context,
                           //     MaterialPageRoute(builder: (context) => AddChatUsername()));
 
-                          Navigator.push(context,
-                              MaterialPageRoute(builder: (context) => _isSignedIn ? const ChatHomePage() : const LoginPage(),));
-
                           // Navigator.push(context,
-                          //     MaterialPageRoute(builder: (context) => Chat(chatRoomId: id,)));
+                          //     MaterialPageRoute(builder: (context) => _isSignedIn ? const ChatHomePage() : const LoginPage(),));
+
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) => Chat(chatRoomId: id,)));
 
                         },
                         buttonText: 'Message Administrator',fSize: fontSize,

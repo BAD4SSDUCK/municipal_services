@@ -8,8 +8,8 @@ class AuthService {
   /// login
   // Future loginWithUserNameWithPhonenumber(String phoneNumber, String password) async {
   //   try {
-  //     User user = (await firebaseAuth.signInWithPhoneNumber(
-  //         phoneNumber, password))
+  //     User user = (await firebaseAuth.signInWithCredential(
+  //         ))
   //         .user!;
   //
   //     if (user != null) {

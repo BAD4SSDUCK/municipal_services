@@ -21,12 +21,13 @@ class _ChatState extends State<Chat> {
     return StreamBuilder<QuerySnapshot>(
       stream: chats, //Provide the proper stream source here
       builder: (context, snapshot){
-        return snapshot.hasData ?  ListView.builder(
+        return snapshot.hasData ? ListView.builder(
             itemCount: snapshot.data?.docs.length ?? 0,
             itemBuilder: (context, index){
               return MessageTile(
                 message: snapshot.data?.docs[index]["message"],
                 sendByMe: Constants.myName == snapshot.data?.docs[index]["sendBy"],
+
               );
             }) : Container();
       },
@@ -78,7 +79,7 @@ class _ChatState extends State<Chat> {
                   .size
                   .width,
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                 color: Colors.grey[350],
                 child: Row(
                   children: [
@@ -106,8 +107,8 @@ class _ChatState extends State<Chat> {
                           decoration: BoxDecoration(
                               gradient: const LinearGradient(
                                   colors: [
-                                    Color(0x37FFFFFF),
-                                    Color(0x0FFFFFFF)
+                                    Color(0xFF39833C),
+                                    Color(0xFF474747)
                                   ],
                                   begin: FractionalOffset.topLeft,
                                   end: FractionalOffset.bottomRight
@@ -168,8 +169,8 @@ class MessageTile extends StatelessWidget {
                 const Color(0xff2A75BC)
               ]
                   : [
-                const Color(0x1AFFFFFF),
-                const Color(0x1AFFFFFF)
+                const Color(0xFF505050),
+                const Color(0xFF474747)
               ],
             )
         ),
@@ -248,6 +249,19 @@ class DatabaseMethods {
         .collection("users")
         .where('first name', isEqualTo: searchField)
         .get();
+  }
+
+  Future<bool> addChatRoom(Map<String, dynamic> chatRoom, String chatRoomId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection("chatRoom")
+          .doc(chatRoomId)
+          .set(chatRoom);
+      return true;
+    } catch (e) {
+      print(e);
+      return false;
+    }
   }
 
   // Future<bool> addChatRoom(chatRoom, chatRoomId) {
