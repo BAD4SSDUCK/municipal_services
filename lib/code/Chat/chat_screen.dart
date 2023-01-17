@@ -180,7 +180,7 @@ class MessageTile extends StatelessWidget {
                 color: Colors.white,
                 fontSize: 16,
                 fontFamily: 'OverpassRegular',
-                fontWeight: FontWeight.w300)),
+                fontWeight: FontWeight.w400)),
       ),
     );
   }

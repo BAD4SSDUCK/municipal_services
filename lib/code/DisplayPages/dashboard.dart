@@ -364,9 +364,12 @@ class MainMenu extends StatefulWidget {
                           // Navigator.push(context,
                           //     MaterialPageRoute(builder: (context) => AddChatUsername()));
 
+                          ///Group chat system that requires an email login
                           // Navigator.push(context,
                           //     MaterialPageRoute(builder: (context) => _isSignedIn ? const ChatHomePage() : const LoginPage(),));
 
+                          ///Directly to the chatapp page that creates a chat id that will be saved on the DB. for an admin to access the chat I will have to
+                          ///make a new page that lists all DB chats for the admin to select and connect to for responding to users
                           Navigator.push(context,
                               MaterialPageRoute(builder: (context) => Chat(chatRoomId: id,)));
 
