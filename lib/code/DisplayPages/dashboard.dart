@@ -20,6 +20,7 @@ import 'package:municipal_track/main.dart';
 import 'package:http/http.dart' as http;
 
 import '../Chat/add_chat_username.dart';
+import '../Chat/chat_list.dart';
 import '../MapTools/location_controller.dart';
 import '../MapTools/map_screen.dart';
 import '../PDFViewer/view_pdf.dart';
@@ -29,6 +30,7 @@ import '../QueryChat/pages/chat_home_page.dart';
 import '../Reuseables/menu_reusable_elevated_button.dart';
 import 'add_details.dart';
 import 'display_info.dart';
+import 'display_info_all_users.dart';
 
 
 class MainMenu extends StatefulWidget {
@@ -234,17 +236,21 @@ class MainMenu extends StatefulWidget {
                     const SizedBox(height: 30),
                     Image.asset('assets/images/logo.png', height: 200, width: 200,),
 
-                    //const SizedBox(height: 30),
-                    // ReusableElevatedButton(
-                    //   onPress: (){
-                    //     Navigator.push(context,
-                    //         MaterialPageRoute(builder: (context) => const UsersTableViewPage()));
-                    //   },
-                    //   buttonText: 'Users Details',fSize: fontSize,
-                    // ),
+                    ///Display information for all user information for admins to see
+                    //const SizedBox(height: 40),
+                    Visibility(
+                     visible: currentVis2,
+                     child: ReusableElevatedButton(
+                        onPress: (){
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) => const UsersTableAllViewPage()));
+                       },
+                       buttonText: 'All Users Details',fSize: fontSize,
+                     ),
+                    ),
 
+                    ///Display information for all meter information only for logged in user
                     const SizedBox(height: 40),
-                    ///Display information for electricity meter information
                     Visibility(
                       visible: currentVis1,
                       child: ReusableElevatedButton(
@@ -252,12 +258,12 @@ class MainMenu extends StatefulWidget {
                           Navigator.push(context,
                               MaterialPageRoute(builder: (context) => const UsersTableViewPage()));
                         },
-                        buttonText: 'View Details',fSize: fontSize,
+                        buttonText: 'View My Details',fSize: fontSize,
                       ),
                     ),
 
-                    //const SizedBox(height: 20),
                     ///Display information for electricity meter information
+                    //const SizedBox(height: 20),
                     Visibility(
                       visible: currentVis2,
                       child: ReusableElevatedButton(
@@ -269,8 +275,8 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    //const SizedBox(height: 20),
                     ///Display information for water meter information
+                    //const SizedBox(height: 20),
                     Visibility(
                       visible: currentVis2,
                       child: ReusableElevatedButton(
@@ -282,8 +288,8 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    //const SizedBox(height: 20),
                     ///Add new details will not be available to anyone as it will all be details pulled from the server when SQL is implemented
+                    //const SizedBox(height: 20),
                     Visibility(
                       visible: currentVis2,
                       child: ReusableElevatedButton(
@@ -309,6 +315,7 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
+                    ///Not used as this is for adding images to the root folder on the firebase DB
                     //const SizedBox(height: 20),
                     Visibility(
                       visible: currentVis2,
@@ -326,8 +333,8 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    //const SizedBox(height: 20),
                     ///this onPress code bellow is used to set the message information and pop it up to the user
+                    //const SizedBox(height: 20),
                     Visibility(
                       visible: currentVis2,
                       child: ReusableElevatedButton(
@@ -375,6 +382,19 @@ class MainMenu extends StatefulWidget {
 
                         },
                         buttonText: 'Message Administrator',fSize: fontSize,
+                      ),
+                    ),
+
+                    ///button for admin to get all chats from the DB
+                    const SizedBox(height: 20),
+                    Visibility(
+                      visible: currentVis1,
+                      child: ReusableElevatedButton(
+                        onPress: () async {
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) => ChatList()));
+                        },
+                        buttonText: 'Message User List',fSize: fontSize,
                       ),
                     ),
 

@@ -264,16 +264,6 @@ class DatabaseMethods {
     }
   }
 
-  // Future<bool> addChatRoom(chatRoom, chatRoomId) {
-  //   FirebaseFirestore.instance
-  //       .collection("chatRoom")
-  //       .doc(chatRoomId)
-  //       .set(chatRoom)
-  //       .catchError((e) {
-  //     print(e);
-  //   });
-  // }
-
   getChats(String chatRoomId) async{
     return FirebaseFirestore.instance
         .collection("chatRoom")
@@ -282,7 +272,6 @@ class DatabaseMethods {
         .orderBy('time')
         .snapshots();
   }
-
 
   Future<void> addMessage(String chatRoomId, chatMessageData) async {
 
