@@ -28,7 +28,7 @@ class _ChatListState extends State<ChatList> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Chat List'),
+        title: const Text('Chat Rooms List'),
         backgroundColor: Colors.green,
       ),
       body: StreamBuilder(
@@ -55,7 +55,7 @@ class _ChatListState extends State<ChatList> {
                         children: [
                           const Center(
                             child: Text(
-                              'Chat Rooms',
+                              'Chat Room',
                               style: TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w700),
                             ),
