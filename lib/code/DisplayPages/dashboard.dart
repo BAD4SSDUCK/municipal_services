@@ -193,8 +193,8 @@ class MainMenu extends StatefulWidget {
   }
   ///end of methods for push notifications with firebase and the device specific token
 
-  bool currentVis1 = true;
-  bool currentVis2 = false;
+  bool visExternal = true;
+  bool visInternal = false;
 
   final CollectionReference _propList =
   FirebaseFirestore.instance.collection('properties');
@@ -237,9 +237,11 @@ class MainMenu extends StatefulWidget {
                     Image.asset('assets/images/logo.png', height: 200, width: 200,),
 
                     ///Display information for all user information for admins to see
-                    //const SizedBox(height: 40),
                     Visibility(
-                     visible: currentVis2,
+                        visible: visInternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                     visible: visInternal,
                      child: ReusableElevatedButton(
                         onPress: (){
                           Navigator.push(context,
@@ -250,9 +252,11 @@ class MainMenu extends StatefulWidget {
                     ),
 
                     ///Display information for all meter information only for logged in user
-                    const SizedBox(height: 40),
                     Visibility(
-                      visible: currentVis1,
+                        visible: visExternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visExternal,
                       child: ReusableElevatedButton(
                         onPress: (){
                           Navigator.push(context,
@@ -263,9 +267,11 @@ class MainMenu extends StatefulWidget {
                     ),
 
                     ///Display information for electricity meter information
-                    //const SizedBox(height: 20),
                     Visibility(
-                      visible: currentVis2,
+                      visible: visInternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visInternal,
                       child: ReusableElevatedButton(
                         onPress: (){
                           // Navigator.push(context,
@@ -276,9 +282,11 @@ class MainMenu extends StatefulWidget {
                     ),
 
                     ///Display information for water meter information
-                    //const SizedBox(height: 20),
                     Visibility(
-                      visible: currentVis2,
+                        visible: visInternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visInternal,
                       child: ReusableElevatedButton(
                         onPress: (){
                           // Navigator.push(context,
@@ -289,9 +297,11 @@ class MainMenu extends StatefulWidget {
                     ),
 
                     ///Add new details will not be available to anyone as it will all be details pulled from the server when SQL is implemented
-                    //const SizedBox(height: 20),
                     Visibility(
-                      visible: currentVis2,
+                        visible: visInternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visInternal,
                       child: ReusableElevatedButton(
                         onPress: (){
                           Navigator.push(context,
@@ -301,9 +311,11 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    //const SizedBox(height: 20),
                     Visibility(
-                      visible: currentVis2,
+                        visible: visInternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visInternal,
                       child: ReusableElevatedButton(
                         onPress: (){
 
@@ -316,9 +328,11 @@ class MainMenu extends StatefulWidget {
                     ),
 
                     ///Not used as this is for adding images to the root folder on the firebase DB
-                    //const SizedBox(height: 20),
                     Visibility(
-                      visible: currentVis2,
+                        visible: visInternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visInternal,
                       child: ReusableElevatedButton(
                         onPress: (){
                           ScaffoldMessenger.of(this.context).showSnackBar(
@@ -334,9 +348,11 @@ class MainMenu extends StatefulWidget {
                     ),
 
                     ///this onPress code bellow is used to set the message information and pop it up to the user
-                    //const SizedBox(height: 20),
                     Visibility(
-                      visible: currentVis2,
+                        visible: visInternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visInternal,
                       child: ReusableElevatedButton(
                         onPress: () async {
 
@@ -360,9 +376,11 @@ class MainMenu extends StatefulWidget {
                     ),
 
                     ///button for chat
-                    const SizedBox(height: 20),
                     Visibility(
-                      visible: currentVis1,
+                        visible: visExternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visExternal,
                       child: ReusableElevatedButton(
                         onPress: () async {
                           String passedID = user.phoneNumber!;
@@ -387,9 +405,11 @@ class MainMenu extends StatefulWidget {
                     ),
 
                     ///button for admin to get all chats from the DB
-                    const SizedBox(height: 20),
                     Visibility(
-                      visible: currentVis1,
+                        visible: visExternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visExternal,
                       child: ReusableElevatedButton(
                         onPress: () async {
 
@@ -401,9 +421,11 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    //const SizedBox(height: 20),
                     Visibility(
-                      visible: currentVis2,
+                        visible: visInternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visInternal,
                       child: ReusableElevatedButton(
                         onPress: () async {
                           ScaffoldMessenger.of(this.context).showSnackBar(
@@ -428,9 +450,11 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 20),
                     Visibility(
-                      visible: currentVis1,
+                        visible: visExternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visExternal,
                       child: ReusableElevatedButton(
                         onPress: (){
                           showDialog(
