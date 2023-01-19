@@ -365,7 +365,8 @@ class MainMenu extends StatefulWidget {
                       visible: currentVis1,
                       child: ReusableElevatedButton(
                         onPress: () async {
-                          String id = 'User ${user.phoneNumber!}';
+                          String passedID = user.phoneNumber!;
+                          String id = passedID;
 
                           ///sending through new chat app in query chat folder
                           // Navigator.push(context,
@@ -391,8 +392,10 @@ class MainMenu extends StatefulWidget {
                       visible: currentVis1,
                       child: ReusableElevatedButton(
                         onPress: () async {
+
                           Navigator.push(context,
                               MaterialPageRoute(builder: (context) => ChatList()));
+
                         },
                         buttonText: 'Message User List',fSize: fontSize,
                       ),

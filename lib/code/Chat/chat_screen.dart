@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class Chat extends StatefulWidget {
-  final String chatRoomId;
+  String chatRoomId;
 
   Chat({required this.chatRoomId});
 
@@ -128,7 +128,6 @@ class _ChatState extends State<Chat> {
       ),
     );
   }
-
 }
 
 class MessageTile extends StatelessWidget {
@@ -194,7 +193,6 @@ String useNum = user.phoneNumber!;
 class Constants{
   static String myName = useNum;
 }
-
 
 ///Widget items
 Widget appBarMain(BuildContext context) {
