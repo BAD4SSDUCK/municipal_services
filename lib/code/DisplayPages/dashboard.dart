@@ -266,36 +266,6 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    ///Display information for electricity meter information
-                    Visibility(
-                      visible: visInternal,
-                        child: const SizedBox(height: 20)),
-                    Visibility(
-                      visible: visInternal,
-                      child: ReusableElevatedButton(
-                        onPress: (){
-                          // Navigator.push(context,
-                          //     MaterialPageRoute(builder: (context) => const UsersTableElectricityPage()));
-                        },
-                        buttonText: 'Manage Electric Meter',fSize: fontSize,
-                      ),
-                    ),
-
-                    ///Display information for water meter information
-                    Visibility(
-                        visible: visInternal,
-                        child: const SizedBox(height: 20)),
-                    Visibility(
-                      visible: visInternal,
-                      child: ReusableElevatedButton(
-                        onPress: (){
-                          // Navigator.push(context,
-                          //     MaterialPageRoute(builder: (context) => const UsersTableWaterPage()));
-                        },
-                        buttonText: 'Manage Water Meter',fSize: fontSize,
-                      ),
-                    ),
-
                     ///Add new details will not be available to anyone as it will all be details pulled from the server when SQL is implemented
                     Visibility(
                         visible: visInternal,
@@ -349,10 +319,10 @@ class MainMenu extends StatefulWidget {
 
                     ///this onPress code bellow is used to set the message information and pop it up to the user
                     Visibility(
-                        visible: visInternal,
+                        visible: false,
                         child: const SizedBox(height: 20)),
                     Visibility(
-                      visible: visInternal,
+                      visible: false,
                       child: ReusableElevatedButton(
                         onPress: () async {
 
