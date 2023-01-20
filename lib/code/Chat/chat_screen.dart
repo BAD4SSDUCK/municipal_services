@@ -287,4 +287,18 @@ class DatabaseMethods {
         .where('users', arrayContains: itIsMyName)
         .snapshots();
   }
+
+  Future<void> addChatDocName(DocumentSnapshot? documentSnapshot, String chatRoomId) async{
+
+    final CollectionReference namedChatAdd =
+    FirebaseFirestore.instance.collection("chatRoom");
+
+    if (documentSnapshot != null) {
+      await namedChatAdd.add({
+        "chatRoom": chatRoomId,
+      });
+    }
+
+  }
+
 }

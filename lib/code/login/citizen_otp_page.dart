@@ -47,7 +47,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         });
       },
       codeAutoRetrievalTimeout: (String verificationId) {
-        showSnackBarText("Timeout!");
+        showSnackBarText("Awaiting OTP!");
       },
     );
   }
@@ -156,6 +156,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                               // if(fullNameController.text.isEmpty) {
                               //   showSnackBarText("Full Name is still empty!");
+                              //
                               // } else
                               if(phoneController.text.isEmpty) {
                                   showSnackBarText("Phone number is still empty!");

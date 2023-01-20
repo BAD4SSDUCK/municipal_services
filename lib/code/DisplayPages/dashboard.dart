@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -199,6 +200,11 @@ class MainMenu extends StatefulWidget {
   final CollectionReference _propList =
   FirebaseFirestore.instance.collection('properties');
 
+  final CollectionReference _userList =
+  FirebaseFirestore.instance.collection('users');
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -354,6 +360,13 @@ class MainMenu extends StatefulWidget {
                       child: ReusableElevatedButton(
                         onPress: () async {
                           String passedID = user.phoneNumber!;
+
+                          String? userName = FirebaseAuth.instance.currentUser!.displayName;
+
+                          print('The user name of the logged in person is $userName}');
+
+
+
                           String id = passedID;
 
                           ///sending through new chat app in query chat folder
@@ -391,6 +404,7 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
+                    ///Direct statement download feature needs to be for the user account only
                     Visibility(
                         visible: visInternal,
                         child: const SizedBox(height: 20)),
