@@ -62,6 +62,16 @@ class _ChatState extends State<Chat> {
     super.initState();
   }
 
+  ///need to fix auto generate to custom named generate
+  Future<void> setIDName() async {
+
+    String thisNewChat = widget.chatRoomId;
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+        .collection(thisNewChat).doc(thisNewChat).get();
+
+    DatabaseMethods().addChatDocName(documentSnapshot, thisNewChat);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

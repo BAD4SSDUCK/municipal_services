@@ -23,6 +23,11 @@ class _ChatListState extends State<ChatList> {
   final CollectionReference _chatsList =
   FirebaseFirestore.instance.collection('chatRoom');
 
+  final CollectionReference _userList =
+  FirebaseFirestore.instance.collection('users');
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,6 +47,8 @@ class _ChatListState extends State<ChatList> {
                 final DocumentSnapshot documentSnapshot = streamSnapshot.data!.docs[index];
 
                 String chatRoomID = documentSnapshot.id.toString();
+
+                String userFullName = documentSnapshot.id.toString();
 
                 print('The chat rooms listed are $chatRoomID');
 

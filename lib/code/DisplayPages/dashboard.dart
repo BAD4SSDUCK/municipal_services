@@ -361,7 +361,7 @@ class MainMenu extends StatefulWidget {
                         onPress: () async {
                           String passedID = user.phoneNumber!;
 
-                          String? userName = FirebaseAuth.instance.currentUser!.displayName;
+                          String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
 
                           print('The user name of the logged in person is $userName}');
 
