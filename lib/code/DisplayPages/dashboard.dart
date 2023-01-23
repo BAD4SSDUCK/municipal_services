@@ -241,7 +241,7 @@ class MainMenu extends StatefulWidget {
                     const SizedBox(height: 30),
                     Image.asset('assets/images/logo.png', height: 200, width: 200,),
 
-                    ///Display information for all user information for admins to see
+                    ///Display information for all users properties information for admins to see
                     Visibility(
                         visible: visInternal,
                         child: const SizedBox(height: 20)),
