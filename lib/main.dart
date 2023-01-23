@@ -22,17 +22,14 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-
   await FirebaseMessaging.instance.getInitialMessage();
 
   ///notification section
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
       AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
-
   await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
     alert: true,
     badge: true,
@@ -43,6 +40,19 @@ void main() async{
   Get.put(LocationController());
 
   runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const GetMaterialApp(
+      debugShowCheckedModeBanner: false,
+      ///MainPage links to an auth state for logging in using the necessary firebase method.
+      home: MainPage(),
+    );
+  }
 }
 
 ///notification channel init start
@@ -56,22 +66,8 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 FlutterLocalNotificationsPlugin();
 ///notification channel init end
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return const GetMaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: MainPage(),
-    );
-
-    ///startup any 3 of these pages, MainPage is for staff to use, Register is for citizens
-    //     home: MapView(), MainPage(), RegisterScreen()
-
-  }
-}
-
+///This login Screen is not used. This was just a template during initial dev using an email and password. MainPage() was used to auth using phone number and OTP to login
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
 

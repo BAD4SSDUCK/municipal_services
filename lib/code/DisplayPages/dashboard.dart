@@ -155,18 +155,18 @@ class MainMenu extends StatefulWidget {
     var androidInitialize = const AndroidInitializationSettings('@mipmap/ic_launcher');
     //var iOSInitialize = const IOSInitializationSettings();
     var initializationSettings = InitializationSettings(android: androidInitialize,);
-    flutterLocalNotificationsPlugin.initialize(initializationSettings, onSelectNotification:(String? payload) async{
-      try{
-        if(payload != null && payload.isNotEmpty){
-          Navigator.push(context, MaterialPageRoute(builder: (BuildContext context){
+    flutterLocalNotificationsPlugin.initialize(initializationSettings, onSelectNotification:(String? payload) async {
+      try {
+        if (payload != null && payload.isNotEmpty) {
+          Navigator.push(
+              context, MaterialPageRoute(builder: (BuildContext context) {
             return const UsersTableViewPage();
           }
           ));
-
         } else {
 
         }
-      } catch (e){
+      } catch (e) {
 
       }
       return;
@@ -204,8 +204,6 @@ class MainMenu extends StatefulWidget {
   FirebaseFirestore.instance.collection('users');
 
 
-
-
   @override
   Widget build(BuildContext context) {
     Get.put(LocationController());
@@ -215,6 +213,7 @@ class MainMenu extends StatefulWidget {
       DeviceOrientation.portraitDown,
     ]);
     return Container(
+      ///When a background image is created this section will display it on the dashboard instead of just a grey colour with no background
       // decoration: const BoxDecoration(
       //   image: DecorationImage(
       //       image: AssetImage("images/MainMenu/mainbackground.png"),
@@ -323,7 +322,8 @@ class MainMenu extends StatefulWidget {
                       ),
                     ),
 
-                    ///this onPress code bellow is used to set the message information and pop it up to the user
+                    ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
+                    ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
                     Visibility(
                         visible: false,
                         child: const SizedBox(height: 20)),
@@ -362,18 +362,15 @@ class MainMenu extends StatefulWidget {
                           String passedID = user.phoneNumber!;
 
                           String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
-
                           print('The user name of the logged in person is $userName}');
-
-
 
                           String id = passedID;
 
-                          ///sending through new chat app in query chat folder
+                          ///Sending through new username for the chat app in query chat folder, this was not used
                           // Navigator.push(context,
                           //     MaterialPageRoute(builder: (context) => AddChatUsername()));
 
-                          ///Group chat system that requires an email login
+                          ///Group chat system that requires an email login, this was not used.
                           // Navigator.push(context,
                           //     MaterialPageRoute(builder: (context) => _isSignedIn ? const ChatHomePage() : const LoginPage(),));
 
@@ -389,10 +386,10 @@ class MainMenu extends StatefulWidget {
 
                     ///button for admin to get all chats from the DB
                     Visibility(
-                        visible: visExternal,
+                        visible: visExternal,//visInternal,
                         child: const SizedBox(height: 20)),
                     Visibility(
-                      visible: visExternal,
+                      visible: visExternal,//visInternal,
                       child: ReusableElevatedButton(
                         onPress: () async {
 
