@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:municipal_track/code/Users/Auth/signup_screen.dart';
+import 'package:municipal_track/code/Users/Auth/login_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({Key? key}) : super(key: key);
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignUpScreenState extends State<SignUpScreen> {
 
   var formKey = GlobalKey<FormState>();
+  var nameController = TextEditingController();
   var phoneNumberController = TextEditingController();
   var passwordController = TextEditingController();
   var isObscure = true.obs;
@@ -29,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  //Login screen header
+                  //Signup screen header
                   Center(
                     child: SizedBox(
                       width: MediaQuery
@@ -61,11 +62,64 @@ class _LoginScreenState extends State<LoginScreen> {
                         padding: const EdgeInsets.fromLTRB(30, 30, 30, 8),
                         child: Column(
                           children: [
-                            //login with phone number form
+                            //signup with phone number form
                             Form(
                               key: formKey,
                               child: Column(
                                 children: [
+
+                                  ///Name field
+                                  TextFormField(
+                                    controller: nameController,
+                                    validator: (val) =>
+                                    val == ""
+                                        ? "Please enter your Name"
+                                        : null,
+                                    decoration: InputDecoration(
+                                      prefixIcon: const Icon(
+                                        Icons.person,
+                                        color: Colors.black,
+                                      ),
+                                      hintText: "Name...",
+                                      border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      disabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      contentPadding: const EdgeInsets
+                                          .symmetric(
+                                          horizontal: 14,
+                                          vertical: 6
+                                      ),
+                                      fillColor: Colors.white,
+                                      filled: true,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 18,),
 
                                   ///Phone number
                                   TextFormField(
@@ -229,38 +283,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Text("Don't have an Account?"),
+                                const Text("Already have an Account?"),
                                 TextButton(
                                   onPressed: () {
-                                    Get.to(SignUpScreen());
+                                    Get.to(LoginScreen());
                                   },
-                                  child: const Text("Register Here",
+                                  child: const Text("Login Here",
                                     style: TextStyle(
                                         color: Colors.blue,
                                         fontSize: 16
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            const Text("Or",
-                                style: TextStyle(
-                                    color: Colors.green, fontSize: 16)),
-
-                            //admin sing in instead.
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text("Are you an Admin?"),
-                                TextButton(
-                                  onPressed: () {
-
-                                  },
-                                  child: const Text("Click Here",
-                                    style: TextStyle(
-                                      color: Colors.blue,
-                                      fontSize: 16,
                                     ),
                                   ),
                                 ),
