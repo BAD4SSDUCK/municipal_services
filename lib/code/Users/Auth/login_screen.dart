@@ -29,6 +29,8 @@ class _LoginScreenState extends State<LoginScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
+                  const SizedBox(height: 100,),
+
                   //Login screen header
                   Center(
                     child: SizedBox(
@@ -36,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           .of(context)
                           .size
                           .width,
-                      height: 285,
+                      height: 250,
                       child: Image.asset("assets/images/logo.png"),
                     ),
                   ),
@@ -232,6 +234,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const Text("Don't have an Account?"),
                                 TextButton(
                                   onPressed: () {
+                                    ///Using this can be changed for other pages instead of using Navigator.push in any onPressed:/onTap: functions.
+                                    // [GETX] WARNING, consider using: "Get.to(() => Page())" instead of "Get.to(Page())".
+                                    // Using a widget function instead of a widget fully guarantees that the widget and its controllers will be removed from memory when they are no longer used.
                                     Get.to(SignUpScreen());
                                   },
                                   child: const Text("Register Here",

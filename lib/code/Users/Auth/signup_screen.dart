@@ -1,6 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:municipal_track/code/Users/Auth/login_screen.dart';
+import 'package:http/http.dart' as http;
+
+import '../../ApiConnection/api_connection.dart';
+import '../model/user.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -12,10 +19,77 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
 
   var formKey = GlobalKey<FormState>();
-  var nameController = TextEditingController();
   var phoneNumberController = TextEditingController();
+  var emailController = TextEditingController();
+  var firstNameController = TextEditingController();
+  var lastNameController = TextEditingController();
+  var userNameController = TextEditingController();
   var passwordController = TextEditingController();
   var isObscure = true.obs;
+
+  validateUserPhone() async{
+    try {
+      var res = await http.post(
+        Uri.parse(API.validatePhone),
+        body: {
+          'cellNumber': phoneNumberController.text.trim(),
+        }
+      );
+      if(res.statusCode == 200){ //from the flutter app the connection with api to the server is a success
+        var resBodyOfValidPhone = jsonDecode(res.body);
+        if(resBodyOfValidPhone['phoneFound'] == true){
+          Fluttertoast.showToast(msg: "Phone Number already in use. Try a different phone number if you have not already registered.");
+        }
+        else{
+          //register new user and save new record to db
+          registerAndSaveUserRecord();
+        }
+      }
+    } catch(e){
+      print(e.toString());
+      Fluttertoast.showToast(msg: e.toString());
+    }
+  }
+
+  registerAndSaveUserRecord() async{
+    User userModel = User(
+      1,
+      phoneNumberController.text.trim(),
+      emailController.text.trim(),
+      firstNameController.text.trim(),
+      lastNameController.text.trim(),
+      userNameController.text.trim(),
+      passwordController.text.trim(),
+    );
+    try{
+      var res = await http.post(
+        Uri.parse(API.signUp),
+        body: userModel.toJson(),
+      );
+      if(res.statusCode == 200){
+        var resBodyOfSigneUp = jsonDecode(res.body);
+        if(resBodyOfSigneUp['success'] == true){
+          print('reaching api');
+          Fluttertoast.showToast(msg: "Congratulations, you have Signed Up Successfully");
+
+          setState(() {
+            phoneNumberController.clear();
+            emailController.clear();
+            firstNameController.clear();
+            lastNameController.clear();
+            userNameController.clear();
+            passwordController.clear();
+          });
+
+        } else {
+          Fluttertoast.showToast(msg: "Error Occurred, Try Again.");
+        }
+      }
+    } catch(e){
+      print(e.toString());
+      Fluttertoast.showToast(msg: e.toString());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +104,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
+                  const SizedBox(height: 100,),
                   //Signup screen header
                   Center(
                     child: SizedBox(
@@ -37,7 +112,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           .of(context)
                           .size
                           .width,
-                      height: 285,
+                      height: 250,
                       child: Image.asset("assets/images/logo.png"),
                     ),
                   ),
@@ -68,19 +143,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               child: Column(
                                 children: [
 
-                                  ///Name field
+                                  ///User Name field
                                   TextFormField(
-                                    controller: nameController,
+                                    controller: userNameController,
                                     validator: (val) =>
                                     val == ""
-                                        ? "Please enter your Name"
+                                        ? "Please enter your Username"
                                         : null,
                                     decoration: InputDecoration(
                                       prefixIcon: const Icon(
                                         Icons.person,
                                         color: Colors.black,
                                       ),
-                                      hintText: "Name...",
+                                      hintText: "Username...",
                                       border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                               30),
@@ -134,6 +209,165 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                         color: Colors.black,
                                       ),
                                       hintText: "+27 Phone Number...",
+                                      border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      disabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      contentPadding: const EdgeInsets
+                                          .symmetric(
+                                          horizontal: 14,
+                                          vertical: 6
+                                      ),
+                                      fillColor: Colors.white,
+                                      filled: true,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 18,),
+
+                                  ///Email
+                                  TextFormField(
+                                    controller: emailController,
+                                    validator: (val) =>
+                                    val == ""
+                                        ? "Please enter your Email Address"
+                                        : null,
+                                    decoration: InputDecoration(
+                                      prefixIcon: const Icon(
+                                        Icons.email,
+                                        color: Colors.black,
+                                      ),
+                                      hintText: "email...",
+                                      border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      disabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      contentPadding: const EdgeInsets
+                                          .symmetric(
+                                          horizontal: 14,
+                                          vertical: 6
+                                      ),
+                                      fillColor: Colors.white,
+                                      filled: true,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 18,),
+
+                                  ///First name
+                                  TextFormField(
+                                    controller: firstNameController,
+                                    validator: (val) =>
+                                    val == ""
+                                        ? "Please enter your First Name"
+                                        : null,
+                                    decoration: InputDecoration(
+                                      prefixIcon: const Icon(
+                                        Icons.person_rounded,
+                                        color: Colors.black,
+                                      ),
+                                      hintText: "First Name...",
+                                      border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      disabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      contentPadding: const EdgeInsets
+                                          .symmetric(
+                                          horizontal: 14,
+                                          vertical: 6
+                                      ),
+                                      fillColor: Colors.white,
+                                      filled: true,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 18,),
+
+                                  ///Last name
+                                  TextFormField(
+                                    controller: lastNameController,
+                                    validator: (val) =>
+                                    val == ""
+                                        ? "Please enter your Last Name"
+                                        : null,
+                                    decoration: InputDecoration(
+                                      prefixIcon: const Icon(
+                                        Icons.person_rounded,
+                                        color: Colors.black,
+                                      ),
+                                      hintText: "Last Name...",
                                       border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                               30),
@@ -253,7 +487,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     borderRadius: BorderRadius.circular(30),
                                     child: InkWell(
                                       onTap: () {
-
+                                        if(formKey.currentState!.validate() == true){
+                                          //validation of phone number already in the db so it is in use, only one user can have this phone number
+                                          validateUserPhone();
+                                        }
+                                        print(formKey.currentState!.validate().toString());
                                       },
                                       borderRadius: BorderRadius.circular(30),
                                       child: const Padding(
@@ -262,7 +500,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                           horizontal: 28,
                                         ),
                                         child: Text(
-                                          "Login",
+                                          "Sign Up",
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: 16,
@@ -273,13 +511,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   )
 
                                 ],
-
                               ),
                             ),
 
                             const SizedBox(height: 16,),
 
-                            //register new account if none
+                            //Account exists, login with username and password
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -297,7 +534,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                               ],
                             ),
-
 
                           ],
                         ),
