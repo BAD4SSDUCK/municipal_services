@@ -7,7 +7,7 @@ import 'package:municipal_track/code/Users/Auth/login_screen.dart';
 import 'package:http/http.dart' as http;
 
 import '../../ApiConnection/api_connection.dart';
-import '../model/user.dart';
+import 'package:municipal_track/code/Users/model/user.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -27,7 +27,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   var passwordController = TextEditingController();
   var isObscure = true.obs;
 
-  validateUserPhone() async{
+  Future validateUserPhone() async{
     try {
       var res = await http.post(
         Uri.parse(API.validatePhone),
@@ -35,6 +35,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           'cellNumber': phoneNumberController.text.trim(),
         }
       );
+      print(res.statusCode.toString());
       if(res.statusCode == 200){ //from the flutter app the connection with api to the server is a success
         var resBodyOfValidPhone = jsonDecode(res.body);
         if(resBodyOfValidPhone['phoneFound'] == true){
@@ -69,7 +70,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if(res.statusCode == 200){
         var resBodyOfSigneUp = jsonDecode(res.body);
         if(resBodyOfSigneUp['success'] == true){
-          print('reaching api');
+          print('reaching signup api');
           Fluttertoast.showToast(msg: "Congratulations, you have Signed Up Successfully");
 
           setState(() {
@@ -486,12 +487,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     color: Colors.green,
                                     borderRadius: BorderRadius.circular(30),
                                     child: InkWell(
-                                      onTap: () {
+                                      onTap: () async {
+                                        ///This button needs to be fixed, the validate with user phone function does not seem to be running when tapped
                                         if(formKey.currentState!.validate() == true){
                                           //validation of phone number already in the db so it is in use, only one user can have this phone number
                                           validateUserPhone();
+                                          print("validateUserPhone fuction :: "+validateUserPhone().toString());
                                         }
-                                        print(formKey.currentState!.validate().toString());
+                                        print("Form feilds filled state :: "+formKey.currentState!.validate().toString());
                                       },
                                       borderRadius: BorderRadius.circular(30),
                                       child: const Padding(

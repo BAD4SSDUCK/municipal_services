@@ -17,6 +17,16 @@ class User{
       this.userPassword,
       );
 
+  factory User.fromJson(Map<String, dynamic> json) => User(
+    int.parse(json["uid"]),
+    json["cellNumber"],
+    json["email"],
+    json["firstName"],
+    json["lastName"],
+    json["userName"],
+    json["userPassword"],
+  );
+
   Map<String, dynamic> toJson() =>
       {
         'uid': uid.toString(),

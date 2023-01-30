@@ -1,6 +1,16 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:municipal_track/code/Users/Auth/signup_screen.dart';
+import 'package:http/http.dart' as http;
+
+import 'package:municipal_track/code/ApiConnection/api_connection.dart';
+import 'package:municipal_track/code/Users/model/user.dart';
+import 'package:municipal_track/code/Users/userPreferences/user_preferences.dart';
+
+import '../fragments/dashboard_of_fragments_sql.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -15,6 +25,45 @@ class _LoginScreenState extends State<LoginScreen> {
   var phoneNumberController = TextEditingController();
   var passwordController = TextEditingController();
   var isObscure = true.obs;
+
+  loginUserNow() async{
+
+    try{
+      var res = await http.post(
+        Uri.parse(API.login),
+        body: {
+          "cellNumber": phoneNumberController.text.trim(),
+          "userPassword": passwordController.text.trim(),
+        },
+      );
+
+      if(res.statusCode == 200){
+        var resBodyOfLogin = jsonDecode(res.body);
+        if(resBodyOfLogin['success'] == true){
+          print('reaching login api');
+          Fluttertoast.showToast(msg: "You are logged in Successfully");
+
+          User userInfo = User.fromJson(resBodyOfLogin["userData"]);
+
+          //save user info to local storage using shared Preferences
+          await RememberUserPrefs.storeUserInfo(userInfo);
+
+          //send user to a dashboard once logged in 'DashboardOfFragments' is a temp dashboard to test the sql user info login
+          Future.delayed(Duration(milliseconds: 2000),(){
+            Get.to(DashboardOfFragments());
+          });
+
+        } else {
+          Fluttertoast.showToast(msg: "Incorrect credentials. \nPlease enter correct password and phone number and Try Again.");
+        }
+      }
+    } catch(e) {
+      print("Error :: " + e.toString());
+      Fluttertoast.showToast(msg: e.toString());
+    }
+
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -201,8 +250,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                     borderRadius: BorderRadius.circular(30),
                                     child: InkWell(
                                       onTap: () {
-
-                                      },
+                                        if(formKey.currentState!.validate()) {
+                                          loginUserNow();
+                                        }
+                                        },
                                       borderRadius: BorderRadius.circular(30),
                                       child: const Padding(
                                         padding: EdgeInsets.symmetric(
