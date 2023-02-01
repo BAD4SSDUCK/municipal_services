@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:municipal_track/code/Users/fragments/home_fragment_screen.dart';
-import 'package:municipal_track/code/Users/fragments/photo_fragment_screen.dart';
-import 'package:municipal_track/code/Users/fragments/profile_fragment_screen.dart';
-import 'package:municipal_track/code/Users/fragments/property_fragment_screen.dart';
-import 'package:municipal_track/code/Users/userPreferences/current_user.dart';
+import 'package:municipal_track/code/SQLApp/fragments/home_fragment_screen.dart';
+import 'package:municipal_track/code/SQLApp/fragments/photo_fragment_screen.dart';
+import 'package:municipal_track/code/SQLApp/fragments/profile_fragment_screen.dart';
+import 'package:municipal_track/code/SQLApp/fragments/property_fragment_screen.dart';
+import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';
 import 'package:municipal_track/code/login/citizen_otp_page.dart';
 
 ///This dashboard is only for testing and will in the future use the firebase dashboard already built but with the sql connection instead
@@ -17,27 +17,27 @@ class DashboardOfFragments extends StatelessWidget {
   List<Widget> _fragmentScreens =[
     HomeFragmentScreen(),
     PropertyFragmentScreen(),
-    PhotoFragmentScreen(),
+    //PhotoFragmentScreen(),
     RegisterScreen(),//for the chat we will still used firebase because it is the easist for tracking chats so the user will just otp login to firebase
     ProfileFragmentScreen(),
   ];
 
   List _navigationButtonsPropterties =[
     {
-      "active_icon": Icons.home,
-      "non_active_icon": Icons.home_outlined,
+      "active_icon": Icons.info,
+      "non_active_icon": Icons.info_outline,
       "label": "Home",
     },
     {
-      "active_icon": Icons.house,
+      "active_icon": Icons.home,
       "non_active_icon": Icons.home_outlined,
       "label": "Properties",
     },
-    {
-      "active_icon": Icons.camera_alt,
-      "non_active_icon": Icons.camera_alt_outlined,
-      "label": "Upload",
-    },
+    // {
+    //   "active_icon": Icons.camera_alt,
+    //   "non_active_icon": Icons.camera_alt_outlined,
+    //   "label": "Upload",
+    // },
     {
       "active_icon": Icons.chat_bubble,
       "non_active_icon": Icons.chat_bubble_outline,
@@ -78,7 +78,7 @@ class DashboardOfFragments extends StatelessWidget {
                 showUnselectedLabels: true,
                 selectedItemColor: Colors.white,
                 unselectedItemColor: Colors.white10,
-                items: List.generate(5, (index) {
+                items: List.generate(4, (index) {
                   var navBtnProperty = _navigationButtonsPropterties[index];
                   return BottomNavigationBarItem(
                       backgroundColor: Colors.black,

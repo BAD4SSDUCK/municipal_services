@@ -1,3 +1,5 @@
+///This is the map api for the structure of the data passed from mySql
+
 class User{
   int uid;
   String cellNumber;
@@ -37,5 +39,5 @@ class User{
         'userName': userName,
         'userPassword': userPassword,
       };
-
+//
 }

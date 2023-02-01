@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
-import 'package:municipal_track/code/DisplayPages/display_info_electricity.dart';
 import 'package:path/path.dart';
 
 class ImageUploads extends StatefulWidget {

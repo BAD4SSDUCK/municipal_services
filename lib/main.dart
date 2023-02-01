@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:municipal_track/code/MapTools/location_controller.dart';
-import 'package:municipal_track/code/Users/Auth/login_screen.dart';
+import 'package:municipal_track/code/SQLInt/sql_main.dart';
+import 'package:municipal_track/code/SQLApp/auth/login_screen.dart';
 import 'package:municipal_track/code/login/citizen_otp_page.dart';
 import 'package:municipal_track/code/login/login_page.dart';
 
@@ -42,6 +42,8 @@ void main() async{
   Get.put(LocationController());
 
   runApp(const MyApp());
+  ///For the sql version the sql_main will call the SQLMain() StatelessWidget instead of the MyApp() StatelessWidget which is for the firebase version
+  //runApp(const SQLMain())
 }
 
 class MyApp extends StatelessWidget {
@@ -53,8 +55,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       ///MainPage links to an auth state for logging in using the necessary firebase method.
       ///If already logged in user will be immediately directed to the dashboard
-      home: LoginScreen(),
-        //LoginScreen(), this is for the mysql db login version
+      home: MainPage(),
+        //SQLMain(), For the sql version the sql_main will call the SQLMain() StatelessWidget
+        //LoginScreen(), this is being developed and I am testing the mysql db login screen
         //MainPage(),
     );
   }

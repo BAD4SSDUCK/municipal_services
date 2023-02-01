@@ -3,15 +3,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
-import 'package:municipal_track/code/Users/Auth/signup_screen.dart';
+import 'package:municipal_track/code/SQLApp/Auth/signup_screen.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';
-import 'package:municipal_track/code/Users/model/user.dart';
-import 'package:municipal_track/code/Users/userPreferences/user_preferences.dart';
+import 'package:municipal_track/code/SQLApp/model/user.dart';
+import 'package:municipal_track/code/SQLApp/userPreferences/user_preferences.dart';
 
 import '../fragments/dashboard_of_fragments_sql.dart';
-
+//
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
 

@@ -8,12 +8,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 
 import '../ImageUploading/image_upload_meter.dart';
-import '../ImageUploading/image_upload_page.dart';
 import '../ImageUploading/image_upload_water.dart';
 import '../MapTools/map_screen.dart';
 import '../PDFViewer/pdf_api.dart';
 import '../PDFViewer/view_pdf.dart';
-import '../MapTools/map_component.dart';
 
 
 class UsersTableViewPage extends StatefulWidget {
@@ -733,7 +731,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                     onPressed: () {
                                       _update(documentSnapshot);
                                     },
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(108, 10),),
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(112, 10),),
                                     child: Row(
                                       children: [
                                         Icon(
@@ -823,10 +821,50 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       ],
                                     ),
                                   ),
+                                  ///No need for a delete button but this is what a delete would look like
                                   // GestureDetector(
                                   //   onTap: () {
-                                  //     _delete(documentSnapshot.id);
-                                  //   },
+                                  //     showDialog(
+                                  //         barrierDismissible: false,
+                                  //         context: context,
+                                  //         builder: (context) {
+                                  //           return AlertDialog(
+                                  //             title: const Text(
+                                  //                 "Deleting Property Information"),
+                                  //             content: const Text(
+                                  //                 "Deleting this property will remove it entirely! Are you sure?"),
+                                  //             actions: [
+                                  //               IconButton(
+                                  //                 onPressed: () {
+                                  //                   Navigator.pop(context);
+                                  //                 },
+                                  //                 icon: const Icon(
+                                  //                   Icons.cancel,
+                                  //                   color: Colors.red,
+                                  //                 ),
+                                  //               ),
+                                  //               IconButton(
+                                  //                 onPressed: () async {
+                                  //                   ScaffoldMessenger.of(
+                                  //                       this.context)
+                                  //                       .showSnackBar(
+                                  //                     const SnackBar(
+                                  //                       content: Text(
+                                  //                           'Property was deleted!'),
+                                  //                     ),
+                                  //                   );
+                                  //                   _delete(documentSnapshot.id);
+                                  //                   Navigator.pop(context);
+                                  //                 },
+                                  //                 icon: const Icon(
+                                  //                   Icons.done,
+                                  //                   color: Colors.green,
+                                  //                 ),
+                                  //               ),
+                                  //             ],
+                                  //           );
+                                  //         });
+                                  //  },
                                   //   child: Row(
                                   //     children: [
                                   //       Icon(
@@ -964,198 +1002,8 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                   );
                 }///end of single user information display.
                 else {
-                  ///this card is to display ALL details for all users when role is set.
-                  return Card();//(
-                  //   margin: const EdgeInsets.all(10),
-                  //   child: Padding(
-                  //     padding: const EdgeInsets.all(20.0),
-                  //     child: Column(
-                  //       mainAxisAlignment: MainAxisAlignment.center,
-                  //       crossAxisAlignment: CrossAxisAlignment.start,
-                  //       children: [
-                  //         Text(
-                  //           'Account Number: ' +
-                  //               documentSnapshot['account number'],
-                  //           style: TextStyle(
-                  //               fontSize: 16, fontWeight: FontWeight.w400),
-                  //         ),
-                  //         const SizedBox(height: 5,),
-                  //         Text(
-                  //           'Street Address: ' + documentSnapshot['address'],
-                  //           style: TextStyle(
-                  //               fontSize: 16, fontWeight: FontWeight.w400),
-                  //         ),
-                  //         const SizedBox(height: 5,),
-                  //         Text(
-                  //           'Area Code: ' +
-                  //               documentSnapshot['area code'].toString(),
-                  //           style: TextStyle(
-                  //               fontSize: 16, fontWeight: FontWeight.w400),
-                  //         ),
-                  //         const SizedBox(height: 5,),
-                  //         Text(
-                  //           'Meter Number: ' + documentSnapshot['meter number'],
-                  //           style: TextStyle(
-                  //               fontSize: 16, fontWeight: FontWeight.w400),
-                  //         ),
-                  //         const SizedBox(height: 5,),
-                  //         Text(
-                  //           'Phone Number: ' + documentSnapshot['cell number'],
-                  //           style: TextStyle(
-                  //               fontSize: 16, fontWeight: FontWeight.w400),
-                  //         ),
-                  //         const SizedBox(height: 5,),
-                  //         Text(
-                  //           'First Name: ' + documentSnapshot['first name'],
-                  //           style: TextStyle(
-                  //               fontSize: 16, fontWeight: FontWeight.w400),
-                  //         ),
-                  //         const SizedBox(height: 5,),
-                  //         Text(
-                  //           'Surname: ' + documentSnapshot['last name'],
-                  //           style: TextStyle(
-                  //               fontSize: 16, fontWeight: FontWeight.w400),
-                  //         ),
-                  //         const SizedBox(height: 5,),
-                  //         Text(
-                  //           'ID Number: ' + documentSnapshot['id number'],
-                  //           style: TextStyle(
-                  //               fontSize: 16, fontWeight: FontWeight.w400),
-                  //         ),
-                  //         const SizedBox(height: 5,),
-                  //
-                  //         ///Image display item needs to get the reference from the firestore using the users uploaded meter connection
-                  //         InkWell(
-                  //           onTap: () {
-                  //             ScaffoldMessenger.of(this.context).showSnackBar(
-                  //               SnackBar(
-                  //                 content: Text(
-                  //                     'Uploading a new image will replace current image!'),
-                  //               ),
-                  //             );
-                  //             Navigator.push(context,
-                  //                 MaterialPageRoute(
-                  //                     builder: (context) => ImageUploads()));
-                  //           },
-                  //           child: Container(
-                  //             margin: EdgeInsets.only(bottom: 5),
-                  //             height: 180,
-                  //             child: Center(
-                  //               child: Card(
-                  //                 color: Colors.blue,
-                  //                 semanticContainer: true,
-                  //                 clipBehavior: Clip.antiAliasWithSaveLayer,
-                  //                 shape: RoundedRectangleBorder(
-                  //                   borderRadius: BorderRadius.circular(10.0),
-                  //                 ),
-                  //                 elevation: 0,
-                  //                 margin: EdgeInsets.all(10.0),
-                  //                 child: FutureBuilder(
-                  //                     future: _getImage(
-                  //                         context, 'files/$userID/file'),
-                  //                     builder: (context, snapshot) {
-                  //                       if (snapshot.hasError) {
-                  //                         return Text('${snapshot.error}');
-                  //                       }
-                  //                       if (snapshot.connectionState ==
-                  //                           ConnectionState.done) {
-                  //                         return Container(
-                  //                           child: snapshot.data,
-                  //                         );
-                  //                       }
-                  //                       if (snapshot.connectionState ==
-                  //                           ConnectionState.waiting) {
-                  //                         return Container(
-                  //                           child: CircularProgressIndicator(),);
-                  //                       }
-                  //                       return Container();
-                  //                     }
-                  //                 ),
-                  //               ),
-                  //             ),
-                  //           ),
-                  //         ),
-                  //
-                  //         const SizedBox(height: 10,),
-                  //         Row(
-                  //           mainAxisAlignment: MainAxisAlignment.end,
-                  //           crossAxisAlignment: CrossAxisAlignment.center,
-                  //           children: [
-                  //             GestureDetector(
-                  //               onTap: () {
-                  //                 _update(documentSnapshot);
-                  //               },
-                  //               child: Row(
-                  //                 children: [
-                  //                   Icon(
-                  //                     Icons.edit,
-                  //                     color: Theme
-                  //                         .of(context)
-                  //                         .primaryColor,
-                  //                   ),
-                  //                 ],
-                  //               ),
-                  //             ),
-                  //             const SizedBox(width: 6,),
-                  //             GestureDetector(
-                  //               onTap: () {
-                  //                 Navigator.push(context,
-                  //                     MaterialPageRoute(
-                  //                         builder: (context) => MapPage()));
-                  //               },
-                  //               child: Row(
-                  //                 children: [
-                  //                   Icon(
-                  //                     Icons.map,
-                  //                     color: Colors.green[700],
-                  //                   ),
-                  //                 ],
-                  //               ),
-                  //             ),
-                  //             const SizedBox(width: 6,),
-                  //             GestureDetector(
-                  //               onTap: () {
-                  //                 ScaffoldMessenger.of(this.context)
-                  //                     .showSnackBar(
-                  //                   SnackBar(
-                  //                     content: Text(
-                  //                         'Uploading a new image will replace current image!'),
-                  //                   ),
-                  //                 );
-                  //                 Navigator.push(context,
-                  //                     MaterialPageRoute(
-                  //                         builder: (context) =>
-                  //                             ImageUploads()));
-                  //               },
-                  //               child: Row(
-                  //                 children: [
-                  //                   Icon(
-                  //                     Icons.camera_alt,
-                  //                     color: Colors.grey[700],
-                  //                   ),
-                  //                 ],
-                  //               ),
-                  //             ),
-                  //             const SizedBox(width: 6,),
-                  //             // GestureDetector(
-                  //             //   onTap: () {
-                  //             //     _delete(documentSnapshot.id);
-                  //             //   },
-                  //             //   child: Row(
-                  //             //     children: [
-                  //             //       Icon(
-                  //             //         Icons.delete,
-                  //             //         color: Colors.red[700],
-                  //             //       ),
-                  //             //     ],
-                  //             //   ),
-                  //             // ),
-                  //           ],
-                  //         )
-                  //       ],
-                  //     ),
-                  //   ),
-                  // );
+                  ///a card to display ALL details for users when role is set to admin is in "display_info_all_users.dart"
+                  return Card();
                 }
               },
             );

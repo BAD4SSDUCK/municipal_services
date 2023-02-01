@@ -8,12 +8,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 
 import '../ImageUploading/image_upload_meter.dart';
-import '../ImageUploading/image_upload_page.dart';
 import '../ImageUploading/image_upload_water.dart';
 import '../MapTools/map_screen.dart';
 import '../PDFViewer/pdf_api.dart';
 import '../PDFViewer/view_pdf.dart';
-import '../MapTools/map_component.dart';
 
 
 class UsersTableAllViewPage extends StatefulWidget {
@@ -731,7 +729,7 @@ class _UsersTableAllViewPageState extends State<UsersTableAllViewPage> {
                                     onPressed: () {
                                       _update(documentSnapshot);
                                     },
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(108, 10),),
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(112, 10),),
                                     child: Row(
                                       children: [
                                         Icon(
@@ -821,19 +819,6 @@ class _UsersTableAllViewPageState extends State<UsersTableAllViewPage> {
                                       ],
                                     ),
                                   ),
-                                  // GestureDetector(
-                                  //   onTap: () {
-                                  //     _delete(documentSnapshot.id);
-                                  //   },
-                                  //   child: Row(
-                                  //     children: [
-                                  //       Icon(
-                                  //         Icons.delete,
-                                  //         color: Colors.red[700],
-                                  //       ),
-                                  //     ],
-                                  //   ),
-                                  // ),
                                 ],
                               ),
                             ],
@@ -938,10 +923,50 @@ class _UsersTableAllViewPageState extends State<UsersTableAllViewPage> {
 
                                   ),
                                   const SizedBox(width: 6,),
+                                  ///No need for a delete button but this is what a delete would look like
                                   // GestureDetector(
                                   //   onTap: () {
-                                  //     _delete(documentSnapshot.id);
-                                  //   },
+                                  //     showDialog(
+                                  //         barrierDismissible: false,
+                                  //         context: context,
+                                  //         builder: (context) {
+                                  //           return AlertDialog(
+                                  //             title: const Text(
+                                  //                 "Deleting Property Information"),
+                                  //             content: const Text(
+                                  //                 "Deleting this property will remove it entirely! Are you sure?"),
+                                  //             actions: [
+                                  //               IconButton(
+                                  //                 onPressed: () {
+                                  //                   Navigator.pop(context);
+                                  //                 },
+                                  //                 icon: const Icon(
+                                  //                   Icons.cancel,
+                                  //                   color: Colors.red,
+                                  //                 ),
+                                  //               ),
+                                  //               IconButton(
+                                  //                 onPressed: () async {
+                                  //                   ScaffoldMessenger.of(
+                                  //                       this.context)
+                                  //                       .showSnackBar(
+                                  //                     const SnackBar(
+                                  //                       content: Text(
+                                  //                           'Property was deleted!'),
+                                  //                     ),
+                                  //                   );
+                                  //                   _delete(documentSnapshot.id);
+                                  //                   Navigator.pop(context);
+                                  //                 },
+                                  //                 icon: const Icon(
+                                  //                   Icons.done,
+                                  //                   color: Colors.green,
+                                  //                 ),
+                                  //               ),
+                                  //             ],
+                                  //           );
+                                  //         });
+                                  //  },
                                   //   child: Row(
                                   //     children: [
                                   //       Icon(

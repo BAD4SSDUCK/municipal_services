@@ -1,4 +1,5 @@
 
+
 class API{
   static const hostConnect = "http://127.0.0.1/api_municipal_tracker";//I need to figure out what the host is for the running XAMPP mysql server
   //static const hostConnect = "http://(ip address here)/(name of the api folder)";
@@ -11,5 +12,8 @@ class API{
   static const validatePhone = "$hostConnect/user/validate_phone.php";
   static const signUp = "$hostConnect/user/signup.php";
   static const login = "$hostConnect/user/login.php";
+
+  //getting property information
+  static const propertiesInfo = "$hostConnect/property/properties.php";
 
 }

@@ -1,7 +1,9 @@
 import 'dart:convert';
 
-import 'package:municipal_track/code/Users/model/user.dart';
+import 'package:municipal_track/code/SQLApp/model/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+///This is the class that saves the logged in user information to local storage
 
 class RememberUserPrefs{
 
@@ -14,6 +16,7 @@ class RememberUserPrefs{
 
   //This keeps the local data of the logged in user locally so that a user does not have to re-login everytime they open the app
 
+
   //get-read user-info
   static Future<User?> readUserInfo() async{
     User? currentUserInfo;
@@ -24,6 +27,13 @@ class RememberUserPrefs{
       currentUserInfo = User.fromJson(userDataMap);
     }
     return currentUserInfo;
+  }
+
+  //removing the app local storage/cache so the user is logged out
+  static Future<void> removeUserInfo() async{
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    await preferences.remove("currentUser");
+
   }
 
 }
