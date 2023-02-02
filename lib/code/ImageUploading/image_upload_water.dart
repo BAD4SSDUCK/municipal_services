@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
@@ -134,17 +135,12 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                 onTap: () {
                   if (_photo != null) {
                     uploadFile();
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Image Successfully Uploaded!'),
-                      ),);
+                    Fluttertoast.showToast(msg: "Successfully Uploaded!\nWater Meter Image!");
+                    Navigator.of(context).pop(context);
                     Navigator.of(context).pop(context);
                     Navigator.of(context).pop(context);
                   } else {
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please tap on the image area and select the image to upload!'),
-                      ),);
+                    Fluttertoast.showToast(msg: "Please tap on the image area\nand select the image to upload!");
                   }
                 },
 

@@ -36,7 +36,7 @@ class ProfileFragmentScreen extends StatelessWidget {
               ),
             ),
           ],
-        )
+        ),
     );
 
     if(resultResponse == "loggedOut"){

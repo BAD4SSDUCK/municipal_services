@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:municipal_track/code/SQLApp/fragments/home_fragment_screen.dart';
@@ -6,6 +8,8 @@ import 'package:municipal_track/code/SQLApp/fragments/profile_fragment_screen.da
 import 'package:municipal_track/code/SQLApp/fragments/property_fragment_screen.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';
 import 'package:municipal_track/code/login/citizen_otp_page.dart';
+
+import '../../PDFViewer/view_pdf.dart';
 
 ///This dashboard is only for testing and will in the future use the firebase dashboard already built but with the sql connection instead
 ///I may use this dashboard if the design is better but input all the build pages in the fragment screens
@@ -94,4 +98,10 @@ class DashboardOfFragments extends StatelessWidget {
       },
     );
   }
+
+  ///pdf view loader getting file name onPress/onTap that passes filename to this class
+  void openPDF(BuildContext context, File file) => Navigator.of(context).push(
+    MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
+  );
+
 }

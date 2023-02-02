@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import 'package:municipal_track/code/ImageUploading/image_upload_meter.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_water.dart';
+import 'package:municipal_track/code/SQLApp/fragments/photo_fragment_screen.dart';
 
 import 'package:municipal_track/code/SQLApp/propertiesData/properties_data.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';
@@ -11,6 +12,9 @@ class PropertyFragmentScreen extends StatelessWidget{
 
   final CurrentUser _currentUser = Get.put(CurrentUser());
   final PropertiesData _propertiesData = Get.put(PropertiesData());
+
+  String userPass='';
+  String addressPass='';
 
   bool buttonVis1 = true;
   bool buttonVis2 = false;
@@ -54,17 +58,6 @@ class PropertyFragmentScreen extends StatelessWidget{
 
   }
 
-//   @override
-//   Widget build(BuildContext context){
-//     return Scaffold(
-//       body: Center(
-//         child: Text(
-//             "Property Fragment Screen."
-//         ),
-//       ),
-//     );
-//   }
-// }
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +78,7 @@ class PropertyFragmentScreen extends StatelessWidget{
 
           ///will have to create a ListView.builder
           ///which needs itemCount: and itemBuilder: (context, index){ } for documentation go to https://docs.flutter.dev/cookbook/lists/mixed-list
+          ///also check https://www.geeksforgeeks.org/listview-builder-in-flutter/
 
           ListView(
               padding: const EdgeInsets.all(32),
@@ -140,13 +134,28 @@ class PropertyFragmentScreen extends StatelessWidget{
 
                 propertyItemField(Icons.phone, "Contact Number: ${_propertiesData.properties.cellNumber}"),
 
-                const SizedBox(height: 10,),
+                const SizedBox(height: 20,),
 
-                propertyItemField(Icons.email, _currentUser.user.email),
+                const Center(
+                  child: Text('Electricity Meter Photo',style: TextStyle(fontWeight: FontWeight.bold),),
+                ),
+                const SizedBox(height: 10,),
+                Center(
+                  ///this image will be for Electric meter
+                    child: Image.asset(
+                      "assets/images/users/man.png",
+                      width: 240,
+                    )
+                ),
 
                 const SizedBox(height: 20,),
 
+                const Center(
+                  child: Text('Water Meter Photo',style: TextStyle(fontWeight: FontWeight.bold),),
+                ),
+                const SizedBox(height: 10,),
                 Center(
+                  ///this image will be for Water meter
                     child: Image.asset(
                       "assets/images/users/man.png",
                       width: 240,
@@ -164,7 +173,11 @@ class PropertyFragmentScreen extends StatelessWidget{
                         borderRadius: BorderRadius.circular(8),
                         child: InkWell(
                           onTap: (){
-                            ImageUploadMeter();
+                            userPass = _currentUser.user.uid.toString();
+                            addressPass = _propertiesData.properties.address.toString();
+                            Navigator.push(context,
+                                MaterialPageRoute(builder: (context) =>
+                                    PhotoFragmentState(userGet: userPass, addressGet: addressPass,)));
                           },
                           borderRadius: BorderRadius.circular(32),
                           child: const Padding(
@@ -173,48 +186,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                               vertical: 12,
                             ),
                             child: Text(
-                              "E-Meter Image Upload",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                      )
-                  ),
-                ),
-
-                const SizedBox(height: 20,),
-
-                Center(
-                    child: Image.asset(
-                      "assets/images/users/man.png",
-                      width: 240,
-                    )
-                ),
-
-                Visibility(visible: buttonVis1, child: const SizedBox(height: 20,)),
-
-                Visibility(
-                  visible: buttonVis1,
-                  child: Center(
-                      child: Material(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(8),
-                        child: InkWell(
-                          onTap: (){
-                            ImageUploadWater();
-                          },
-                          borderRadius: BorderRadius.circular(32),
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 30,
-                              vertical: 12,
-                            ),
-                            child: Text(
-                              "W-Meter Image Upload",
+                              "Meter Photo Upload",
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,

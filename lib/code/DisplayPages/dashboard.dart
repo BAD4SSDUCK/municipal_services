@@ -225,8 +225,9 @@ class MainMenu extends StatefulWidget {
                   //  crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 50),
                     Image.asset('assets/images/logo.png', height: 200, width: 200,),
+                    const SizedBox(height: 50),
 
                     ///Display information for all users properties information for admins to see
                     Visibility(

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:fluttertoast/fluttertoast.dart';
 
 import '../ImageUploading/image_upload_meter.dart';
 import '../ImageUploading/image_upload_water.dart';
@@ -428,9 +429,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
 
   Future<void> _delete(String users) async {
     await _propList.doc(users).delete();
-
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('You have successfully deleted an account')));
+    Fluttertoast.showToast(msg: "You have successfully deleted an account!");
   }
 
   @override
@@ -568,11 +567,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                         ),
                                         IconButton(
                                           onPressed: () async {
-                                            ScaffoldMessenger.of(this.context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Uploading a new image will replace current image!'),
-                                              ),
-                                            );
+                                            Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
                                             Navigator.push(context,
                                                 MaterialPageRoute(builder: (context) => ImageUploadMeter()));
                                           },
@@ -657,11 +652,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                         ),
                                         IconButton(
                                           onPressed: () async {
-                                            ScaffoldMessenger.of(this.context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Uploading a new image will replace current image!'),
-                                              ),
-                                            );
+                                            Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
                                             Navigator.push(context,
                                                 MaterialPageRoute(builder: (context) => ImageUploadWater()));
                                           },
@@ -792,11 +783,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                                 ),
                                                 IconButton(
                                                   onPressed: () async {
-                                                    ScaffoldMessenger.of(this.context).showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text('Uploading a new image will replace current image!'),
-                                                      ),
-                                                    );
+                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
                                                     Navigator.push(context,
                                                         MaterialPageRoute(builder: (context) => ImageUploadMeter()));
                                                   },
@@ -887,11 +874,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                 children: [
                                   ElevatedButton(
                                     onPressed: () async {
-                                      ScaffoldMessenger.of(this.context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Now downloading your statement! Please wait a few seconds!'),
-                                        ),
-                                      );
+                                      Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!");
                                       final FirebaseAuth auth = FirebaseAuth.instance;
                                       final User? user = auth.currentUser;
                                       final uid = user?.uid;
@@ -905,11 +888,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       try{
                                         openPDF(context, file);
                                       } catch(e){
-                                        ScaffoldMessenger.of(this.context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Unable to download statement.'),
-                                          ),
-                                        );
+                                        Fluttertoast.showToast(msg: "Unable to download statement.");
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350] ),
@@ -934,7 +913,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           builder: (context) {
                                             return AlertDialog(
                                               title: const Text("Upload Water Meter Image"),
-                                              content: const Text("Uploading a new image will replace current image! Are you sure?"),
+                                              content: const Text("Uploading a new image\nwill replace current image! Are you sure?"),
                                               actions: [
                                                 IconButton(
                                                   onPressed: () {
@@ -947,11 +926,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                                 ),
                                                 IconButton(
                                                   onPressed: () async {
-                                                    ScaffoldMessenger.of(this.context).showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text('Uploading a new image will replace current image!'),
-                                                      ),
-                                                    );
+                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
                                                     Navigator.push(context,
                                                         MaterialPageRoute(builder: (context) => ImageUploadWater()));
                                                   },
