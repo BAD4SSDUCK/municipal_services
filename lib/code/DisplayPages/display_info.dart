@@ -495,12 +495,12 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'Meter Number: ' + documentSnapshot['meter number'],
+                            'Electric Meter Number: ' + documentSnapshot['meter number'],
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'Meter Reading: ' + documentSnapshot['meter reading'],
+                            'Electric Meter Reading: ' + documentSnapshot['meter reading'],
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),

@@ -15,5 +15,6 @@ class API{
 
   //getting property information
   static const propertiesInfo = "$hostConnect/property/properties.php";
+  static const meterImgData = "$hostConnect/property/image_data.php";
 
 }

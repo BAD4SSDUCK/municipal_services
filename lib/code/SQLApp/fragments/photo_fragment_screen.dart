@@ -1,10 +1,15 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:municipal_track/code/SQLApp/propertiesData/property_preferences.dart';
 import 'package:path/path.dart';
 import 'package:http/http.dart' as http;
+
+import '../../ApiConnection/api_connection.dart';
+import '../propertiesData/image_preferences.dart';
 
 
 class PhotoFragmentState extends StatefulWidget {
@@ -21,6 +26,8 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
 
   File? _photo;
   final ImagePicker _picker = ImagePicker();
+  String? meterType;
+
 
   TextEditingController nameController = TextEditingController();
 
@@ -31,7 +38,11 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
     setState(() {
       if (pickedFile != null) {
         _photo = File(pickedFile.path);
-        uploadEFile();
+        if(meterType == "E"){
+          uploadEFile();
+        } else if (meterType == "W"){
+          uploadWFile();
+        }
       } else {
         print('No image selected.');
       }
@@ -45,7 +56,11 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
     setState(() {
       if (pickedFile != null) {
         _photo = File(pickedFile.path);
-        uploadEFile();
+        if(meterType == "E"){
+          uploadEFile();
+        } else if (meterType == "W"){
+          uploadWFile();
+        }
       } else {
         print('No image selected.');
       }
@@ -54,7 +69,16 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
 
   Future uploadEFile() async {
 
+    if (_photo == null) return;
+
+    File? imageFile = _photo;
+    List<int> imageBytes = imageFile!.readAsBytesSync();
+    String imageData = base64Encode(imageBytes);
+
     final String photoName;
+
+    
+
     ///'electricity/month/$userGet/$addressGet' is used specifically for adding the user id to a table in order to split the users per account
     // if (_photo == null) return;
     // final fileName = basename(_photo!.path);
@@ -73,11 +97,53 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
   }
 
   Future uploadWFile() async {
-    final uri =Uri.parse("");
+
+    if (_photo == null) return;
+
+    File? imageFile = _photo;
+    List<int> imageBytes = imageFile!.readAsBytesSync();
+    String imageData = base64Encode(imageBytes);
+
+
 
     final String photoName;
+
+    var data ={
+      "uid": widget.userGet,
+      "propertyAddress": widget.addressGet,
+      "waterMeterIMG": imageData,
+      "uploadMonth": imageData,
+      "waterMeterIMG": imageData,
+    };
+
+    try{
+      var res = await http.post(
+        Uri.parse(API.meterImgData),
+        body: data,
+      );
+
+      if(res.statusCode == 200){
+        var resBodyOfImage = jsonDecode(res.body);
+        if(resBodyOfImage['success'] == true){
+          print('reaching api');
+
+          //save user info to local storage using shared Preferences ///fix imageData
+          //await RememberImageInfo.storeImageInfo(imageData);
+
+
+        } else {
+          Fluttertoast.showToast(msg: "Upload connection failed. Try again with network!");
+        }
+      }
+    } catch(e) {
+      print("Error :: " + e.toString());
+      Fluttertoast.showToast(msg: e.toString());
+    }
+
+
+    ///This is the old method for firebase, some of it is commented out because firebasecore is not imported on this page
     ///'water/month/$userGet/' is used specifically for adding the user id to a table in order to split the users per account '$addressGet' will be the image name
-    if (_photo == null) return;
+
     final fileName = basename(_photo!.path);
     final destination = 'water/month/${widget.userGet}/'; // /$fileName  $meterNumber
 
@@ -92,6 +158,11 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
     //   print('error occured');
     // }
   }
+  
+  showImage(String image){
+    return Image.memory(base64Decode(image));
+  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +199,7 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
               padding: const EdgeInsets.all(8.0),
               child: TextField(
                 controller: nameController,
-                decoration: InputDecoration(labelText: 'Meter Serial Number'),
+                decoration: InputDecoration(labelText: 'Meter Image Upload'),
               ),
             ),
             const SizedBox(height: 100,),
@@ -152,8 +223,9 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
                             ],
                           ),
                           onPressed: () {
+                            meterType = "E";
                             uploadEFile();
-                            Fluttertoast.showToast(msg: "Successfully Uploaded! \nElectric Meter Image!");
+                            Fluttertoast.showToast(msg: "Successfully Uploaded!\nElectric Meter Image!");
                             Navigator.of(context).pop(context);
                             Navigator.of(context).pop(context);
                           },
@@ -168,8 +240,9 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
                             ],
                           ),
                           onPressed: () {
+                            meterType = "W";
                             uploadWFile();
-                            Fluttertoast.showToast(msg: "Successfully Uploaded! \nWater Meter Image!");
+                            Fluttertoast.showToast(msg: "Successfully Uploaded!\nWater Meter Image!");
                             Navigator.of(context).pop(context); //pops the alert dialogue box
                             Navigator.of(context).pop(context); //pops the image upload page back to the listview
                           },

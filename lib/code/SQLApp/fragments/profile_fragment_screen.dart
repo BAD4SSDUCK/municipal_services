@@ -4,6 +4,7 @@ import 'package:municipal_track/code/SQLApp/auth/login_screen.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/user_preferences.dart';
 import 'package:municipal_track/code/SQLApp/propertiesData/property_preferences.dart';
+import 'package:municipal_track/code/SQLApp/propertiesData/image_preferences.dart';
 
 class ProfileFragmentScreen extends StatelessWidget {
 
@@ -42,6 +43,7 @@ class ProfileFragmentScreen extends StatelessWidget {
     if(resultResponse == "loggedOut"){
       //remove user data and properties data from phone local storage
       RememberPropertyInfo.removePropertyInfo();
+      RememberImageInfo.removeImageInfo();
       RememberUserPrefs.removeUserInfo().then((value){Get.off(LoginScreen());});
     }
 
