@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:http/http.dart' as html;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -5,13 +8,21 @@ import 'package:municipal_track/code/ImageUploading/image_upload_meter.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_water.dart';
 import 'package:municipal_track/code/SQLApp/fragments/photo_fragment_screen.dart';
 
+import 'package:municipal_track/code/SQLApp/propertiesData/image_data.dart';
 import 'package:municipal_track/code/SQLApp/propertiesData/properties_data.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';
 
+import '../../PDFViewer/view_pdf.dart';
+
 class PropertyFragmentScreen extends StatelessWidget{
+
+
+  final _meterReadingController = TextEditingController();
+  final _waterMeterReadingController = TextEditingController();
 
   final CurrentUser _currentUser = Get.put(CurrentUser());
   final PropertiesData _propertiesData = Get.put(PropertiesData());
+  final ImageData _imageData = Get.put(ImageData());
 
   String userPass='';
   String addressPass='';
@@ -21,7 +32,7 @@ class PropertyFragmentScreen extends StatelessWidget{
 
   //this widget is for displaying a property field of information with an icon next to it, NB. the icon is to make it look good
   //it is called within a listview page widget
-  Widget propertyItemField(IconData iconData, String userData){
+  Widget propertyItemField(String propertyDat){
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -30,14 +41,9 @@ class PropertyFragmentScreen extends StatelessWidget{
       padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 8,),
       child: Row(
         children: [
-          Icon(
-            iconData,
-            size: 30,
-            color: Colors.black,
-          ),
-          const SizedBox(width: 16,),
+          const SizedBox(width: 6,),
           Text(
-            userData,
+            propertyDat,
             style: const TextStyle(
               fontSize: 15,
             ),
@@ -47,14 +53,29 @@ class PropertyFragmentScreen extends StatelessWidget{
     );
   }
 
+  Future<Widget> _getEImage(BuildContext context, String imageName) async{
+    Image image;
+    final value = _imageData.meterImageData.electricImage;
+    image =Image.network(
+      value.toString(),
+      fit: BoxFit.fill,
+    );
+    return image;
+  }
 
-  int propertyListLength = 0;
-  Future<int> findListItemLength() async{
-    while(_propertiesData.properties.uid == _currentUser.user.uid){
-      propertyListLength + 1;
-    }
+  Future<Widget> _getWImage(BuildContext context, String imageName) async{
+    Image image;
+    final value = _imageData.meterImageData.waterImage;
+    image =Image.network(
+      value.toString(),
+      fit: BoxFit.fill,
+    );
+    return image;
+  }
 
-    return propertyListLength;
+
+  Future userPropertyImageMatch() async{
+    _propertiesData.properties.uid == _currentUser.user.uid;
 
   }
 
@@ -86,53 +107,53 @@ class PropertyFragmentScreen extends StatelessWidget{
 
                 const SizedBox(height: 20,),
 
-                propertyItemField(Icons.numbers, "Account Number: ${_propertiesData.properties.accountNumber}"),
+                propertyItemField("Account Number: ${_propertiesData.properties.accountNumber}"),
 
                 const SizedBox(height: 10,),
 
-                propertyItemField(Icons.house, "Address: ${_propertiesData.properties.address}"),
+                propertyItemField("Address: ${_propertiesData.properties.address}"),
 
                 const SizedBox(height: 10,),
 
-                propertyItemField(Icons.map, "Area Code: ${_propertiesData.properties.areaCode}"),
+                propertyItemField("Area Code: ${_propertiesData.properties.areaCode}"),
 
                 const SizedBox(height: 10,),
 
-                propertyItemField(Icons.wallet, "Current bill: R${_propertiesData.properties.eBill}"),
+                propertyItemField("Current bill: R${_propertiesData.properties.eBill}"),
 
                 const SizedBox(height: 10,),
 
-                propertyItemField(Icons.power, "Electric Meter Number: ${_propertiesData.properties.electricityMeterNumber}"),
+                propertyItemField("Electric Meter Number: ${_propertiesData.properties.electricityMeterNumber}"),
 
                 const SizedBox(height: 10,),
 
-                propertyItemField(Icons.power_input, "Electric Meter Reading: ${_propertiesData.properties.electricityMeterReading}"),
+                propertyItemField("Electric Meter Reading: ${_propertiesData.properties.electricityMeterReading}"),
                 ///add text input to make tappable to edit and save changes for only the current months meter reading
 
                 const SizedBox(height: 10,),
 
-                propertyItemField(Icons.water_drop, "Water Meter Number: ${_propertiesData.properties.waterMeterNumber}"),
+                propertyItemField("Water Meter Number: ${_propertiesData.properties.waterMeterNumber}"),
 
                 const SizedBox(height: 10,),
 
-                propertyItemField(Icons.power_input, "Water Meter Reading: ${_propertiesData.properties.waterMeterReading}"),
+                propertyItemField("Water Meter Reading: ${_propertiesData.properties.waterMeterReading}"),
                 ///add text input to make tappable to edit and save changes for only the current months meter reading
 
                 const SizedBox(height: 10,),
 
-                propertyItemField(Icons.person, "First Name: ${_propertiesData.properties.firstName}"),
+                propertyItemField("First Name: ${_propertiesData.properties.firstName}"),
 
                 const SizedBox(height: 10,),
 
-                propertyItemField(Icons.person, "Last Name: ${_propertiesData.properties.lastName}"),
+                propertyItemField("Last Name: ${_propertiesData.properties.lastName}"),
 
                 const SizedBox(height: 10,),
 
-                propertyItemField(Icons.folder_shared, "ID Number: ${_propertiesData.properties.idNumber}"),
+                propertyItemField("ID Number: ${_propertiesData.properties.idNumber}"),
 
                 const SizedBox(height: 10,),
 
-                propertyItemField(Icons.phone, "Contact Number: ${_propertiesData.properties.cellNumber}"),
+                propertyItemField("Contact Number: ${_propertiesData.properties.cellNumber}"),
 
                 const SizedBox(height: 20,),
 
@@ -141,11 +162,37 @@ class PropertyFragmentScreen extends StatelessWidget{
                 ),
                 const SizedBox(height: 10,),
                 Center(
-                  ///this image will be for Electric meter
-                    child: Image.asset(
-                      "assets/images/users/man.png",
-                      width: 240,
-                    )
+                  child: Card(
+                    color: Colors.blue,
+                    semanticContainer: true,
+                    clipBehavior: Clip.antiAliasWithSaveLayer,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    elevation: 0,
+                    margin: const EdgeInsets.all(10.0),
+                    child: FutureBuilder(
+                        future: _getEImage(
+                            context, _propertiesData.properties.address),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError) {
+                            return Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
+                          }
+                          if (snapshot.connectionState ==
+                              ConnectionState.done) {
+                            return Container(
+                              child: snapshot.data,
+                            );
+                          }
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Container(
+                              child: const CircularProgressIndicator(),);
+                          }
+                          return Container();
+                        }
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 20,),
@@ -155,11 +202,37 @@ class PropertyFragmentScreen extends StatelessWidget{
                 ),
                 const SizedBox(height: 10,),
                 Center(
-                  ///this image will be for Water meter
-                    child: Image.asset(
-                      "assets/images/users/man.png",
-                      width: 240,
-                    )
+                  child: Card(
+                    color: Colors.blue,
+                    semanticContainer: true,
+                    clipBehavior: Clip.antiAliasWithSaveLayer,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    elevation: 0,
+                    margin: const EdgeInsets.all(10.0),
+                    child: FutureBuilder(
+                        future: _getWImage(
+                            context, _propertiesData.properties.address),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError) {
+                            return Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
+                          }
+                          if (snapshot.connectionState ==
+                              ConnectionState.done) {
+                            return Container(
+                              child: snapshot.data,
+                            );
+                          }
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Container(
+                              child: const CircularProgressIndicator(),);
+                          }
+                          return Container();
+                        }
+                    ),
+                  ),
                 ),
 
                 Visibility(visible: buttonVis1, child: const SizedBox(height: 20,)),
@@ -240,4 +313,9 @@ class PropertyFragmentScreen extends StatelessWidget{
       ),
     );
   }
+
+  ///pdf view loader getting file name onPress/onTap that passes pdf filename to this class.
+  void openPDF(BuildContext context, File file) => Navigator.of(context).push(
+    MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
+  );
 }

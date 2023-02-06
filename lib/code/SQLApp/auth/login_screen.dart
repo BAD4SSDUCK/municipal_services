@@ -26,43 +26,46 @@ class _LoginScreenState extends State<LoginScreen> {
   var passwordController = TextEditingController();
   var isObscure = true.obs;
 
-  loginUserNow() async{
+  loginUserNow() async {
+    if (phoneNumberController.toString().contains('+27')) {
+      try {
+        var res = await http.post(
+          Uri.parse(API.login),
+          body: {
 
-    try{
-      var res = await http.post(
-        Uri.parse(API.login),
-        body: {
-          "cellNumber": phoneNumberController.text.trim(),
-          "userPassword": passwordController.text.trim(),
-        },
-      );
+            "cellNumber": phoneNumberController.text.trim(),
+            "userPassword": passwordController.text.trim(),
+          },
+        );
 
-      if(res.statusCode == 200){
-        var resBodyOfLogin = jsonDecode(res.body);
-        if(resBodyOfLogin['success'] == true){
-          print('reaching login api');
-          Fluttertoast.showToast(msg: "You are logged in Successfully");
+        if (res.statusCode == 200) {
+          var resBodyOfLogin = jsonDecode(res.body);
+          if (resBodyOfLogin['success'] == true) {
+            print('reaching login api');
+            Fluttertoast.showToast(msg: "You are logged in Successfully");
 
-          User userInfo = User.fromJson(resBodyOfLogin["userData"]);
+            User userInfo = User.fromJson(resBodyOfLogin["userData"]);
 
-          //save user info to local storage using shared Preferences
-          await RememberUserPrefs.storeUserInfo(userInfo);
+            //save user info to local storage using shared Preferences
+            await RememberUserPrefs.storeUserInfo(userInfo);
 
-          //send user to a dashboard once logged in 'DashboardOfFragments' is a temp dashboard to test the sql user info login
-          Future.delayed(Duration(milliseconds: 2000),(){
-            Get.to(DashboardOfFragments());
-          });
-
-        } else {
-          Fluttertoast.showToast(msg: "Incorrect credentials. \nPlease enter correct password and phone number and Try Again.");
+            //send user to a dashboard once logged in 'DashboardOfFragments' is a temp dashboard to test the sql user info login
+            Future.delayed(Duration(milliseconds: 2000), () {
+              Get.to(DashboardOfFragments());
+            });
+          } else {
+            Fluttertoast.showToast(
+                msg: "Incorrect credentials. \nPlease enter correct password and phone number and Try Again.");
+          }
         }
+      } catch (e) {
+        print("Error :: " + e.toString());
+        Fluttertoast.showToast(msg: e.toString());
       }
-    } catch(e) {
-      print("Error :: " + e.toString());
-      Fluttertoast.showToast(msg: e.toString());
+    } else {
+      Fluttertoast.showToast(
+          msg: "Please use phone number country code format.\nReplace the first 0 with +27");
     }
-
-
   }
 
   @override

@@ -1,0 +1,3 @@
+All the api_municipal tracker folder goes into the installed xampp htdocs folder.
+The connection.php file will have to be configured for the server.
+For the flutter app to connect to the server the api_connection.dart will have to be set to the host connect string

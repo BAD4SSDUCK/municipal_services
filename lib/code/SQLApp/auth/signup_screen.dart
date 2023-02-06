@@ -52,43 +52,48 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  registerAndSaveUserRecord() async{
-    User userModel = User(
-      1,
-      phoneNumberController.text.trim(),
-      emailController.text.trim(),
-      firstNameController.text.trim(),
-      lastNameController.text.trim(),
-      userNameController.text.trim(),
-      passwordController.text.trim(),
-    );
-    try{
-      var res = await http.post(
-        Uri.parse(API.signUp),
-        body: userModel.toJson(),
+  registerAndSaveUserRecord() async {
+    if (phoneNumberController.toString().contains('+27')) {
+      User userModel = User(
+        1,
+        phoneNumberController.text.trim(),
+        emailController.text.trim(),
+        firstNameController.text.trim(),
+        lastNameController.text.trim(),
+        userNameController.text.trim(),
+        passwordController.text.trim(),
       );
-      if(res.statusCode == 200){
-        var resBodyOfSigneUp = jsonDecode(res.body);
-        if(resBodyOfSigneUp['success'] == true){
-          print('reaching signup api');
-          Fluttertoast.showToast(msg: "Congratulations, you have Signed Up Successfully");
+      try {
+        var res = await http.post(
+          Uri.parse(API.signUp),
+          body: userModel.toJson(),
+        );
+        if (res.statusCode == 200) {
+          var resBodyOfSigneUp = jsonDecode(res.body);
+          if (resBodyOfSigneUp['success'] == true) {
+            print('reaching signup api');
+            Fluttertoast.showToast(
+                msg: "Congratulations, you have Signed Up Successfully");
 
-          setState(() {
-            phoneNumberController.clear();
-            emailController.clear();
-            firstNameController.clear();
-            lastNameController.clear();
-            userNameController.clear();
-            passwordController.clear();
-          });
-
-        } else {
-          Fluttertoast.showToast(msg: "Error Occurred, Try Again.");
+            setState(() {
+              phoneNumberController.clear();
+              emailController.clear();
+              firstNameController.clear();
+              lastNameController.clear();
+              userNameController.clear();
+              passwordController.clear();
+            });
+          } else {
+            Fluttertoast.showToast(msg: "Error Occurred, Try Again.");
+          }
         }
+      } catch (e) {
+        print(e.toString());
+        Fluttertoast.showToast(msg: e.toString());
       }
-    } catch(e){
-      print(e.toString());
-      Fluttertoast.showToast(msg: e.toString());
+    } else {
+      Fluttertoast.showToast(
+          msg: "Please use phone number country code format.\nReplace the first 0 with +27");
     }
   }
 

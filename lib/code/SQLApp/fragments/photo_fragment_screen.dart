@@ -1,14 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:municipal_track/code/SQLApp/propertiesData/property_preferences.dart';
 import 'package:path/path.dart';
 import 'package:http/http.dart' as http;
 
-import '../../ApiConnection/api_connection.dart';
+import 'package:municipal_track/code/ApiConnection/api_connection.dart';
 import '../propertiesData/image_preferences.dart';
 
 
@@ -111,9 +113,9 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
     var data ={
       "uid": widget.userGet,
       "propertyAddress": widget.addressGet,
-      "waterMeterIMG": imageData,
       "uploadMonth": imageData,
       "waterMeterIMG": imageData,
+      "uploadTime": DateTime.now()
     };
 
     try{
