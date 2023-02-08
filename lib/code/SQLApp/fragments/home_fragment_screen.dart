@@ -1,15 +1,246 @@
-import 'package:flutter/material.dart';
+import 'dart:collection';
+import 'dart:convert';
+import 'dart:io';
 
-class HomeFragmentScreen extends StatelessWidget{
-//
+import 'package:animated_background/animated_background.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:municipal_track/code/Chat/chat_screen.dart';
+import 'package:municipal_track/code/ImageUploading/image_upload_page.dart';
+import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
+import 'package:municipal_track/code/Reuseables/main_menu_reusable_button.dart';
+import 'package:municipal_track/code/Reuseables/nav_drawer.dart';
+import 'package:municipal_track/code/SQLApp/fragments/profile_fragment_screen.dart';
+import 'package:municipal_track/main.dart';
+import 'package:http/http.dart' as http;
+
+import '../../DisplayPages/add_details.dart';
+import '../../DisplayPages/display_info.dart';
+import '../../DisplayPages/display_info_all_users.dart';
+import '../../PDFViewer/view_pdf.dart';
+import 'package:municipal_track/code/Chat/chat_list.dart';
+import 'package:municipal_track/code/MapTools/location_controller.dart';
+import 'package:municipal_track/code/MapTools/map_screen.dart';
+import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
+import 'package:municipal_track/code/Reuseables/menu_reusable_elevated_button.dart';
+
+import 'dashboard_of_fragments_sql.dart';
+
+
+class HomeFragmentScreen extends StatefulWidget {
+  const HomeFragmentScreen({Key? key}) : super(key: key);
+
   @override
-  Widget build(BuildContext context){
-    return Scaffold(
-      body: Center(
-        child: Text(
-          "Home Fragment Screen."
+  State<StatefulWidget> createState() =>_HomeFragmentScreenState();
+}
+
+class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
+
+  @override
+  void initState() {
+    super.initState();
+    Fluttertoast.showToast(msg: "Navigate To Details In The Bottom Tab.", gravity: ToastGravity.CENTER);
+
+  }
+
+  bool visExternal = true;
+  bool visInternal = false;
+
+  final CollectionReference _propList =
+  FirebaseFirestore.instance.collection('properties');
+
+  final CollectionReference _userList =
+  FirebaseFirestore.instance.collection('users');
+
+
+  @override
+  Widget build(BuildContext context) {
+    Get.put(LocationController());
+    const double fontSize = 28.0;
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    return Container(
+      ///When a background image is created this section will display it on the dashboard instead of just a grey colour with no background
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+            image: AssetImage("assets/images/greyscale.jpg"),
+            fit: BoxFit.cover),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,//Colors.grey,
+        ///App bar removed for aesthetic
+        // appBar: AppBar(
+        //   title:
+        //   Text('Signed in from: ${user.phoneNumber!}'),///${user.email!}
+        //   backgroundColor: Colors.black87,
+        // ),
+        //drawer: const NavigationDrawer(),
+        body: SingleChildScrollView(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              Expanded(
+                flex: 1,
+                child: Column(
+                  // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  //  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+
+                    const SizedBox(height: 50),
+                    Image.asset('assets/images/logo.png', height: 200, width: 200,),
+                    const SizedBox(height: 50),
+
+                    ///Display information for all users properties information for admins to see
+                    Visibility(
+                        visible: visInternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visInternal,
+                      child: ReusableElevatedButton(
+                        onPress: (){
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) => const UsersTableAllViewPage()));
+                        },
+                        buttonText: 'All Users Details',fSize: fontSize,
+                      ),
+                    ),
+
+
+
+                    Visibility(
+                        visible: visInternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visInternal,
+                      child: ReusableElevatedButton(
+                        onPress: (){
+
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) => const MapScreen()));
+                          //MapPage()
+                        },
+                        buttonText: 'Map Viewer',fSize: fontSize,
+                      ),
+                    ),
+
+
+                    ///button for admin to get all chats from the DB
+                    Visibility(
+                        visible: visInternal,//visInternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visInternal,//visInternal,
+                      child: ReusableElevatedButton(
+                        onPress: () async {
+
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) => ChatList()));
+
+                        },
+                        buttonText: 'Message User List',fSize: fontSize,
+                      ),
+                    ),
+
+                    ///Direct statement download feature needs to be for the user account only
+                    Visibility(
+                        visible: visExternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visExternal,
+                      child: ReusableElevatedButton(
+                        onPress: () async {
+                          Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!");
+
+                          final FirebaseAuth auth = FirebaseAuth.instance;
+                          final User? user = auth.currentUser;
+                          final uid = user?.uid;
+                          String userID = uid as String;
+
+                          ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
+                          ///no pdfs are uploaded by users
+                          print(FirebaseAuth.instance.currentUser);
+                          final url = 'pdfs/$userID/ds_wirelessp2p.pdf';
+                          final url2 = 'pdfs/$userID/Invoice_000003728743_040000653226.PDF';
+                          final file = await PDFApi.loadFirebase(url);
+                          try{
+                            openPDF(context, file);
+                          } catch(e){
+                            Fluttertoast.showToast(msg: "Unable to download statement.");
+                          }
+                        },
+                        buttonText: 'Download Statement',fSize: fontSize,
+                      ),
+                    ),
+
+                    Visibility(
+                        visible: visExternal,
+                        child: const SizedBox(height: 20)),
+                    Visibility(
+                      visible: visExternal,
+                      child: ReusableElevatedButton(
+                        onPress: (){
+                          showDialog(
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  shape: const RoundedRectangleBorder(borderRadius:
+                                  BorderRadius.all(Radius.circular(16))),
+                                  title: const Text("Logout"),
+                                  content: const Text("Are you sure you want to logout?"),
+                                  actions: [
+                                    IconButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(
+                                        Icons.cancel,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () async {
+                                        ProfileFragmentScreen().signOutUser();
+                                        FirebaseAuth.instance.signOut();
+                                        SystemNavigator.pop();
+                                      },
+                                      icon: const Icon(
+                                        Icons.done,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              });
+                        },
+                        buttonText: 'Logout',fSize: fontSize,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                  ],
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
   }
+
+  ///pdf view loader getting file name onPress/onTap that passes filename to this class
+  void openPDF(BuildContext context, File file) => Navigator.of(context).push(
+    MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
+  );
+
 }

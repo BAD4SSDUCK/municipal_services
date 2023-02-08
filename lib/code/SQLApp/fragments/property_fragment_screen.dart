@@ -74,242 +74,271 @@ class PropertyFragmentScreen extends StatelessWidget{
   }
 
 
-  Future userPropertyImageMatch() async{
-    _propertiesData.properties.uid == _currentUser.user.uid;
-
-  }
-
-
   @override
   Widget build(BuildContext context) {
     ///I will be putting an if statement that only matches the users uid to the uid saved in the properties table so the user only sees
-    ///a list of his property information and images, I will also have to make a modal that allows updating the electricity and water readings
+    ///a list of this property information and images, I will also have to make a modal that allows updating the electricity and water readings
     ///I will have to make a dropdown button that inputs the year and month so that the user can only update for the current month or view other months
     ///The image upload will have to be worked on with the same month system ie. only current moth upload or overwrite and previous months viewing only
 
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Property Details'),
+        title: const Center(child: Text('Property Details')),
         backgroundColor: Colors.green,
       ),
-      body:
-      Column(
-        children: [
 
-          ///will have to create a ListView.builder
-          ///which needs itemCount: and itemBuilder: (context, index){ } for documentation go to https://docs.flutter.dev/cookbook/lists/mixed-list
-          ///also check https://www.geeksforgeeks.org/listview-builder-in-flutter/
+      body: ListView.builder(
+        ///I need to figure out how to get the item count of all the rows of the propertiesData list so that displaying is not limited to the number set
+        itemCount: 4,
+        itemBuilder: (BuildContext context, int index) {
+          if(_propertiesData.properties.uid == _currentUser.user.uid){
+            ///This checks and only displays the users property where the UID saved for both is the same
 
-          ListView(
-              padding: const EdgeInsets.all(32),
+            return Column(
               children: [
+                ListView(
+                    padding: const EdgeInsets.all(32),
+                    children: [
 
-                const SizedBox(height: 20,),
+                      const SizedBox(height: 20,),
 
-                propertyItemField("Account Number: ${_propertiesData.properties.accountNumber}"),
+                      propertyItemField(
+                          "Account Number: ${_propertiesData.properties
+                              .accountNumber}"),
 
-                const SizedBox(height: 10,),
+                      const SizedBox(height: 10,),
 
-                propertyItemField("Address: ${_propertiesData.properties.address}"),
+                      propertyItemField(
+                          "Address: ${_propertiesData.properties.address}"),
 
-                const SizedBox(height: 10,),
+                      const SizedBox(height: 10,),
 
-                propertyItemField("Area Code: ${_propertiesData.properties.areaCode}"),
+                      propertyItemField(
+                          "Area Code: ${_propertiesData.properties.areaCode}"),
 
-                const SizedBox(height: 10,),
+                      const SizedBox(height: 10,),
 
-                propertyItemField("Current bill: R${_propertiesData.properties.eBill}"),
+                      propertyItemField(
+                          "Current bill: R${_propertiesData.properties.eBill}"),
 
-                const SizedBox(height: 10,),
+                      const SizedBox(height: 10,),
 
-                propertyItemField("Electric Meter Number: ${_propertiesData.properties.electricityMeterNumber}"),
+                      propertyItemField(
+                          "Electric Meter Number: ${_propertiesData.properties
+                              .electricityMeterNumber}"),
 
-                const SizedBox(height: 10,),
+                      const SizedBox(height: 10,),
 
-                propertyItemField("Electric Meter Reading: ${_propertiesData.properties.electricityMeterReading}"),
-                ///add text input to make tappable to edit and save changes for only the current months meter reading
+                      propertyItemField(
+                          "Electric Meter Reading: ${_propertiesData.properties
+                              .electricityMeterReading}"),
 
-                const SizedBox(height: 10,),
+                      ///add text input to make tappable to edit and save changes for only the current months meter reading
 
-                propertyItemField("Water Meter Number: ${_propertiesData.properties.waterMeterNumber}"),
+                      const SizedBox(height: 10,),
 
-                const SizedBox(height: 10,),
+                      propertyItemField(
+                          "Water Meter Number: ${_propertiesData.properties
+                              .waterMeterNumber}"),
 
-                propertyItemField("Water Meter Reading: ${_propertiesData.properties.waterMeterReading}"),
-                ///add text input to make tappable to edit and save changes for only the current months meter reading
+                      const SizedBox(height: 10,),
 
-                const SizedBox(height: 10,),
+                      propertyItemField(
+                          "Water Meter Reading: ${_propertiesData.properties
+                              .waterMeterReading}"),
 
-                propertyItemField("First Name: ${_propertiesData.properties.firstName}"),
+                      ///add text input to make tappable to edit and save changes for only the current months meter reading
 
-                const SizedBox(height: 10,),
+                      const SizedBox(height: 10,),
 
-                propertyItemField("Last Name: ${_propertiesData.properties.lastName}"),
+                      propertyItemField(
+                          "First Name: ${_propertiesData.properties.firstName}"),
 
-                const SizedBox(height: 10,),
+                      const SizedBox(height: 10,),
 
-                propertyItemField("ID Number: ${_propertiesData.properties.idNumber}"),
+                      propertyItemField(
+                          "Last Name: ${_propertiesData.properties.lastName}"),
 
-                const SizedBox(height: 10,),
+                      const SizedBox(height: 10,),
 
-                propertyItemField("Contact Number: ${_propertiesData.properties.cellNumber}"),
+                      propertyItemField(
+                          "ID Number: ${_propertiesData.properties.idNumber}"),
 
-                const SizedBox(height: 20,),
+                      const SizedBox(height: 10,),
 
-                const Center(
-                  child: Text('Electricity Meter Photo',style: TextStyle(fontWeight: FontWeight.bold),),
-                ),
-                const SizedBox(height: 10,),
-                Center(
-                  child: Card(
-                    color: Colors.blue,
-                    semanticContainer: true,
-                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    elevation: 0,
-                    margin: const EdgeInsets.all(10.0),
-                    child: FutureBuilder(
-                        future: _getEImage(
-                            context, _propertiesData.properties.address),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasError) {
-                            return Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
-                          }
-                          if (snapshot.connectionState ==
-                              ConnectionState.done) {
-                            return Container(
-                              child: snapshot.data,
-                            );
-                          }
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return Container(
-                              child: const CircularProgressIndicator(),);
-                          }
-                          return Container();
-                        }
-                    ),
-                  ),
-                ),
+                      propertyItemField(
+                          "Contact Number: ${_propertiesData.properties
+                              .cellNumber}"),
 
-                const SizedBox(height: 20,),
+                      const SizedBox(height: 20,),
 
-                const Center(
-                  child: Text('Water Meter Photo',style: TextStyle(fontWeight: FontWeight.bold),),
-                ),
-                const SizedBox(height: 10,),
-                Center(
-                  child: Card(
-                    color: Colors.blue,
-                    semanticContainer: true,
-                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    elevation: 0,
-                    margin: const EdgeInsets.all(10.0),
-                    child: FutureBuilder(
-                        future: _getWImage(
-                            context, _propertiesData.properties.address),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasError) {
-                            return Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
-                          }
-                          if (snapshot.connectionState ==
-                              ConnectionState.done) {
-                            return Container(
-                              child: snapshot.data,
-                            );
-                          }
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return Container(
-                              child: const CircularProgressIndicator(),);
-                          }
-                          return Container();
-                        }
-                    ),
-                  ),
-                ),
-
-                Visibility(visible: buttonVis1, child: const SizedBox(height: 20,)),
-
-                ///button visibility only when the current month is selected
-                Visibility(
-                  visible: buttonVis1,
-                  child: Center(
-                      child: Material(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(8),
-                        child: InkWell(
-                          onTap: (){
-                            userPass = _currentUser.user.uid.toString();
-                            addressPass = _propertiesData.properties.address.toString();
-                            Navigator.push(context,
-                                MaterialPageRoute(builder: (context) =>
-                                    PhotoFragmentState(userGet: userPass, addressGet: addressPass,)));
-                          },
-                          borderRadius: BorderRadius.circular(32),
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 30,
-                              vertical: 12,
-                            ),
-                            child: Text(
-                              "Meter Photo Upload",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
+                      const Center(
+                        child: Text('Electricity Meter Photo',
+                          style: TextStyle(fontWeight: FontWeight.bold),),
+                      ),
+                      const SizedBox(height: 10,),
+                      Center(
+                        child: Card(
+                          color: Colors.blue,
+                          semanticContainer: true,
+                          clipBehavior: Clip.antiAliasWithSaveLayer,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          elevation: 0,
+                          margin: const EdgeInsets.all(10.0),
+                          child: FutureBuilder(
+                              future: _getEImage(
+                                  context, _propertiesData.properties.address),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasError) {
+                                  return Text(
+                                      'Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
+                                }
+                                if (snapshot.connectionState ==
+                                    ConnectionState.done) {
+                                  return Container(
+                                    child: snapshot.data,
+                                  );
+                                }
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return Container(
+                                    child: const CircularProgressIndicator(),);
+                                }
+                                return Container();
+                              }
                           ),
                         ),
+                      ),
 
-                      )
-                  ),
-                ),
+                      const SizedBox(height: 20,),
 
-                const SizedBox(height: 20,),
-
-                ///Save changed button
-                Visibility(
-                  visible: buttonVis1,
-                  child: Center(
-                      child: Material(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(8),
-                        child: InkWell(
-                          onTap: (){
-                            ///This will contain the function that edits the table data of meter readings for the current month only
-                          },
-                          borderRadius: BorderRadius.circular(32),
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 30,
-                              vertical: 12,
-                            ),
-                            child: Text(
-                              "Save Changes",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
+                      const Center(
+                        child: Text('Water Meter Photo',
+                          style: TextStyle(fontWeight: FontWeight.bold),),
+                      ),
+                      const SizedBox(height: 10,),
+                      Center(
+                        child: Card(
+                          color: Colors.blue,
+                          semanticContainer: true,
+                          clipBehavior: Clip.antiAliasWithSaveLayer,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          elevation: 0,
+                          margin: const EdgeInsets.all(10.0),
+                          child: FutureBuilder(
+                              future: _getWImage(
+                                  context, _propertiesData.properties.address),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasError) {
+                                  return Text(
+                                      'Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
+                                }
+                                if (snapshot.connectionState ==
+                                    ConnectionState.done) {
+                                  return Container(
+                                    child: snapshot.data,
+                                  );
+                                }
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return Container(
+                                    child: const CircularProgressIndicator(),);
+                                }
+                                return Container();
+                              }
                           ),
                         ),
+                      ),
 
-                      )
-                  ),
+                      Visibility(visible: buttonVis1,
+                          child: const SizedBox(height: 20,)),
+
+                      ///button visibility only when the current month is selected
+                      Visibility(
+                        visible: buttonVis1,
+                        child: Center(
+                            child: Material(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(8),
+                              child: InkWell(
+                                onTap: () {
+                                  userPass = _currentUser.user.uid.toString();
+                                  addressPass = _propertiesData.properties.address
+                                      .toString();
+                                  Navigator.push(context,
+                                      MaterialPageRoute(builder: (context) =>
+                                          PhotoFragmentState(userGet: userPass,
+                                            addressGet: addressPass,)));
+                                },
+                                borderRadius: BorderRadius.circular(32),
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 30,
+                                    vertical: 12,
+                                  ),
+                                  child: Text(
+                                    "Meter Photo Upload",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                            )
+                        ),
+                      ),
+
+                      const SizedBox(height: 20,),
+
+                      ///Save changed button
+                      Visibility(
+                        visible: buttonVis1,
+                        child: Center(
+                            child: Material(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(8),
+                              child: InkWell(
+                                onTap: () {
+                                  ///This will contain the function that edits the table data of meter readings for the current month only
+                                },
+                                borderRadius: BorderRadius.circular(32),
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 30,
+                                    vertical: 12,
+                                  ),
+                                  child: Text(
+                                    "Save Changes",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                            )
+                        ),
+                      ),
+
+                      const SizedBox(height: 50,),
+
+                    ]
                 ),
+              ],
+            );
 
-                const SizedBox(height: 50,),
-
-              ]
-          ),
-        ],
+          } else {
+            return const CircularProgressIndicator();
+          }
+        },
       ),
     );
   }

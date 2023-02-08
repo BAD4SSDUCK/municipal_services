@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:http/http.dart';
@@ -11,9 +12,9 @@ class MeterImage{
   int id;
   String address;
   int uid;
-  MultipartFile electricImage;
-  MultipartFile waterImage;
-  DateTime uploadTime; ///format to be changed from string to datetime with formatting to only month matching the mySql db format
+  File electricImage;
+  File waterImage;
+  DateTime uploadDate; ///format to be changed from string to datetime with formatting to only month matching the mySql db format
 
   MeterImage(
       this.id,
@@ -21,7 +22,7 @@ class MeterImage{
       this.address,
       this.electricImage,
       this.waterImage,
-      this.uploadTime,
+      this.uploadDate,
       );
 
   factory MeterImage.fromJson(Map<String, dynamic> json) => MeterImage(
@@ -30,7 +31,7 @@ class MeterImage{
     json["address"],
     json["electricImage"],///find out for files
     json["waterImage"],///find out for files
-    json["uploadTime"],///format to be changed from string to datetime with formatting to only month matching the mySql db format
+    json["uploadDate"],///format to be changed from string to datetime with formatting to only month matching the mySql db format
   );
 
   Map<String, dynamic> toJson() =>
@@ -40,7 +41,7 @@ class MeterImage{
         'address': address,
         'electricImage': electricImage,
         'waterImage': waterImage,
-        'uploadTime': uploadTime,///format to be changed from string to datetime with formatting to only month matching the mySql db format
+        'uploadDate': uploadDate,///format to be changed from string to datetime with formatting to only month matching the mySql db format
       };
 
 }

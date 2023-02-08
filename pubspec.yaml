@@ -37,6 +37,8 @@ dependencies:
   fluttertoast: ^8.0.9
   font_awesome_flutter: ^10.3.0
 
+  animated_background: ^2.0.0
+
   image_picker: ^0.8.6
   permission_handler: ^10.2.0
   path: ^1.8.2

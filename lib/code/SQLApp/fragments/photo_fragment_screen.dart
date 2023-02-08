@@ -79,23 +79,37 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
 
     final String photoName;
 
-    
+    var data ={
+      "uid": widget.userGet,
+      "propertyAddress": widget.addressGet,
+      "uploadMonth": imageData,
+      "uploadTime": DateTime.now()
+    };
 
-    ///'electricity/month/$userGet/$addressGet' is used specifically for adding the user id to a table in order to split the users per account
-    // if (_photo == null) return;
-    // final fileName = basename(_photo!.path);
-    // final destination = 'electricity/month/$userGet/$addressGet'; // /$fileName  $meterNumber
-    //
-    // try {
-    //   final ref = firebase_storage.FirebaseStorage.instance
-    //       .ref(destination)
-    //       .child('${widget.addressGet}/');   ///this is the jpg filename which needs to be named something on the db in order to display in the display screen
-    //   await ref.putFile(_photo!);
-    //   photoName = _photo!.toString();
-    //   print(destination);
-    // } catch (e) {
-    //   print('error occured');
-    // }
+    try{
+      var res = await http.post(
+        Uri.parse(API.meterImgData),
+        body: data,
+      );
+
+      if(res.statusCode == 200){
+        var resBodyOfImage = jsonDecode(res.body);
+        if(resBodyOfImage['success'] == true){
+          print('reaching api');
+
+          //save user info to local storage using shared Preferences ///fix imageData
+          //await RememberImageInfo.storeImageInfo(imageData);
+
+
+        } else {
+          Fluttertoast.showToast(msg: "Upload connection failed. Try again with network!");
+        }
+      }
+    } catch(e) {
+      print("Error :: " + e.toString());
+      Fluttertoast.showToast(msg: e.toString());
+    }
+
   }
 
   Future uploadWFile() async {
@@ -113,7 +127,6 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
     var data ={
       "uid": widget.userGet,
       "propertyAddress": widget.addressGet,
-      "uploadMonth": imageData,
       "waterMeterIMG": imageData,
       "uploadTime": DateTime.now()
     };
@@ -142,23 +155,6 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
       Fluttertoast.showToast(msg: e.toString());
     }
 
-
-    ///This is the old method for firebase, some of it is commented out because firebasecore is not imported on this page
-    ///'water/month/$userGet/' is used specifically for adding the user id to a table in order to split the users per account '$addressGet' will be the image name
-
-    final fileName = basename(_photo!.path);
-    final destination = 'water/month/${widget.userGet}/'; // /$fileName  $meterNumber
-
-    // try {
-    //   final ref = firebase_storage.FirebaseStorage.instance
-    //       .ref(destination)
-    //       .child('${widget.addressGet}/');   ///this is the jpg filename which needs to be named something on the db in order to display in the display screen
-    //   await ref.putFile(_photo!);
-    //   photoName = _photo!.toString();
-    //   print(destination);
-    // } catch (e) {
-    //   print('error occured');
-    // }
   }
   
   showImage(String image){
@@ -211,6 +207,8 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
                 onTap: () {
                   if (_photo != null) {
                     AlertDialog(
+                      shape: const RoundedRectangleBorder(borderRadius:
+                      BorderRadius.all(Radius.circular(16))),
                       title: const Text("Meter Type!"),
                       content: const Text(
                           "Are you uploading an Electricity Meter Image \n or a Water Meter Image?"),

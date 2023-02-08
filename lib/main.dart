@@ -9,16 +9,9 @@ import 'package:municipal_track/code/SQLApp/auth/login_screen.dart';
 import 'package:municipal_track/code/login/citizen_otp_page.dart';
 import 'package:municipal_track/code/login/login_page.dart';
 
+import 'code/SQLApp/fragments/dashboard_of_fragments_sql.dart';
 import 'code/main_page.dart';
 
-///notification handler start
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // If you're going to use other Firebase services in the background, such as Firestore,
-  // make sure you call `initializeApp` before using other Firebase services.
-  await Firebase.initializeApp();
-  print('Handling a background message ${message.messageId}');
-}
-///notification handler end
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,8 +35,10 @@ void main() async{
   Get.put(LocationController());
 
   runApp(const MyApp());
-  ///For the sql version the sql_main will call the SQLMain() StatelessWidget instead of the MyApp() StatelessWidget which is for the firebase version
-  //runApp(const SQLMain())
+
+  ///For the sql version the sql_main will call the SQLMain() StatelessWidget instead of the LoginScreen() StatelessWidget which is for the firebase version
+  //SQLMain(), For the sql version the sql_main will call the SQLMain() StatelessWidget.
+  //runApp(const SQLMain());
 }
 
 class MyApp extends StatelessWidget {
@@ -51,17 +46,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const GetMaterialApp(
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       ///MainPage links to an auth state for logging in using the necessary firebase method.
       ///If already logged in user will be immediately directed to the dashboard
-      home: MainPage(),
-        //SQLMain(), For the sql version the sql_main will call the SQLMain() StatelessWidget
-        //LoginScreen(), this is being developed and I am testing the mysql db login screen
-        //MainPage(),
+      home: DashboardOfFragments(),//MainPage(),//
+        //DashboardOfFragments(), this is being developed for the sql version dashboard, accessible for testing without login details or db connection
+        //LoginScreen(), this is being developed and I am testing the mysql db login screen.
+        //MainPage(), For the working Firebase version.
     );
   }
 }
+
+
+
 
 ///notification channel init start
 const AndroidNotificationChannel channel = AndroidNotificationChannel(
@@ -74,3 +72,21 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 FlutterLocalNotificationsPlugin();
 ///notification channel init end
 
+///notification handler start
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // If you're going to use other Firebase services in the background, such as Firestore,
+  // make sure you call `initializeApp` before using other Firebase services.
+  await Firebase.initializeApp();
+  print('Handling a background message ${message.messageId}');
+}
+///notification handler end
+
+/// this is just for reference to using Fluttertoast once it is imported from the installed pubspec dependency
+// Fluttertoast.showToast(
+// msg: "This is a Toast message",
+// toastLength: Toast.LENGTH_SHORT,
+// gravity: ToastGravity.CENTER,
+// timeInSecForIosWeb: 1,
+// textColor: Colors.white,
+// fontSize: 16.0
+// );

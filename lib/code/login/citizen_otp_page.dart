@@ -355,10 +355,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  void addUser(){
-
-  }
-
   Widget circle(double size) {
     return Container(
       height: screenHeight / size,

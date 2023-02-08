@@ -14,6 +14,7 @@ class Chat extends StatefulWidget {
 
 class _ChatState extends State<Chat> {
 
+  late bool _isLoading;
   late Stream<QuerySnapshot> chats;
   TextEditingController messageEditingController = new TextEditingController();
 
@@ -54,6 +55,14 @@ class _ChatState extends State<Chat> {
 
   @override
   void initState() {
+    ///This is the circular loading widget in this future.delayed call
+    _isLoading = true;
+    Future.delayed(const Duration(seconds: 3),(){
+      setState(() {
+        _isLoading = false;
+      });
+    });
+
     DatabaseMethods().getChats(widget.chatRoomId).then((val) {
       setState(() {
         chats = val;
@@ -76,13 +85,15 @@ class _ChatState extends State<Chat> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Chat'),
+        title: Center(child: Text('Administrator Chat')),
         backgroundColor: Colors.green,
       ),
       body: Container(
         child: Stack(
-          children: [
-            chatMessages(),
+          children: [_isLoading
+              ? const Center(child: CircularProgressIndicator(),)
+              :
+          chatMessages(),
             Container(alignment: Alignment.bottomCenter,
               width: MediaQuery
                   .of(context)

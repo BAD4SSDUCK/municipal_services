@@ -14,6 +14,8 @@ class ProfileFragmentScreen extends StatelessWidget {
   signOutUser() async {
     var resultResponse = await Get.dialog(
         AlertDialog(
+          shape: const RoundedRectangleBorder(borderRadius:
+          BorderRadius.all(Radius.circular(16))),
           title: const Text("Logout!"),
           content: const Text(
               "Are you sure you would like to Logout?"),
@@ -79,68 +81,75 @@ class ProfileFragmentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(32),
-        children: [
-          const SizedBox(height: 20,),
+    return Container(
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+            image: AssetImage("assets/images/greybg.gif"),
+            fit: BoxFit.cover),
+      ),
+      child: ListView(
+        padding: const EdgeInsets.all(32),
+          children: [
+            //const SizedBox(height: 5,),
 
-          Center(
-              child: Image.asset(
-                "assets/images/users/man.png",
-                width: 240,
-              )
-          ),
+            Center(
+                child: Image.asset(
+                  "assets/images/users/man.png",
+                  width: 240,
+                )
+            ),
 
-          const SizedBox(height: 20,),
+            const SizedBox(height: 20,),
 
-          userInfoItemProfile(Icons.account_box, "Username: ${_currentUser.user.userName}"),
+            userInfoItemProfile(Icons.account_box, "Username: ${_currentUser.user.userName}"),
 
-          const SizedBox(height: 20,),
+            const SizedBox(height: 10,),
 
-          userInfoItemProfile(Icons.person, "First Name: ${_currentUser.user.firstName}"),
+            userInfoItemProfile(Icons.person, "First Name: ${_currentUser.user.firstName}"),
 
-          const SizedBox(height: 20,),
+            const SizedBox(height: 10,),
 
-          userInfoItemProfile(Icons.person, "Last Name: ${_currentUser.user.lastName}"),
+            userInfoItemProfile(Icons.person, "Last Name: ${_currentUser.user.lastName}"),
 
-          const SizedBox(height: 20,),
+            const SizedBox(height: 10,),
 
-          userInfoItemProfile(Icons.phone, _currentUser.user.cellNumber),
+            userInfoItemProfile(Icons.phone, _currentUser.user.cellNumber),
 
-          const SizedBox(height: 20,),
+            const SizedBox(height: 10,),
 
-          userInfoItemProfile(Icons.email, _currentUser.user.email),
+            userInfoItemProfile(Icons.email, _currentUser.user.email),
 
-          const SizedBox(height: 20,),
+            const SizedBox(height: 20,),
 
-          Center(
-            child: Material(
-                color: Colors.green,
-                borderRadius: BorderRadius.circular(8),
-              child: InkWell(
-                onTap: (){
-                  signOutUser();
-                },
-                borderRadius: BorderRadius.circular(32),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 30,
-                    vertical: 12,
-                  ),
-                  child: Text(
-                    "Logout",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
+            Center(
+              child: Material(
+                  color: Colors.green,
+                  borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  onTap: (){
+                    signOutUser();
+                  },
+                  borderRadius: BorderRadius.circular(32),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 30,
+                      vertical: 12,
+                    ),
+                    child: Text(
+                      "Logout",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              
-            ) 
-          ),
 
-        ]
+              )
+            ),
+
+          ]
+      ),
     );
   }
 }

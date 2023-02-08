@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:municipal_track/code/SQLApp/model/user.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/user_preferences.dart';
 
@@ -12,10 +14,7 @@ import 'package:municipal_track/code/SQLApp/propertiesData/image_preferences.dar
 
 class ImageData extends GetxController {
 
-  MultipartFile elecMeterImage = File('') as MultipartFile;
-  MultipartFile waterMeterImage = File('') as MultipartFile;
-
-  Rx<MeterImage> _imageData = MeterImage(0, 0, '', elecMeterImage, waterMeterImage, DateTime.now()).obs;
+  Rx<MeterImage> _imageData = MeterImage(0, 0, '', File(''), File(''), DateTime.now()).obs;
   MeterImage get meterImageData => _imageData.value;
 
   Rx<User> _currentUser = User(0,'', '', '', '', '', '').obs;
