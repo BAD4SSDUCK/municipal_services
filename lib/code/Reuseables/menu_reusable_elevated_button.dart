@@ -11,10 +11,10 @@ class ReusableElevatedButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       style: TextButton.styleFrom(
-        minimumSize: const Size(350,70),
-        primary: Colors.black, //foreground
+        foregroundColor: Colors.black,
+        minimumSize: const Size(350,60),
+        disabledForegroundColor: Colors.red.withOpacity(0.38), //foreground
         backgroundColor: Colors.white,
-        onSurface: Colors.red,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16)),
       ),

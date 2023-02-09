@@ -4,6 +4,7 @@ import 'package:municipal_track/code/Auth/auth_page.dart';
 import 'package:municipal_track/code/AuthGoogle/auth_page_google.dart';
 import 'package:municipal_track/code/login/login_page.dart';
 import 'package:municipal_track/code/DisplayPages/dashboard.dart';
+import 'package:municipal_track/code/DisplayPages/dashboard_of_fragments.dart';
 
 ///this page is for login check on users and will return the user to the main menu or a login page if they are logged in or not.
 

@@ -201,19 +201,19 @@ class MainMenu extends StatefulWidget {
     ]);
     return Container(
       ///When a background image is created this section will display it on the dashboard instead of just a grey colour with no background
-      // decoration: const BoxDecoration(
-      //   image: DecorationImage(
-      //       image: AssetImage("images/MainMenu/mainbackground.png"),
-      //       fit: BoxFit.cover),
-      // ),
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+            image: AssetImage("assets/images/greyscale.jpg"),
+            fit: BoxFit.cover),
+      ),
       child: Scaffold(
-        backgroundColor: Colors.grey[350],
+        backgroundColor: Colors.transparent,//grey[350],
         appBar: AppBar(
           title:
           Text('Signed in from: ${user.phoneNumber!}'),///${user.email!}
           backgroundColor: Colors.black87,
         ),
-        //drawer: const NavigationDrawer(),
+        drawer: const NavigationDrawer(),
         body: SingleChildScrollView(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -347,16 +347,11 @@ class MainMenu extends StatefulWidget {
                       visible: visExternal,
                       child: ReusableElevatedButton(
                         onPress: () async {
-                          String passedID = user.phoneNumber!;
 
+                          String passedID = user.phoneNumber!;
                           String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
                           print('The user name of the logged in person is $userName}');
-
                           String id = passedID;
-
-                          ///Sending through new username for the chat app in query chat folder, this was not used
-                          // Navigator.push(context,
-                          //     MaterialPageRoute(builder: (context) => AddChatUsername()));
 
                           ///Group chat system that requires an email login, this was not used.
                           // Navigator.push(context,

@@ -46,11 +46,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
+    return const GetMaterialApp(
       debugShowCheckedModeBanner: false,
       ///MainPage links to an auth state for logging in using the necessary firebase method.
       ///If already logged in user will be immediately directed to the dashboard
-      home: DashboardOfFragments(),//MainPage(),//
+      home: MainPage(),//DashboardOfFragments(),//
         //DashboardOfFragments(), this is being developed for the sql version dashboard, accessible for testing without login details or db connection
         //LoginScreen(), this is being developed and I am testing the mysql db login screen.
         //MainPage(), For the working Firebase version.

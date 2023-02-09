@@ -32,7 +32,6 @@ class _LoginScreenState extends State<LoginScreen> {
         var res = await http.post(
           Uri.parse(API.login),
           body: {
-
             "cellNumber": phoneNumberController.text.trim(),
             "userPassword": passwordController.text.trim(),
           },

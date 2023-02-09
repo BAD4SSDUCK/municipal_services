@@ -85,7 +85,7 @@ class _ChatState extends State<Chat> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Center(child: Text('Administrator Chat')),
+        title: Text('Administrator Chat'),
         backgroundColor: Colors.green,
       ),
       body: Container(
