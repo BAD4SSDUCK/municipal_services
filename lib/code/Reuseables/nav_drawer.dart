@@ -73,8 +73,16 @@ Widget buildMenuItems(BuildContext context) => Wrap(
         runSpacing: -20,
         children:  <Widget>[
           ListTile(
+              leading: const Icon(Icons.add_call, size: 20,),
+              title: const Text('Contact Cyberfox IT'),
+              onTap: (){
+                final Uri _tel = Uri.parse('tel:+27${0333871974}');
+                launchUrl(_tel);
+              }
+          ),
+          ListTile(
             leading: const Icon(Icons.facebook_rounded, size: 20,),
-            title: const Text('Follow us on Facebook'),
+            title: const Text('Cyberfox IT Facebook'),
             onTap: (){
               final Uri _url1 = Uri.parse('https://www.facebook.com/cyberfoxit');
               _launchURL(_url1);
@@ -88,14 +96,7 @@ Widget buildMenuItems(BuildContext context) => Wrap(
               _launchURL(_url2);
             },
           ),
-          ListTile(
-              leading: const Icon(Icons.add_call, size: 20,),
-              title: const Text('Contact us'),
-              onTap: (){
-                final Uri _tel = Uri.parse('tel:+27${0333871974}');
-                launchUrl(_tel);
-              }
-          ),
+
           // ListTile(
           //     leading: const Icon(Icons.logout, size: 20,),
           //     title: const Text('Logout'),
@@ -105,18 +106,22 @@ Widget buildMenuItems(BuildContext context) => Wrap(
           // ),
         ]
     ),
-    const SizedBox(height: 120,),
+    const SizedBox(height: 100,),
 
 
     ListTile(
-      leading: const Icon(Icons.label_important, size: 50,),
-      title: const Center(
-        child: Text('Cyberfox IT',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,),),
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 8.0),
+        child: const Icon(Icons.label_important, size: 50,),
       ),
-      trailing: const Icon(Icons.copyright, size: 30,),
+      title: Text('   Cyberfox IT',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 20,),),
+      trailing: Padding(
+        padding: const EdgeInsets.only(right: 15.0),
+        child: const Icon(Icons.copyright, size: 30,),
+      ),
       onTap: (){
         Navigator.of(context).popUntil((route) => route.isFirst);
       },
