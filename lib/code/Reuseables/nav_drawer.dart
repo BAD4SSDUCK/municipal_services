@@ -19,7 +19,7 @@ class NavigationDrawer extends StatelessWidget {
               const SizedBox(height: 100,),
               Center(child: buildHeader(context)),
 
-              const SizedBox(height: 180,),
+              const SizedBox(height: 200,),
               buildMenuItems(context),
 
             ],
@@ -70,31 +70,41 @@ Widget buildMenuItems(BuildContext context) => Wrap(
     // ),
     const SizedBox(height: 20,),
     Wrap(
-        runSpacing: -20,
+        runSpacing: 0,
+        runAlignment: WrapAlignment.spaceEvenly,
         children:  <Widget>[
-          ListTile(
-              leading: const Icon(Icons.add_call, size: 20,),
-              title: const Text('Contact Cyberfox IT'),
+          SizedBox(
+            height: 40,
+            child: ListTile(
+                leading: const Icon(Icons.add_call, size: 20,),
+                title: const Text('Contact Cyberfox IT'),
+                onTap: (){
+                  final Uri _tel = Uri.parse('tel:+27${0333871974}');
+                  launchUrl(_tel);
+                }
+            ),
+          ),
+          SizedBox(
+            height: 40,
+            child: ListTile(
+              leading: const Icon(Icons.facebook_rounded, size: 20,),
+              title: const Text('Cyberfox IT Facebook'),
               onTap: (){
-                final Uri _tel = Uri.parse('tel:+27${0333871974}');
-                launchUrl(_tel);
-              }
+                final Uri _url1 = Uri.parse('https://www.facebook.com/cyberfoxit');
+                _launchURL(_url1);
+              },
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.facebook_rounded, size: 20,),
-            title: const Text('Cyberfox IT Facebook'),
-            onTap: (){
-              final Uri _url1 = Uri.parse('https://www.facebook.com/cyberfoxit');
-              _launchURL(_url1);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.video_collection_rounded, size: 20,),
-            title: const Text('Subscribe on YouTube'),
-            onTap: (){
-              final Uri _url2 = Uri.parse('https://www.youtube.com/user/axed25');
-              _launchURL(_url2);
-            },
+          SizedBox(
+            height: 50,
+            child: ListTile(
+              leading: const Icon(Icons.video_collection_rounded, size: 20,),
+              title: const Text('Subscribe on YouTube'),
+              onTap: (){
+                final Uri _url2 = Uri.parse('https://www.youtube.com/user/axed25');
+                _launchURL(_url2);
+              },
+            ),
           ),
 
           // ListTile(
