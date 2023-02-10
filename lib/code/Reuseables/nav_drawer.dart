@@ -110,17 +110,17 @@ Widget buildMenuItems(BuildContext context) => Wrap(
 
 
     ListTile(
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 8.0),
-        child: const Icon(Icons.label_important, size: 50,),
+      leading: const Padding(
+        padding: EdgeInsets.only(left: 8.0),
+        child: Icon(Icons.label_important, size: 50,),
       ),
-      title: Text('   Cyberfox IT',
+      title: const Text('   Cyberfox IT',
         style: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 20,),),
-      trailing: Padding(
-        padding: const EdgeInsets.only(right: 15.0),
-        child: const Icon(Icons.copyright, size: 30,),
+      trailing: const Padding(
+        padding: EdgeInsets.only(right: 15.0),
+        child: Icon(Icons.copyright, size: 30,),
       ),
       onTap: (){
         Navigator.of(context).popUntil((route) => route.isFirst);
