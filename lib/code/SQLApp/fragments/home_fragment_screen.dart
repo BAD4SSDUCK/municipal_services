@@ -227,7 +227,16 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                         buttonText: 'Logout',fSize: fontSize,
                       ),
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
+                    const Text('Copyright Cyberfox ',
+                      style: TextStyle(
+                        color: Colors.white,
+                        backgroundColor: Colors.white10,
+                        fontStyle: FontStyle.italic,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               )

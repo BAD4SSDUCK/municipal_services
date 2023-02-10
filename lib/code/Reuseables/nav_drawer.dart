@@ -77,7 +77,7 @@ Widget buildMenuItems(BuildContext context) => Wrap(
             height: 40,
             child: ListTile(
                 leading: const Icon(Icons.add_call, size: 20,),
-                title: const Text('Contact Cyberfox IT'),
+                title: const Text('Contact Cyberfox'),
                 onTap: (){
                   final Uri _tel = Uri.parse('tel:+27${0333871974}');
                   launchUrl(_tel);
@@ -88,7 +88,7 @@ Widget buildMenuItems(BuildContext context) => Wrap(
             height: 40,
             child: ListTile(
               leading: const Icon(Icons.facebook_rounded, size: 20,),
-              title: const Text('Cyberfox IT Facebook'),
+              title: const Text('Cyberfox Facebook'),
               onTap: (){
                 final Uri _url1 = Uri.parse('https://www.facebook.com/cyberfoxit');
                 _launchURL(_url1);
@@ -124,7 +124,7 @@ Widget buildMenuItems(BuildContext context) => Wrap(
         padding: EdgeInsets.only(left: 8.0),
         child: Icon(Icons.label_important, size: 50,),
       ),
-      title: const Text('   Cyberfox IT',
+      title: const Text('    Cyberfox',
         style: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 20,),),

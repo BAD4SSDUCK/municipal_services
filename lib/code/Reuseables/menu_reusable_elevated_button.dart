@@ -12,16 +12,20 @@ class ReusableElevatedButton extends StatelessWidget {
     return ElevatedButton(
       style: TextButton.styleFrom(
         foregroundColor: Colors.black,
-        minimumSize: const Size(350,60),
+        minimumSize: const Size(320,60),
         disabledForegroundColor: Colors.red.withOpacity(0.38), //foreground
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.white70,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16)),
+        side: const BorderSide(
+          width: 5,
+          color: Colors.black54,
+        ),
       ),
       onPressed: (){
         onPress();
       },
-      child:  Text(buttonText, style: TextStyle(
+      child: Text(buttonText, style: TextStyle(
         //default size 26 change was made for driver section
           fontSize:fSize,
           fontFamily: 'Gotham',
