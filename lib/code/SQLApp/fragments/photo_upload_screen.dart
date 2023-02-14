@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
@@ -12,24 +12,28 @@ import 'package:http/http.dart' as http;
 
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';
 import '../propertiesData/image_preferences.dart';
+import 'package:municipal_track/code/SQLapp/propertiesData/properties_data.dart';
 
 
-class PhotoFragmentState extends StatefulWidget {
+class PhotoUploadState extends StatefulWidget {
   final String userGet;
   final String addressGet;
 
-  const PhotoFragmentState({Key? key, required this.userGet, required this.addressGet,}) : super(key: key);
+  const PhotoUploadState({Key? key, required this.userGet, required this.addressGet,}) : super(key: key);
 
   @override
-  State<PhotoFragmentState> createState() => _PhotoFragmentStateState();
+  State<PhotoUploadState> createState() => _PhotoUploadStateState();
 }
 
-class _PhotoFragmentStateState extends State<PhotoFragmentState> {
+
+
+class _PhotoUploadStateState extends State<PhotoUploadState> {
 
   File? _photo;
   final ImagePicker _picker = ImagePicker();
   String? meterType;
 
+  final PropertiesData _propertiesData = Get.put(PropertiesData());
 
   TextEditingController nameController = TextEditingController();
 
@@ -79,11 +83,14 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
 
     final String photoName;
 
+    DateTime now = DateTime.now();
+    String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+
     var data ={
       "uid": widget.userGet,
       "propertyAddress": widget.addressGet,
-      "uploadMonth": imageData,
-      "uploadTime": DateTime.now()
+      "electricMeterIMG": imageFile,
+      "uploadTime": formattedDate,
     };
 
     try{
@@ -109,7 +116,6 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
       print("Error :: " + e.toString());
       Fluttertoast.showToast(msg: e.toString());
     }
-
   }
 
   Future uploadWFile() async {
@@ -120,15 +126,16 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
     List<int> imageBytes = imageFile!.readAsBytesSync();
     String imageData = base64Encode(imageBytes);
 
-
-
     final String photoName;
+
+    DateTime now = DateTime.now();
+    String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
 
     var data ={
       "uid": widget.userGet,
       "propertyAddress": widget.addressGet,
-      "waterMeterIMG": imageData,
-      "uploadTime": DateTime.now()
+      "waterMeterIMG": imageFile,
+      "uploadTime": formattedDate,
     };
 
     try{
@@ -142,7 +149,7 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
         if(resBodyOfImage['success'] == true){
           print('reaching api');
 
-          //save user info to local storage using shared Preferences ///fix imageData
+          //save user info to local storage using shared Preferences
           //await RememberImageInfo.storeImageInfo(imageData);
 
 
@@ -154,7 +161,6 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
       print("Error :: " + e.toString());
       Fluttertoast.showToast(msg: e.toString());
     }
-
   }
   
   showImage(String image){
@@ -256,7 +262,6 @@ class _PhotoFragmentStateState extends State<PhotoFragmentState> {
                           },
                         ),
                       ],
-
                     );
                   } else {
                     Fluttertoast.showToast(msg: "Please tap on the image area and select the image to upload!");

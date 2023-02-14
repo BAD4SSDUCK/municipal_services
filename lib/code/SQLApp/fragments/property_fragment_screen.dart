@@ -6,7 +6,7 @@ import 'package:get/get.dart';
 
 import 'package:municipal_track/code/ImageUploading/image_upload_meter.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_water.dart';
-import 'package:municipal_track/code/SQLApp/fragments/photo_fragment_screen.dart';
+import 'package:municipal_track/code/SQLApp/fragments/photo_upload_screen.dart';
 
 import 'package:municipal_track/code/SQLApp/propertiesData/image_data.dart';
 import 'package:municipal_track/code/SQLApp/propertiesData/properties_data.dart';
@@ -194,7 +194,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                               builder: (context, snapshot) {
                                 if (snapshot.hasError) {
                                   return Text(
-                                      'Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
+                                      'Image not yet uploaded.'); //${snapshot.error} if error needs to be displayed instead
                                 }
                                 if (snapshot.connectionState ==
                                     ConnectionState.done) {
@@ -236,7 +236,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                               builder: (context, snapshot) {
                                 if (snapshot.hasError) {
                                   return Text(
-                                      'Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
+                                      'Image not yet uploaded.'); //${snapshot.error} if error needs to be displayed instead
                                 }
                                 if (snapshot.connectionState ==
                                     ConnectionState.done) {
@@ -272,7 +272,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                                       .toString();
                                   Navigator.push(context,
                                       MaterialPageRoute(builder: (context) =>
-                                          PhotoFragmentState(userGet: userPass,
+                                          PhotoUploadState(userGet: userPass,
                                             addressGet: addressPass,)));
                                 },
                                 borderRadius: BorderRadius.circular(32),
@@ -342,6 +342,10 @@ class PropertyFragmentScreen extends StatelessWidget{
       ),
     );
   }
+
+
+
+
 
   ///pdf view loader getting file name onPress/onTap that passes pdf filename to this class.
   void openPDF(BuildContext context, File file) => Navigator.of(context).push(

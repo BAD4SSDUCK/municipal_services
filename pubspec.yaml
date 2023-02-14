@@ -36,6 +36,7 @@ dependencies:
   http: ^0.13.5
   fluttertoast: ^8.0.9
   font_awesome_flutter: ^10.3.0
+  intl: ^0.18.0
 
   animated_background: ^2.0.0
 

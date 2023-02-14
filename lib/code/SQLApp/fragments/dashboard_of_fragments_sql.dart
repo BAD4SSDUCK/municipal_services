@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:municipal_track/code/SQLApp/fragments/home_fragment_screen.dart';
-import 'package:municipal_track/code/SQLApp/fragments/photo_fragment_screen.dart';
+import 'package:municipal_track/code/SQLApp/fragments/photo_upload_screen.dart';
 import 'package:municipal_track/code/SQLApp/fragments/profile_fragment_screen.dart';
 import 'package:municipal_track/code/SQLApp/fragments/property_fragment_screen.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';

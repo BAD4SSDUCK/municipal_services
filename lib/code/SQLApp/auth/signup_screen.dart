@@ -69,9 +69,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
           body: userModel.toJson(),
         );
         if (res.statusCode == 200) {
+          print('reaching signup api');
           var resBodyOfSigneUp = jsonDecode(res.body);
           if (resBodyOfSigneUp['success'] == true) {
-            print('reaching signup api');
             Fluttertoast.showToast(
                 msg: "Congratulations, you have Signed Up Successfully");
 

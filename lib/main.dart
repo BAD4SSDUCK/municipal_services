@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -14,31 +16,34 @@ import 'code/main_page.dart';
 
 
 void main() async{
+
+  HttpOverrides.global = MyHttpOverrides();
+
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp();
   await FirebaseMessaging.instance.getInitialMessage();
 
   ///notification section
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-      AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(channel);
-  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
+  // FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  // await flutterLocalNotificationsPlugin
+  //     .resolvePlatformSpecificImplementation<
+  //     AndroidFlutterLocalNotificationsPlugin>()
+  //     ?.createNotificationChannel(channel);
+  // await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+  //   alert: true,
+  //   badge: true,
+  //   sound: true,
+  // );
   ///notification section ended
 
   Get.put(LocationController());
 
-  runApp(const MyApp());
+  //runApp(const MyApp());
 
   ///For the sql version the sql_main will call the SQLMain() StatelessWidget instead of the LoginScreen() StatelessWidget which is for the firebase version
   //SQLMain(), For the sql version the sql_main will call the SQLMain() StatelessWidget.
-  //runApp(const SQLMain());
+  runApp(const SQLMain());
 }
 
 class MyApp extends StatelessWidget {
@@ -46,11 +51,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const GetMaterialApp(
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       ///MainPage links to an auth state for logging in using the necessary firebase method.
       ///If already logged in user will be immediately directed to the dashboard
-      home: MainPage(),//DashboardOfFragments(),//
+      home: DashboardOfFragments(),//MainPage(),//
         //DashboardOfFragments(), this is being developed for the sql version dashboard, accessible for testing without login details or db connection
         //LoginScreen(), this is being developed and I am testing the mysql db login screen.
         //MainPage(), For the working Firebase version.
@@ -58,19 +63,25 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
-
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host,
+          int port) => true;
+  }
+}
 
 ///notification channel init start
-const AndroidNotificationChannel channel = AndroidNotificationChannel(
-  'high_importance_channel', // id
-  'High Importance Notifications', // title
-  //'This channel is used for important notifications.', // description
-  importance: Importance.high,
-);
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-FlutterLocalNotificationsPlugin();
-///notification channel init end
+// const AndroidNotificationChannel channel = AndroidNotificationChannel(
+//   'high_importance_channel', // id
+//   'High Importance Notifications', // title
+//   //'This channel is used for important notifications.', // description
+//   importance: Importance.high,
+// );
+// final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+// FlutterLocalNotificationsPlugin();
+// ///notification channel init end
 
 ///notification handler start
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
