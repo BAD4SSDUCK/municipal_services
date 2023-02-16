@@ -21,4 +21,4 @@ if($resultOfQuery){
 else{
     echo json_encode(array("success"=>false));
 }
-
+?>

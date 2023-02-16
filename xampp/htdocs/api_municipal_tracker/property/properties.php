@@ -1,5 +1,6 @@
 <?php
 include '../connection.php';
+include '/user_properties';
 ///Need to fix connection.php as it is still not retrieving DB conection. it returning(connection denied) 
 
 
@@ -24,7 +25,7 @@ include '../connection.php';
 // $year = $_GET['year'];
 
 ///To be fixed for retrieving all data
-$sqlQuery = $connectNow->query("SELECT * FROM properties");
+$sqlQuery = $connectNow->query("SELECT * FROM propertyTable");
 
 $resultOfQuery = array();
 
@@ -33,3 +34,4 @@ while($rowData = $sqlQuery->fetch_assoc()){
 }
 
 echo json_encode($resultOfQuery);
+?>

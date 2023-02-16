@@ -28,4 +28,4 @@ if($resultOfQuery->num_rows > 0){ //allow user to login
 else{ //does not allow a login
     echo json_encode(array("success"=>false));
 }
-
+?>

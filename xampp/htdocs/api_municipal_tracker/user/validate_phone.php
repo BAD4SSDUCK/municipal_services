@@ -22,4 +22,4 @@ else{
 }
 
 //this will check if the cell number trying to register is already existing in the db. if it is the new registration will not validate unless its a new phone number
-
+?>
