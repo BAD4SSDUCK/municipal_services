@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:municipal_track/code/SQLApp/auth/login_screen.dart';
@@ -31,6 +32,7 @@ class ProfileFragmentScreen extends StatelessWidget {
             ),
             IconButton(
               onPressed: () async {
+                FirebaseAuth.instance.signOut();
                 Get.back(result: "loggedOut");
               },
               icon: const Icon(

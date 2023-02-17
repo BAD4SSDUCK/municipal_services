@@ -7,6 +7,8 @@ import 'package:municipal_track/code/Chat/chat_screen.dart';
 import 'package:municipal_track/code/DisplayPages/dashboard.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
+import 'package:municipal_track/code/SQLApp/fragments/dashboard_of_fragments_sql.dart';
+import 'package:municipal_track/code/SQLApp/fragments/home_fragment_screen.dart';
 import 'fb_chat_auth.dart';
 
 class ChatRegisterScreen extends StatefulWidget {
@@ -70,7 +72,7 @@ class _ChatRegisterScreenState extends State<ChatRegisterScreen> {
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => FBChatAuth(),
+          builder: (context) => DashboardOfFragments(),
         ),
       );
     });
@@ -103,7 +105,7 @@ class _ChatRegisterScreenState extends State<ChatRegisterScreen> {
                   child: Center(
                     child: Column(
                       children: [
-                        const SizedBox(height: 30),
+                        const SizedBox(height: 20),
                         Text(
                           "VALIDATE NUMBER",
                           style: GoogleFonts.montserrat(
@@ -112,12 +114,14 @@ class _ChatRegisterScreenState extends State<ChatRegisterScreen> {
                             fontSize: screenWidth / 12,
                           ),
                         ),
-                        Text(
-                          "Validate mobile number to chat with an Admin!",
-                          style: GoogleFonts.montserrat(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500 ,
-                            fontSize: screenWidth / 23,
+                        Center(
+                          child: Text(
+                            "Validate mobile number to chat with\nan Admin!",
+                            style: GoogleFonts.montserrat(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500 ,
+                              fontSize: screenWidth / 23,
+                            ),
                           ),
                         ),
                       ],

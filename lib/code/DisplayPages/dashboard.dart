@@ -216,7 +216,7 @@ class MainMenu extends StatefulWidget {
           Text('Signed in from: ${user.phoneNumber!}'),///${user.email!}
           backgroundColor: Colors.black87,
         ),
-        drawer: const NavigationDrawer(),
+        drawer: const NavDrawer(),
         body: SingleChildScrollView(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -249,6 +249,7 @@ class MainMenu extends StatefulWidget {
                               fSize: 18,
                               faIcon: const FaIcon(FontAwesomeIcons.houseCircleExclamation),
                               fgColor: Colors.green,
+                              btSize: const Size(120, 120),
                             ),
                             const SizedBox(width: 40),
                             ElevatedIconButton(
@@ -268,6 +269,7 @@ class MainMenu extends StatefulWidget {
                               fSize: 18,
                               faIcon: const FaIcon(FontAwesomeIcons.message),
                               fgColor: Colors.blue,
+                              btSize: const Size(120, 120),
                             ),
 
                           ],
@@ -305,6 +307,7 @@ class MainMenu extends StatefulWidget {
                                 fSize: 16,
                                 faIcon: const FaIcon(FontAwesomeIcons.solidFilePdf),
                                 fgColor: Colors.redAccent,
+                                btSize: const Size(120, 120),
                               ),
                               const SizedBox(width: 40),
                               ElevatedIconButton(
@@ -316,6 +319,7 @@ class MainMenu extends StatefulWidget {
                                 fSize: 18,
                                 faIcon: const FaIcon(Icons.mark_chat_unread),
                                 fgColor: Colors.blue,
+                                btSize: const Size(120, 120),
                               ),
 
                             ],
@@ -368,6 +372,7 @@ class MainMenu extends StatefulWidget {
                                 fSize: 18,
                                 faIcon: const FaIcon(Icons.logout),
                                 fgColor: Colors.red,
+                                btSize: const Size(120, 120),
                               ),
                             ],
                           ),

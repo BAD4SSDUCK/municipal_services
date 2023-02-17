@@ -19,14 +19,15 @@ import 'package:municipal_track/code/ImageUploading/image_upload_page.dart';
 import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_track/code/Reusable/main_menu_reusable_button.dart';
 import 'package:municipal_track/code/Reusable/nav_drawer.dart';
+import 'package:municipal_track/code/SQLApp/fragments/fault_report_screen.dart';
 import 'package:municipal_track/code/SQLApp/fragments/profile_fragment_screen.dart';
 import 'package:municipal_track/code/SQLApp/fragments/statement_download.dart';
 import 'package:municipal_track/main.dart';
 import 'package:http/http.dart' as http;
 
-import '../../DisplayPages/add_details.dart';
-import '../../DisplayPages/display_info.dart';
-import '../../DisplayPages/display_info_all_users.dart';
+import 'package:municipal_track/code/DisplayPages/add_details.dart';
+import 'package:municipal_track/code/DisplayPages/display_info.dart';
+import 'package:municipal_track/code/DisplayPages/display_info_all_users.dart';
 import 'package:municipal_track/code/Chat/chat_list.dart';
 import 'package:municipal_track/code/MapTools/location_controller.dart';
 import 'package:municipal_track/code/MapTools/map_screen.dart';
@@ -34,7 +35,7 @@ import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_track/code/Reusable/menu_reusable_elevated_button.dart';
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';
 
-import '../../Reusable/icon_elevated_button.dart';
+import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 import 'dashboard_of_fragments_sql.dart';
 
 
@@ -102,7 +103,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
         ///App bar removed for aesthetic
         // appBar: AppBar(
         //   title:
-        //   Text('Signed in from: ${user.phoneNumber!}'),///${user.email!}
+        //   Text('Signed in'),
         //   backgroundColor: Colors.black87,
         // ),
         //drawer: const NavigationDrawer(),
@@ -118,7 +119,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                   children: <Widget>[
 
                     const SizedBox(height: 50),
-                    Image.asset('assets/images/logo.png', height: 200, width: 200,),
+                    Image.asset('assets/images/logo.png', height: 180, width: 180,),
                     const SizedBox(height: 50),
 
                     Column(
@@ -139,7 +140,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => const pdfSelectionPage()));
 
-                                    // ///This will be changed for the SQL api
+                                    // ///This is for the firebase pdf retrieval
                                     // final FirebaseAuth auth = FirebaseAuth.instance;
                                     // final User? user = auth.currentUser;
                                     // final uid = user?.uid;
@@ -162,13 +163,42 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                                   fSize: 24,
                                   faIcon: const FaIcon(FontAwesomeIcons.solidFilePdf),
                                   fgColor: Colors.redAccent,
+                                  btSize: const Size(300, 80),
                                 ),
 
                               ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: 20,),
+                        const SizedBox(height: 5,),
+                        Visibility(
+                          visible: visExternal,
+                          child: Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                ElevatedIconButton(
+                                  onPress: () async {
+                                    // Fluttertoast.showToast(msg: "Now downloading your statements!\nPlease wait a few seconds!",
+                                    //   gravity: ToastGravity.CENTER,);
+
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) => ReportPropertyMenu()));
+
+                                  },
+                                  labelText: 'Report Fault',
+                                  fSize: 24,
+                                  faIcon: const FaIcon(Icons.report_problem),
+                                  fgColor: Colors.orange,
+                                  btSize: const Size(300, 80),
+                                ),
+
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 5,),
                         Visibility(
                           visible: visExternal,
                           child: Center(
@@ -178,49 +208,54 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                               children: [
                                 ElevatedIconButton(
                                   onPress: (){
-                                    showDialog(
-                                        barrierDismissible: false,
-                                        context: context,
-                                        builder: (context) {
-                                          return AlertDialog(
-                                            shape: const RoundedRectangleBorder(borderRadius:
-                                            BorderRadius.all(Radius.circular(18))),
-                                            title: const Text("Logout"),
-                                            content: const Text("Are you sure you want to logout?"),
-                                            actions: [
-                                              IconButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                },
-                                                icon: const Icon(
-                                                  Icons.cancel,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                              IconButton(
-                                                onPressed: () async {
-                                                  ProfileFragmentScreen().signOutUser();
-                                                  FirebaseAuth.instance.signOut();
-                                                  SystemNavigator.pop();
-                                                },
-                                                icon: const Icon(
-                                                  Icons.done,
-                                                  color: Colors.green,
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        });
+                                    ProfileFragmentScreen().signOutUser();
+
+                                    // showDialog(
+                                    //     barrierDismissible: false,
+                                    //     context: context,
+                                    //     builder: (context) {
+                                    //       return AlertDialog(
+                                    //         shape: const RoundedRectangleBorder(borderRadius:
+                                    //         BorderRadius.all(Radius.circular(18))),
+                                    //         title: const Text("Logout"),
+                                    //         content: const Text("Are you sure you want to logout?"),
+                                    //         actions: [
+                                    //           IconButton(
+                                    //             onPressed: () {
+                                    //               Navigator.pop(context);
+                                    //             },
+                                    //             icon: const Icon(
+                                    //               Icons.cancel,
+                                    //               color: Colors.red,
+                                    //             ),
+                                    //           ),
+                                    //           IconButton(
+                                    //             onPressed: () async {
+                                    //
+                                    //               FirebaseAuth.instance.signOut();
+                                    //               SystemNavigator.pop();
+                                    //             },
+                                    //             icon: const Icon(
+                                    //               Icons.done,
+                                    //               color: Colors.green,
+                                    //             ),
+                                    //           ),
+                                    //         ],
+                                    //       );
+                                    //     });
+
                                   },
-                                  labelText: '    Logout      ',
+                                  labelText: 'Logout',
                                   fSize: 24,
                                   faIcon: const FaIcon(Icons.logout),
                                   fgColor: Colors.red,
+                                  btSize: const Size(300, 80),
                                 ),
                               ],
                             ),
                           ),
                         ),
+
                       ],
                     ),
 
@@ -351,7 +386,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                     //   ),
                     // ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 50),
                     const Text('Copyright Cyberfox ',
                       style: TextStyle(
                         color: Colors.white,

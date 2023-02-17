@@ -10,7 +10,7 @@ import 'package:municipal_track/code/ApiConnection/api_connection.dart';
 import 'package:municipal_track/code/SQLApp/model/user.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/user_preferences.dart';
 
-import '../fragments/dashboard_of_fragments_sql.dart';
+import 'package:municipal_track/code/SQLApp/fragments/dashboard_of_fragments_sql.dart';
 //
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);

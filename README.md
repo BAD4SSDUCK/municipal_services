@@ -1,6 +1,7 @@
 # municipal_track
 
-A new Flutter project.
+Municipal Tracker application using mySql with php rest api's
+REST API's in folder xampp/htdocs/api_municipal_tracker/ This folder must be placed in the xampp server folder
 
 ## Getting Started
 

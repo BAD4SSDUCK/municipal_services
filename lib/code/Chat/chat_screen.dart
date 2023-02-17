@@ -17,6 +17,7 @@ class _ChatState extends State<Chat> {
   late bool _isLoading;
   late Stream<QuerySnapshot> chats;
   TextEditingController messageEditingController = new TextEditingController();
+  final _navigatorKey = GlobalKey<NavigatorState>();
 
   Widget chatMessages(){
     return StreamBuilder<QuerySnapshot>(
@@ -85,7 +86,7 @@ class _ChatState extends State<Chat> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Administrator Chat'),
+        title: const Text('Administrator Chat'),
         backgroundColor: Colors.green,
       ),
       body: Container(

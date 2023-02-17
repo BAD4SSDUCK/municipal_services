@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as html;
 
 import 'package:flutter/material.dart';
@@ -7,18 +8,29 @@ import 'package:get/get.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_meter.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_water.dart';
 import 'package:municipal_track/code/SQLApp/fragments/photo_upload_screen.dart';
+import 'package:municipal_track/code/SQLApp/model/property.dart';
 
 import 'package:municipal_track/code/SQLApp/propertiesData/image_data.dart';
 import 'package:municipal_track/code/SQLApp/propertiesData/properties_data.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';
 
-import '../../PDFViewer/view_pdf.dart';
+import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
 
 class PropertyFragmentScreen extends StatelessWidget{
 
 
   final _meterReadingController = TextEditingController();
   final _waterMeterReadingController = TextEditingController();
+
+  final _accountNumberController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _areaCodeController = TextEditingController();
+  final _meterNumberController = TextEditingController();
+  final _waterMeterController = TextEditingController();
+  final _cellNumberController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _idNumberController = TextEditingController();
 
   final CurrentUser _currentUser = Get.put(CurrentUser());
   final PropertiesData _propertiesData = Get.put(PropertiesData());
@@ -74,9 +86,203 @@ class PropertyFragmentScreen extends StatelessWidget{
   }
 
 
+  void showPressed(BuildContext context) {
+    //need to work on update controller for property readings, meter and water
+    Future<void> _update([PropertiesData? documentSnapshot]) async {
+      if (documentSnapshot != null) {
+        _accountNumberController.text = documentSnapshot.properties.accountNumber;
+        _addressController.text = documentSnapshot.properties.address;
+        _areaCodeController.text = documentSnapshot.properties.areaCode.toString();
+        _meterNumberController.text = documentSnapshot.properties.electricityMeterNumber;
+        _meterReadingController.text = documentSnapshot.properties.electricityMeterReading;
+        _waterMeterController.text = documentSnapshot.properties.waterMeterNumber;
+        _waterMeterReadingController.text = documentSnapshot.properties.waterMeterReading;
+        _cellNumberController.text = documentSnapshot.properties.cellNumber;
+        _firstNameController.text = documentSnapshot.properties.firstName;
+        _lastNameController.text = documentSnapshot.properties.lastName;
+        _idNumberController.text = documentSnapshot.properties.idNumber.toString();
+        _currentUser.user.uid = documentSnapshot.properties.uid;
+      }
+
+      /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
+      await showModalBottomSheet(
+          isScrollControlled: true,
+          context: context,
+          builder: (BuildContext ctx) {
+            return SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.only(
+                    top: 20,
+                    left: 20,
+                    right: 20,
+                    bottom: MediaQuery
+                        .of(ctx)
+                        .viewInsets
+                        .bottom + 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    //Text controllers for the properties db visibility only available for the electric and water readings because users must not be able to
+                    //edit any other data but the controllers have to be there to prevent updating items to null, this may not be necessary but I left it for null safety
+                    Visibility(
+                      visible: buttonVis2,
+                      child: TextField(
+                        controller: _accountNumberController,
+                        decoration: const InputDecoration(
+                            labelText: 'Account Number'),
+                      ),
+                    ),
+                    Visibility(
+                      visible: buttonVis2,
+                      child: TextField(
+                        controller: _addressController,
+                        decoration: const InputDecoration(
+                            labelText: 'Street Address'),
+                      ),
+                    ),
+                    Visibility(
+                      visible: buttonVis2,
+                      child: TextField(
+                        keyboardType:
+                        const TextInputType.numberWithOptions(),
+                        controller: _areaCodeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Area Code',),
+                      ),
+                    ),
+                    Visibility(
+                      visible: buttonVis2,
+                      child: TextField(
+                        controller: _meterNumberController,
+                        decoration: const InputDecoration(
+                            labelText: 'Electricity Meter Number'),
+                      ),
+                    ),
+                    Visibility(
+                      visible: buttonVis1,
+                      child: TextField(
+                        controller: _meterReadingController,
+                        decoration: const InputDecoration(
+                            labelText: 'Electricity Meter Reading'),
+                      ),
+                    ),
+                    Visibility(
+                      visible: buttonVis2,
+                      child: TextField(
+                        controller: _waterMeterController,
+                        decoration: const InputDecoration(
+                            labelText: 'Water Meter Number'),
+                      ),
+                    ),
+                    Visibility(
+                      visible: buttonVis1,
+                      child: TextField(
+                        controller: _waterMeterReadingController,
+                        decoration: const InputDecoration(
+                            labelText: 'Water Meter Reading'),
+                      ),
+                    ),
+                    Visibility(
+                      visible: buttonVis2,
+                      child: TextField(
+                        controller: _cellNumberController,
+                        decoration: const InputDecoration(
+                            labelText: 'Phone Number'),
+                      ),
+                    ),
+                    Visibility(
+                      visible: buttonVis2,
+                      child: TextField(
+                        controller: _firstNameController,
+                        decoration: const InputDecoration(
+                            labelText: 'First Name'),
+                      ),
+                    ),
+                    Visibility(
+                      visible: buttonVis2,
+                      child: TextField(
+                        controller: _lastNameController,
+                        decoration: const InputDecoration(
+                            labelText: 'Last Name'),
+                      ),
+                    ),
+                    Visibility(
+                      visible: buttonVis2,
+                      child: TextField(
+                        controller: _idNumberController,
+                        decoration: const InputDecoration(
+                            labelText: 'ID Number'),
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    ElevatedButton(
+                        child: const Text('Update'),
+                        onPressed: () async {
+                          final String accountNumber = _accountNumberController.text;
+                          final String address = _addressController.text;
+                          final int areaCode = int.parse(_areaCodeController.text);
+                          final String meterNumber = _meterNumberController.text;
+                          final String meterReading = _meterReadingController.text;
+                          final String waterMeterNumber = _waterMeterController.text;
+                          final String waterMeterReading = _waterMeterReadingController.text;
+                          final String cellNumber = _cellNumberController.text;
+                          final String firstName = _firstNameController.text;
+                          final String lastName = _lastNameController.text;
+                          final String idNumber = _idNumberController.text;
+
+                          Future<void> _Update_PropData() async {
+
+
+                          }
+
+
+                          ///I need to get the CRUD method for updating the existing property info
+                          // if (accountNumber != null) {
+                          //   await _propertiesData.properties.obs(documentSnapshot!.properties.id as Property?)
+                          //       .update({
+                          //     "accountNumber": accountNumber,
+                          //     "address": address,
+                          //     "areaCode": areaCode,
+                          //     "meterNumber": meterNumber,
+                          //     "meterReading": meterReading,
+                          //     "waterMeterNumber": waterMeterNumber,
+                          //     "waterMeterReading": waterMeterReading,
+                          //     "cellNumber": cellNumber,
+                          //     "firstName": firstName,
+                          //     "lastName": lastName,
+                          //     "idNumber": idNumber,
+                          //     "uid": _currentUser.user.uid,
+                          //   });
+
+                          _accountNumberController.text = '';
+                          _addressController.text = '';
+                          _areaCodeController.text = '';
+                          _meterNumberController.text = '';
+                          _meterReadingController.text = '';
+                          _waterMeterController.text = '';
+                          _waterMeterReadingController.text = '';
+                          _cellNumberController.text = '';
+                          _firstNameController.text = '';
+                          _lastNameController.text = '';
+                          _idNumberController.text = '';
+
+                          Navigator.of(context).pop();
+                        }
+                    ),
+                  ],
+                ),
+              ),
+            );
+          });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    ///I will be putting an if statement that only matches the users uid to the uid saved in the properties table so the user only sees
+    ///if statement that only matches the users uid to the uid saved in the properties table so the user only sees
     ///a list of this property information and images, I will also have to make a modal that allows updating the electricity and water readings
     ///I will have to make a dropdown button that inputs the year and month so that the user can only update for the current month or view other months
     ///The image upload will have to be worked on with the same month system ie. only current moth upload or overwrite and previous months viewing only
@@ -92,6 +298,15 @@ class PropertyFragmentScreen extends StatelessWidget{
         ///I need to figure out how to get the item count of all the rows of the propertiesData list so that displaying is not limited to the number set
         itemCount: 4,
         itemBuilder: (BuildContext context, int index) {
+
+          String billMessage;///A check for if payment is outstanding or not
+          if(_propertiesData.properties.eBill.toString() != '' || _propertiesData.properties.eBill.toString() != '0'){
+            String feesOnAddress = _propertiesData.properties.address.toString();
+            billMessage = "Current bill: R${_propertiesData.properties.eBill}";
+          } else {
+            billMessage = "No outstanding payments";
+          }
+
           if(_propertiesData.properties.uid == _currentUser.user.uid){
             ///This checks and only displays the users property where the UID saved for both is the same
 
@@ -120,7 +335,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                       const SizedBox(height: 10,),
 
                       propertyItemField(
-                          "Current bill: R${_propertiesData.properties.eBill}"),
+                          "Current bill: R$billMessage"),
 
                       const SizedBox(height: 10,),
 
@@ -305,9 +520,8 @@ class PropertyFragmentScreen extends StatelessWidget{
                               color: Colors.green,
                               borderRadius: BorderRadius.circular(8),
                               child: InkWell(
-                                onTap: () {
-                                  ///This will contain the function that edits the table data of meter readings for the current month only
-                                },
+                                ///This will contain the function that edits the table data of meter readings for the current month only
+                                onTap: ()=>showPressed(context),
                                 borderRadius: BorderRadius.circular(32),
                                 child: const Padding(
                                   padding: EdgeInsets.symmetric(
@@ -315,7 +529,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                                     vertical: 12,
                                   ),
                                   child: Text(
-                                    "Save Changes",
+                                    "Update Meter Reading",
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,

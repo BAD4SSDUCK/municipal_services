@@ -10,8 +10,8 @@ import 'package:municipal_track/code/SQLApp/fragments/property_fragment_screen.d
 import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';
 import 'package:municipal_track/code/login/citizen_otp_page.dart';
 
-import '../../PDFViewer/view_pdf.dart';
-import '../auth/fb_chat_auth.dart';
+import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
+import 'package:municipal_track/code/SQLApp/auth/fb_chat_auth.dart';
 
 ///This dashboard is only for testing and will in the future use the firebase dashboard already built but with the sql connection instead
 ///I may use this dashboard if the design is better but input all the build pages in the fragment screens
@@ -23,8 +23,7 @@ class DashboardOfFragments extends StatelessWidget {
   List<Widget> fragmentScreens =[
     HomeFragmentScreen(),
     PropertyFragmentScreen(),
-    //PhotoFragmentScreen(),
-    FBChatAuth(),//for the chat we will still used firebase because it is the easist for tracking chats so the user will just otp login to firebase
+    FBChatAuth(),//for now the chat we will still used firebase because it is the easiest for tracking chats so the user will just otp login to firebase
     ProfileFragmentScreen(),
   ];
 
@@ -39,11 +38,6 @@ class DashboardOfFragments extends StatelessWidget {
       "non_active_icon": Icons.home_outlined,
       "label": "Properties",
     },
-    // {
-    //   "active_icon": Icons.camera_alt,
-    //   "non_active_icon": Icons.camera_alt_outlined,
-    //   "label": "Upload",
-    // },
     {
       "active_icon": Icons.chat_bubble,
       "non_active_icon": Icons.chat_bubble_outline,
