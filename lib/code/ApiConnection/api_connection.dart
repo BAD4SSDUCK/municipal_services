@@ -17,6 +17,9 @@ class API{
   static const propertiesInfo = "$hostConnect/property/properties.php";
   static const meterImgData = "$hostConnect/property/image_data.php";
 
+  //reporting electrical or water faults on a property
+  static const reportFault = "$hostConnect/faults/report_fault.php";
+
   //getting pdfList
   static const pdfDBList = "$hostConnect/statements/statement_download.php";
 

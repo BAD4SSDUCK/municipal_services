@@ -47,7 +47,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         }
       }
     } catch(e){
-      print(e.toString());
+      print("error is::"+e.toString());
       Fluttertoast.showToast(msg: e.toString());
     }
   }

@@ -19,7 +19,7 @@ class NavDrawer extends StatelessWidget {
               const SizedBox(height: 100,),
               Center(child: buildHeader(context)),
 
-              const SizedBox(height: 200,),
+              const SizedBox(height: 150,),
               buildMenuItems(context),
 
             ],

@@ -86,7 +86,8 @@ class ProfileFragmentScreen extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         image: DecorationImage(
-            image: AssetImage("assets/images/greybg.gif"),
+            //image: AssetImage("assets/images/greybg.gif"),
+            image: AssetImage("assets/images/greyscale.jpg"),
             fit: BoxFit.cover),
       ),
       child: ListView(

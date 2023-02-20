@@ -101,12 +101,12 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
       child: Scaffold(
         backgroundColor: Colors.transparent,//Colors.grey,
         ///App bar removed for aesthetic
-        // appBar: AppBar(
-        //   title:
-        //   Text('Signed in'),
-        //   backgroundColor: Colors.black87,
-        // ),
-        //drawer: const NavigationDrawer(),
+        appBar: AppBar(
+          title:
+          Text(''),
+          backgroundColor: Colors.black87,
+        ),
+        drawer: const NavDrawer(),
         body: SingleChildScrollView(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
