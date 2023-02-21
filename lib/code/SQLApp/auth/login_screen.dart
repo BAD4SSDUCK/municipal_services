@@ -111,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(30, 30, 30, 8),
+                        padding: const EdgeInsets.fromLTRB(30, 40, 30, 8),
                         child: Column(
                           children: [
                             //login with phone number form
