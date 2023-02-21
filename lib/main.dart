@@ -41,7 +41,7 @@ void main() async{
 
   //runApp(const MyApp());
 
-  ///For the sql version the sql_main will call the SQLMain() StatelessWidget instead of the LoginScreen() StatelessWidget which is for the firebase version
+  ///For the sql version the sql_main will call the SQLMain() StatelessWidget instead of the MyApp() StatelessWidget which is for the firebase version
   //SQLMain(), For the sql version the sql_main will call the SQLMain() StatelessWidget.
   runApp(const SQLMain());
 }
@@ -54,7 +54,7 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       ///MainPage links to an auth state for logging in using the necessary firebase method.
-      ///If already logged in user will be immediately directed to the dashboard
+      ///If already logged in user will be immediately directed to the firebase version dashboard
       home: DashboardOfFragments(),//MainPage(),//
         //DashboardOfFragments(), this is being developed for the sql version dashboard, accessible for testing without login details or db connection
         //LoginScreen(), this is being developed and I am testing the mysql db login screen.

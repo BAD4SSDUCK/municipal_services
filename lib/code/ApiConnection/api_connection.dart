@@ -1,7 +1,7 @@
 
 
 class API{
-  static const hostConnect = "https://127.0.0.1/api_municipal_tracker"; //I need to figure out what the host is for the running XAMPP mysql server
+  static const hostConnect = "http://localhost:8080/api_municipal_tracker"; //I need to figure out what the host is for the running XAMPP mysql server
   //static const hostConnect = "http://(ip address here)/(name of the api folder)";
 
   //$hostConnect allows us to pass the folder structure of the base api folder
