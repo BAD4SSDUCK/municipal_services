@@ -123,6 +123,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                   ),
 
+                  const SizedBox(height: 20,),
+
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: Container(
@@ -140,7 +142,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(30, 40, 30, 8),
+                        padding: const EdgeInsets.fromLTRB(30, 30, 30, 8),
                         child: Column(
                           children: [
                             //signup with phone number form
