@@ -39,11 +39,11 @@ void main() async{
 
   Get.put(LocationController());
 
-  //runApp(const MyApp());
+  runApp(const MyApp());
 
   ///For the sql version the sql_main will call the SQLMain() StatelessWidget instead of the MyApp() StatelessWidget which is for the firebase version
   //SQLMain(), For the sql version the sql_main will call the SQLMain() StatelessWidget.
-  runApp(const SQLMain());
+  //runApp(const SQLMain());
 }
 
 class MyApp extends StatelessWidget {
@@ -92,12 +92,3 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 ///notification handler end
 
-/// this is just for reference to using Fluttertoast once it is imported from the installed pubspec dependency
-// Fluttertoast.showToast(
-// msg: "This is a Toast message",
-// toastLength: Toast.LENGTH_SHORT,
-// gravity: ToastGravity.CENTER,
-// timeInSecForIosWeb: 1,
-// textColor: Colors.white,
-// fontSize: 16.0
-// );

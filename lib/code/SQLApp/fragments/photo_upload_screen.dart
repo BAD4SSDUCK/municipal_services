@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -9,9 +10,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:municipal_track/code/SQLApp/propertiesData/property_preferences.dart';
 import 'package:path/path.dart';
 import 'package:http/http.dart' as http;
+import 'package:geocoding/geocoding.dart';
+//import 'package:location/location.dart';
+//import 'package:location/location.dart' as loc;
 
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';
-import '../propertiesData/image_preferences.dart';
+import 'package:municipal_track/code/SQLApp/propertiesData/image_preferences.dart';
 import 'package:municipal_track/code/SQLapp/propertiesData/properties_data.dart';
 
 
@@ -36,6 +40,22 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
   final PropertiesData _propertiesData = Get.put(PropertiesData());
 
   TextEditingController nameController = TextEditingController();
+
+  bool buttonEnabled = true;
+
+  String location ='Null, Press Button';
+  String Address = 'search';
+
+  @override
+  void initState() async {
+    Position position = await _getGeoLocationPosition();
+    location ='Lat: ${position.latitude} , Long: ${position.longitude}';
+    GetAddressFromLatLong(position);
+    if(_getGeoLocationPosition.isBlank == false){
+      buttonEnabled = false;
+    }
+    super.initState();
+  }
 
   //Used to set the _photo file as image from gallery
   Future imgFromGallery() async {
@@ -90,6 +110,7 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
       "uid": widget.userGet,
       "propertyAddress": widget.addressGet,
       "electricMeterIMG": imageFile,
+      "capturedFrom": Address.toString(),
       "uploadTime": formattedDate,
     };
 
@@ -109,12 +130,12 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
 
 
         } else {
-          Fluttertoast.showToast(msg: "Upload connection failed. Try again with network!");
+          Fluttertoast.showToast(msg: "Upload connection failed. Try again with network!", gravity: ToastGravity.CENTER);
         }
       }
     } catch(e) {
       print("Error :: " + e.toString());
-      Fluttertoast.showToast(msg: e.toString());
+      Fluttertoast.showToast(msg: e.toString(), gravity: ToastGravity.CENTER);
     }
   }
 
@@ -135,6 +156,7 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
       "uid": widget.userGet,
       "propertyAddress": widget.addressGet,
       "waterMeterIMG": imageFile,
+      "capturedFrom": Address.toString(),
       "uploadTime": formattedDate,
     };
 
@@ -166,7 +188,46 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
   showImage(String image){
     return Image.memory(base64Decode(image));
   }
-  
+
+
+  Future<Position> _getGeoLocationPosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled don't continue
+      // accessing the position and request users of the
+      // App to enable the location services.
+      await Geolocator.openLocationSettings();
+      return Future.error('Location services are disabled.');
+    }
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+
+        return Future.error('Location permissions are denied');
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    // When we reach here, permissions are granted and we can
+    // continue accessing the position of the device.
+    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  }
+
+  Future<void> GetAddressFromLatLong(Position position)async {
+    List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+    print(placemarks);
+    Placemark place = placemarks[0];
+    Address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +271,7 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25.0),
               child: GestureDetector(
-                onTap: () {
+                onTap: buttonEnabled? () {
                   if (_photo != null) {
                     AlertDialog(
                       shape: const RoundedRectangleBorder(borderRadius:
@@ -231,7 +292,7 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
                           onPressed: () {
                             meterType = "E";
                             uploadEFile();
-                            Fluttertoast.showToast(msg: "Successfully Uploaded!\nElectric Meter Image!");
+                            Fluttertoast.showToast(msg: "Successfully Uploaded!\nElectric Meter Image!", gravity: ToastGravity.CENTER);
                             Navigator.of(context).pop(context);
                             Navigator.of(context).pop(context);
                           },
@@ -248,7 +309,7 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
                           onPressed: () {
                             meterType = "W";
                             uploadWFile();
-                            Fluttertoast.showToast(msg: "Successfully Uploaded!\nWater Meter Image!");
+                            Fluttertoast.showToast(msg: "Successfully Uploaded!\nWater Meter Image!", gravity: ToastGravity.CENTER);
                             Navigator.of(context).pop(context); //pops the alert dialogue box
                             Navigator.of(context).pop(context); //pops the image upload page back to the listview
                           },
@@ -264,9 +325,9 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
                       ],
                     );
                   } else {
-                    Fluttertoast.showToast(msg: "Please tap on the image area and select the image to upload!");
+                    Fluttertoast.showToast(msg: "Please tap on the image area and select the image to upload!", gravity: ToastGravity.CENTER);
                   }
-                },
+                } : null,
 
                 child: Container(
                   padding: const EdgeInsets.all(20),
