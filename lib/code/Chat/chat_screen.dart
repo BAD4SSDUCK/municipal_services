@@ -294,7 +294,6 @@ class DatabaseMethods {
   }
 
   Future<void> addMessage(String chatRoomId, chatMessageData) async {
-
     FirebaseFirestore.instance.collection("chatRoom")
         .doc(chatRoomId)
         .collection("chats")
@@ -311,7 +310,6 @@ class DatabaseMethods {
   }
 
   Future<void> addChatDocName(DocumentSnapshot? documentSnapshot, String chatRoomId) async{
-
     final CollectionReference namedChatAdd =
     FirebaseFirestore.instance.collection("chatRoom");
 
@@ -320,7 +318,5 @@ class DatabaseMethods {
         "chatRoom": chatRoomId,
       });
     }
-
   }
-
 }

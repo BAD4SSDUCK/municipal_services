@@ -42,7 +42,7 @@ void main() async{
   runApp(const MyApp());
 
   ///For the sql version the sql_main will call the SQLMain() StatelessWidget instead of the MyApp() StatelessWidget which is for the firebase version
-  //SQLMain(), For the sql version the sql_main will call the SQLMain() StatelessWidget.
+  ///SQLMain(), For the sql version the sql_main will call the SQLMain() StatelessWidget.
   //runApp(const SQLMain());
 }
 

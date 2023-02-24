@@ -29,20 +29,14 @@ class PhotoUploadState extends StatefulWidget {
   State<PhotoUploadState> createState() => _PhotoUploadStateState();
 }
 
-
-
 class _PhotoUploadStateState extends State<PhotoUploadState> {
 
   File? _photo;
   final ImagePicker _picker = ImagePicker();
   String? meterType;
-
   final PropertiesData _propertiesData = Get.put(PropertiesData());
-
   TextEditingController nameController = TextEditingController();
-
   bool buttonEnabled = true;
-
   String location ='Null, Press Button';
   String Address = 'search';
 
@@ -119,7 +113,6 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
         Uri.parse(API.meterImgData),
         body: data,
       );
-
       if(res.statusCode == 200){
         var resBodyOfImage = jsonDecode(res.body);
         if(resBodyOfImage['success'] == true){
@@ -127,7 +120,6 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
 
           //save user info to local storage using shared Preferences ///fix imageData
           //await RememberImageInfo.storeImageInfo(imageData);
-
 
         } else {
           Fluttertoast.showToast(msg: "Upload connection failed. Try again with network!", gravity: ToastGravity.CENTER);
@@ -174,7 +166,6 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
           //save user info to local storage using shared Preferences
           //await RememberImageInfo.storeImageInfo(imageData);
 
-
         } else {
           Fluttertoast.showToast(msg: "Upload connection failed. Try again with network!");
         }
@@ -188,7 +179,6 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
   showImage(String image){
     return Image.memory(base64Decode(image));
   }
-
 
   Future<Position> _getGeoLocationPosition() async {
     bool serviceEnabled;
@@ -227,7 +217,6 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
     Placemark place = placemarks[0];
     Address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -328,7 +317,6 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
                     Fluttertoast.showToast(msg: "Please tap on the image area and select the image to upload!", gravity: ToastGravity.CENTER);
                   }
                 } : null,
-
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(

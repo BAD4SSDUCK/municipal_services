@@ -8,7 +8,6 @@ import 'package:municipal_track/code/SQLApp/fragments/photo_upload_screen.dart';
 import 'package:municipal_track/code/SQLApp/fragments/profile_fragment_screen.dart';
 import 'package:municipal_track/code/SQLApp/fragments/property_fragment_screen.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';
-import 'package:municipal_track/code/login/citizen_otp_page.dart';
 
 import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_track/code/SQLApp/auth/fb_chat_auth.dart';
@@ -52,7 +51,6 @@ class DashboardOfFragments extends StatelessWidget {
 
   RxInt indexNumber = 0.obs;
 
-
   @override
   Widget build(BuildContext context) {
     return GetBuilder(
@@ -66,7 +64,6 @@ class DashboardOfFragments extends StatelessWidget {
           body: SafeArea(
             child: Obx(
                 ()=> fragmentScreens[indexNumber.value],
-
             ),
           ),
           bottomNavigationBar: Obx(
@@ -90,7 +87,6 @@ class DashboardOfFragments extends StatelessWidget {
                 }),
               ),
           ),
-
         );
       },
     );

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
@@ -12,6 +13,8 @@ import 'package:municipal_track/code/SQLApp/propertiesData/properties_data.dart'
 import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';
 
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';
+
+import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 
 class ReportPropertyMenu extends StatelessWidget {
 
@@ -279,10 +282,9 @@ class ReportPropertyMenu extends StatelessWidget {
                       ///button visibility only when the current month is selected
                       Center(
                           child: Material(
-                            color: Colors.amberAccent,
-                            borderRadius: BorderRadius.circular(8),
-                            child: InkWell(
-                              onTap: buttonEnabled ? () {
+                            child: ElevatedIconButton(
+                              onPress: buttonEnabled ? () {
+
                                 userPass = _currentUser.user.uid.toString();
                                 addressPass =
                                     _propertiesData.properties.address
@@ -292,61 +294,73 @@ class ReportPropertyMenu extends StatelessWidget {
 
                                 showPressed;
 
-                              } : null,
-                              borderRadius: BorderRadius.circular(32),
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 30,
-                                  vertical: 12,
-                                ),
-                                child: Text(
-                                  "Report\nElectrical Fault",
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
+                              } : (){
+                                Fluttertoast.showToast(
+                                msg: "Outstanding bill to pay, Fault Reporting unavailable!",
+                                gravity: ToastGravity.CENTER,); },
+                              labelText: 'Report Electrical Fault',
+                              fSize: 16,
+                              faIcon: const FaIcon(Icons.electric_bolt),
+                              fgColor: Colors.amberAccent,
+                              btSize: const Size(30, 12),
                             ),
+
+                            // InkWell(
+                            //   onTap: buttonEnabled ? () {
+                            //     userPass = _currentUser.user.uid.toString();
+                            //     addressPass =
+                            //         _propertiesData.properties.address
+                            //             .toString();
+                            //     elecDesVis = true;
+                            //     waterDesVis = false;
+                            //
+                            //     showPressed;
+                            //
+                            //   } : null,
+                            //   borderRadius: BorderRadius.circular(32),
+                            //   child: const Padding(
+                            //     padding: EdgeInsets.symmetric(
+                            //       horizontal: 30,
+                            //       vertical: 12,
+                            //     ),
+                            //     child: Text(
+                            //       "Report\nElectrical Fault",
+                            //       style: TextStyle(
+                            //         color: Colors.black,
+                            //         fontSize: 16,
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
 
                           )
                       ),
 
                       const SizedBox(height: 20,),
 
-                      ///Save changed button
+                      ///Report adding button
                       Center(
-                          child: Material(
-                            color: Colors.blueAccent,
-                            borderRadius: BorderRadius.circular(8),
-                            child: InkWell(
-                              onTap: buttonEnabled ? () {
-                                userPass = _currentUser.user.uid.toString();
-                                addressPass =
-                                    _propertiesData.properties.address
-                                        .toString();
+                          child: ElevatedIconButton(
+                            onPress: buttonEnabled ? () {
 
-                                elecDesVis = false;
-                                waterDesVis = true;
-                                showPressed;
+                              userPass = _currentUser.user.uid.toString();
+                              addressPass =
+                                  _propertiesData.properties.address
+                                      .toString();
+                              elecDesVis = false;
+                              waterDesVis = true;
 
-                              } : null,
-                              borderRadius: BorderRadius.circular(32),
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 30,
-                                  vertical: 12,
-                                ),
-                                child: Text(
-                                  "Report\nWater Fault",
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                            ),
+                              showPressed;
 
+                            } : (){
+                              Fluttertoast.showToast(
+                              msg: "Outstanding bill to pay, Fault Reporting unavailable!",
+                              gravity: ToastGravity.CENTER,); },
+                            labelText: 'Report Electrical Fault',
+                            fSize: 16,
+                            faIcon: const FaIcon(Icons.water_drop),
+                            fgColor: Colors.blue,
+                            btSize: const Size(30, 12),
                           )
                       ),
 
