@@ -1,7 +1,7 @@
 # municipal_track
 
 Municipal Tracker application using mySql with php rest api's
-REST API's in folder xampp/htdocs/api_municipal_tracker/ This folder must be placed in the xampp server folder
+REST API's in folder wampserver/www/api_municipal_tracker/ This folder must be placed in the wamp server folder
 
 ## Getting Started
 
