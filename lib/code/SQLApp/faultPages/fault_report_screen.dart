@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:municipal_track/code/SQLApp/faultPages/general_fault_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:municipal_track/code/SQLApp/propertiesData/properties_data.dart';
@@ -18,7 +19,6 @@ import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 
 class ReportPropertyMenu extends StatelessWidget {
 
-
   final _electricalFaultController = TextEditingController();
   final _waterFaultController = TextEditingController();
 
@@ -28,14 +28,13 @@ class ReportPropertyMenu extends StatelessWidget {
   String userPass = '';
   String addressPass = '';
 
-
   bool elecDesVis = true;
   bool waterDesVis = false;
   bool buttonEnabled = true;
 
   //this widget is for displaying a property field of information with an icon next to it, NB. the icon is to make it look good
   //it is called within a listview page widget
-  Widget propertyItemField(String propertyDat) {
+  Widget faultItemField(String propertyDat) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -55,7 +54,6 @@ class ReportPropertyMenu extends StatelessWidget {
       ),
     );
   }
-
 
   Future<void> _addNewFaultReport() async {
     final int uid = _currentUser.user.uid;
@@ -88,7 +86,6 @@ class ReportPropertyMenu extends StatelessWidget {
 
           Fluttertoast.showToast(msg: "Fault has been reported successfully!",
             gravity: ToastGravity.CENTER,);
-
         } else {
           Fluttertoast.showToast(
               msg: "Server connection failed. Report with network connection!");
@@ -142,7 +139,6 @@ class ReportPropertyMenu extends StatelessWidget {
                   ElevatedButton(
                     child: const Text('Report'),
                     onPressed: () async {
-
                       AlertDialog(
                         shape: const RoundedRectangleBorder(borderRadius:
                         BorderRadius.all(Radius.circular(16))),
@@ -167,7 +163,6 @@ class ReportPropertyMenu extends StatelessWidget {
                           ),
                           IconButton(
                             onPressed: () async {
-
                               _addNewFaultReport();
 
                               _electricalFaultController.text = '';
@@ -196,184 +191,149 @@ class ReportPropertyMenu extends StatelessWidget {
         });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Report Property Fault'),
+        title: const Text('Report Fault'),
         backgroundColor: Colors.green,
       ),
-
-      body: ListView.builder(
-
-        ///I need to figure out how to get the item count of all the rows of the propertiesData list so that displaying is not limited to the number set
-        itemCount: 4,
-        itemBuilder: (BuildContext context, int index) {
-          if (_propertiesData.properties.uid == _currentUser.user.uid) {
-            ///This checks and only displays the users property where the UID saved for both is the same
-
-            String billMessage;
-
-            ///A check for if payment is outstanding or not
-            if (_propertiesData.properties.eBill.toString() == '' ||
-                _propertiesData.properties.eBill.toString() == '0' ||
-                _propertiesData.properties.eBill
-                    .toString()
-                    .isEmpty) {
-              billMessage = "No outstanding payments";
-              buttonEnabled = true;
-            } else {
-              String feesOnAddress = _propertiesData.properties.address
-                  .toString();
-              billMessage =
-              "Current bill: R${_propertiesData.properties.eBill}";
-              Fluttertoast.showToast(
-                msg: "Outstanding bill to pay on:\nR$feesOnAddress\nFault Reporting unavailable!",
-                gravity: ToastGravity.CENTER,);
-              buttonEnabled = false;
-            }
-
-            return Column(
-              children: [
-                ListView(
-                    padding: const EdgeInsets.all(32),
-                    children: [
-
-                      const SizedBox(height: 20,),
-
-                      propertyItemField(
-                          "Account Number: ${_propertiesData.properties
-                              .accountNumber}"),
-
-                      const SizedBox(height: 10,),
-
-                      propertyItemField(
-                          "Address: ${_propertiesData.properties.address}"),
-
-                      const SizedBox(height: 10,),
-
-                      propertyItemField(
-                          "Area Code: ${_propertiesData.properties
-                              .areaCode}"),
-
-                      const SizedBox(height: 10,),
-
-                      propertyItemField(
-                          "Current bill: $billMessage"),
-
-                      const SizedBox(height: 10,),
-
-                      propertyItemField(
-                          "Electric Meter Number: ${_propertiesData.properties
-                              .electricityMeterNumber}"),
-
-                      const SizedBox(height: 10,),
-
-                      propertyItemField(
-                          "Water Meter Number: ${_propertiesData.properties
-                              .waterMeterNumber}"),
-
-                      const SizedBox(height: 20,),
-
-                      const SizedBox(height: 20,),
-
-                      ///button visibility only when the current month is selected
-                      Center(
-                          child: Material(
-                            child: ElevatedIconButton(
-                              onPress: buttonEnabled ? () {
-
-                                userPass = _currentUser.user.uid.toString();
-                                addressPass =
-                                    _propertiesData.properties.address
-                                        .toString();
-                                elecDesVis = true;
-                                waterDesVis = false;
-
-                                showPressed;
-
-                              } : (){
-                                Fluttertoast.showToast(
-                                msg: "Outstanding bill to pay, Fault Reporting unavailable!",
-                                gravity: ToastGravity.CENTER,); },
-                              labelText: 'Report Electrical Fault',
-                              fSize: 16,
-                              faIcon: const FaIcon(Icons.electric_bolt),
-                              fgColor: Colors.amberAccent,
-                              btSize: const Size(30, 12),
-                            ),
-
-                            // InkWell(
-                            //   onTap: buttonEnabled ? () {
-                            //     userPass = _currentUser.user.uid.toString();
-                            //     addressPass =
-                            //         _propertiesData.properties.address
-                            //             .toString();
-                            //     elecDesVis = true;
-                            //     waterDesVis = false;
-                            //
-                            //     showPressed;
-                            //
-                            //   } : null,
-                            //   borderRadius: BorderRadius.circular(32),
-                            //   child: const Padding(
-                            //     padding: EdgeInsets.symmetric(
-                            //       horizontal: 30,
-                            //       vertical: 12,
-                            //     ),
-                            //     child: Text(
-                            //       "Report\nElectrical Fault",
-                            //       style: TextStyle(
-                            //         color: Colors.black,
-                            //         fontSize: 16,
-                            //       ),
-                            //     ),
-                            //   ),
-                            // ),
-
-                          )
-                      ),
-
-                      const SizedBox(height: 20,),
-
-                      ///Report adding button
-                      Center(
-                          child: ElevatedIconButton(
-                            onPress: buttonEnabled ? () {
-
-                              userPass = _currentUser.user.uid.toString();
-                              addressPass =
-                                  _propertiesData.properties.address
-                                      .toString();
-                              elecDesVis = false;
-                              waterDesVis = true;
-
-                              showPressed;
-
-                            } : (){
-                              Fluttertoast.showToast(
-                              msg: "Outstanding bill to pay, Fault Reporting unavailable!",
-                              gravity: ToastGravity.CENTER,); },
-                            labelText: 'Report Electrical Fault',
-                            fSize: 16,
-                            faIcon: const FaIcon(Icons.water_drop),
-                            fgColor: Colors.blue,
-                            btSize: const Size(30, 12),
-                          )
-                      ),
-
-                      const SizedBox(height: 50,),
-
-                    ]
+      body: Column(
+        children: <Widget>[
+          Card(
+            margin: const EdgeInsets.all(10),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ElevatedIconButton(
+                  onPress: () async {
+                    Navigator.push(context,
+                        MaterialPageRoute(
+                            builder: (context) => GeneralFaultReporting()));
+                  },
+                  labelText: 'General Fault',
+                  fSize: 20,
+                  faIcon: const FaIcon(Icons.report_problem),
+                  fgColor: Colors.orangeAccent,
+                  btSize: const Size(20, 60),
                 ),
-              ],
-            );
-          } else {
-            return const CircularProgressIndicator();
-          }
-        },
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              shrinkWrap: true,
+
+              ///I need to figure out how to get the item count of all the rows of the propertiesData list so that displaying is not limited to the number set
+              itemCount: 4,
+              itemBuilder: (BuildContext context, int index) {
+                if (_propertiesData.properties.uid == _currentUser.user.uid) {
+                  ///This checks and only displays the users property where the UID saved for both is the same
+
+                  String billMessage;
+
+                  ///A check for if payment is outstanding or not
+                  if (_propertiesData.properties.eBill.toString() == '' ||
+                      _propertiesData.properties.eBill.toString() == '0' ||
+                      _propertiesData.properties.eBill
+                          .toString()
+                          .isEmpty) {
+                    billMessage = "No outstanding payments";
+                    buttonEnabled = true;
+                  } else {
+                    String feesOnAddress = _propertiesData.properties.address
+                        .toString();
+                    billMessage =
+                    "Current bill: R${_propertiesData.properties.eBill}";
+                    Fluttertoast.showToast(
+                      msg: "Outstanding bill to pay on:\nR$feesOnAddress\nFault Reporting unavailable!",
+                      gravity: ToastGravity.CENTER,);
+                    buttonEnabled = false;
+                  }
+                  const SizedBox(height: 20,);
+                  faultItemField("Account Number: ${_propertiesData.properties.accountNumber}");
+                  const SizedBox(height: 10,);
+                  faultItemField("Address: ${_propertiesData.properties.address}");
+                  const SizedBox(height: 10,);
+                  faultItemField("Current bill: $billMessage");
+                  const SizedBox(height: 10,);
+                  faultItemField("Electric Meter Number: ${_propertiesData.properties.electricityMeterNumber}");
+                  const SizedBox(height: 10,);
+                  faultItemField("Water Meter Number: ${_propertiesData.properties.waterMeterNumber}");
+                  const SizedBox(height: 20,);
+                  ///button visibility only when the current month is selected
+                  Center(
+                      child: Material(
+                        child: ElevatedIconButton(
+                          onPress: buttonEnabled ? () {
+                            userPass = _currentUser.user.uid.toString();
+                            addressPass = _propertiesData.properties.address.toString();
+                            elecDesVis = true;
+                            waterDesVis = false;
+                            showPressed;
+                          } : () {
+                            Fluttertoast.showToast(msg: "Outstanding bill to pay, Fault Reporting unavailable!", gravity: ToastGravity.CENTER,);
+                          },
+                          labelText: 'Report Electrical Fault',
+                          fSize: 16,
+                          faIcon: const FaIcon(Icons.electric_bolt),
+                          fgColor: Colors.amberAccent,
+                          btSize: const Size(30, 12),
+                        ),
+                      )
+                  );
+
+                  const SizedBox(height: 20,);
+
+                  ///Report adding button
+                  Center(
+                      child: ElevatedIconButton(
+                        onPress: buttonEnabled ? () {
+                          userPass = _currentUser.user.uid.toString();
+                          addressPass = _propertiesData.properties.address.toString();
+                          elecDesVis = false;
+                          waterDesVis = true;
+                          showPressed;
+                        } : () {
+                          Fluttertoast.showToast(msg: "Outstanding bill to pay, Fault Reporting unavailable!", gravity: ToastGravity.CENTER,);
+                        },
+                        labelText: 'Report Water Fault',
+                        fSize: 16,
+                        faIcon: const FaIcon(Icons.water_drop),
+                        fgColor: Colors.blue,
+                        btSize: const Size(30, 12),
+                      )
+                  );
+
+                  const SizedBox(height: 50,);
+                } else {
+                  return Column(
+                    children: [
+                      ElevatedIconButton(
+                        onPress: () async {
+                          Fluttertoast.showToast(
+                            msg: "Reporting a non-property related fault!",
+                            gravity: ToastGravity.CENTER,);
+
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) =>
+                                  GeneralFaultReporting()));
+                        },
+                        labelText: 'General Fault',
+                        fSize: 24,
+                        faIcon: const FaIcon(Icons.chat),
+                        fgColor: Colors.green,
+                        btSize: const Size(300, 80),
+                      ),
+                      const CircularProgressIndicator(),
+                    ],
+                  );
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

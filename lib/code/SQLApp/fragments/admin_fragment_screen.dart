@@ -16,7 +16,7 @@ import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';
 
 import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
 
-class PropertyFragmentScreen extends StatelessWidget{
+class AdminFragmentScreen extends StatelessWidget{
 
 
   final _meterReadingController = TextEditingController();
@@ -39,8 +39,8 @@ class PropertyFragmentScreen extends StatelessWidget{
   String userPass='';
   String addressPass='';
 
-  bool visShow = true;
-  bool visHide = false;
+  bool buttonVis1 = true;
+  bool buttonVis2 = false;
 
   //this widget is for displaying a property field of information with an icon next to it, NB. the icon is to make it look good
   //it is called within a listview page widget
@@ -126,7 +126,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                     //Text controllers for the properties db visibility only available for the electric and water readings because users must not be able to
                     //edit any other data but the controllers have to be there to prevent updating items to null, this may not be necessary but I left it for null safety
                     Visibility(
-                      visible: visHide,
+                      visible: buttonVis2,
                       child: TextField(
                         controller: _accountNumberController,
                         decoration: const InputDecoration(
@@ -134,7 +134,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: visHide,
+                      visible: buttonVis2,
                       child: TextField(
                         controller: _addressController,
                         decoration: const InputDecoration(
@@ -142,7 +142,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: visHide,
+                      visible: buttonVis2,
                       child: TextField(
                         keyboardType:
                         const TextInputType.numberWithOptions(),
@@ -152,7 +152,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: visHide,
+                      visible: buttonVis2,
                       child: TextField(
                         controller: _meterNumberController,
                         decoration: const InputDecoration(
@@ -160,7 +160,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: visShow,
+                      visible: buttonVis1,
                       child: TextField(
                         controller: _meterReadingController,
                         decoration: const InputDecoration(
@@ -168,7 +168,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: visHide,
+                      visible: buttonVis2,
                       child: TextField(
                         controller: _waterMeterController,
                         decoration: const InputDecoration(
@@ -176,7 +176,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: visShow,
+                      visible: buttonVis1,
                       child: TextField(
                         controller: _waterMeterReadingController,
                         decoration: const InputDecoration(
@@ -184,7 +184,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: visHide,
+                      visible: buttonVis2,
                       child: TextField(
                         controller: _cellNumberController,
                         decoration: const InputDecoration(
@@ -192,7 +192,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: visHide,
+                      visible: buttonVis2,
                       child: TextField(
                         controller: _firstNameController,
                         decoration: const InputDecoration(
@@ -200,7 +200,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: visHide,
+                      visible: buttonVis2,
                       child: TextField(
                         controller: _lastNameController,
                         decoration: const InputDecoration(
@@ -208,7 +208,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: visHide,
+                      visible: buttonVis2,
                       child: TextField(
                         controller: _idNumberController,
                         decoration: const InputDecoration(
@@ -290,207 +290,171 @@ class PropertyFragmentScreen extends StatelessWidget{
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Center(child: Text('Property Details')),
+        title: const Center(child: Text('Administrators Details')),
         backgroundColor: Colors.green,
       ),
 
       body: ListView.builder(
-
         ///I need to figure out how to get the item count of all the rows of the propertiesData list so that displaying is not limited to the number set
         itemCount: 4,
         itemBuilder: (BuildContext context, int index) {
-          String billMessage;
-          ///A check for if payment is outstanding or not
-          if (_propertiesData.properties.eBill.toString() != '' ||
-              _propertiesData.properties.eBill.toString() != '0') {
-            String feesOnAddress = _propertiesData.properties.address.toString();
-            billMessage = "Current bill: R${_propertiesData.properties.eBill}";
-          } else {
-            billMessage = "No outstanding payments";
-          }
 
-          if (_propertiesData.properties.uid == _currentUser.user.uid) {
+
+          if(_propertiesData.properties.uid == _currentUser.user.uid){
             ///This checks and only displays the users property where the UID saved for both is the same
 
-            const SizedBox(height: 20,);
-            propertyItemField("Account Number: ${_propertiesData.properties.accountNumber}");
-            const SizedBox(height: 10,);
-            propertyItemField("Address: ${_propertiesData.properties.address}");
-            const SizedBox(height: 10,);
-            propertyItemField("Area Code: ${_propertiesData.properties.areaCode}");
-            const SizedBox(height: 10,);
-            propertyItemField("Current bill: R$billMessage");
-            const SizedBox(height: 10,);
-            propertyItemField("Electric Meter Number: ${_propertiesData.properties.electricityMeterNumber}");
-            const SizedBox(height: 10,);
-            propertyItemField("Electric Meter Reading: ${_propertiesData.properties.electricityMeterReading}");
-            const SizedBox(height: 10,);
-            propertyItemField("Water Meter Number: ${_propertiesData.properties.waterMeterNumber}");
-            const SizedBox(height: 10,);
-            propertyItemField("Water Meter Reading: ${_propertiesData.properties.waterMeterReading}");
-            const SizedBox(height: 10,);
-            propertyItemField("First Name: ${_propertiesData.properties.firstName}");
-            const SizedBox(height: 10,);
-            propertyItemField("Last Name: ${_propertiesData.properties.lastName}");
-            const SizedBox(height: 10,);
-            propertyItemField("ID Number: ${_propertiesData.properties.idNumber}");
-            const SizedBox(height: 10,);
-            propertyItemField("Contact Number: ${_propertiesData.properties.cellNumber}");
-            const SizedBox(height: 20,);
-            const Center(
-              child: Text('Electricity Meter Photo',
-                style: TextStyle(fontWeight: FontWeight.bold),),
-            );
-            const SizedBox(height: 10,);
-            Center(
-              child: Card(
-                color: Colors.blue,
-                semanticContainer: true,
-                clipBehavior: Clip.antiAliasWithSaveLayer,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                elevation: 0,
-                margin: const EdgeInsets.all(10.0),
-                child: FutureBuilder(
-                    future: _getEImage(
-                        context, _propertiesData.properties.address),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return Text(
-                            'Image not yet uploaded.'); //${snapshot.error} if error needs to be displayed instead
-                      }
-                      if (snapshot.connectionState ==
-                          ConnectionState.done) {
-                        return Container(
-                          child: snapshot.data,
-                        );
-                      }
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return Container(
-                          child: const CircularProgressIndicator(),);
-                      }
-                      return Container();
-                    }
-                ),
-              ),
-            );
-            const SizedBox(height: 20,);
-            const Center(
-              child: Text('Water Meter Photo',
-                style: TextStyle(fontWeight: FontWeight.bold),),
-            );
-            const SizedBox(height: 10,);
-            Center(
-              child: Card(
-                color: Colors.blue,
-                semanticContainer: true,
-                clipBehavior: Clip.antiAliasWithSaveLayer,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                elevation: 0,
-                margin: const EdgeInsets.all(10.0),
-                child: FutureBuilder(
-                    future: _getWImage(
-                        context, _propertiesData.properties.address),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return Text(
-                            'Image not yet uploaded.'); //${snapshot.error} if error needs to be displayed instead
-                      }
-                      if (snapshot.connectionState ==
-                          ConnectionState.done) {
-                        return Container(
-                          child: snapshot.data,
-                        );
-                      }
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return Container(
-                          child: const CircularProgressIndicator(),);
-                      }
-                      return Container();
-                    }
-                ),
-              ),
-            );
+            return Column(
+              children: [
+                ListView(
+                    padding: const EdgeInsets.all(32),
+                    children: [
 
-            Visibility(visible: visShow,
-                child: const SizedBox(height: 20,));
+                      const SizedBox(height: 20,),
 
-            ///button visibility only when the current month is selected
-            Visibility(
-              visible: visShow,
-              child: Center(
-                  child: Material(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.circular(8),
-                    child: InkWell(
-                      onTap: () {
-                        userPass = _currentUser.user.uid.toString();
-                        addressPass = _propertiesData.properties.address
-                            .toString();
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (context) =>
-                                PhotoUploadState(userGet: userPass,
-                                  addressGet: addressPass,)));
-                      },
-                      borderRadius: BorderRadius.circular(32),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 30,
-                          vertical: 12,
-                        ),
-                        child: Text(
-                          "Meter Photo Upload",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
+                      propertyItemField(
+                          "Account Number: ${_propertiesData.properties
+                              .accountNumber}"),
+
+                      const SizedBox(height: 10,),
+
+                      propertyItemField(
+                          "Address: ${_propertiesData.properties.address}"),
+
+                      const SizedBox(height: 10,),
+
+                      propertyItemField(
+                          "Area Code: ${_propertiesData.properties.areaCode}"),
+
+                      const SizedBox(height: 10,),
+
+                      propertyItemField(
+                          "Electric Meter Number: ${_propertiesData.properties
+                              .electricityMeterNumber}"),
+
+                      const SizedBox(height: 10,),
+
+                      propertyItemField(
+                          "Electric Meter Reading: ${_propertiesData.properties
+                              .electricityMeterReading}"),
+
+                      ///add text input to make tappable to edit and save changes for only the current months meter reading
+
+                      const SizedBox(height: 10,),
+
+                      propertyItemField(
+                          "Water Meter Number: ${_propertiesData.properties
+                              .waterMeterNumber}"),
+
+                      const SizedBox(height: 10,),
+
+                      propertyItemField(
+                          "Water Meter Reading: ${_propertiesData.properties
+                              .waterMeterReading}"),
+
+                      ///add text input to make tappable to edit and save changes for only the current months meter reading
+
+                      const SizedBox(height: 10,),
+
+                      propertyItemField(
+                          "First Name: ${_propertiesData.properties.firstName}"),
+
+                      const SizedBox(height: 10,),
+
+                      propertyItemField(
+                          "Last Name: ${_propertiesData.properties.lastName}"),
+
+                      const SizedBox(height: 10,),
+
+                      propertyItemField(
+                          "ID Number: ${_propertiesData.properties.idNumber}"),
+
+                      const SizedBox(height: 10,),
+
+                      propertyItemField(
+                          "Contact Number: ${_propertiesData.properties
+                              .cellNumber}"),
+
+                      const SizedBox(height: 20,),
+
+                      const Center(
+                        child: Text('Electricity Meter Photo',
+                          style: TextStyle(fontWeight: FontWeight.bold),),
+                      ),
+                      const SizedBox(height: 10,),
+
+                      Visibility(visible: buttonVis1,
+                          child: const SizedBox(height: 20,)),
+
+                      ///button visibility only when the current month is selected
+                      Visibility(
+                        visible: buttonVis1,
+                        child: Center(
+                            child: Material(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(8),
+                              child: InkWell(
+                                onTap: () {
+
+                                },
+                                borderRadius: BorderRadius.circular(32),
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 30,
+                                    vertical: 12,
+                                  ),
+                                  child: Text(
+                                    "Set User Roll",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                            )
                         ),
                       ),
-                    ),
 
-                  )
-              ),
-            );
+                      const SizedBox(height: 20,),
 
-            const SizedBox(height: 20,);
+                      ///Save changed button
+                      Visibility(
+                        visible: buttonVis1,
+                        child: Center(
+                            child: Material(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(8),
+                              child: InkWell(
+                                ///This will contain the function that edits the table data of meter readings for the current month only
+                                onTap: ()=>showPressed(context),
+                                borderRadius: BorderRadius.circular(32),
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 30,
+                                    vertical: 12,
+                                  ),
+                                  child: Text(
+                                    "Update Meter Reading",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
 
-            ///Save changed button
-            Visibility(
-              visible: visShow,
-              child: Center(
-                  child: Material(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.circular(8),
-                    child: InkWell(
-
-                      ///This will contain the function that edits the table data of meter readings for the current month only
-                      onTap: () => showPressed(context),
-                      borderRadius: BorderRadius.circular(32),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 30,
-                          vertical: 12,
-                        ),
-                        child: Text(
-                          "Update Meter Reading",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
+                            )
                         ),
                       ),
-                    ),
 
-                  )
-              ),
+                      const SizedBox(height: 50,),
+
+                    ]
+                ),
+              ],
             );
 
-            const SizedBox(height: 50,);
           } else {
             return const CircularProgressIndicator();
           }
@@ -498,6 +462,10 @@ class PropertyFragmentScreen extends StatelessWidget{
       ),
     );
   }
+
+
+
+
 
   ///pdf view loader getting file name onPress/onTap that passes pdf filename to this class.
   void openPDF(BuildContext context, File file) => Navigator.of(context).push(

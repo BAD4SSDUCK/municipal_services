@@ -1,5 +1,5 @@
 import 'package:municipal_track/code/SQLApp/model/property.dart';
-import 'package:municipal_track/code/SQLApp/propertiesData/property_preferences.dart';
+import 'package:municipal_track/code/SQLApp/propertiesData/property_storage.dart';
 
 import 'package:municipal_track/code/SQLApp/model/user.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/user_preferences.dart';

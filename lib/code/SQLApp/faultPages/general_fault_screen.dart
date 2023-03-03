@@ -8,6 +8,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:municipal_track/code/SQLApp/propertiesData/property_storage.dart';
+import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';
 import 'package:path/path.dart';
 import 'package:http/http.dart' as http;
 import 'package:geocoding/geocoding.dart';
@@ -17,38 +18,50 @@ import 'package:geocoding/geocoding.dart';
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';
 import 'package:municipal_track/code/SQLApp/propertiesData/image_preferences.dart';
 import 'package:municipal_track/code/SQLapp/propertiesData/properties_data.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 
-class PhotoUploadState extends StatefulWidget {
-  final String userGet;
-  final String addressGet;
+class GeneralFaultReporting extends StatefulWidget {
 
-  const PhotoUploadState({Key? key, required this.userGet, required this.addressGet,}) : super(key: key);
+  const GeneralFaultReporting({Key? key}) : super(key: key);
 
   @override
-  State<PhotoUploadState> createState() => _PhotoUploadStateState();
+  State<GeneralFaultReporting> createState() => _GeneralFaultReportingState();
 }
 
-class _PhotoUploadStateState extends State<PhotoUploadState> {
+class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
+
+  final _accountNumberController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _depAllocationController = TextEditingController();
+  final _dateReportedController = TextEditingController();
+
+  bool visShow = true;
+  bool visHide = false;
 
   File? _photo;
   final ImagePicker _picker = ImagePicker();
   String? meterType;
-  final PropertiesData _propertiesData = Get.put(PropertiesData());
+  final CurrentUser _currentUser = Get.put(CurrentUser());
   TextEditingController nameController = TextEditingController();
   bool buttonEnabled = true;
   String location ='Null, Press Button';
   String Address = 'search';
 
   @override
-  void initState() async {
+  void initState() {
+    locationAllow();
+    super.initState();
+  }
+
+  Future<void> locationAllow() async {
     Position position = await _getGeoLocationPosition();
     location ='Lat: ${position.latitude} , Long: ${position.longitude}';
     GetAddressFromLatLong(position);
     if(_getGeoLocationPosition.isBlank == false){
-      buttonEnabled = false;
+      buttonEnabled = true;
     }
-    super.initState();
   }
 
   //Used to set the _photo file as image from gallery
@@ -58,11 +71,7 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
     setState(() {
       if (pickedFile != null) {
         _photo = File(pickedFile.path);
-        if(meterType == "E"){
-          uploadEFile();
-        } else if (meterType == "W"){
-          uploadWFile();
-        }
+        uploadFaultFile();
       } else {
         print('No image selected.');
       }
@@ -76,18 +85,14 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
     setState(() {
       if (pickedFile != null) {
         _photo = File(pickedFile.path);
-        if(meterType == "E"){
-          uploadEFile();
-        } else if (meterType == "W"){
-          uploadWFile();
-        }
+        uploadFaultFile();
       } else {
         print('No image selected.');
       }
     });
   }
 
-  Future uploadEFile() async {
+  Future uploadFaultFile() async {
 
     if (_photo == null) return;
 
@@ -101,16 +106,17 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
     String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
 
     var data ={
-      "uid": widget.userGet,
-      "propertyAddress": widget.addressGet,
-      "electricMeterIMG": imageFile,
+      "uid": _currentUser.user.uid.toString(),
+      "propertyAddress": Address.toString(),
+      "faultDes": _descriptionController.text,
+      "faultIMG": imageFile,
       "capturedFrom": Address.toString(),
-      "uploadTime": formattedDate,
+      "dateReported": formattedDate,
     };
 
     try{
       var res = await http.post(
-        Uri.parse(API.meterImgData),
+        Uri.parse(API.reportFault),
         body: data,
       );
       if(res.statusCode == 200){
@@ -122,57 +128,12 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
           //await RememberImageInfo.storeImageInfo(imageData);
 
         } else {
-          Fluttertoast.showToast(msg: "Upload connection failed. Try again with network!", gravity: ToastGravity.CENTER);
+          Fluttertoast.showToast(msg: "Connection failed. Fix your network!", gravity: ToastGravity.CENTER);
         }
       }
     } catch(e) {
       print("Error :: " + e.toString());
       Fluttertoast.showToast(msg: e.toString(), gravity: ToastGravity.CENTER);
-    }
-  }
-
-  Future uploadWFile() async {
-
-    if (_photo == null) return;
-
-    File? imageFile = _photo;
-    List<int> imageBytes = imageFile!.readAsBytesSync();
-    String imageData = base64Encode(imageBytes);
-
-    final String photoName;
-
-    DateTime now = DateTime.now();
-    String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-
-    var data ={
-      "uid": widget.userGet,
-      "propertyAddress": widget.addressGet,
-      "waterMeterIMG": imageFile,
-      "capturedFrom": Address.toString(),
-      "uploadTime": formattedDate,
-    };
-
-    try{
-      var res = await http.post(
-        Uri.parse(API.meterImgData),
-        body: data,
-      );
-
-      if(res.statusCode == 200){
-        var resBodyOfImage = jsonDecode(res.body);
-        if(resBodyOfImage['success'] == true){
-          print('reaching api');
-
-          //save user info to local storage using shared Preferences
-          //await RememberImageInfo.storeImageInfo(imageData);
-
-        } else {
-          Fluttertoast.showToast(msg: "Upload connection failed. Fix your network!");
-        }
-      }
-    } catch(e) {
-      print("Error :: " + e.toString());
-      Fluttertoast.showToast(msg: e.toString());
     }
   }
   
@@ -222,13 +183,13 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Meter Reading Capture'),
+        title: const Text('General Fault Reporting'),
         backgroundColor: Colors.green,
       ),
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            const SizedBox(height: 100,),
+            const SizedBox(height: 50,),
             Center(
               child: GestureDetector(
                 onTap: () {
@@ -248,75 +209,20 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
                 ),
               ),
             ),
-            const SizedBox(height: 20,),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                controller: nameController,
-                decoration: InputDecoration(labelText: 'Meter Image Upload'),
-              ),
-            ),
-            const SizedBox(height: 100,),
+            const SizedBox(height: 80,),
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25.0),
               child: GestureDetector(
                 onTap: buttonEnabled? () {
                   if (_photo != null) {
-                    AlertDialog(
-                      shape: const RoundedRectangleBorder(borderRadius:
-                      BorderRadius.all(Radius.circular(16))),
-                      title: const Text("Meter Type!"),
-                      content: const Text(
-                          "Are you uploading an Electricity Meter Image \n or a Water Meter Image?"),
-                      actions: [
-                        TextButton(
-                          child: Row(
-                            children: const [
-                              Icon(
-                                Icons.power, color: Colors.yellowAccent,
-                              ),
-                              Text('Electric'),
-                            ],
-                          ),
-                          onPressed: () {
-                            meterType = "E";
-                            uploadEFile();
-                            Fluttertoast.showToast(msg: "Successfully Uploaded!\nElectric Meter Image!", gravity: ToastGravity.CENTER);
-                            Navigator.of(context).pop(context);
-                            Navigator.of(context).pop(context);
-                          },
-                        ),
-                        TextButton(
-                          child: Row(
-                            children: const [
-                              Icon(
-                                Icons.water_drop, color: Colors.blueAccent,
-                              ),
-                              Text('Water'),
-                            ],
-                          ),
-                          onPressed: () {
-                            meterType = "W";
-                            uploadWFile();
-                            Fluttertoast.showToast(msg: "Successfully Uploaded!\nWater Meter Image!", gravity: ToastGravity.CENTER);
-                            Navigator.of(context).pop(context); //pops the alert dialogue box
-                            Navigator.of(context).pop(context); //pops the image upload page back to the listview
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.cancel, color: Colors.red,
-                          ),
-                          onPressed: () {
-                            Navigator.of(context).pop(context);
-                          },
-                        ),
-                      ],
-                    );
+                    showPressed(context);
                   } else {
                     Fluttertoast.showToast(msg: "Please tap on the image area and select the image to upload!", gravity: ToastGravity.CENTER);
                   }
-                } : null,
+                } : (){
+                  Fluttertoast.showToast(msg: "Please fill all fields!", gravity: ToastGravity.CENTER);
+                },
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -325,7 +231,7 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
                   ),
                   child: const Center(
                     child: Text(
-                      'Upload Image',
+                      'Report Fault With Image',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -365,6 +271,136 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
                       imgFromCamera();
                       Navigator.of(context).pop();
                     },
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
+  Future<void> showPressed(BuildContext context) async{
+     showModalBottomSheet(
+        isScrollControlled: true,
+        context: context,
+        builder: (BuildContext ctx) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: 20,
+                  left: 20,
+                  right: 20,
+                  bottom: MediaQuery
+                      .of(ctx)
+                      .viewInsets
+                      .bottom + 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  //Text controllers for the properties db visibility only available for the electric and water readings because users must not be able to
+                  //edit any other data but the controllers have to be there to prevent updating items to null, this may not be necessary but I left it for null safety
+                  Visibility(
+                    visible: visHide,
+                    child: TextField(
+                      controller: _accountNumberController,
+                      decoration: const InputDecoration(
+                          labelText: 'Account Number'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visHide,
+                    child: TextField(
+                      controller: _addressController,
+                      decoration: const InputDecoration(
+                          labelText: 'Street Address'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visShow,
+                    child: TextField(
+                      keyboardType:
+                      const TextInputType.numberWithOptions(),
+                      controller: _descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Fault Description',),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visHide,
+                    child: TextField(
+                      controller: _depAllocationController,
+                      decoration: const InputDecoration(
+                          labelText: 'Department Allocation'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visHide,
+                    child: TextField(
+                      controller: _dateReportedController,
+                      decoration: const InputDecoration(
+                          labelText: 'Date of Report'),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  ElevatedButton(
+                      child: const Text('Report'),
+                      onPressed: () {
+                        AlertDialog(
+                          shape: const RoundedRectangleBorder(borderRadius:
+                          BorderRadius.all(Radius.circular(16))),
+                          title: const Text("Complete Your Report!"),
+                          content: const Text(
+                              "Would you like to call the report center after reporting?"),
+                          actions: [
+                            TextButton(
+                              child: Row(
+                                children: const [
+                                  Icon(
+                                    Icons.call, color: Colors.blueAccent,
+                                  ),
+                                  Text('Call After Reporting'),
+                                ],
+                              ),
+                              onPressed: () {
+                                uploadFaultFile();
+                                Fluttertoast.showToast(msg: "Successfully Sent Report!", gravity: ToastGravity.CENTER);
+                                Navigator.of(context).pop(context);
+                                Navigator.of(context).pop(context);
+                                final Uri _tel = Uri.parse(
+                                    'tel:+27${0800001868}');
+                                launchUrl(_tel);
+                              },
+                            ),
+                            TextButton(
+                              child: Row(
+                                children: const [
+                                  Icon(
+                                    Icons.report_problem, color: Colors.tealAccent,
+                                  ),
+                                  Text('Don\'t Call'),
+                                ],
+                              ),
+                              onPressed: () {
+                                uploadFaultFile();
+                                Fluttertoast.showToast(msg: "Successfully Sent Report!", gravity: ToastGravity.CENTER);
+                                Navigator.of(context).pop(context);
+                                Navigator.of(context).pop(context);
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.cancel, color: Colors.red,
+                              ),
+                              onPressed: () {
+                                Navigator.of(context).pop(context);
+                              },
+                            ),
+                          ],
+                        );
+                      }
                   ),
                 ],
               ),

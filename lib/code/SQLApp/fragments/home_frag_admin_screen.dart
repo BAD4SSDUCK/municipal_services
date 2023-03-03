@@ -39,14 +39,14 @@ import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 import 'dashboard_of_fragments_sql.dart';
 
 
-class HomeFragmentScreen extends StatefulWidget {
-  const HomeFragmentScreen({Key? key}) : super(key: key);
+class HomeAdminScreen extends StatefulWidget {
+  const HomeAdminScreen({Key? key}) : super(key: key);
 
   @override
-  State<StatefulWidget> createState() =>_HomeFragmentScreenState();
+  State<StatefulWidget> createState() =>_HomeAdminScreenState();
 }
 
-class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
+class _HomeAdminScreenState extends State<HomeAdminScreen>{
 
   bool loading = true;
   late List pdfList;
@@ -137,15 +137,15 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                                       gravity: ToastGravity.CENTER,);
 
                                     ///SQL pdf list that shows the users statements if it contains their account number
-                                    Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => const pdfSelectionPage()));
+                                    // Navigator.push(context,
+                                    //     MaterialPageRoute(builder: (context) => const pdfSelectionPage()));
 
                                   },
-                                  labelText: 'Download Statement',
-                                  fSize: 22,
-                                  faIcon: const FaIcon(FontAwesomeIcons.solidFilePdf),
-                                  fgColor: Colors.redAccent,
-                                  btSize: const Size(280, 60),
+                                  labelText: 'Maps',
+                                  fSize: 24,
+                                  faIcon: const FaIcon(FontAwesomeIcons.map),
+                                  fgColor: Colors.green,
+                                  btSize: const Size(300, 80),
                                 ),
 
                               ],
@@ -165,15 +165,15 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                                     // Fluttertoast.showToast(msg: "Now downloading your statements!\nPlease wait a few seconds!",
                                     //   gravity: ToastGravity.CENTER,);
 
-                                    Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => ReportPropertyMenu()));
+                                    // Navigator.push(context,
+                                    //     MaterialPageRoute(builder: (context) => ReportPropertyMenu()));
 
                                   },
-                                  labelText: 'Report Fault',
-                                  fSize: 22,
+                                  labelText: 'Report List',
+                                  fSize: 24,
                                   faIcon: const FaIcon(Icons.report_problem),
                                   fgColor: Colors.orange,
-                                  btSize: const Size(280, 60),
+                                  btSize: const Size(300, 80),
                                 ),
 
                               ],
@@ -191,12 +191,13 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                                 ElevatedIconButton(
                                   onPress: (){
                                     ProfileFragmentScreen().signOutUser();
+
                                   },
                                   labelText: 'Logout',
-                                  fSize: 22,
+                                  fSize: 24,
                                   faIcon: const FaIcon(Icons.logout),
                                   fgColor: Colors.red,
-                                  btSize: const Size(280, 60),
+                                  btSize: const Size(300, 80),
                                 ),
                               ],
                             ),
@@ -210,7 +211,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                     ///Old Buttons
                     // ///Display information for all users properties information for admins to see
                     // Visibility(
-                    //     visible: visHide,
+                    //     visible: visInternal,
                     //     child: const SizedBox(height: 20)),
                     // Visibility(
                     //   visible: visInternal,
@@ -224,10 +225,10 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                     // ),
                     //
                     // Visibility(
-                    //     visible: visHide,
+                    //     visible: visInternal,
                     //     child: const SizedBox(height: 20)),
                     // Visibility(
-                    //   visible: visHide,
+                    //   visible: visInternal,
                     //   child: ReusableElevatedButton(
                     //     onPress: (){
                     //
@@ -242,10 +243,10 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                     //
                     // ///button for admin to get all chats from the DB
                     // Visibility(
-                    //     visible: visHide,//visInternal,
+                    //     visible: visInternal,//visInternal,
                     //     child: const SizedBox(height: 20)),
                     // Visibility(
-                    //   visible: visHide,//visInternal,
+                    //   visible: visInternal,//visInternal,
                     //   child: ReusableElevatedButton(
                     //     onPress: () async {
                     //
@@ -259,10 +260,10 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                     //
                     // ///Direct statement download feature needs to be for the user account only
                     // Visibility(
-                    //     visible: visShow,
+                    //     visible: visExternal,
                     //     child: const SizedBox(height: 20)),
                     // Visibility(
-                    //   visible: visShow,
+                    //   visible: visExternal,
                     //   child: ReusableElevatedButton(
                     //     onPress: () async {
                     //       Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!");
@@ -289,10 +290,10 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                     // ),
                     //
                     // Visibility(
-                    //     visible: visShow,
+                    //     visible: visExternal,
                     //     child: const SizedBox(height: 20)),
                     // Visibility(
-                    //   visible: visShow,
+                    //   visible: visExternal,
                     //   child: ReusableElevatedButton(
                     //     onPress: (){
                     //       showDialog(

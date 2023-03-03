@@ -3,68 +3,64 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
+import 'package:municipal_track/code/SQLApp/Auth/login_screen.dart';
 import 'package:municipal_track/code/SQLApp/Auth/signup_screen.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';
-import 'package:municipal_track/code/SQLApp/auth/admin_login_screen.dart';
 import 'package:municipal_track/code/SQLApp/model/user.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/user_preferences.dart';
 
 import 'package:municipal_track/code/SQLApp/fragments/dashboard_of_fragments_sql.dart';
+import 'package:url_launcher/url_launcher.dart';
 //
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+class AdminLoginScreen extends StatefulWidget {
+  const AdminLoginScreen({Key? key}) : super(key: key);
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<AdminLoginScreen> createState() => _AdminLoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
   var formKey = GlobalKey<FormState>();
-  var phoneNumberController = TextEditingController();
+  var userNameController = TextEditingController();
   var passwordController = TextEditingController();
   var isObscure = true.obs;
 
   loginUserNow() async {
-    if (phoneNumberController.toString().contains('+27')) {
-      try {
-        var res = await http.post(
-          Uri.parse(API.login),
-          body: {
-            "cellNumber": phoneNumberController.text.trim(),
-            "userPassword": passwordController.text.trim(),
-          },
-        );
+    try {
+      var res = await http.post(
+        Uri.parse(API.login),
+        body: {
+          "userName": userNameController.text.trim(),
+          "userPassword": passwordController.text.trim(),
+        },
+      );
 
-        if (res.statusCode == 200) {
-          var resBodyOfLogin = jsonDecode(res.body);
-          if (resBodyOfLogin['success'] == true) {
-            print('reaching login api');
-            Fluttertoast.showToast(msg: "You are logged in Successfully");
+      if (res.statusCode == 200) {
+        var resBodyOfLogin = jsonDecode(res.body);
+        if (resBodyOfLogin['success'] == true) {
+          print('reaching login api');
+          Fluttertoast.showToast(msg: "You are logged in Successfully");
 
-            User userInfo = User.fromJson(resBodyOfLogin["userData"]);
+          User userInfo = User.fromJson(resBodyOfLogin["userData"]);
 
-            //save user info to local storage using shared Preferences
-            await RememberUserPrefs.storeUserInfo(userInfo);
+          //save user info to local storage using shared Preferences
+          await RememberUserPrefs.storeUserInfo(userInfo);
 
-            //send user to a dashboard once logged in 'DashboardOfFragments' is a temp dashboard to test the sql user info login
-            Future.delayed(Duration(milliseconds: 2000), () {
-              Get.to(DashboardOfFragments());
-            });
-          } else {
-            Fluttertoast.showToast(
-                msg: "Incorrect credentials. \nPlease enter correct password and phone number and Try Again.");
-          }
+          //send user to a dashboard once logged in 'DashboardOfFragments' is a temp dashboard to test the sql user info login
+          Future.delayed(Duration(milliseconds: 2000), () {
+            Get.to(DashboardOfFragments());
+          });
+        } else {
+          Fluttertoast.showToast(
+              msg: "Incorrect credentials. \nPlease enter correct password and phone number and Try Again.");
         }
-      } catch (e) {
-        print("Error :: " + e.toString());
-        Fluttertoast.showToast(msg: e.toString());
       }
-    } else {
-      Fluttertoast.showToast(
-          msg: "Please use phone number country code format.\nReplace the first 0 with +27");
+    } catch (e) {
+      print("Error :: " + e.toString());
+      Fluttertoast.showToast(msg: e.toString());
     }
   }
 
@@ -123,19 +119,19 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: Column(
                                 children: [
 
-                                  ///Phone number
+                                  ///Username
                                   TextFormField(
-                                    controller: phoneNumberController,
+                                    controller: userNameController,
                                     validator: (val) =>
                                     val == ""
-                                        ? "Please Enter Your Phone Number"
+                                        ? "Please Enter Your Username"
                                         : null,
                                     decoration: InputDecoration(
                                       prefixIcon: const Icon(
                                         Icons.phone,
                                         color: Colors.black,
                                       ),
-                                      hintText: "+27 Phone Number...",
+                                      hintText: "Username...",
                                       border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                               30),
@@ -184,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           obscureText: isObscure.value,
                                           validator: (val) =>
                                           val == ""
-                                              ? "Please Enter Your Password"
+                                              ? "Please enter your password"
                                               : null,
                                           decoration: InputDecoration(
                                             prefixIcon: const Icon(
@@ -290,12 +286,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const Text("Don't have an Account?"),
                                 TextButton(
                                   onPressed: () {
-                                    ///Using this can be changed for other pages instead of using Navigator.push in any onPressed:/onTap: functions.
-                                    // [GETX] WARNING, consider using: "Get.to(() => Page())" instead of "Get.to(Page())".
-                                    // Using a widget function instead of a widget fully guarantees that the widget and its controllers will be removed from memory when they are no longer used.
-                                    Get.to(SignUpScreen());
+                                    ///Using this needs to be for managers phone number.
+                                    final Uri _tel = Uri.parse('tel:+27${"TOBE changed"}');
+                                    launchUrl(_tel);
                                   },
-                                  child: const Text("Register Here",
+                                  child: const Text("Contact Manager",
                                     style: TextStyle(
                                         color: Colors.blue,
                                         fontSize: 16
@@ -313,10 +308,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Text("Are you an Admin?"),
+                                const Text("Are you a regular user?"),
                                 TextButton(
                                   onPressed: () {
-                                    Get.to(AdminLoginScreen());
+                                    Get.to(LoginScreen());
                                   },
                                   child: const Text("Click Here",
                                     style: TextStyle(

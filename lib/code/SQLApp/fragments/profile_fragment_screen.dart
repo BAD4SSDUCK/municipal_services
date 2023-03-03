@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:municipal_track/code/SQLApp/auth/login_screen.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/user_preferences.dart';
-import 'package:municipal_track/code/SQLApp/propertiesData/property_preferences.dart';
+import 'package:municipal_track/code/SQLApp/propertiesData/property_storage.dart';
 import 'package:municipal_track/code/SQLApp/propertiesData/image_preferences.dart';
 
 class ProfileFragmentScreen extends StatelessWidget {
