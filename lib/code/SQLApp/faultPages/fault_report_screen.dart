@@ -3,19 +3,16 @@ import 'dart:io';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:municipal_track/code/SQLApp/faultPages/general_fault_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_track/code/SQLApp/faultPages/general_fault_screen.dart';
 import 'package:municipal_track/code/SQLApp/propertiesData/properties_data.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';
-
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';
-
-import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 
 class ReportPropertyMenu extends StatelessWidget {
 
@@ -87,8 +84,8 @@ class ReportPropertyMenu extends StatelessWidget {
           Fluttertoast.showToast(msg: "Fault has been reported successfully!",
             gravity: ToastGravity.CENTER,);
         } else {
-          Fluttertoast.showToast(
-              msg: "Server connection failed. Report with network connection!");
+          Fluttertoast.showToast(msg: "Server connection failed. Report with network connection!",
+            gravity: ToastGravity.CENTER,);
         }
       }
     } catch (e) {
@@ -172,8 +169,8 @@ class ReportPropertyMenu extends StatelessWidget {
                                   'tel:+27${0800001868}');
                               launchUrl(_tel);
 
-                              Get.back();
                               Navigator.of(context).pop();
+                              Get.back();
                             },
                             icon: const Icon(
                               Icons.done,
@@ -236,16 +233,12 @@ class ReportPropertyMenu extends StatelessWidget {
                   ///A check for if payment is outstanding or not
                   if (_propertiesData.properties.eBill.toString() == '' ||
                       _propertiesData.properties.eBill.toString() == '0' ||
-                      _propertiesData.properties.eBill
-                          .toString()
-                          .isEmpty) {
+                      _propertiesData.properties.eBill.toString().isEmpty) {
                     billMessage = "No outstanding payments";
                     buttonEnabled = true;
                   } else {
-                    String feesOnAddress = _propertiesData.properties.address
-                        .toString();
-                    billMessage =
-                    "Current bill: R${_propertiesData.properties.eBill}";
+                    String feesOnAddress = _propertiesData.properties.address.toString();
+                    billMessage = "Current bill: R${_propertiesData.properties.eBill}";
                     Fluttertoast.showToast(
                       msg: "Outstanding bill to pay on:\nR$feesOnAddress\nFault Reporting unavailable!",
                       gravity: ToastGravity.CENTER,);

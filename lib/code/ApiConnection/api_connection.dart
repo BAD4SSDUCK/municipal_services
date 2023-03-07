@@ -15,10 +15,13 @@ class API{
 
   //getting property information
   static const propertiesInfo = "$hostConnect/property/properties.php";
-  static const meterImgData = "$hostConnect/property/image_data.php";
+  static const propertiesUpdate = "$hostConnect/property/properties_update.php";
+  static const meterImgUpload = "$hostConnect/property/image_upload.php";
+  static const meterImgDownload = "$hostConnect/property/image_download.php";
 
   //reporting electrical or water faults on a property
   static const reportFault = "$hostConnect/faults/fault_upload.php";
+  static const reportFaultUpdated = "$hostConnect/faults/fault_update.php";
   //Getting reports to assign to admin users
   static const reportList = "$hostConnect/faults/fault_list.php";
 

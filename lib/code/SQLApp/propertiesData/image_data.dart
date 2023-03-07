@@ -32,5 +32,4 @@ class ImageData extends GetxController {
     }
   }
 
-
 }

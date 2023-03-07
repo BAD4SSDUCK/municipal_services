@@ -103,14 +103,14 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
     var data ={
       "uid": widget.userGet,
       "propertyAddress": widget.addressGet,
-      "electricMeterIMG": imageFile,
+      "electricMeterIMG": imageData,
       "capturedFrom": Address.toString(),
       "uploadTime": formattedDate,
     };
 
     try{
       var res = await http.post(
-        Uri.parse(API.meterImgData),
+        Uri.parse(API.meterImgUpload),
         body: data,
       );
       if(res.statusCode == 200){
@@ -147,14 +147,14 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
     var data ={
       "uid": widget.userGet,
       "propertyAddress": widget.addressGet,
-      "waterMeterIMG": imageFile,
+      "waterMeterIMG": imageData,
       "capturedFrom": Address.toString(),
       "uploadTime": formattedDate,
     };
 
     try{
       var res = await http.post(
-        Uri.parse(API.meterImgData),
+        Uri.parse(API.meterImgUpload),
         body: data,
       );
 
