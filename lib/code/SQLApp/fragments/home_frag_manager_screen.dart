@@ -16,6 +16,7 @@ import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:municipal_track/code/Chat/chat_screen.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_page.dart';
+import 'package:municipal_track/code/MapTools/map_screen_multi.dart';
 import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_track/code/Reusable/main_menu_reusable_button.dart';
 import 'package:municipal_track/code/Reusable/nav_drawer.dart';
@@ -133,49 +134,32 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               children: [
                                 ElevatedIconButton(
                                   onPress: () async {
-                                    Fluttertoast.showToast(msg: "Now downloading your statements!\nPlease wait a few seconds!",
-                                      gravity: ToastGravity.CENTER,);
 
-                                    ///SQL pdf list that shows the users statements if it contains their account number
+                                    ///Will need to swap to multi marker map page
                                     // Navigator.push(context,
                                     //     MaterialPageRoute(builder: (context) => const pdfSelectionPage()));
 
                                   },
                                   labelText: 'Maps',
-                                  fSize: 24,
+                                  fSize: 18,
                                   faIcon: const FaIcon(FontAwesomeIcons.map),
                                   fgColor: Colors.purple,
-                                  btSize: const Size(300, 80),
+                                  btSize: const Size(120, 120),
                                 ),
-
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 5,),
-                        Visibility(
-                          visible: visShow,
-                          child: Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
+                                const SizedBox(height: 40,),
                                 ElevatedIconButton(
                                   onPress: () async {
-                                    // Fluttertoast.showToast(msg: "Now downloading your statements!\nPlease wait a few seconds!",
-                                    //   gravity: ToastGravity.CENTER,);
 
-                                    // Navigator.push(context,
-                                    //     MaterialPageRoute(builder: (context) => ReportPropertyMenu()));
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) => MapScreenMulti()));
 
                                   },
-                                  labelText: 'Report List',
-                                  fSize: 24,
+                                  labelText: 'Report\nList',
+                                  fSize: 18,
                                   faIcon: const FaIcon(Icons.report_problem),
                                   fgColor: Colors.orange,
-                                  btSize: const Size(300, 80),
+                                  btSize: const Size(120, 120),
                                 ),
-
                               ],
                             ),
                           ),
@@ -190,47 +174,59 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               children: [
                                 ElevatedIconButton(
                                   onPress: () async {
-                                    // Fluttertoast.showToast(msg: "Now downloading your statements!\nPlease wait a few seconds!",
-                                    //   gravity: ToastGravity.CENTER,);
 
                                     // Navigator.push(context,
                                     //     MaterialPageRoute(builder: (context) => ReportPropertyMenu()));
 
                                   },
-                                  labelText: 'Chat List',
-                                  fSize: 24,
-                                  faIcon: const FaIcon(Icons.chat),
+                                  labelText: 'Chat\nList',
+                                  fSize: 18,
+                                  faIcon: const FaIcon(Icons.mark_chat_unread),
                                   fgColor: Colors.green,
-                                  btSize: const Size(300, 80),
+                                  btSize: const Size(120, 120),
                                 ),
-
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 5,),
-                        Visibility(
-                          visible: visShow,
-                          child: Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
+                                const SizedBox(height: 40,),
                                 ElevatedIconButton(
                                   onPress: () async {
-                                    // Fluttertoast.showToast(msg: "Now downloading your statements!\nPlease wait a few seconds!",
-                                    //   gravity: ToastGravity.CENTER,);
 
                                     // Navigator.push(context,
                                     //     MaterialPageRoute(builder: (context) => ReportPropertyMenu()));
 
                                   },
-                                  labelText: 'Manage Admin',
-                                  fSize: 24,
+                                  labelText: 'Manage\nAdmin',
+                                  fSize: 18,
                                   faIcon: const FaIcon(Icons.people),
                                   fgColor: Colors.blue,
-                                  btSize: const Size(300, 80),
+                                  btSize: const Size(120, 120),
                                 ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 5,),
+                        Visibility(
+                          visible: visShow,
+                          child: Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+
+
+
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 5,),
+                        Visibility(
+                          visible: visShow,
+                          child: Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+
 
                               ],
                             ),
@@ -263,132 +259,6 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                       ],
                     ),
 
-
-                    ///Old Buttons
-                    // ///Display information for all users properties information for admins to see
-                    // Visibility(
-                    //     visible: visInternal,
-                    //     child: const SizedBox(height: 20)),
-                    // Visibility(
-                    //   visible: visInternal,
-                    //   child: ReusableElevatedButton(
-                    //     onPress: (){
-                    //       Navigator.push(context,
-                    //           MaterialPageRoute(builder: (context) => const UsersTableAllViewPage()));
-                    //     },
-                    //     buttonText: 'All Users Details',fSize: fontSize,
-                    //   ),
-                    // ),
-                    //
-                    // Visibility(
-                    //     visible: visInternal,
-                    //     child: const SizedBox(height: 20)),
-                    // Visibility(
-                    //   visible: visInternal,
-                    //   child: ReusableElevatedButton(
-                    //     onPress: (){
-                    //
-                    //       Navigator.push(context,
-                    //           MaterialPageRoute(builder: (context) => const MapScreen()));
-                    //       //MapPage()
-                    //     },
-                    //     buttonText: 'Map Viewer',fSize: fontSize,
-                    //   ),
-                    // ),
-                    //
-                    //
-                    // ///button for admin to get all chats from the DB
-                    // Visibility(
-                    //     visible: visInternal,//visInternal,
-                    //     child: const SizedBox(height: 20)),
-                    // Visibility(
-                    //   visible: visInternal,//visInternal,
-                    //   child: ReusableElevatedButton(
-                    //     onPress: () async {
-                    //
-                    //       Navigator.push(context,
-                    //           MaterialPageRoute(builder: (context) => ChatList()));
-                    //
-                    //     },
-                    //     buttonText: 'Message User List',fSize: fontSize,
-                    //   ),
-                    // ),
-                    //
-                    // ///Direct statement download feature needs to be for the user account only
-                    // Visibility(
-                    //     visible: visExternal,
-                    //     child: const SizedBox(height: 20)),
-                    // Visibility(
-                    //   visible: visExternal,
-                    //   child: ReusableElevatedButton(
-                    //     onPress: () async {
-                    //       Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!");
-                    //
-                    //       final FirebaseAuth auth = FirebaseAuth.instance;
-                    //       final User? user = auth.currentUser;
-                    //       final uid = user?.uid;
-                    //       String userID = uid as String;
-                    //
-                    //       ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
-                    //       ///no pdfs are uploaded by users
-                    //       print(FirebaseAuth.instance.currentUser);
-                    //       final url = 'pdfs/$userID/ds_wirelessp2p.pdf';
-                    //       final url2 = 'pdfs/$userID/Invoice_000003728743_040000653226.PDF';
-                    //       final file = await PDFApi.loadFirebase(url);
-                    //       try{
-                    //         openPDF(context, file);
-                    //       } catch(e){
-                    //         Fluttertoast.showToast(msg: "Unable to download statement.");
-                    //       }
-                    //     },
-                    //     buttonText: 'Download Statement',fSize: fontSize,
-                    //   ),
-                    // ),
-                    //
-                    // Visibility(
-                    //     visible: visExternal,
-                    //     child: const SizedBox(height: 20)),
-                    // Visibility(
-                    //   visible: visExternal,
-                    //   child: ReusableElevatedButton(
-                    //     onPress: (){
-                    //       showDialog(
-                    //           barrierDismissible: false,
-                    //           context: context,
-                    //           builder: (context) {
-                    //             return AlertDialog(
-                    //               shape: const RoundedRectangleBorder(borderRadius:
-                    //               BorderRadius.all(Radius.circular(16))),
-                    //               title: const Text("Logout"),
-                    //               content: const Text("Are you sure you want to logout?"),
-                    //               actions: [
-                    //                 IconButton(
-                    //                   onPressed: () {
-                    //                     Navigator.pop(context);
-                    //                   },
-                    //                   icon: const Icon(
-                    //                     Icons.cancel,
-                    //                     color: Colors.red,
-                    //                   ),
-                    //                 ),
-                    //                 IconButton(
-                    //                   onPressed: () async {
-                    //                     ProfileFragmentScreen().signOutUser();
-                    //                     FirebaseAuth.instance.signOut();
-                    //                     SystemNavigator.pop();
-                    //                   },
-                    //                   icon: const Icon(
-                    //                     Icons.done,
-                    //                     color: Colors.green,
-                    //                   ),
-                    //                 ),
-                    //               ],
-                    //             );
-                    //           });
-                    //     },
-                    //     buttonText: 'Logout',fSize: fontSize,
-                    //   ),
-                    // ),
 
                     const SizedBox(height: 50),
                     const Text('Copyright Cyberfox ',

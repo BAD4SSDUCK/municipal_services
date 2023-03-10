@@ -271,37 +271,27 @@ class PropertyFragmentScreen extends StatelessWidget{
                     propertyItemField(
                         "Account Number: ${_propertiesData.properties.accountNumber}"),
                     const SizedBox(height: 10,),
-                    propertyItemField(
-                        "Address: ${_propertiesData.properties.address}"),
+                    propertyItemField("Address: ${_propertiesData.properties.address}"),
                     const SizedBox(height: 10,),
-                    propertyItemField(
-                        "Area Code: ${_propertiesData.properties.areaCode}"),
+                    propertyItemField("Area Code: ${_propertiesData.properties.areaCode}"),
                     const SizedBox(height: 10,),
                     propertyItemField("Current bill: R$billMessage"),
                     const SizedBox(height: 10,),
-                    propertyItemField(
-                        "Electric Meter Number: ${_propertiesData.properties.electricityMeterNumber}"),
+                    propertyItemField("Electric Meter Number: ${_propertiesData.properties.electricityMeterNumber}"),
                     const SizedBox(height: 10,),
-                    propertyItemField(
-                        "Electric Meter Reading: ${_propertiesData.properties.electricityMeterReading}"),
+                    propertyItemField("Electric Meter Reading: ${_propertiesData.properties.electricityMeterReading}"),
                     const SizedBox(height: 10,),
-                    propertyItemField(
-                        "Water Meter Number: ${_propertiesData.properties.waterMeterNumber}"),
+                    propertyItemField("Water Meter Number: ${_propertiesData.properties.waterMeterNumber}"),
                     const SizedBox(height: 10,),
-                    propertyItemField(
-                        "Water Meter Reading: ${_propertiesData.properties.waterMeterReading}"),
+                    propertyItemField("Water Meter Reading: ${_propertiesData.properties.waterMeterReading}"),
                     const SizedBox(height: 10,),
-                    propertyItemField(
-                        "First Name: ${_propertiesData.properties.firstName}"),
+                    propertyItemField("First Name: ${_propertiesData.properties.firstName}"),
                     const SizedBox(height: 10,),
-                    propertyItemField(
-                        "Last Name: ${_propertiesData.properties.lastName}"),
+                    propertyItemField("Last Name: ${_propertiesData.properties.lastName}"),
                     const SizedBox(height: 10,),
-                    propertyItemField(
-                        "ID Number: ${_propertiesData.properties.idNumber}"),
+                    propertyItemField("ID Number: ${_propertiesData.properties.idNumber}"),
                     const SizedBox(height: 10,),
-                    propertyItemField(
-                        "Contact Number: ${_propertiesData.properties.cellNumber}"),
+                    propertyItemField("Contact Number: ${_propertiesData.properties.cellNumber}"),
                     const SizedBox(height: 20,),
                     const Center(
                       child: Text('Electricity Meter Photo',

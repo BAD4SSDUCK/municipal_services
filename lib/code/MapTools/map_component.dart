@@ -6,7 +6,7 @@ import 'package:get/get.dart';
 import '../DisplayPages/display_info.dart';
 import 'map_user_badge.dart';
 
-///This is the old map page, currently using the mapPage
+///This is the old map page, currently using the mapScreen
 
 ///given latLng is the initial location
 const LatLng SOURCE_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);
