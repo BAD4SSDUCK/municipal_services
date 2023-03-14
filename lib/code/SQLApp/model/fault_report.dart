@@ -1,4 +1,4 @@
-import 'dart:ffi';
+
 
 ///This is the map api for the structure of the data passed from mySql
 

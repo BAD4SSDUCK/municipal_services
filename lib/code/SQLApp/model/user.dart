@@ -8,6 +8,7 @@ class User{
   String lastName;
   String userName;
   String userPassword;
+  bool official;
 
   User(
       this.uid,
@@ -17,6 +18,7 @@ class User{
       this.lastName,
       this.userName,
       this.userPassword,
+      this.official,
       );
 
   factory User.fromJson(Map<String, dynamic> json) => User(
@@ -27,6 +29,7 @@ class User{
     json["lastName"],
     json["userName"],
     json["userPassword"],
+    json["official"],
   );
 
   Map<String, dynamic> toJson() =>
@@ -38,6 +41,7 @@ class User{
         'lastName': lastName,
         'userName': userName,
         'userPassword': userPassword,
+        'official': official,
       };
 //
 }

@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:municipal_track/code/MapTools/location_controller.dart';
+import 'package:municipal_track/code/SQLApp/fragments/home_frag_manager_screen.dart';
 import 'package:municipal_track/code/SQLInt/sql_main.dart';
 import 'package:municipal_track/code/SQLApp/auth/login_screen.dart';
 import 'package:municipal_track/code/login/citizen_otp_page.dart';
@@ -17,12 +18,12 @@ import 'code/main_page.dart';
 
 void main() async{
 
-  HttpOverrides.global = MyHttpOverrides();
-
   WidgetsFlutterBinding.ensureInitialized();
 
+  HttpOverrides.global = MyHttpOverrides();
+
   await Firebase.initializeApp();
-  await FirebaseMessaging.instance.getInitialMessage();
+  //await FirebaseMessaging.instance.getInitialMessage();
 
   ///notification section
   // FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
@@ -51,11 +52,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
+    return const GetMaterialApp(
       debugShowCheckedModeBanner: false,
       ///MainPage links to an auth state for logging in using the necessary firebase method.
       ///If already logged in user will be immediately directed to the firebase version dashboard
-      home: DashboardOfFragments(),//MainPage(),//
+      home: HomeManagerScreen(), //DashboardOfFragments(),//MainPage(),//
         //DashboardOfFragments(), this is being developed for the sql version dashboard, accessible for testing without login details or db connection
         //LoginScreen(), this is being developed and I am testing the mysql db login screen.
         //MainPage(), For the working Firebase version.
@@ -84,11 +85,11 @@ class MyHttpOverrides extends HttpOverrides {
 // ///notification channel init end
 
 ///notification handler start
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // If you're going to use other Firebase services in the background, such as Firestore,
-  // make sure you call `initializeApp` before using other Firebase services.
-  await Firebase.initializeApp();
-  print('Handling a background message ${message.messageId}');
-}
+// Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+//   // If you're going to use other Firebase services in the background, such as Firestore,
+//   // make sure you call `initializeApp` before using other Firebase services.
+//   await Firebase.initializeApp();
+//   print('Handling a background message ${message.messageId}');
+// }
 ///notification handler end
 

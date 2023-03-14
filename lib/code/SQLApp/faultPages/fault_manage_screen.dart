@@ -234,7 +234,7 @@ class FaultManageScreen extends StatelessWidget{
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Center(child: Text('Administrators Details')),
+        title: const Text('Fault Reports Listed'),
         backgroundColor: Colors.green,
       ),
 
@@ -333,7 +333,8 @@ class FaultManageScreen extends StatelessWidget{
               ),
             );
           }
-          else return CircularProgressIndicator();
+          else return Center(
+              child: CircularProgressIndicator());
         },),
     );
   }

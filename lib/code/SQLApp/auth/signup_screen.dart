@@ -62,6 +62,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         lastNameController.text.trim(),
         userNameController.text.trim(),
         passwordController.text.trim(),
+        false,
       );
       try {
         var res = await http.post(

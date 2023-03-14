@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'dart:js_util';
 
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
 import 'package:geocoding/geocoding.dart';
@@ -33,6 +34,9 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
   late LatLng addressLocation;
   late bool _isLoading;
 
+  String location ='Null, Press Button';
+  String Address = 'search';
+
   @override
   void initState(){
 
@@ -46,8 +50,11 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
 
     super.initState();
 
+    //Allows user's location to be captured while using the map
+    locationAllow();
+
     //Set camera position based on db address given
-    //this.addressConvert();
+    addressConvert('Chief Albert Luthuli St, Pietermaritzburg, 3200');
     //Set multiple markers
     multiMarkerInit();
     //Set up initial locations
@@ -56,7 +63,7 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
     setSourceAndDestinationMarkerIcons();
 
     // city all position for camera default (target: LatLng(-29.601505328570788, 30.379442518631805), zoom: 16);
-    //_cameraPosition = CameraPosition(target: currentLocation, zoom: 16);
+    _cameraPosition = CameraPosition(target: currentLocation, zoom: 16);
   }
 
   late GoogleMapController _mapController;
@@ -70,6 +77,53 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
         ImageConfiguration(devicePixelRatio: 2.0),
         'assets/images/location/destination_pin_android.png'
     );
+  }
+
+  Future<void> locationAllow() async {
+    Position position = await _getGeoLocationPosition();
+    location ='Lat: ${position.latitude} , Long: ${position.longitude}';
+    GetAddressFromLatLong(position);
+    if(_getGeoLocationPosition.isBlank == false){
+
+    }
+  }
+
+  Future<Position> _getGeoLocationPosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled don't continue
+      // accessing the position and request users of the
+      // App to enable the location services.
+      await Geolocator.openLocationSettings();
+      return Future.error('Location services are disabled.');
+    }
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+
+        return Future.error('Location permissions are denied');
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    // When we reach here, permissions are granted and we can
+    // continue accessing the position of the device.
+    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  }
+
+  Future<void> GetAddressFromLatLong(Position position)async {
+    List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+    print(placemarks);
+    Placemark place = placemarks[0];
+    Address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
   }
 
   void addressConvert(String address) async {
@@ -89,22 +143,20 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
       }
 
       _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
+      showPinOnMap();
 
     } catch(e) {
       currentLocation = LatLng(-29.601505328570788, 30.379442518631805);
 
-      _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
+      _cameraPosition = CameraPosition(target: currentLocation, zoom: 16);
 
-      ScaffoldMessenger.of(this.context).showSnackBar(
-        SnackBar(
-          content: Text('Default map location City Hall!'),
-        ),
-      );
+      Fluttertoast.showToast(msg: "Default map location City Hall!", gravity: ToastGravity.CENTER);
 
     }
     print('$addressLocation this is the change');
 
   }
+
 
   void multiMarkerInit() async {
 
@@ -186,8 +238,6 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
         // go on
       }
     }
-
-
   }
 
   void setAddressLocation() async {
@@ -215,7 +265,7 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
         builder: (locationController) {
           return Scaffold(
               appBar: AppBar(
-                title: const Text('Readings Not Captured'),
+                title: const Text('Outstanding Captures'),
                 backgroundColor: Colors.green[700],
               ),
               body: Stack(
@@ -235,15 +285,18 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
 
                             onMapCreated: (GoogleMapController mapController) {
                               addressConvert(_propertiesData.properties.address);
-                              _mapController = mapController;
-                            },
+                              setState(() {
+                                _mapController = mapController;
+
+                              });
+                              },
                             initialCameraPosition: _cameraPosition
                       ),
                   ),
 
                   ///Positioned widget is for searching an address
                   Positioned(
-                      top: 100,
+                      top: 60,
                       left: 25, right: 25,
                       child: GestureDetector(
 
@@ -254,21 +307,22 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           decoration: BoxDecoration(color: Theme
                               .of(context)
-                              .cardColor,
-                              borderRadius: BorderRadius.circular(10)),
+                              .highlightColor,
+                          ),
+
                           child: Row(children: [
                             Icon(Icons.location_on, size: 25, color: Colors.green[700],
                             ),
                             SizedBox(width: 5,),
                             Expanded(
-                              child: Text(
-                                '${locationController.pickPlaceMark.name ?? ''}'
-                                    '${locationController.pickPlaceMark.locality ?? ''}'
-                                    '${locationController.pickPlaceMark.postalCode ?? ''}'
-                                    '${locationController.pickPlaceMark.country ?? ''}',
-                                style: TextStyle(fontSize: 20),
-                                maxLines: 1, overflow: TextOverflow.ellipsis,
-                              ),
+                                child: Text(
+                                  '${locationController.pickPlaceMark.name ?? ''}'
+                                      '${locationController.pickPlaceMark.locality ?? ''}'
+                                      '${locationController.pickPlaceMark.postalCode ?? ''}'
+                                      '${locationController.pickPlaceMark.country ?? ''}',
+                                  style: TextStyle(fontSize: 20),
+                                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                                ),
                             ),
                             SizedBox(width: 10),
                             Icon(Icons.search, size: 25, color: Theme.of(context).textTheme.bodyLarge!.color),
@@ -292,12 +346,10 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
 
   void showPinOnMap(){
 
-    addressConvert;
-
     setState(() {
       _markers.add(Marker(
         markerId: const MarkerId('sourcePin'),
-        position: currentLocation,
+        position: addressLocation,
         icon: sourceIcon,
       ));
     });

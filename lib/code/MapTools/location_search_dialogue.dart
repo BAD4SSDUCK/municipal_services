@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geocoding/geocoding.dart' as geo;
 import 'package:get/get.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -14,8 +17,38 @@ class LocationSearchDialogue extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextEditingController _controller = TextEditingController();
 
+    LatLng newlatlang = LatLng(-29.601505328570788, 30.379442518631805);
+
+    void addressConvert(String address) async {
+      ///Location change here for address conversion into lat long
+      //String address = _propertiesData.properties.address[0];
+
+      try {
+        List<geo.Location> locations = await locationFromAddress(address);
+
+        if (locations.isNotEmpty) {
+          geo.Location location = locations.first;
+
+          double latitude = location.latitude;
+          double longitude = location.longitude;
+
+          newlatlang = LatLng(latitude, longitude);
+        }
+        mapController?.animateCamera(
+            CameraUpdate.newCameraPosition(
+                CameraPosition(target: newlatlang, zoom: 16)
+              //17 is new zoom level
+            )
+        );
+        //move position of map camera to new location
+
+      } catch(e) {
+        Fluttertoast.showToast(msg: "The location map position was not found", gravity: ToastGravity.CENTER);
+      }
+    }
+
     return Container(
-      margin: EdgeInsets.only(top : 150),
+      margin: EdgeInsets.only(top : 110),
       padding: EdgeInsets.all(6),
       alignment: Alignment.topCenter,
       child: Material(
@@ -38,8 +71,8 @@ class LocationSearchDialogue extends StatelessWidget {
               ),
               filled: true, fillColor: Theme.of(context).cardColor,
             ),
-            style: Theme.of(context).textTheme.headline2?.copyWith(
-              color: Theme.of(context).textTheme.bodyText1?.color, fontSize: 20,
+            style: Theme.of(context).textTheme.displayMedium?.copyWith(
+              color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 20,
             ),
           ),
           suggestionsCallback: (pattern) async {
@@ -51,8 +84,8 @@ class LocationSearchDialogue extends StatelessWidget {
               child: Row(children: [
                 Icon(Icons.location_on),
                 Expanded(
-                  child: Text(suggestion.description!, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.headline2?.copyWith(
-                    color: Theme.of(context).textTheme.bodyText1?.color, fontSize: 20,
+                  child: Text(suggestion.description!, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                    color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 20,
                   )),
                 ),
               ]),
@@ -61,9 +94,9 @@ class LocationSearchDialogue extends StatelessWidget {
           onSuggestionSelected: (Prediction suggestion) async{
             print("My location is "+suggestion.description!);
 
+            addressConvert(suggestion.description!);
 
-
-            ///Get.find<LocationController>().setLocation(suggestion.placeId!, suggestion.description!, mapController!);
+            Get.find<LocationController>().setLocation(suggestion.placeId!, suggestion.description!, mapController!);
             Get.back();
           },
         )),

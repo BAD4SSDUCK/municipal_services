@@ -17,7 +17,7 @@ class ImageData extends GetxController {
   Rx<MeterImage> _imageData = MeterImage(0, 0, '', File(''), File(''), DateTime.now()).obs;
   MeterImage get meterImageData => _imageData.value;
 
-  Rx<User> _currentUser = User(0,'', '', '', '', '', '').obs;
+  Rx<User> _currentUser = User(0,'', '', '', '', '', '',false).obs;
   User get user => _currentUser.value;
   getUserInfo() async {
     User? getUserInfoFromLocalStorage = await RememberUserPrefs.readUserInfo();

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
 import 'package:geocoding/geocoding.dart';
@@ -24,6 +25,9 @@ class _MapScreenState extends State<MapScreen> {
   late LatLng addressLocation;
   late bool _isLoading;
 
+  String location ='Null, Press Button';
+  String Address = 'search';
+
   @override
   void initState(){
 
@@ -34,6 +38,9 @@ class _MapScreenState extends State<MapScreen> {
         _isLoading = false;
       });
     });
+
+    //Allows user's location to be captured while using the map
+    locationAllow();
 
     super.initState();
 
@@ -53,7 +60,54 @@ class _MapScreenState extends State<MapScreen> {
   late BitmapDescriptor sourceIcon;
   Set<Marker> _markers = Set<Marker>();
 
+  ///This checks current users location
+  Future<void> locationAllow() async {
+    Position position = await _getGeoLocationPosition();
+    location ='Lat: ${position.latitude} , Long: ${position.longitude}';
+    GetAddressFromLatLong(position);
+    if(_getGeoLocationPosition.isBlank == false){
 
+    }
+  }
+
+  Future<Position> _getGeoLocationPosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled don't continue
+      // accessing the position and request users of the
+      // App to enable the location services.
+      await Geolocator.openLocationSettings();
+      return Future.error('Location services are disabled.');
+    }
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+
+        return Future.error('Location permissions are denied');
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    // When we reach here, permissions are granted and we can
+    // continue accessing the position of the device.
+    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  }
+
+  Future<void> GetAddressFromLatLong(Position position)async {
+    List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+    print(placemarks);
+    Placemark place = placemarks[0];
+    Address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+  }
+  ///End of current user location check
 
   void setSourceAndDestinationMarkerIcons() async{
     sourceIcon = await BitmapDescriptor.fromAssetImage(
