@@ -7,11 +7,12 @@ include '/user_properties';
 //POST = sending/saving data to mysql db
 //GET = retrieve/read data from db
 
+$address = $_POST['address'];
+$cellNumber = $_POST['cellNumber'];
+
 ///The bellow is incase the vales from table need to be set to objects
 // $accountNumber = $_GET['accountNumber'];
-// $address = $_GET['address'];
 // $areaCode = $_GET['areaCode'];
-// $cellNumber = $_GET['cellNumber'];
 // $eBill = $_GET['eBill'];
 // $electricityMeterNumber = $_GET['electricityMeterNumber'];
 // $electricityMeterReading = $_GET['electricityMeterReading'];
@@ -25,7 +26,7 @@ include '/user_properties';
 // $year = $_GET['year'];
 
 ///To be fixed for retrieving all data
-$sqlQuery = $connectNow->query("SELECT * FROM propertyTable");
+$sqlQuery = $connectNow->query("SELECT * FROM propertyTable WHERE cellNumber = '$cellNumber'");
 
 $resultOfQuery = array();
 

@@ -1,9 +1,7 @@
 <?php
 include '../connection.php';
 
-$address = $_GET['address'];
-
-$result = $conn->query("SELECT * FROM imageTable ORDER BY id DESC WHERE address ='$address'");
+$result = $conn->query("SELECT * FROM faultTable ORDER BY id DESC");
 $list = array();
 if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {

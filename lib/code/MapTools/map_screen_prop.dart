@@ -13,14 +13,16 @@ import 'map_user_badge.dart';
 const LatLng SOURCE_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);
 
 
-class MapScreen extends StatefulWidget {
-  const MapScreen({Key? key}) : super(key: key);
+class MapScreenProp extends StatefulWidget {
+  const MapScreenProp({Key? key, required this.propAddress}) : super(key: key);
+
+  final String propAddress;
 
   @override
-  State<MapScreen> createState() => _MapScreenState();
+  State<MapScreenProp> createState() => _MapScreenPropState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class _MapScreenPropState extends State<MapScreenProp> {
   late CameraPosition _cameraPosition;
   late LatLng currentLocation;
   late LatLng addressLocation;
@@ -119,7 +121,7 @@ class _MapScreenState extends State<MapScreen> {
 
   void addressConvert() async {
     ///Location change here for address conversion into lat long
-    String address = locationGiven;
+    String address = widget.propAddress;
 
     //List<Location> locations = await Geocoding.google(apiKey: "AIzaSyB3p4M0JwkbBauV_5_dIHxWNpk8PSqmmU0").searchByAddress(address);
 
@@ -132,45 +134,39 @@ class _MapScreenState extends State<MapScreen> {
         double latitude = location.latitude;
         double longitude = location.longitude;
 
-        currentLocation = LatLng(latitude, longitude);
+        addressLocation = LatLng(latitude, longitude);
 
         showPinOnMap();
       }
 
-      _cameraPosition = CameraPosition(target: currentLocation, zoom: 16);
+      _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
 
     } catch(e) {
-      currentLocation = LatLng(-29.601505328570788, 30.379442518631805);
+      addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
 
-      _cameraPosition = CameraPosition(target: currentLocation, zoom: 16);
+      _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
 
       showPinOnMap();
 
       Fluttertoast.showToast(msg: "Address not found! Default map location City Hall!", gravity: ToastGravity.CENTER);
 
     }
-    print('$currentLocation this is the change');
-
+    print('$addressLocation this is the change');
   }
 
   void setAddressLocation() async {
-
     addressLocation = LatLng(
         SOURCE_LOCATION.latitude,
         SOURCE_LOCATION.longitude
     );
-
   }
 
   void setInitialLocation() async{
-
     currentLocation = LatLng(
         SOURCE_LOCATION.latitude,
         SOURCE_LOCATION.longitude
     );
-
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -239,7 +235,7 @@ class _MapScreenState extends State<MapScreen> {
                   //       ),
                   //     )),
 
-                  SizedBox(height: 10,),
+                  const SizedBox(height: 10,),
 
                   ///Positioned badge that shows account number and address shown on the pin
                   Positioned(
@@ -260,7 +256,7 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       _markers.add(Marker(
         markerId: const MarkerId('sourcePin'),
-        position: currentLocation,
+        position: addressLocation,
         icon: sourceIcon,
       ));
     });

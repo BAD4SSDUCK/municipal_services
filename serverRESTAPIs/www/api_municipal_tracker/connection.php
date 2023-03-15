@@ -18,3 +18,6 @@ if ($connectNow -> connect_errno){
 ///Need to fix connection.php as it is still not retrieving DB conection. 
 //it's returning(connection refused) 
 ?>
+
+//need to work on an admin/manager table in one that specifies a username login to the flutter app
+//the users will also have access to different dashboards

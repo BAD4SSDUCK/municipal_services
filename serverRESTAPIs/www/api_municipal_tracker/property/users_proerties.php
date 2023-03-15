@@ -22,7 +22,7 @@ $year = $_GET['year'];
 ///To be fixed for retrieving data per user where  users uid == property uid 
 //NB. "id" represents primary key for proerties only, "uid" represents primary key of users only
 
-$sqlQuery = "INSERT INTO users SET cellNumber = '$cellNumber', email = '$email', firstName = '$firstName', lastName = '$lastName', userName = '$userName', userpassword = '$userPassword'";
+$sqlQuery = "INSERT INTO propertyTable SET firstName = '$firstName', lastName = '$lastName' WHERE cellNumber = '$cellNumber'";
 
 $resultOfQuery = $connectNow->query($sqlQuery);
 

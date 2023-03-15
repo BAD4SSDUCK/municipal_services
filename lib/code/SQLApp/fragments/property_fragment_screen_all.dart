@@ -18,7 +18,7 @@ import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';
 import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';
 
-class PropertyFragmentScreen extends StatelessWidget{
+class PropertyFragmentScreenAll extends StatelessWidget{
 
   final _meterReadingController = TextEditingController();
   final _waterMeterReadingController = TextEditingController();
@@ -258,7 +258,7 @@ class PropertyFragmentScreen extends StatelessWidget{
             billMessage = "No outstanding payments";
           }
 
-          if (_propertiesData.properties.cellNumber == _currentUser.user.cellNumber) {
+          if (_propertiesData.properties.accountNumber.isNotEmpty) {
             ///This checks and only displays the users property where the phone number saved for both is the same
             Card(
               margin: const EdgeInsets.all(10),

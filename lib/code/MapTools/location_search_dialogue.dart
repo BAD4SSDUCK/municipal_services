@@ -66,7 +66,7 @@ class LocationSearchDialogue extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(style: BorderStyle.none, width: 0),
               ),
-              hintStyle: Theme.of(context).textTheme.headline2?.copyWith(
+              hintStyle: Theme.of(context).textTheme.displayMedium?.copyWith(
                 fontSize: 16, color: Theme.of(context).disabledColor,
               ),
               filled: true, fillColor: Theme.of(context).cardColor,
@@ -92,7 +92,7 @@ class LocationSearchDialogue extends StatelessWidget {
             );
           },
           onSuggestionSelected: (Prediction suggestion) async{
-            print("My location is "+suggestion.description!);
+            print("Location selected is "+suggestion.description!);
 
             addressConvert(suggestion.description!);
 

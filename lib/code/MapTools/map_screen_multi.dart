@@ -25,8 +25,6 @@ class MapScreenMulti extends StatefulWidget {
 
 class _MapScreenMultiState extends State<MapScreenMulti> {
 
-  List<LatLng> multiMarkers = [];
-
   final PropertiesData _propertiesData = Get.put(PropertiesData());
 
   late CameraPosition _cameraPosition;
@@ -48,11 +46,8 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
       });
     });
 
-    super.initState();
-
     //Allows user's location to be captured while using the map
     locationAllow();
-
     //Set camera position based on db address given
     addressConvert('Chief Albert Luthuli St, Pietermaritzburg, 3200');
     //Set multiple markers
@@ -64,12 +59,15 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
 
     // city all position for camera default (target: LatLng(-29.601505328570788, 30.379442518631805), zoom: 16);
     _cameraPosition = CameraPosition(target: currentLocation, zoom: 16);
+
+    super.initState();
   }
 
   late GoogleMapController _mapController;
 
   late BitmapDescriptor sourceIcon;
   Set<Marker> _markers = Set<Marker>();
+  Set<Marker> newMarker = Set<Marker>();
 
 
   void setSourceAndDestinationMarkerIcons() async{
@@ -129,7 +127,6 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
   void addressConvert(String address) async {
     ///Location change here for address conversion into lat long
     //String address = _propertiesData.properties.address[0];
-
     try {
       List<Location> locations = await locationFromAddress(address);
 
@@ -157,25 +154,20 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
 
   }
 
-
   void multiMarkerInit() async {
 
     final len = _markers.length;
     int i = 0;
 
+// this is the last item
     for(final item in _markers){
       if(i == len){
         if (_propertiesData.isBlank == false) {
           ///A check for if payment is outstanding or not and add the address of the outstanding payments to the map marker
           if (_propertiesData.properties.eBill.toString() != '' ||
-              _propertiesData.properties.eBill.toString() != '0') {
+              _propertiesData.properties.eBill.toString() != '0' ||
+              _propertiesData.properties.eBill.isBlank == false) {
             String address = _propertiesData.properties.address[i];
-
-            String addThisAddress = _propertiesData.properties.address.toString();
-            addressConvert(addThisAddress);
-            LatLng convertingAdded = addressLocation;
-
-            multiMarkers.add(convertingAdded);
 
             try {
               List<Location> locations = await locationFromAddress(address);
@@ -187,6 +179,8 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                 double longitude = location.longitude;
 
                 addressLocation = LatLng(latitude, longitude);
+
+                showPinOnMap();
               }
             } catch (e) {
               addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
@@ -198,20 +192,16 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
 
           }
         }
-        // this is the last item
+        // go on
       } else {
         while (len == i) {
           if (_propertiesData.isBlank == false) {
             ///A check for if payment is outstanding or not and add the address of the outstanding payments to the map marker
             if (_propertiesData.properties.eBill.toString() != '' ||
-                _propertiesData.properties.eBill.toString() != '0') {
+                _propertiesData.properties.eBill.toString() != '0' ||
+                _propertiesData.properties.eBill.isBlank == false) {
+
               String address = _propertiesData.properties.address[i];
-
-              String addThisAddress = _propertiesData.properties.address.toString();
-              addressConvert(addThisAddress);
-              LatLng convertingAdded = addressLocation;
-
-              multiMarkers.add(convertingAdded);
 
               try {
                 List<Location> locations = await locationFromAddress(address);
@@ -223,6 +213,9 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                   double longitude = location.longitude;
 
                   addressLocation = LatLng(latitude, longitude);
+
+                  showPinOnMap();
+
                 }
               } catch (e) {
                 addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
@@ -235,27 +228,22 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
             }
           }
         }
-        // go on
       }
     }
   }
 
   void setAddressLocation() async {
-
     addressLocation = LatLng(
         SOURCE_LOCATION.latitude,
         SOURCE_LOCATION.longitude
     );
-
   }
 
   void setInitialLocation() async{
-
     currentLocation = LatLng(
         SOURCE_LOCATION.latitude,
         SOURCE_LOCATION.longitude
     );
-
   }
 
 
@@ -287,7 +275,6 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                               addressConvert(_propertiesData.properties.address);
                               setState(() {
                                 _mapController = mapController;
-
                               });
                               },
                             initialCameraPosition: _cameraPosition
@@ -299,9 +286,9 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                       top: 60,
                       left: 25, right: 25,
                       child: GestureDetector(
-
-                        onTap: () => Get.dialog(LocationSearchDialogue(mapController: _mapController)),
-
+                        onTap: () {
+                          Get.dialog(LocationSearchDialogue(mapController: _mapController));
+                          },
                         child: Container(
                           height: 50,
                           padding: EdgeInsets.symmetric(horizontal: 5),
@@ -313,7 +300,7 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                           child: Row(children: [
                             Icon(Icons.location_on, size: 25, color: Colors.green[700],
                             ),
-                            SizedBox(width: 5,),
+                            const SizedBox(width: 5,),
                             Expanded(
                                 child: Text(
                                   '${locationController.pickPlaceMark.name ?? ''}'
@@ -324,13 +311,13 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                                   maxLines: 1, overflow: TextOverflow.ellipsis,
                                 ),
                             ),
-                            SizedBox(width: 10),
+                            const SizedBox(width: 10),
                             Icon(Icons.search, size: 25, color: Theme.of(context).textTheme.bodyLarge!.color),
                           ],),
                         ),
                       )),
 
-                  SizedBox(height: 10,),
+                  const SizedBox(height: 10,),
 
                   ///Positioned badge that shows account number and address shown on the pin
                   // Positioned(
@@ -345,13 +332,22 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
   }
 
   void showPinOnMap(){
-
     setState(() {
       _markers.add(Marker(
         markerId: const MarkerId('sourcePin'),
         position: addressLocation,
         icon: sourceIcon,
       ));
+    });
+  }
+
+  void setNewMarker(LatLng newPos){
+    setState(() {
+      newMarker.add(Marker(
+        markerId: const MarkerId('sourcePin'),
+        position: newPos,
+        icon: sourceIcon,
+      ),);
     });
   }
 
