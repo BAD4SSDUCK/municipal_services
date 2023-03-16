@@ -16,7 +16,7 @@ import 'package:path/path.dart';
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';
 
 
-class FaultManageScreen extends StatelessWidget {
+class FaultTaskScreen extends StatelessWidget {
 
   final _accountNumberController = TextEditingController();
   final _addressController = TextEditingController();
@@ -28,8 +28,10 @@ class FaultManageScreen extends StatelessWidget {
 
   final FaultData _faultData = Get.put(FaultData());
 
-  bool visShow = true;
-  bool visHide = false;
+  //final UserData _userData = Get.put( );
+
+  bool buttonVis1 = true;
+  bool buttonVis2 = false;
 
 
   //this widget is for displaying a property field of information with an icon next to it, NB. the icon is to make it look good
@@ -67,6 +69,7 @@ class FaultManageScreen extends StatelessWidget {
     final String electricityFaultDes = _faultData.fault.electricFaultDes;
     final String waterFaultDes = _faultData.fault.waterFaultDes;
     final String reportedDate = _faultData.fault.dateReported;
+    final String allocatedDpt = _faultData.fault.depAllocation;
 
     var data = {
       "id": id.toString(),
@@ -76,6 +79,7 @@ class FaultManageScreen extends StatelessWidget {
       "electricityFaultDes": electricityFaultDes,
       "waterFaultDes": waterFaultDes,
       "dateReported": reportedDate,
+      "depAllocation": allocatedDpt,
     };
 
     try {
@@ -93,8 +97,7 @@ class FaultManageScreen extends StatelessWidget {
             gravity: ToastGravity.CENTER,);
         } else {
           Fluttertoast.showToast(
-            msg: "Server connection failed. Report with network connection!",
-            gravity: ToastGravity.CENTER,);
+              msg: "Server connection failed. Report with network connection!");
         }
       }
     } catch (e) {
@@ -125,7 +128,7 @@ class FaultManageScreen extends StatelessWidget {
                   //Text controllers for the properties db visibility only available for the electric and water readings because users must not be able to
                   //edit any other data but the controllers have to be there to prevent updating items to null, this may not be necessary but I left it for null safety
                   Visibility(
-                    visible: visHide,
+                    visible: buttonVis2,
                     child: TextField(
                       controller: _accountNumberController,
                       decoration: const InputDecoration(
@@ -133,7 +136,7 @@ class FaultManageScreen extends StatelessWidget {
                     ),
                   ),
                   Visibility(
-                    visible: visHide,
+                    visible: buttonVis2,
                     child: TextField(
                       controller: _addressController,
                       decoration: const InputDecoration(
@@ -141,7 +144,7 @@ class FaultManageScreen extends StatelessWidget {
                     ),
                   ),
                   Visibility(
-                    visible: visHide,
+                    visible: buttonVis2,
                     child: TextField(
                       keyboardType:
                       const TextInputType.numberWithOptions(),
@@ -151,7 +154,7 @@ class FaultManageScreen extends StatelessWidget {
                     ),
                   ),
                   Visibility(
-                    visible: visHide,
+                    visible: buttonVis2,
                     child: TextField(
                       controller: _wDescriptionController,
                       decoration: const InputDecoration(
@@ -159,7 +162,7 @@ class FaultManageScreen extends StatelessWidget {
                     ),
                   ),
                   Visibility(
-                    visible: visShow,
+                    visible: buttonVis1,
                     child: TextField(
                       controller: _depAllocationController,
                       decoration: const InputDecoration(
@@ -167,7 +170,7 @@ class FaultManageScreen extends StatelessWidget {
                     ),
                   ),
                   Visibility(
-                    visible: visHide,
+                    visible: buttonVis2,
                     child: Row(
                       children: <Widget>[
                         const SizedBox(
@@ -191,7 +194,7 @@ class FaultManageScreen extends StatelessWidget {
                     ),
                   ),
                   Visibility(
-                    visible: visShow,
+                    visible: buttonVis1,
                     child: TextField(
                       controller: _dateReportedController,
                       decoration: const InputDecoration(
@@ -316,13 +319,13 @@ class FaultManageScreen extends StatelessWidget {
                                   DataCell(
                                     Text('${item.Fault.faultResolved}'),
                                   ),
-                                  // DataCell(
-                                  //   IconButton(
-                                  //     onPressed: () {
-                                  //       showPressed;
-                                  //     },
-                                  //     icon: Icon(FontAwesomeIcons
-                                  //         .fileCircleExclamation),),),
+                                  DataCell(
+                                    IconButton(
+                                      onPressed: () {
+                                        showPressed;
+                                      },
+                                      icon: Icon(FontAwesomeIcons
+                                          .fileCircleExclamation),),),
                                 ].toList(),
                               ),
                           ],
@@ -336,7 +339,7 @@ class FaultManageScreen extends StatelessWidget {
           }
           else {
             return const Padding(
-              padding: EdgeInsets.all(50.0),
+              padding: EdgeInsets.all(10.0),
               child: Center(
                   child: CircularProgressIndicator()),
             );

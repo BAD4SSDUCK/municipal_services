@@ -14,8 +14,9 @@ const LatLng SOURCE_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);
 
 
 class MapScreenProp extends StatefulWidget {
-  const MapScreenProp({Key? key, required this.propAddress}) : super(key: key);
+  const MapScreenProp({Key? key, required this.propAddress, required this.propAccNumber}) : super(key: key);
 
+  final String propAccNumber;
   final String propAddress;
 
   @override
@@ -200,7 +201,7 @@ class _MapScreenPropState extends State<MapScreenProp> {
                       ),
                   ),
 
-                  ///Positioned widget is for searching an address but will not be used
+                  ///Positioned widget is for searching an address but will not be used in view mode
                   // Positioned(
                   //     top: 100,
                   //     left: 25, right: 25,
@@ -241,8 +242,10 @@ class _MapScreenPropState extends State<MapScreenProp> {
                   Positioned(
                       top: 10, left: 0, right: 0,
                       child: MapUserBadge(
-                        locationGiven: locationGiven,
-                        accountNumber: accountNumber,)),
+                        locationGiven: widget.propAddress,
+                        accountNumber: widget.propAccNumber,
+                      )
+                  ),
                 ],
               )
           );
@@ -250,7 +253,6 @@ class _MapScreenPropState extends State<MapScreenProp> {
   }
 
   void showPinOnMap(){
-
     addressConvert;
 
     setState(() {

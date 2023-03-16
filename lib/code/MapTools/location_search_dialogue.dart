@@ -99,6 +99,7 @@ class LocationSearchDialogue extends StatelessWidget {
             Get.find<LocationController>().setLocation(suggestion.placeId!, suggestion.description!, mapController!);
             Get.back();
           },
+
         )),
       ),
     );

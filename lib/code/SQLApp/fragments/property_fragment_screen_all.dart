@@ -19,6 +19,7 @@ import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';
 
 class PropertyFragmentScreenAll extends StatelessWidget{
+  PropertyFragmentScreenAll({super.key});
 
   final _meterReadingController = TextEditingController();
   final _waterMeterReadingController = TextEditingController();
@@ -37,8 +38,8 @@ class PropertyFragmentScreenAll extends StatelessWidget{
   final PropertiesData _propertiesData = Get.put(PropertiesData());
   final ImageData _imageData = Get.put(ImageData());
 
-  String userPass='';
-  String addressPass='';
+  late String userPass;
+  late String addressPass;
 
   bool visShow = true;
   bool visHide = false;
@@ -87,7 +88,7 @@ class PropertyFragmentScreenAll extends StatelessWidget{
   }
 
 
-  void showPressed(BuildContext context) {
+  void showPressed(BuildContext context) async{
     //need to work on update controller for property readings, meter and water
     void _update([PropertiesData? documentSnapshot]) async {
       if (documentSnapshot != null) {
@@ -223,7 +224,6 @@ class PropertyFragmentScreenAll extends StatelessWidget{
     }
   }
 
-  int userPropCount = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -232,21 +232,17 @@ class PropertyFragmentScreenAll extends StatelessWidget{
     ///I will have to make a dropdown button that inputs the year and month so that the user can only update for the current month or view other months
     ///The image upload will have to be worked on with the same month system ie. only current moth upload or overwrite and previous months viewing only
 
-    while(_propertiesData.properties.uid == _currentUser.user.uid){
-      userPropCount++;
-    }
-
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Center(child: Text('Property Details')),
+        title: const Text('All Registered Properties'),
         backgroundColor: Colors.green,
       ),
 
       body: ListView.builder(
 
         ///I need to figure out how to get the item count of all the rows of the propertiesData list so that displaying is not limited to the number set
-        itemCount: userPropCount,
+        itemCount: 1,
         itemBuilder: (BuildContext context, int index) {
           String billMessage;
           ///A check for if payment is outstanding or not
@@ -258,8 +254,8 @@ class PropertyFragmentScreenAll extends StatelessWidget{
             billMessage = "No outstanding payments";
           }
 
-          if (_propertiesData.properties.accountNumber.isNotEmpty) {
-            ///This checks and only displays the users property where the phone number saved for both is the same
+          if (_currentUser.user.official == true) {
+            ///This checks and only displays the users property where the logged in user is an official
             Card(
               margin: const EdgeInsets.all(10),
               child: Padding(
@@ -269,8 +265,7 @@ class PropertyFragmentScreenAll extends StatelessWidget{
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 20,),
-                    propertyItemField(
-                        "Account Number: ${_propertiesData.properties.accountNumber}"),
+                    propertyItemField("Account Number: ${_propertiesData.properties.accountNumber}"),
                     const SizedBox(height: 10,),
                     propertyItemField("Address: ${_propertiesData.properties.address}"),
                     const SizedBox(height: 10,),
@@ -315,7 +310,7 @@ class PropertyFragmentScreenAll extends StatelessWidget{
                             builder: (context, snapshot) {
                               if (snapshot.hasError) {
                                 return const Padding(
-                                  padding: EdgeInsets.all(8.0),
+                                  padding: EdgeInsets.all(10.0),
                                   child: Text(
                                       'Image not yet uploaded.'),
                                 ); //${snapshot.error} if error needs to be displayed instead
@@ -329,7 +324,10 @@ class PropertyFragmentScreenAll extends StatelessWidget{
                               if (snapshot.connectionState ==
                                   ConnectionState.waiting) {
                                 return Container(
-                                  child: const CircularProgressIndicator(),);
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(10.0),
+                                    child: Center(child: CircularProgressIndicator()),
+                                  ),);
                               }
                               return Container();
                             }
@@ -462,7 +460,7 @@ class PropertyFragmentScreenAll extends StatelessWidget{
                               ///This will send the address to the property map screen to show its location
                               onTap: () {
                                 MaterialPageRoute(builder: (context) =>
-                                    MapScreenProp(propAddress: _propertiesData.properties.address));
+                                    MapScreenProp(propAddress: _propertiesData.properties.address, propAccNumber: _propertiesData.properties.accountNumber,));
                               },
                               borderRadius: BorderRadius.circular(32),
                               child: const Padding(
@@ -488,7 +486,10 @@ class PropertyFragmentScreenAll extends StatelessWidget{
               ),
             );
           } else {
-            return const CircularProgressIndicator();
+            return const Padding(
+              padding: EdgeInsets.all(50.0),
+              child: Center(child: CircularProgressIndicator()),
+            );
           }
         },
       ),

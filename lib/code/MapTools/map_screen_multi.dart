@@ -288,6 +288,7 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                       child: GestureDetector(
                         onTap: () {
                           Get.dialog(LocationSearchDialogue(mapController: _mapController));
+                          Fluttertoast.showToast(msg: "Select address from the list!", gravity: ToastGravity.CENTER);
                           },
                         child: Container(
                           height: 50,
@@ -324,7 +325,8 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                   //     top: 10, left: 0, right: 0,
                   //     child: MapUserBadge(
                   //       locationGiven: locationGiven,
-                  //       accountNumber: accountNumber,)),
+                  //       accountNumber: accountNumber,)
+                  // ),
                 ],
               )
           );

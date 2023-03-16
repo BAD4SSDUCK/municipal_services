@@ -98,8 +98,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
         backgroundColor: Colors.transparent,//Colors.grey,
         ///App bar removed for aesthetic
         appBar: AppBar(
-          title:
-          Text(''),
+          title: Text(''),
           backgroundColor: Colors.black87,
         ),
         drawer: const NavDrawer(),
@@ -208,6 +207,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                 const SizedBox(width: 20,),
                                 ElevatedIconButton(
                                   onPress: () async {
+
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => PropertyFragmentScreenAll()));
                                   },

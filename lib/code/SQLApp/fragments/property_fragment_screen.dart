@@ -223,7 +223,6 @@ class PropertyFragmentScreen extends StatelessWidget{
     }
   }
 
-  int userPropCount = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -232,9 +231,6 @@ class PropertyFragmentScreen extends StatelessWidget{
     ///I will have to make a dropdown button that inputs the year and month so that the user can only update for the current month or view other months
     ///The image upload will have to be worked on with the same month system ie. only current moth upload or overwrite and previous months viewing only
 
-    while(_propertiesData.properties.uid == _currentUser.user.uid){
-      userPropCount++;
-    }
 
     return Scaffold(
       backgroundColor: Colors.grey[350],
@@ -246,7 +242,7 @@ class PropertyFragmentScreen extends StatelessWidget{
       body: ListView.builder(
 
         ///I need to figure out how to get the item count of all the rows of the propertiesData list so that displaying is not limited to the number set
-        itemCount: userPropCount,
+        itemCount: 2,
         itemBuilder: (BuildContext context, int index) {
           String billMessage;
           ///A check for if payment is outstanding or not
@@ -358,7 +354,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                             builder: (context, snapshot) {
                               if (snapshot.hasError) {
                                 return const Padding(
-                                  padding: EdgeInsets.all(8.0),
+                                  padding: EdgeInsets.all(10.0),
                                   child: Text('Image not yet uploaded.'),
                                 ); //${snapshot.error} if error needs to be displayed instead
                               }
@@ -462,7 +458,11 @@ class PropertyFragmentScreen extends StatelessWidget{
                               ///This will send the address to the property map screen to show its location
                               onTap: () {
                                 MaterialPageRoute(builder: (context) =>
-                                    MapScreenProp(propAddress: _propertiesData.properties.address));
+                                    MapScreenProp(
+                                      propAddress: _propertiesData.properties.address,
+                                      propAccNumber: _propertiesData.properties.accountNumber,
+                                    )
+                                );
                               },
                               borderRadius: BorderRadius.circular(32),
                               child: const Padding(
@@ -488,7 +488,10 @@ class PropertyFragmentScreen extends StatelessWidget{
               ),
             );
           } else {
-            return const CircularProgressIndicator();
+            return const Padding(
+              padding: EdgeInsets.all(50.0),
+              child: Center(child: CircularProgressIndicator()),
+            );
           }
         },
       ),

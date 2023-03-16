@@ -22,11 +22,9 @@ class FaultData extends GetxController {
   }
 
   getFaultInfo() async {
-    if(_currentUser.value.uid == _faultData.value.uid) {
-      Fault? getFaultInfoFromLocalStorage = await RememberFaultInfo
-          .readFaultInfo();
-      _faultData.value = getFaultInfoFromLocalStorage!;
-    }
+    Fault? getFaultInfoFromLocalStorage = await RememberFaultInfo
+        .readFaultInfo();
+    _faultData.value = getFaultInfoFromLocalStorage!;
   }
 
 
