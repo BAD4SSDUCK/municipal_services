@@ -29,5 +29,11 @@ class PropertiesData extends GetxController {
     }
   }
 
+  getAllPropertiesInfo() async{
+    Property? getPropertyInfoFromLocalStorage = await RememberPropertyInfo
+        .readPropertyInfo();
+    _propertiesData.value = getPropertyInfoFromLocalStorage!;
+  }
+
 
 }

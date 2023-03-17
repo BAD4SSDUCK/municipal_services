@@ -8,6 +8,7 @@ import 'package:municipal_track/code/SQLApp/Auth/signup_screen.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';
+import 'package:municipal_track/code/SQLApp/fragments/home_frag_manager_screen.dart';
 import 'package:municipal_track/code/SQLApp/model/user.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/user_preferences.dart';
 
@@ -51,7 +52,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
           //send user to a dashboard once logged in 'DashboardOfFragments' is a temp dashboard to test the sql user info login
           Future.delayed(Duration(milliseconds: 2000), () {
-            Get.to(DashboardOfFragments());
+            Get.to(HomeManagerScreen());
           });
         } else {
           Fluttertoast.showToast(
@@ -90,9 +91,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                       child: Image.asset("assets/images/logo.png"),
                     ),
                   ),
-
                   const SizedBox(height: 20,),
-
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: Container(
@@ -160,8 +159,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                                             color: Colors.white60,
                                           )
                                       ),
-                                      contentPadding: const EdgeInsets
-                                          .symmetric(
+                                      contentPadding: const EdgeInsets.symmetric(
                                           horizontal: 14,
                                           vertical: 6
                                       ),
@@ -232,8 +230,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                                                   color: Colors.white60,
                                                 )
                                             ),
-                                            contentPadding: const EdgeInsets
-                                                .symmetric(
+                                            contentPadding: const EdgeInsets.symmetric(
                                                 horizontal: 14,
                                                 vertical: 6
                                             ),
@@ -322,8 +319,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                                 ),
                               ],
                             ),
-
-
                           ],
                         ),
                       ),

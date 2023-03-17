@@ -41,6 +41,8 @@ class PropertyFragmentScreenAll extends StatelessWidget{
   late String userPass;
   late String addressPass;
 
+  int propertyRowsCount = 1;
+
   bool visShow = true;
   bool visHide = false;
 
@@ -238,11 +240,9 @@ class PropertyFragmentScreenAll extends StatelessWidget{
         title: const Text('All Registered Properties'),
         backgroundColor: Colors.green,
       ),
-
       body: ListView.builder(
-
         ///I need to figure out how to get the item count of all the rows of the propertiesData list so that displaying is not limited to the number set
-        itemCount: 1,
+        itemCount: propertyRowsCount,
         itemBuilder: (BuildContext context, int index) {
           String billMessage;
           ///A check for if payment is outstanding or not
@@ -250,10 +250,10 @@ class PropertyFragmentScreenAll extends StatelessWidget{
               _propertiesData.properties.eBill.toString() != '0') {
             String feesOnAddress = _propertiesData.properties.address.toString();
             billMessage = "Current bill: R${_propertiesData.properties.eBill}";
+            propertyRowsCount++;
           } else {
             billMessage = "No outstanding payments";
           }
-
           if (_currentUser.user.official == true) {
             ///This checks and only displays the users property where the logged in user is an official
             Card(

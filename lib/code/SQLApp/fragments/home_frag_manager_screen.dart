@@ -112,7 +112,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                   // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   //  crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
-                    const SizedBox(height: 50),
+                    const SizedBox(height: 20),
                     Image.asset('assets/images/logo.png', height: 180, width: 180,),
                     const SizedBox(height: 20),
                     Column(
