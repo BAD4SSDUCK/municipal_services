@@ -51,7 +51,7 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
     super.initState();
   }
 
-  //Used to set the _photo file as image from gallery
+  //Used to set the _photo file as image from gallery, it also checks if the image is for an electric meter or water meter
   Future imgFromGallery() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 60,);
 
@@ -69,7 +69,7 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
     });
   }
 
-  //Used to set the _photo file as image from gallery
+  //Used to set the _photo file as image from camera, it also checks if the image is for an electric meter or water meter
   Future imgFromCamera() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.camera, imageQuality: 60,);
 
@@ -175,7 +175,7 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
       Fluttertoast.showToast(msg: e.toString());
     }
   }
-  
+
   showImage(String image){
     return Image.memory(base64Decode(image));
   }
@@ -257,6 +257,8 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
               ),
             ),
             const SizedBox(height: 100,),
+            //This button is for uploading the meter image to the server but opens a dialogue for the user to specify if the image being uploaded is for
+            //either an electrical meter or water meter, the upload only happens once the user specifies the meter type.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25.0),
               child: GestureDetector(
@@ -282,8 +284,8 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
                             meterType = "E";
                             uploadEFile();
                             Fluttertoast.showToast(msg: "Successfully Uploaded!\nElectric Meter Image!", gravity: ToastGravity.CENTER);
-                            Navigator.of(context).pop(context);
-                            Navigator.of(context).pop(context);
+                            Navigator.of(context).pop(context); //pops the alert dialogue box
+                            Navigator.of(context).pop(context); //pops the image upload page back to the listview
                           },
                         ),
                         TextButton(

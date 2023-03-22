@@ -196,6 +196,7 @@ class PropertyFragmentScreenAll extends StatelessWidget{
                                 "year": formatYear,
                                 "uid": _currentUser.user.uid,
                               });
+                              response;
                             } catch(e){
                               print("Error updating :: $e");
                             }
@@ -317,9 +318,11 @@ class PropertyFragmentScreenAll extends StatelessWidget{
                               }
                               if (snapshot.connectionState ==
                                   ConnectionState.done) {
-                                return Container(
-                                  child: snapshot.data,
-                                );
+                                if(_propertiesData.properties.address == _imageData.meterImageData.address) {
+                                  return Container(
+                                    child: snapshot.data,
+                                  );
+                                }
                               }
                               if (snapshot.connectionState ==
                                   ConnectionState.waiting) {
@@ -362,9 +365,11 @@ class PropertyFragmentScreenAll extends StatelessWidget{
                               }
                               if (snapshot.connectionState ==
                                   ConnectionState.done) {
-                                return Container(
-                                  child: snapshot.data,
-                                );
+                                if(_propertiesData.properties.address == _imageData.meterImageData.address) {
+                                  return Container(
+                                    child: snapshot.data,
+                                  );
+                                }
                               }
                               if (snapshot.connectionState ==
                                   ConnectionState.waiting) {

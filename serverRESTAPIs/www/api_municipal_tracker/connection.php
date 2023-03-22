@@ -20,4 +20,4 @@ if ($connectNow -> connect_errno){
 ?>
 
 //need to work on an admin/manager table in one that specifies a username login to the flutter app
-//the users will also have access to different dashboards
+//the official users will also have access to different dashboards
