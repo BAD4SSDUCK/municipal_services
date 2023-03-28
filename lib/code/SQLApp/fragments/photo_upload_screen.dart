@@ -45,7 +45,7 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
     Position position = await _getGeoLocationPosition();
     location ='Lat: ${position.latitude} , Long: ${position.longitude}';
     GetAddressFromLatLong(position);
-    if(_getGeoLocationPosition.isBlank == false){
+    if(position.isBlank == true){
       buttonEnabled = false;
     }
     super.initState();

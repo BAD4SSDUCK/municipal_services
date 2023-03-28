@@ -39,8 +39,8 @@ class AdminFragmentScreen extends StatelessWidget{
   String userPass='';
   String addressPass='';
 
-  bool buttonVis1 = true;
-  bool buttonVis2 = false;
+  bool visShow = true;
+  bool visHide = false;
 
   //this widget is for displaying a property field of information with an icon next to it, NB. the icon is to make it look good
   //it is called within a listview page widget
@@ -126,7 +126,7 @@ class AdminFragmentScreen extends StatelessWidget{
                     //Text controllers for the properties db visibility only available for the electric and water readings because users must not be able to
                     //edit any other data but the controllers have to be there to prevent updating items to null, this may not be necessary but I left it for null safety
                     Visibility(
-                      visible: buttonVis2,
+                      visible: visHide,
                       child: TextField(
                         controller: _accountNumberController,
                         decoration: const InputDecoration(
@@ -134,7 +134,7 @@ class AdminFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: buttonVis2,
+                      visible: visHide,
                       child: TextField(
                         controller: _addressController,
                         decoration: const InputDecoration(
@@ -142,7 +142,7 @@ class AdminFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: buttonVis2,
+                      visible: visHide,
                       child: TextField(
                         keyboardType:
                         const TextInputType.numberWithOptions(),
@@ -152,7 +152,7 @@ class AdminFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: buttonVis2,
+                      visible: visHide,
                       child: TextField(
                         controller: _meterNumberController,
                         decoration: const InputDecoration(
@@ -160,7 +160,7 @@ class AdminFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: buttonVis1,
+                      visible: visShow,
                       child: TextField(
                         controller: _meterReadingController,
                         decoration: const InputDecoration(
@@ -168,7 +168,7 @@ class AdminFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: buttonVis2,
+                      visible: visHide,
                       child: TextField(
                         controller: _waterMeterController,
                         decoration: const InputDecoration(
@@ -176,7 +176,7 @@ class AdminFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: buttonVis1,
+                      visible: visShow,
                       child: TextField(
                         controller: _waterMeterReadingController,
                         decoration: const InputDecoration(
@@ -184,7 +184,7 @@ class AdminFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: buttonVis2,
+                      visible: visHide,
                       child: TextField(
                         controller: _cellNumberController,
                         decoration: const InputDecoration(
@@ -192,7 +192,7 @@ class AdminFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: buttonVis2,
+                      visible: visHide,
                       child: TextField(
                         controller: _firstNameController,
                         decoration: const InputDecoration(
@@ -200,7 +200,7 @@ class AdminFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: buttonVis2,
+                      visible: visHide,
                       child: TextField(
                         controller: _lastNameController,
                         decoration: const InputDecoration(
@@ -208,7 +208,7 @@ class AdminFragmentScreen extends StatelessWidget{
                       ),
                     ),
                     Visibility(
-                      visible: buttonVis2,
+                      visible: visHide,
                       child: TextField(
                         controller: _idNumberController,
                         decoration: const InputDecoration(
@@ -382,12 +382,12 @@ class AdminFragmentScreen extends StatelessWidget{
                       ),
                       const SizedBox(height: 10,),
 
-                      Visibility(visible: buttonVis1,
+                      Visibility(visible: visShow,
                           child: const SizedBox(height: 20,)),
 
                       ///button visibility only when the current month is selected
                       Visibility(
-                        visible: buttonVis1,
+                        visible: visShow,
                         child: Center(
                             child: Material(
                               color: Colors.green,
@@ -420,7 +420,7 @@ class AdminFragmentScreen extends StatelessWidget{
 
                       ///Save changed button
                       Visibility(
-                        visible: buttonVis1,
+                        visible: visShow,
                         child: Center(
                             child: Material(
                               color: Colors.green,

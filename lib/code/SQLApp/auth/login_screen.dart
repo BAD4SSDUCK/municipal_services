@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:municipal_track/code/SQLApp/Auth/signup_screen.dart';
@@ -30,6 +33,11 @@ class _LoginScreenState extends State<LoginScreen> {
   loginUserNow() async {
     if (phoneNumberController.toString().contains('+27')) {
       try {
+        print('reaching login api');
+        ByteData rootCACertificate = await rootBundle.load("assets/ca.pem");
+        //ByteData clientCertificate = await rootBundle.load("assets/cert.pem");
+        ByteData privateKey = await rootBundle.load("assets/public_key.pem");
+
         var res = await http.post(
           Uri.parse(API.login),
           body: {
@@ -37,11 +45,10 @@ class _LoginScreenState extends State<LoginScreen> {
             "userPassword": passwordController.text.trim(),
           },
         );
-
+        print(res.toString());
         if (res.statusCode == 200) {
           var resBodyOfLogin = jsonDecode(res.body);
           if (resBodyOfLogin['success'] == true) {
-            print('reaching login api');
             Fluttertoast.showToast(msg: "You are logged in Successfully");
 
             User userInfo = User.fromJson(resBodyOfLogin["userData"]);

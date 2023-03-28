@@ -27,7 +27,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   var passwordController = TextEditingController();
   var isObscure = true.obs;
 
-  Future validateUserPhone() async{
+  Future <void> validateUserPhone() async{
     try {
       var res = await http.post(
         Uri.parse(API.validatePhone),
