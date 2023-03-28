@@ -22,6 +22,7 @@ import 'package:municipal_track/code/Reusable/main_menu_reusable_button.dart';
 import 'package:municipal_track/code/Reusable/nav_drawer.dart';
 import 'package:municipal_track/code/SQLApp/faultPages/fault_manage_screen.dart';
 import 'package:municipal_track/code/SQLApp/faultPages/fault_report_screen.dart';
+import 'package:municipal_track/code/SQLApp/fragments/admin_management_screen.dart';
 import 'package:municipal_track/code/SQLApp/fragments/profile_fragment_screen.dart';
 import 'package:municipal_track/code/SQLApp/fragments/property_fragment_screen_all.dart';
 import 'package:municipal_track/code/SQLApp/fragments/statement_download.dart';
@@ -174,7 +175,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => FaultManageScreen()));
+                                        MaterialPageRoute(builder: (context) => AdminManagementScreen()));
                                   },
                                   labelText: 'Manage\nAdmin',
                                   fSize: 18,

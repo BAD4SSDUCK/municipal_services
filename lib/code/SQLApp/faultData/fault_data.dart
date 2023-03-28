@@ -14,7 +14,7 @@ class FaultData extends GetxController {
   Rx<Fault> _faultData = Fault(0, 0, '', '', '', '', '', false, '').obs;
   Fault get fault => _faultData.value;
 
-  Rx<User> _currentUser = User(0,'', '', '', '', '', '',false).obs;
+  Rx<User> _currentUser = User(0,'', '', '', '', '', '','',false).obs;
   User get user => _currentUser.value;
   getUserInfo() async {
     User? getUserInfoFromLocalStorage = await RememberUserPrefs.readUserInfo();

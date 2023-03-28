@@ -6,7 +6,7 @@ import 'package:get/get.dart';
 ///This is the controller using getx for the information on the mySql
 
 class CurrentUser extends GetxController {
-  Rx<User> _currentUser = User(0,'', '', '', '', '', '',false).obs;
+  Rx<User> _currentUser = User(0,'', '', '', '', '', '','',false).obs;
 
   User get user => _currentUser.value;
 

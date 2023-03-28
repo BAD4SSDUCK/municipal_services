@@ -9,14 +9,14 @@ import 'package:http/http.dart' as http;
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';
 import 'package:municipal_track/code/SQLApp/model/user.dart';
 
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({Key? key}) : super(key: key);
+class AddAdminUserScreen extends StatefulWidget {
+  const AddAdminUserScreen({Key? key}) : super(key: key);
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  State<AddAdminUserScreen> createState() => _AddAdminUserScreenState();
 }
 //
-class _SignUpScreenState extends State<SignUpScreen> {
+class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
 
   var formKey = GlobalKey<FormState>();
   var phoneNumberController = TextEditingController();
@@ -25,7 +25,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   var lastNameController = TextEditingController();
   var userNameController = TextEditingController();
   var passwordController = TextEditingController();
-  var rollController = '';
+  var adminRollController = TextEditingController();
   var isObscure = true.obs;
 
   Future <void> validateUserPhone() async{
@@ -63,7 +63,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         lastNameController.text.trim(),
         userNameController.text.trim(),
         passwordController.text.trim(),
-        rollController,
+        adminRollController.text.trim(),
         false,
       );
       try {
@@ -76,7 +76,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           var resBodyOfSigneUp = jsonDecode(res.body);
           if (resBodyOfSigneUp['success'] == true) {
             Fluttertoast.showToast(
-                msg: "Congratulations, you have Signed Up Successfully");
+                msg: "You Have Successfully Created an Administrator");
 
             setState(() {
               phoneNumberController.clear();
@@ -84,6 +84,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               firstNameController.clear();
               lastNameController.clear();
               userNameController.clear();
+              adminRollController.clear();
               passwordController.clear();
             });
           } else {
@@ -103,6 +104,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Add New Official User'),
+        backgroundColor: Colors.green,
+      ),
       backgroundColor: Colors.grey,
       body: LayoutBuilder(
         builder: (context, cons) {
@@ -113,7 +118,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  const SizedBox(height: 100,),
+                  const SizedBox(height: 80,),
                   //Signup screen header
                   Center(
                     child: SizedBox(
@@ -121,7 +126,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           .of(context)
                           .size
                           .width,
-                      height: 250,
+                      height: 150,
                       child: Image.asset("assets/images/logo.png"),
                     ),
                   ),
@@ -159,7 +164,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     controller: userNameController,
                                     validator: (val) =>
                                     val == ""
-                                        ? "Please enter your Username"
+                                        ? "Please enter a Username"
                                         : null,
                                     decoration: InputDecoration(
                                       prefixIcon: const Icon(
@@ -167,6 +172,59 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                         color: Colors.black,
                                       ),
                                       hintText: "Username...",
+                                      border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      disabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              30),
+                                          borderSide: const BorderSide(
+                                            color: Colors.white60,
+                                          )
+                                      ),
+                                      contentPadding: const EdgeInsets
+                                          .symmetric(
+                                          horizontal: 14,
+                                          vertical: 6
+                                      ),
+                                      fillColor: Colors.white,
+                                      filled: true,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 18,),
+
+                                  ///User Roll field
+                                  TextFormField(
+                                    controller: adminRollController,
+                                    validator: (val) =>
+                                    val == ""
+                                        ? "Please Users Roll"
+                                        : null,
+                                    decoration: InputDecoration(
+                                      prefixIcon: const Icon(
+                                        Icons.manage_accounts,
+                                        color: Colors.black,
+                                      ),
+                                      hintText: "User Roll...",
                                       border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                               30),
@@ -513,7 +571,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                           horizontal: 28,
                                         ),
                                         child: Text(
-                                          "Sign Up",
+                                          "Create User",
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: 16,
@@ -529,24 +587,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                             const SizedBox(height: 16,),
 
-                            //Account exists, login with username and password
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text("Already have an Account?"),
-                                TextButton(
-                                  onPressed: () {
-                                    Get.to(LoginScreen());
-                                  },
-                                  child: const Text("Login Here",
-                                    style: TextStyle(
-                                        color: Colors.blue,
-                                        fontSize: 16
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
 
                           ],
                         ),
