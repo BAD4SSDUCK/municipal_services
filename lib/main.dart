@@ -41,11 +41,11 @@ void main() async{
 
   Get.put(LocationController());
 
-  //runApp(const MyApp());
+  runApp(const MyApp());
 
   ///For the sql version the sql_main will call the SQLMain() StatelessWidget instead of the MyApp() StatelessWidget which is for the firebase version
   ///SQLMain(), For the sql version the sql_main will call the SQLMain() StatelessWidget.
-  runApp(const SQLMain());
+  //runApp(const SQLMain());
 }
 
 class MyApp extends StatelessWidget {

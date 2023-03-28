@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
   loginUserNow() async {
     if (phoneNumberController.toString().contains('+27')) {
       try {
-        print('reaching login api');
+        //print('reaching login api');
         ByteData rootCACertificate = await rootBundle.load("assets/ca.pem");
         //ByteData clientCertificate = await rootBundle.load("assets/cert.pem");
         ByteData privateKey = await rootBundle.load("assets/public_key.pem");
