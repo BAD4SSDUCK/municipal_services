@@ -8,6 +8,8 @@ class API{
   //$hostConnect allows us to pass the folder structure of the base api folder
   //so we do not have to type the entire path of "http://127.0.0.1/api_municipal_tracker/user"
   static const hostConnectUser = "$hostConnect/user";
+  static const adminUserUpdate = "$hostConnect/user/admin_update.php";
+  static const adminUserList = "$hostConnect/user/admin_list.php";
 
   //signup user
   static const validatePhone = "$hostConnect/user/validate_phone.php";

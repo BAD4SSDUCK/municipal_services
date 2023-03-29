@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as html;
@@ -6,12 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:municipal_track/code/SQLApp/adminData/admin_users.dart';
-import 'package:municipal_track/code/SQLApp/fragments/photo_upload_screen.dart';
 import 'package:municipal_track/code/SQLApp/fragments/user_add_screen.dart';
-import 'package:municipal_track/code/SQLApp/model/property.dart';
-
-
-import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
+import 'package:municipal_track/code/ApiConnection/api_connection.dart';
 
 class AdminManagementScreen extends StatelessWidget{
 
@@ -139,40 +136,35 @@ class AdminManagementScreen extends StatelessWidget{
                     ElevatedButton(
                         child: const Text('Update'),
                         onPressed: () async {
-                          final String accountNumber = _userNameController.text;
+                          final String userName = _userNameController.text;
                           final String userRoll = _userRollController.text;
                           final String firstName = _firstNameController.text;
                           final String lastName = _lastNameController.text;
                           final String email = _userEmailController.text;
                           final String cellNumber = _cellNumberController.text;
-                          final bool official = true;
+                          const bool official = true;
 
                           Future<void> _Update_AdminData() async {
-                            await _adminUser.user.toJson(
-
+                            var response = await html.post(
+                              Uri.parse(API.adminUserUpdate),
+                              body: {
+                                "uid": _adminUser.user.uid,
+                                "userName": userName,
+                                "adminRoll": userRoll,
+                                "firstName": firstName,
+                                "lastName": lastName,
+                                "email": email,
+                                "cellNumber": cellNumber,
+                                "official": official,
+                              }
                             );
+                            var jsonData = jsonDecode(response.body);
 
+                            if (jsonData == "failed"){
+                              print('failed');
+                            }
 
                           }
-
-
-                          ///I need to get the CRUD method for updating the existing property info
-                          // if (accountNumber != null) {
-                          //   await _propertiesData.properties.obs(documentSnapshot!.properties.id as Property?)
-                          //       .update({
-                          //     "accountNumber": accountNumber,
-                          //     "address": address,
-                          //     "areaCode": areaCode,
-                          //     "meterNumber": meterNumber,
-                          //     "meterReading": meterReading,
-                          //     "waterMeterNumber": waterMeterNumber,
-                          //     "waterMeterReading": waterMeterReading,
-                          //     "cellNumber": cellNumber,
-                          //     "firstName": firstName,
-                          //     "lastName": lastName,
-                          //     "idNumber": idNumber,
-                          //     "uid": _currentUser.user.uid,
-                          //   });
 
                           _userNameController.text = '';
                           _userRollController.text = '';

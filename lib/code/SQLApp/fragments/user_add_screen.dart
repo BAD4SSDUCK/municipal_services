@@ -118,18 +118,18 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  const SizedBox(height: 80,),
-                  //Signup screen header
-                  Center(
-                    child: SizedBox(
-                      width: MediaQuery
-                          .of(context)
-                          .size
-                          .width,
-                      height: 150,
-                      child: Image.asset("assets/images/logo.png"),
-                    ),
-                  ),
+                  // const SizedBox(height: 80,),
+                  // //Signup screen header
+                  // Center(
+                  //   child: SizedBox(
+                  //     width: MediaQuery
+                  //         .of(context)
+                  //         .size
+                  //         .width,
+                  //     height: 150,
+                  //     child: Image.asset("assets/images/logo.png"),
+                  //   ),
+                  // ),
 
                   const SizedBox(height: 20,),
 
