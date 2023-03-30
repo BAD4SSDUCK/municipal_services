@@ -15,7 +15,7 @@ class AddAdminUserScreen extends StatefulWidget {
   @override
   State<AddAdminUserScreen> createState() => _AddAdminUserScreenState();
 }
-//
+
 class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
 
   var formKey = GlobalKey<FormState>();
@@ -72,7 +72,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
           body: userModel.toJson(),
         );
         if (res.statusCode == 200) {
-          print('reaching signup api');
+          print('reaching create api step');
           var resBodyOfSigneUp = jsonDecode(res.body);
           if (resBodyOfSigneUp['success'] == true) {
             Fluttertoast.showToast(
@@ -485,7 +485,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
                                           obscureText: isObscure.value,
                                           validator: (val) =>
                                           val == ""
-                                              ? "Please enter your password"
+                                              ? "Please enter user password"
                                               : null,
                                           decoration: InputDecoration(
                                             prefixIcon: const Icon(
@@ -550,7 +550,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
 
                                   const SizedBox(height: 18,),
 
-                                  ///Button for login
+                                  ///Button for creating user
                                   Material(
                                     color: Colors.green,
                                     borderRadius: BorderRadius.circular(30),
@@ -561,6 +561,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
                                           //validation of phone number already in the db so it is in use, only one user can have this phone number
                                           validateUserPhone();
                                           print("validateUserPhone fuction :: "+validateUserPhone().toString());
+                                          Navigator.of(context).pop();
                                         }
                                         print("Form feilds filled state :: "+formKey.currentState!.validate().toString());
                                       },
@@ -580,13 +581,11 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
                                       ),
                                     ),
                                   )
-
                                 ],
                               ),
                             ),
 
                             const SizedBox(height: 16,),
-
 
                           ],
                         ),

@@ -10,7 +10,7 @@ class AdminUser extends GetxController {
 
   User get user => _adminUser.value;
 
-  getUserInfo() async {
+  getAdminUserInfo() async {
     User? getUserInfoFromLocalStorage = await RememberAdminPrefs.readUserInfo();
     _adminUser.value = getUserInfoFromLocalStorage!;
   }

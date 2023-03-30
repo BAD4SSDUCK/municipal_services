@@ -2,10 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as html;
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import 'package:municipal_track/code/SQLApp/adminData/admin_users.dart';
 import 'package:municipal_track/code/SQLApp/fragments/user_add_screen.dart';
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';
@@ -27,7 +25,7 @@ class AdminManagementScreen extends StatelessWidget{
   bool visShow = true;
   bool visHide = false;
 
-  //this widget is for displaying a property field of information with an icon next to it, NB. the icon is to make it look good
+  //this widget is for displaying a user information with an icon next to it, NB. the icon is to make it look good
   //it is called within a listview page widget
   Widget adminUserField(String propertyDat){
     return Container(
@@ -49,7 +47,6 @@ class AdminManagementScreen extends StatelessWidget{
       ),
     );
   }
-
 
   void showPressed(BuildContext context) {
     //need to work on update controller for property readings, meter and water
@@ -144,7 +141,7 @@ class AdminManagementScreen extends StatelessWidget{
                           final String cellNumber = _cellNumberController.text;
                           const bool official = true;
 
-                          Future<void> _Update_AdminData() async {
+                          Future<void> _UpdateAdminData() async {
                             var response = await html.post(
                               Uri.parse(API.adminUserUpdate),
                               body: {
@@ -246,7 +243,6 @@ class AdminManagementScreen extends StatelessWidget{
                                   ),
                                 ),
                               ),
-
                             )
                         ),
                       ),
@@ -263,6 +259,7 @@ class AdminManagementScreen extends StatelessWidget{
 
         floatingActionButton: FloatingActionButton(
           onPressed: () => const AddAdminUserScreen(),
+          backgroundColor: Colors.green,
           child: const Icon(Icons.add),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat
