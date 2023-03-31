@@ -265,8 +265,7 @@ class PropertyFragmentScreen extends StatelessWidget{
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 20,),
-                    propertyItemField(
-                        "Account Number: ${_propertiesData.properties.accountNumber}"),
+                    propertyItemField("Account Number: ${_propertiesData.properties.accountNumber}"),
                     const SizedBox(height: 10,),
                     propertyItemField("Address: ${_propertiesData.properties.address}"),
                     const SizedBox(height: 10,),
@@ -442,7 +441,6 @@ class PropertyFragmentScreen extends StatelessWidget{
                                 ),
                               ),
                             ),
-
                           )
                       ),
                     ),

@@ -5,7 +5,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:municipal_track/code/SQLApp/Auth/login_screen.dart';
 import 'package:http/http.dart' as http;
-
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';
 import 'package:municipal_track/code/SQLApp/model/user.dart';
 
@@ -200,8 +199,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
                                             color: Colors.white60,
                                           )
                                       ),
-                                      contentPadding: const EdgeInsets
-                                          .symmetric(
+                                      contentPadding: const EdgeInsets.symmetric(
                                           horizontal: 14,
                                           vertical: 6
                                       ),
@@ -253,8 +251,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
                                             color: Colors.white60,
                                           )
                                       ),
-                                      contentPadding: const EdgeInsets
-                                          .symmetric(
+                                      contentPadding: const EdgeInsets.symmetric(
                                           horizontal: 14,
                                           vertical: 6
                                       ),
@@ -270,7 +267,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
                                     controller: phoneNumberController,
                                     validator: (val) =>
                                     val == ""
-                                        ? "Please enter your Phone Number"
+                                        ? "Please enter users Phone Number"
                                         : null,
                                     decoration: InputDecoration(
                                       prefixIcon: const Icon(
@@ -306,8 +303,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
                                             color: Colors.white60,
                                           )
                                       ),
-                                      contentPadding: const EdgeInsets
-                                          .symmetric(
+                                      contentPadding: const EdgeInsets.symmetric(
                                           horizontal: 14,
                                           vertical: 6
                                       ),
@@ -323,7 +319,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
                                     controller: emailController,
                                     validator: (val) =>
                                     val == ""
-                                        ? "Please enter your Email Address"
+                                        ? "Please enter users Email Address"
                                         : null,
                                     decoration: InputDecoration(
                                       prefixIcon: const Icon(
@@ -359,8 +355,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
                                             color: Colors.white60,
                                           )
                                       ),
-                                      contentPadding: const EdgeInsets
-                                          .symmetric(
+                                      contentPadding: const EdgeInsets.symmetric(
                                           horizontal: 14,
                                           vertical: 6
                                       ),
@@ -376,7 +371,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
                                     controller: firstNameController,
                                     validator: (val) =>
                                     val == ""
-                                        ? "Please enter your First Name"
+                                        ? "Please enter users First Name"
                                         : null,
                                     decoration: InputDecoration(
                                       prefixIcon: const Icon(
@@ -412,8 +407,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
                                             color: Colors.white60,
                                           )
                                       ),
-                                      contentPadding: const EdgeInsets
-                                          .symmetric(
+                                      contentPadding: const EdgeInsets.symmetric(
                                           horizontal: 14,
                                           vertical: 6
                                       ),
@@ -429,7 +423,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
                                     controller: lastNameController,
                                     validator: (val) =>
                                     val == ""
-                                        ? "Please enter your Last Name"
+                                        ? "Please enter users Last Name"
                                         : null,
                                     decoration: InputDecoration(
                                       prefixIcon: const Icon(
@@ -465,8 +459,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
                                             color: Colors.white60,
                                           )
                                       ),
-                                      contentPadding: const EdgeInsets
-                                          .symmetric(
+                                      contentPadding: const EdgeInsets.symmetric(
                                           horizontal: 14,
                                           vertical: 6
                                       ),
@@ -485,7 +478,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
                                           obscureText: isObscure.value,
                                           validator: (val) =>
                                           val == ""
-                                              ? "Please enter user password"
+                                              ? "Please enter the users password"
                                               : null,
                                           decoration: InputDecoration(
                                             prefixIcon: const Icon(
@@ -537,8 +530,7 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
                                                   color: Colors.white60,
                                                 )
                                             ),
-                                            contentPadding: const EdgeInsets
-                                                .symmetric(
+                                            contentPadding: const EdgeInsets.symmetric(
                                                 horizontal: 14,
                                                 vertical: 6
                                             ),
