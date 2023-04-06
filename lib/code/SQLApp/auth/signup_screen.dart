@@ -73,7 +73,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         );
         if (res.statusCode == 200) {
           print('reaching signup api');
-          var resBodyOfSigneUp = jsonDecode(res.body);
+          var resBodyOfSigneUp = jsonDecode(jsonEncode(res.body));
           if (resBodyOfSigneUp['success'] == true) {
             Fluttertoast.showToast(
                 msg: "Congratulations, you have Signed Up Successfully");
@@ -499,12 +499,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     child: InkWell(
                                       onTap: () async {
                                         ///This button needs to be fixed, the validate with user phone function does not seem to be running when tapped
-                                        if(formKey.currentState!.validate() == true){
-                                          //validation of phone number already in the db so it is in use, only one user can have this phone number
-                                          validateUserPhone();
-                                          print("validateUserPhone fuction :: "+validateUserPhone().toString());
-                                        }
-                                        print("Form feilds filled state :: "+formKey.currentState!.validate().toString());
+                                        // if(formKey.currentState!.validate() == true){
+                                        //   //validation of phone number already in the db so it is in use, only one user can have this phone number
+                                        //   validateUserPhone();
+                                        //   print("validateUserPhone fuction :: "+validateUserPhone().toString());
+                                        // }
+                                        //print("Form feilds filled state :: "+formKey.currentState!.validate().toString());
+
                                       },
                                       borderRadius: BorderRadius.circular(30),
                                       child: const Padding(

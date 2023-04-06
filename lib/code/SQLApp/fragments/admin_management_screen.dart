@@ -71,10 +71,8 @@ class AdminManagementScreen extends StatelessWidget{
                     top: 20,
                     left: 20,
                     right: 20,
-                    bottom: MediaQuery
-                        .of(ctx)
-                        .viewInsets
-                        .bottom + 20),
+                    bottom: MediaQuery.of(ctx).viewInsets.bottom + 20
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,18 +250,20 @@ class AdminManagementScreen extends StatelessWidget{
               ],
             );
           } else {
-            return const CircularProgressIndicator();
+            return const Padding(
+              padding: EdgeInsets.all(50.0),
+              child: Center(child: CircularProgressIndicator()),
+            );
           }
         },
       ),
-
         floatingActionButton: FloatingActionButton(
           onPressed: () => const AddAdminUserScreen(),
           backgroundColor: Colors.green,
-          child: const Icon(Icons.add),
+          child: const Icon(Icons.plus_one),
         ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat
-
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
+
 }

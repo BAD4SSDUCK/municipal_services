@@ -335,6 +335,18 @@ class MainMenu extends StatefulWidget {
                             children: [
                               ElevatedIconButton(
                                 onPress: (){
+                                  Navigator.push(context,
+                                      MaterialPageRoute(builder: (context) => const ChatList()));
+                                },
+                                labelText: 'Report\nA\nFault',
+                                fSize: 18,
+                                faIcon: const FaIcon(Icons.report_problem),
+                                fgColor: Colors.orangeAccent,
+                                btSize: const Size(120, 120),
+                              ),
+                              const SizedBox(width: 40),
+                              ElevatedIconButton(
+                                onPress: (){
                                   showDialog(
                                       barrierDismissible: false,
                                       context: context,
@@ -381,203 +393,6 @@ class MainMenu extends StatefulWidget {
                     ],
                   ),
 
-                  ///For normal buttons
-                  // Column(
-                  //   children: [
-                  //     //Display information for all users properties information for admins to see
-                  //     Visibility(
-                  //         visible: visInternal,
-                  //         child: const SizedBox(height: 20)),
-                  //     Visibility(
-                  //      visible: visInternal,
-                  //      child: ReusableElevatedButton(
-                  //         onPress: (){
-                  //           Navigator.push(context,
-                  //               MaterialPageRoute(builder: (context) => const UsersTableAllViewPage()));
-                  //        },
-                  //        buttonText: 'All Users Details',fSize: fontSize,
-                  //      ),
-                  //     ),
-                  //     //Display information for all meter information only for logged in user
-                  //     Visibility(
-                  //         visible: visExternal,
-                  //         child: const SizedBox(height: 20)),
-                  //     Visibility(
-                  //       visible: visExternal,
-                  //       child: ReusableElevatedButton(
-                  //         onPress: (){
-                  //           Navigator.push(context,
-                  //               MaterialPageRoute(builder: (context) => const UsersTableViewPage()));
-                  //         },
-                  //         buttonText: 'View My Details',fSize: fontSize,
-                  //       ),
-                  //     ),
-                  //     //Add new details will not be available to anyone as it will all be details pulled from the server when SQL is implemented
-                  //     Visibility(
-                  //         visible: visInternal,
-                  //         child: const SizedBox(height: 20)),
-                  //     Visibility(
-                  //       visible: visInternal,
-                  //       child: ReusableElevatedButton(
-                  //         onPress: (){
-                  //           Navigator.push(context,
-                  //               MaterialPageRoute(builder: (context) => const AddPropertyDetails()));
-                  //         },
-                  //         buttonText: 'Add New Details',fSize: fontSize,
-                  //       ),
-                  //     ),
-                  //     //MapScreen to be worked on for admins to see all meter photo that have not been
-                  //     Visibility(
-                  //         visible: visInternal,
-                  //         child: const SizedBox(height: 20)),
-                  //     Visibility(
-                  //       visible: visInternal,
-                  //       child: ReusableElevatedButton(
-                  //         onPress: (){
-                  //           Navigator.push(context,
-                  //               MaterialPageRoute(builder: (context) => const MapScreen()));
-                  //           //MapPage()
-                  //         },
-                  //         buttonText: 'Map Viewer',fSize: fontSize,
-                  //       ),
-                  //     ),
-                  //     //Not used as this is for adding images to the root folder on the firebase DB
-                  //     Visibility(
-                  //         visible: visInternal,
-                  //         child: const SizedBox(height: 20)),
-                  //     Visibility(
-                  //       visible: visInternal,
-                  //       child: ReusableElevatedButton(
-                  //         onPress: (){
-                  //           ScaffoldMessenger.of(this.context).showSnackBar(
-                  //             const SnackBar(
-                  //               content: Text('Uploading a new image will replace existing image if this is not your first upload!'),
-                  //             ),
-                  //           );
-                  //           Navigator.push(context,
-                  //               MaterialPageRoute(builder: (context) => ImageUploads()));
-                  //         },
-                  //         buttonText: 'Upload Image',fSize: fontSize,
-                  //       ),
-                  //     ),
-                  //     //button for chat
-                  //     Visibility(
-                  //         visible: visExternal,
-                  //         child: const SizedBox(height: 20)),
-                  //     Visibility(
-                  //       visible: visExternal,
-                  //       child: ReusableElevatedButton(
-                  //         onPress: () async {
-                  //
-                  //           String passedID = user.phoneNumber!;
-                  //           String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
-                  //           print('The user name of the logged in person is $userName}');
-                  //           String id = passedID;
-                  //
-                  //           ///Group chat system that requires an email login, this was not used.
-                  //           // Navigator.push(context,
-                  //           //     MaterialPageRoute(builder: (context) => _isSignedIn ? const ChatHomePage() : const LoginPage(),));
-                  //
-                  //           ///Directly to the chatapp page that creates a chat id that will be saved on the DB. for an admin to access the chat I will have to
-                  //           ///make a new page that lists all DB chats for the admin to select and connect to for responding to users
-                  //           Navigator.push(context,
-                  //               MaterialPageRoute(builder: (context) => Chat(chatRoomId: id,)));
-                  //
-                  //         },
-                  //         buttonText: 'Message Admin',fSize: fontSize,
-                  //       ),
-                  //     ),
-                  //     //button for admin to get all chats from the DB
-                  //     Visibility(
-                  //         visible: visExternal,//visInternal,
-                  //         child: const SizedBox(height: 20)),
-                  //     Visibility(
-                  //       visible: visExternal,//visInternal,
-                  //       child: ReusableElevatedButton(
-                  //         onPress: () async {
-                  //
-                  //           Navigator.push(context,
-                  //               MaterialPageRoute(builder: (context) => ChatList()));
-                  //
-                  //         },
-                  //         buttonText: 'Message User List',fSize: fontSize,
-                  //       ),
-                  //     ),
-                  //     //Direct statement download feature needs to be for the user account only
-                  //     Visibility(
-                  //         visible: visExternal,
-                  //         child: const SizedBox(height: 20)),
-                  //     Visibility(
-                  //       visible: visExternal,
-                  //       child: ReusableElevatedButton(
-                  //         onPress: () async {
-                  //           Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!");
-                  //           final FirebaseAuth auth = FirebaseAuth.instance;
-                  //           final User? user = auth.currentUser;
-                  //           final uid = user?.uid;
-                  //           String userID = uid as String;
-                  //
-                  //           ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
-                  //           ///no pdfs are uploaded by users
-                  //           print(FirebaseAuth.instance.currentUser);
-                  //           final url = 'pdfs/$userID/ds_wirelessp2p.pdf';
-                  //           final url2 = 'pdfs/$userID/Invoice_000003728743_040000653226.PDF';
-                  //           final file = await PDFApi.loadFirebase(url);
-                  //           try{
-                  //             openPDF(context, file);
-                  //           } catch(e){
-                  //             Fluttertoast.showToast(msg: "Unable to download statement.");
-                  //           }
-                  //         },
-                  //         buttonText: 'Download Statement',fSize: fontSize,
-                  //       ),
-                  //     ),
-                  //     //logout button
-                  //     Visibility(
-                  //         visible: visExternal,
-                  //         child: const SizedBox(height: 20)),
-                  //     Visibility(
-                  //       visible: visExternal,
-                  //       child: ReusableElevatedButton(
-                  //         onPress: (){
-                  //           showDialog(
-                  //               barrierDismissible: false,
-                  //               context: context,
-                  //               builder: (context) {
-                  //                 return AlertDialog(
-                  //                   shape: const RoundedRectangleBorder(borderRadius:
-                  //                   BorderRadius.all(Radius.circular(18))),
-                  //                   title: const Text("Logout"),
-                  //                   content: const Text("Are you sure you want to logout?"),
-                  //                   actions: [
-                  //                     IconButton(
-                  //                       onPressed: () {
-                  //                         Navigator.pop(context);
-                  //                       },
-                  //                       icon: const Icon(
-                  //                         Icons.cancel,
-                  //                         color: Colors.red,
-                  //                       ),
-                  //                     ),
-                  //                     IconButton(
-                  //                       onPressed: () async {
-                  //                         FirebaseAuth.instance.signOut();
-                  //                         SystemNavigator.pop();
-                  //                       },
-                  //                       icon: const Icon(
-                  //                         Icons.done,
-                  //                         color: Colors.green,
-                  //                       ),
-                  //                     ),
-                  //                   ],
-                  //                 );
-                  //               });
-                  //         },
-                  //         buttonText: 'Logout',fSize: fontSize,
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
 
                   ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
                   ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device

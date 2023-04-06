@@ -24,19 +24,19 @@ void main() async{
 
   await Firebase.initializeApp();
 
-  //await FirebaseMessaging.instance.getInitialMessage();
+  await FirebaseMessaging.instance.getInitialMessage();
 
   ///notification section
-  // FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  // await flutterLocalNotificationsPlugin
-  //     .resolvePlatformSpecificImplementation<
-  //     AndroidFlutterLocalNotificationsPlugin>()
-  //     ?.createNotificationChannel(channel);
-  // await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-  //   alert: true,
-  //   badge: true,
-  //   sound: true,
-  // );
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+      AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
+  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
   ///notification section ended
 
   Get.put(LocationController());
@@ -57,7 +57,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       ///MainPage links to an auth state for logging in using the necessary firebase method.
       ///If already logged in user will be immediately directed to the firebase version dashboard
-      home: HomeManagerScreen(), //DashboardOfFragments(),//MainPage(),//
+      home: MainPage(),
+        //HomeManagerScreen(),
         //DashboardOfFragments(), this is being developed for the sql version dashboard, accessible for testing without login details or db connection
         //LoginScreen(), this is being developed and I am testing the mysql db login screen.
         //MainPage(), For the working Firebase version.
@@ -75,22 +76,22 @@ class MyHttpOverrides extends HttpOverrides {
 }
 
 ///notification channel init start
-// const AndroidNotificationChannel channel = AndroidNotificationChannel(
-//   'high_importance_channel', // id
-//   'High Importance Notifications', // title
-//   //'This channel is used for important notifications.', // description
-//   importance: Importance.high,
-// );
-// final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-// FlutterLocalNotificationsPlugin();
-// ///notification channel init end
+const AndroidNotificationChannel channel = AndroidNotificationChannel(
+  'high_importance_channel', // id
+  'High Importance Notifications', // title
+  //'This channel is used for important notifications.', // description
+  importance: Importance.high,
+);
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+FlutterLocalNotificationsPlugin();
+///notification channel init end
 
 ///notification handler start
-// Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-//   // If you're going to use other Firebase services in the background, such as Firestore,
-//   // make sure you call `initializeApp` before using other Firebase services.
-//   await Firebase.initializeApp();
-//   print('Handling a background message ${message.messageId}');
-// }
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // If you're going to use other Firebase services in the background, such as Firestore,
+  // make sure you call `initializeApp` before using other Firebase services.
+  await Firebase.initializeApp();
+  print('Handling a background message ${message.messageId}');
+}
 ///notification handler end
 

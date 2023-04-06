@@ -1,8 +1,8 @@
 
-
+///These api's are only for fire
 class API{
 
-  static const hostConnect = "https://127.0.0.1:8080/connection.php"; //http://municipal_tracker.localhost:8080/ //localhost:8080 //I need to figure out what the host is for the running XAMPP mysql server
+  static const hostConnect = "http://172.21.160.1:8080/connection.php"; //http://municipal_tracker.localhost:8080/ //localhost:8080 //I need to figure out what the host is for the running XAMPP mysql server
   //static const hostConnect = "http://(ip address here)/(name of the api folder)";
 
   //$hostConnect allows us to pass the folder structure of the base api folder

@@ -218,6 +218,8 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                       final String lastName = _lastNameController.text;
                       final String idNumber = _idNumberController.text;
                       if (accountNumber != null) {
+
+
                         await _propList.add({
                           "account number": accountNumber,
                           "address": address,
@@ -599,7 +601,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           context, 'files/$userID/electricity/$eMeterNumber'),
                                       builder: (context, snapshot) {
                                         if (snapshot.hasError) {
-                                          return Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
+                                          return const Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
                                         }
                                         if (snapshot.connectionState ==
                                             ConnectionState.done) {
@@ -883,7 +885,18 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
                                       ///no pdfs are uploaded by users
                                       print(FirebaseAuth.instance.currentUser);
-                                      final url = 'pdfs/$userID/ds_wirelessp2p.pdf';
+
+                                      String accountNumberPDF = documentSnapshot['account number'];
+
+                                      String nameOfUserPdf;
+
+                                      ///todo: make this find the name of documents by the property account number owned by the logged in user for their statement
+                                      if(PDFApi.loadFirebase('pdfs/$userID/').toString().contains(accountNumberPDF)){
+                                          nameOfUserPdf = PDFApi.loadFirebase('pdfs/$userID/').toString();
+
+                                          final url = nameOfUserPdf;//'pdfs/$userID/ds_wirelessp2p.pdf';
+                                      }
+
                                       final url2 = 'pdfs/$userID/Invoice_000003728743_040000653226.pdf';
                                       final file = await PDFApi.loadFirebase(url2);
                                       try{

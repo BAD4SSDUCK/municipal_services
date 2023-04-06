@@ -34,9 +34,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (phoneNumberController.toString().contains('+27')) {
       try {
         //print('reaching login api');
-        ByteData rootCACertificate = await rootBundle.load("assets/ca.pem");
+        //ByteData rootCACertificate = await rootBundle.load("assets/ca.pem");
         //ByteData clientCertificate = await rootBundle.load("assets/cert.pem");
-        ByteData privateKey = await rootBundle.load("assets/public_key.pem");
+        //ByteData privateKey = await rootBundle.load("assets/public_key.pem");
 
         var res = await http.post(
           Uri.parse(API.login),
@@ -47,6 +47,8 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         print(res.toString());
         if (res.statusCode == 200) {
+
+          print('the body is::${res.body}');
           var resBodyOfLogin = jsonDecode(res.body);
           if (resBodyOfLogin['success'] == true) {
             Fluttertoast.showToast(msg: "You are logged in Successfully");

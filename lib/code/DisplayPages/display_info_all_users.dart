@@ -14,11 +14,11 @@ import '../PDFViewer/pdf_api.dart';
 import '../PDFViewer/view_pdf.dart';
 
 
-class UsersTableAllViewPage extends StatefulWidget {
-  const UsersTableAllViewPage({Key? key}) : super(key: key);
+class UsersPropsAll extends StatefulWidget {
+  const UsersPropsAll({Key? key}) : super(key: key);
 
   @override
-  _UsersTableAllViewPageState createState() => _UsersTableAllViewPageState();
+  _UsersPropsAllState createState() => _UsersPropsAllState();
 }
 
 final FirebaseAuth auth = FirebaseAuth.instance;
@@ -69,7 +69,7 @@ Future<Widget> _getImageW(BuildContext context, String imageName2) async{
 }
 
 
-class _UsersTableAllViewPageState extends State<UsersTableAllViewPage> {
+class _UsersPropsAllState extends State<UsersPropsAll> {
 
   // text fields' controllers
   final _accountNumberController = TextEditingController();
