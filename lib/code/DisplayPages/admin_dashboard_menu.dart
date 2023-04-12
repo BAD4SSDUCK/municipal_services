@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -15,8 +16,8 @@ import 'package:municipal_track/code/MapTools/map_screen_multi.dart';
 import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_track/code/Reusable/main_menu_reusable_button.dart';
 import 'package:municipal_track/code/Reusable/nav_drawer.dart';
-import 'package:municipal_track/code/SQLApp/faultPages/fault_manage_screen.dart';
-import 'package:municipal_track/code/SQLApp/faultPages/fault_report_screen.dart';
+import 'package:municipal_track/code/SQLApp/faultSQLPages/fault_task_screen.dart';
+import 'package:municipal_track/code/faultPages/fault_report_screen.dart';
 import 'package:municipal_track/code/SQLApp/fragments/profile_fragment_screen.dart';
 import 'package:http/http.dart' as http;
 
@@ -42,16 +43,12 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
   bool loading = true;
   late List pdfList;
 
-  Future fetchAllUsers() async{
-
-  }
 
   late FToast fToast;
 
   @override
   void initState() {
     super.initState();
-    fetchAllUsers();
     fToast =FToast();
     fToast.init(context);
     //Fluttertoast.showToast(msg: "Navigate The App From The Bottom Tabs.", gravity: ToastGravity.CENTER);
@@ -121,7 +118,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => FaultManageScreen()));
+                                        MaterialPageRoute(builder: (context) => FaultTaskScreen()));
                                   },
                                   labelText: 'Report\nList',
                                   fSize: 18,
@@ -178,7 +175,42 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               children: [
                                 ElevatedIconButton(
                                   onPress: (){
-                                    ProfileFragmentScreen().signOutUser();
+                                    showDialog(
+                                        barrierDismissible: false,
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            shape: const RoundedRectangleBorder(borderRadius:
+                                            BorderRadius.all(Radius.circular(18))),
+                                            title: const Text("Logout"),
+                                            content: const Text("Are you sure you want to logout?"),
+                                            actions: [
+                                              IconButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                },
+                                                icon: const Icon(
+                                                  Icons.cancel,
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                onPressed: () async {
+                                                  FirebaseAuth.instance.signOut();
+                                                  // Navigator.pop(context);
+                                                  // SystemNavigator.pop();
+                                                },
+                                                icon: const Icon(
+                                                  Icons.done,
+                                                  color: Colors.green,
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        });
+
+                                    ///commented out old sql sign out method
+                                    // ProfileFragmentScreen().signOutUser();
                                   },
                                   labelText: 'Logout',
                                   fSize: 18,

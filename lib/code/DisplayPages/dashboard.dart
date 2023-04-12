@@ -15,10 +15,12 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:municipal_track/code/Chat/chat_screen.dart';
+import 'package:municipal_track/code/DisplayPages/display_pdf_list.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_page.dart';
 import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_track/code/Reusable/main_menu_reusable_button.dart';
 import 'package:municipal_track/code/Reusable/nav_drawer.dart';
+import 'package:municipal_track/code/faultPages/fault_report_screen.dart';
 import 'package:municipal_track/main.dart';
 import 'package:http/http.dart' as http;
 
@@ -28,6 +30,7 @@ import 'package:municipal_track/code/MapTools/map_screen.dart';
 import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 import 'package:municipal_track/code/Reusable/menu_reusable_elevated_button.dart';
+import 'package:path/path.dart';
 import 'add_details.dart';
 import 'display_info.dart';
 import 'display_info_all_users.dart';
@@ -60,6 +63,7 @@ class MainMenu extends StatefulWidget {
     initInfo();
     ///checking chat login status
     // getUserLoggedInStatus();
+    addChatCustomId();
   }
 
   ///added login status for chat
@@ -149,7 +153,7 @@ class MainMenu extends StatefulWidget {
       try {
         if (payload != null && payload.isNotEmpty) {
           Navigator.push(
-              context, MaterialPageRoute(builder: (BuildContext context) {
+              context as BuildContext, MaterialPageRoute(builder: (BuildContext context) {
             return const UsersTableViewPage();
           }
           ));
@@ -187,12 +191,18 @@ class MainMenu extends StatefulWidget {
   bool visExternal = true;
   bool visInternal = false;
 
-  final CollectionReference _propList =
-  FirebaseFirestore.instance.collection('properties');
+  final CollectionReference _chatRoom =
+  FirebaseFirestore.instance.collection('chatRoom');
 
-  final CollectionReference _userList =
-  FirebaseFirestore.instance.collection('users');
-
+  addChatCustomId() async{
+    String? addChatID = user.phoneNumber;
+    final chatSnapshot = await FirebaseFirestore.instance
+        .collection("chatRoom").doc(addChatID);
+    if(chatSnapshot.isBlank!){
+    } else {
+      _chatRoom.add(addChatID);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -249,7 +259,7 @@ class MainMenu extends StatefulWidget {
                               fSize: 18,
                               faIcon: const FaIcon(FontAwesomeIcons.houseCircleExclamation),
                               fgColor: Colors.green,
-                              btSize: const Size(120, 120),
+                              btSize: const Size(130, 120),
                             ),
                             const SizedBox(width: 40),
                             ElevatedIconButton(
@@ -269,9 +279,8 @@ class MainMenu extends StatefulWidget {
                               fSize: 18,
                               faIcon: const FaIcon(FontAwesomeIcons.message),
                               fgColor: Colors.blue,
-                              btSize: const Size(120, 120),
+                              btSize: const Size(130, 120),
                             ),
-
                           ],
                           ),
                         ),
@@ -285,43 +294,44 @@ class MainMenu extends StatefulWidget {
                             children: [
                               ElevatedIconButton(
                                 onPress: () async {
-                                  Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!\nDownload speed dependent on network connection.", gravity: ToastGravity.CENTER);
-                                  final FirebaseAuth auth = FirebaseAuth.instance;
-                                  final User? user = auth.currentUser;
-                                  final uid = user?.uid;
-                                  String userID = uid as String;
+                                  Fluttertoast.showToast(msg: "Now downloading a list of your statements!\nDownload speed dependent on network connection.", gravity: ToastGravity.CENTER);
+
+                                  Navigator.push(context,
+                                      MaterialPageRoute(builder: (context) => UsersPdfListViewPage()));
 
                                   ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
                                   ///no pdfs are uploaded by users
-                                  print(FirebaseAuth.instance.currentUser);
-                                  final url = 'pdfs/$userID/ds_wirelessp2p.pdf';
-                                  final url2 = 'pdfs/$userID/Invoice_000003728743_040000653226.PDF';
-                                  final file = await PDFApi.loadFirebase(url2);
-                                  try{
-                                    openPDF(context, file);
-                                  } catch(e){
-                                    Fluttertoast.showToast(msg: "Unable to download statement.", gravity: ToastGravity.CENTER);
-                                  }
+                                  ///todo get the document name by account number
+                                  // print(FirebaseAuth.instance.currentUser);
+                                  //
+                                  // final url = 'pdfs/$userID/ds_wirelessp2p.pdf';
+                                  // final url2 = 'pdfs/$userID/Invoice_000003728743_040000653226.PDF';
+                                  // final file = await PDFApi.loadFirebase(url2);
+                                  // try{
+                                  //   openPDF(context, file);
+                                  // } catch(e){
+                                  //   Fluttertoast.showToast(msg: "Unable to download statement.", gravity: ToastGravity.CENTER);
+                                  // }
                                 },
                                 labelText: 'Download\nStatement',
                                 fSize: 16,
                                 faIcon: const FaIcon(FontAwesomeIcons.solidFilePdf),
                                 fgColor: Colors.redAccent,
-                                btSize: const Size(120, 120),
+                                btSize: const Size(130, 120),
                               ),
-                              const SizedBox(width: 40),
-                              ElevatedIconButton(
-                                onPress: (){
-                                  Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) => const ChatList()));
-                                },
-                                labelText: 'User\nChat\nList',
-                                fSize: 18,
-                                faIcon: const FaIcon(Icons.mark_chat_unread),
-                                fgColor: Colors.blue,
-                                btSize: const Size(120, 120),
-                              ),
-
+                              ///This user chat list should only be fore managers to chat to listed users
+                              // const SizedBox(width: 40),
+                              // ElevatedIconButton(
+                              //   onPress: (){
+                              //     Navigator.push(context,
+                              //         MaterialPageRoute(builder: (context) => const ChatList()));
+                              //   },
+                              //   labelText: 'User\nChat\nList',
+                              //   fSize: 18,
+                              //   faIcon: const FaIcon(Icons.mark_chat_unread),
+                              //   fgColor: Colors.blue,
+                              //   btSize: const Size(130, 120),
+                              // ),
                             ],
                           ),
                         ),
@@ -336,13 +346,13 @@ class MainMenu extends StatefulWidget {
                               ElevatedIconButton(
                                 onPress: (){
                                   Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) => const ChatList()));
+                                      MaterialPageRoute(builder: (context) => ReportPropertyMenu()));
                                 },
-                                labelText: 'Report\nA\nFault',
+                                labelText: 'Report\nFaults',
                                 fSize: 18,
                                 faIcon: const FaIcon(Icons.report_problem),
                                 fgColor: Colors.orangeAccent,
-                                btSize: const Size(120, 120),
+                                btSize: const Size(130, 120),
                               ),
                               const SizedBox(width: 40),
                               ElevatedIconButton(
@@ -369,7 +379,8 @@ class MainMenu extends StatefulWidget {
                                             IconButton(
                                               onPressed: () async {
                                                 FirebaseAuth.instance.signOut();
-                                                SystemNavigator.pop();
+                                                // Navigator.pop(context);
+                                                // SystemNavigator.pop();
                                               },
                                               icon: const Icon(
                                                 Icons.done,
@@ -384,7 +395,7 @@ class MainMenu extends StatefulWidget {
                                 fSize: 18,
                                 faIcon: const FaIcon(Icons.logout),
                                 fgColor: Colors.red,
-                                btSize: const Size(120, 120),
+                                btSize: const Size(130, 120),
                               ),
                             ],
                           ),

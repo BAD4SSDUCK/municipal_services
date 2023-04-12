@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:municipal_track/code/DisplayPages/dashboard.dart';
+import 'package:municipal_track/code/login/login_page.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -63,7 +64,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => const MainMenu(),
-          //todo send user to a password creation page if they have not logged in before
         ),
       );
     });
@@ -193,6 +193,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 5,),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'Municipality Member?',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap:() {
+                                Navigator.push(context,
+                                    MaterialPageRoute(builder: (context) =>
+                                        const LoginPage()));
+                              },
+                              child: const Text(
+                                ' Login Here',
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.bold,
+                                ),),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20,),
                       ],
                     ),
                   ),

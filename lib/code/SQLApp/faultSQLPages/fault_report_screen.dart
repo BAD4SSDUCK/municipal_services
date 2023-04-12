@@ -9,7 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
-import 'package:municipal_track/code/SQLApp/faultPages/general_fault_screen.dart';
+import 'package:municipal_track/code/SQLApp/faultSQLPages/general_fault_screen.dart';
 import 'package:municipal_track/code/SQLApp/propertiesData/properties_data.dart';
 import 'package:municipal_track/code/SQLApp/userPreferences/current_user.dart';
 import 'package:municipal_track/code/ApiConnection/api_connection.dart';

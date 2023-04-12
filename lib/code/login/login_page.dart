@@ -3,13 +3,15 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:municipal_track/code/DisplayPages/admin_dashboard_menu.dart';
 import 'forgot_pw_page.dart';
 
 class LoginPage extends StatefulWidget{
 
-  final VoidCallback showRegisterPage;
+  //final VoidCallback showRegisterPage;
 
-  const LoginPage({Key? key, required this.showRegisterPage }) : super(key: key);
+  const LoginPage({Key? key, //required this.showRegisterPage
+  }) : super(key: key);
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -37,7 +39,17 @@ class _LoginPageState extends State<LoginPage>{
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
-      );
+      ).whenComplete(() {
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const HomeManagerScreen(),
+          ),
+        );
+      });
+
+      Navigator.of(context).pop();
+
     } on FirebaseAuthException catch (e) {
 
       authProblems errorType;
@@ -112,14 +124,15 @@ class _LoginPageState extends State<LoginPage>{
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset('assets/images/logo.png',height: 200,width: 300,),
+                const SizedBox(height: 10,),
                 Text(
                   'Welcome!',
                   style: GoogleFonts.bebasNeue(
                     fontSize: 50,
                   ),
                 ),
-                const SizedBox(height: 10,),
-                const Text('Let\'s log in to manage details.',
+                const SizedBox(height: 5,),
+                const Text('Let\'s log in to continue.',
                   style: TextStyle(fontSize: 18),),
                 const SizedBox(height: 20,),
 
@@ -168,29 +181,29 @@ class _LoginPageState extends State<LoginPage>{
                 ),
                 const SizedBox(height: 10,),
 
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      GestureDetector(
-                        onTap: (){
-                          Navigator.push(context,
-                            MaterialPageRoute(builder: (context){
-                              return ForgotPasswordPage();
-                            },
-                            ),
-                          );
-                        },
-                        child: const Text('Forgot Password?',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.bold,
-                          ),),
-                      )
-                    ],
-                  ),
-                ),
+                // Padding(
+                //   padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                //   child: Row(
+                //     mainAxisAlignment: MainAxisAlignment.end,
+                //     children: [
+                //       GestureDetector(
+                //         onTap: (){
+                //           Navigator.push(context,
+                //             MaterialPageRoute(builder: (context){
+                //               return ForgotPasswordPage();
+                //             },
+                //             ),
+                //           );
+                //         },
+                //         child: const Text('Forgot Password?',
+                //           style: TextStyle(
+                //             color: Colors.blue,
+                //             fontWeight: FontWeight.bold,
+                //           ),),
+                //       )
+                //     ],
+                //   ),
+                // ),
                 const SizedBox(height: 10,),
 
                 // login button
@@ -206,7 +219,7 @@ class _LoginPageState extends State<LoginPage>{
                       ),
                       child: const Center(
                         child: Text(
-                          'Sign In',
+                          'Login',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -224,15 +237,17 @@ class _LoginPageState extends State<LoginPage>{
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      'Not a member?',
+                      'Not an official?',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     GestureDetector(
-                      onTap: widget.showRegisterPage,
+                      onTap: (){
+                        Navigator.pop(context);
+                        },
                       child: const Text(
-                        ' Register now',
+                        ' Phone Login',
                         style: TextStyle(
                           color: Colors.blue,
                           fontWeight: FontWeight.bold,
@@ -240,6 +255,28 @@ class _LoginPageState extends State<LoginPage>{
                     ),
                   ],
                 )
+
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.center,
+                //   children: [
+                //     const Text(
+                //       'Not a member?',
+                //       style: TextStyle(
+                //         fontWeight: FontWeight.bold,
+                //       ),
+                //     ),
+                //     GestureDetector(
+                //       onTap: widget.showRegisterPage,
+                //       child: const Text(
+                //         ' Register now',
+                //         style: TextStyle(
+                //           color: Colors.blue,
+                //           fontWeight: FontWeight.bold,
+                //         ),),
+                //     ),
+                //   ],
+                // )
+
               ],
             ),
           ),

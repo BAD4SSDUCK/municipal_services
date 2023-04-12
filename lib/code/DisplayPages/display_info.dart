@@ -8,11 +8,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 
-import '../ImageUploading/image_upload_meter.dart';
-import '../ImageUploading/image_upload_water.dart';
-import '../MapTools/map_screen.dart';
-import '../PDFViewer/pdf_api.dart';
-import '../PDFViewer/view_pdf.dart';
+import 'package:municipal_track/code/ImageUploading/image_upload_meter.dart';
+import 'package:municipal_track/code/ImageUploading/image_upload_water.dart';
+import 'package:municipal_track/code/MapTools/map_screen.dart';
+import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
+import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
 
 
 class UsersTableViewPage extends StatefulWidget {
@@ -27,7 +27,9 @@ final storageRef = FirebaseStorage.instance.ref();
 
 final User? user = auth.currentUser;
 final uid = user?.uid;
+final phone = user?.phoneNumber;
 String userID = uid as String;
+String phoneNum = phone as String;
 
 String accountNumber = ' ';
 String locationGiven = ' ';
@@ -35,6 +37,8 @@ String eMeterNumber = ' ';
 String accountNumberW = ' ';
 String locationGivenW = ' ';
 String wMeterNumber = ' ';
+
+String imgFolder = ' ';
 
 bool visibilityState1 = true;
 bool visibilityState2 = false;
@@ -548,40 +552,41 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                           InkWell(
                             ///onTap allows to open image upload page if user taps on the image.
                             ///Can be later changed to display the picture zoomed in if user taps on it.
-                            onTap: () {
-                              eMeterNumber = documentSnapshot['meter number'];
-                              showDialog(
-                                  barrierDismissible: false,
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: const Text("Upload Meter Image"),
-                                      content: const Text("Uploading a new image will replace current image! Are you sure?"),
-                                      actions: [
-                                        IconButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                          icon: const Icon(
-                                            Icons.cancel,
-                                            color: Colors.red,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          onPressed: () async {
-                                            Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                            Navigator.push(context,
-                                                MaterialPageRoute(builder: (context) => ImageUploadMeter()));
-                                          },
-                                          icon: const Icon(
-                                            Icons.done,
-                                            color: Colors.green,
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  });
-                            },
+                            // onTap: () {
+                            //   eMeterNumber = documentSnapshot['meter number'];
+                            //   showDialog(
+                            //       barrierDismissible: false,
+                            //       context: context,
+                            //       builder: (context) {
+                            //         return AlertDialog(
+                            //           title: const Text("Upload Meter Image"),
+                            //           content: const Text("Uploading a new image will replace current image! Are you sure?"),
+                            //           actions: [
+                            //             IconButton(
+                            //               onPressed: () {
+                            //                 Navigator.pop(context);
+                            //               },
+                            //               icon: const Icon(
+                            //                 Icons.cancel,
+                            //                 color: Colors.red,
+                            //               ),
+                            //             ),
+                            //             IconButton(
+                            //               onPressed: () async {
+                            //                 Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                            //                 Navigator.push(context,
+                            //                     MaterialPageRoute(builder: (context) => ImageUploadMeter()));
+                            //               },
+                            //               icon: const Icon(
+                            //                 Icons.done,
+                            //                 color: Colors.green,
+                            //               ),
+                            //             ),
+                            //           ],
+                            //         );
+                            //       });
+                            // },
+
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 5),
                               height: 180,
@@ -598,7 +603,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                   child: FutureBuilder(
                                       future: _getImage(
                                         ///Firebase image location must be changed to display image based on the meter number
-                                          context, 'files/$userID/electricity/$eMeterNumber'),
+                                          context, 'files/$imgFolder/electricity/$eMeterNumber'),
                                       builder: (context, snapshot) {
                                         if (snapshot.hasError) {
                                           return const Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
@@ -633,40 +638,41 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                           InkWell(
                             ///onTap allows to open image upload page if user taps on the image.
                             ///Can be later changed to display the picture zoomed in if user taps on it.
-                            onTap: () {
-                              wMeterNumber = documentSnapshot['water meter number'];
-                              showDialog(
-                                  barrierDismissible: false,
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: const Text("Upload Water Meter Image"),
-                                      content: const Text("Uploading a new image will replace current image! Are you sure?"),
-                                      actions: [
-                                        IconButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                          icon: const Icon(
-                                            Icons.cancel,
-                                            color: Colors.red,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          onPressed: () async {
-                                            Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                            Navigator.push(context,
-                                                MaterialPageRoute(builder: (context) => ImageUploadWater()));
-                                          },
-                                          icon: const Icon(
-                                            Icons.done,
-                                            color: Colors.green,
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  });
-                            },
+                            // onTap: () {
+                            //   wMeterNumber = documentSnapshot['water meter number'];
+                            //   showDialog(
+                            //       barrierDismissible: false,
+                            //       context: context,
+                            //       builder: (context) {
+                            //         return AlertDialog(
+                            //           title: const Text("Upload Water Meter Image"),
+                            //           content: const Text("Uploading a new image will replace current image! Are you sure?"),
+                            //           actions: [
+                            //             IconButton(
+                            //               onPressed: () {
+                            //                 Navigator.pop(context);
+                            //               },
+                            //               icon: const Icon(
+                            //                 Icons.cancel,
+                            //                 color: Colors.red,
+                            //               ),
+                            //             ),
+                            //             IconButton(
+                            //               onPressed: () async {
+                            //                 Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                            //                 Navigator.push(context,
+                            //                     MaterialPageRoute(builder: (context) => ImageUploadWater()));
+                            //               },
+                            //               icon: const Icon(
+                            //                 Icons.done,
+                            //                 color: Colors.green,
+                            //               ),
+                            //             ),
+                            //           ],
+                            //         );
+                            //       });
+                            // },
+
                             child: Container(
                               margin: EdgeInsets.only(bottom: 5),
                               height: 180,
@@ -683,7 +689,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                   child: FutureBuilder(
                                       future: _getImageW(
                                         ///Firebase image location must be changed to display image based on the meter number
-                                          context, 'files/$userID/water/$wMeterNumber'),//$meterNumber
+                                          context, 'files/$imgFolder/water/$wMeterNumber'),//$meterNumber
                                       builder: (context, snapshot) {
                                         if (snapshot.hasError) {
                                           return Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
@@ -732,7 +738,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           color: Theme.of(context).primaryColor,
                                         ),
                                         const SizedBox(width: 2,),
-                                        Text('Capture',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
+                                        const Text('Capture',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
                                       ],
                                     ),
                                   ),
@@ -766,6 +772,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                   ElevatedButton(
                                     onPressed: () {
                                       eMeterNumber = documentSnapshot['meter number'];
+                                      imgFolder = documentSnapshot['cell number'];
                                       showDialog(
                                           barrierDismissible: false,
                                           context: context,
@@ -891,13 +898,13 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       String nameOfUserPdf;
 
                                       ///todo: make this find the name of documents by the property account number owned by the logged in user for their statement
-                                      if(PDFApi.loadFirebase('pdfs/$userID/').toString().contains(accountNumberPDF)){
-                                          nameOfUserPdf = PDFApi.loadFirebase('pdfs/$userID/').toString();
+                                      if(PDFApi.loadFirebase('pdfs/$phoneNum/').toString().contains(accountNumberPDF)){
+                                          nameOfUserPdf = PDFApi.loadFirebase('pdfs/$phoneNum/').toString();
 
                                           final url = nameOfUserPdf;//'pdfs/$userID/ds_wirelessp2p.pdf';
                                       }
 
-                                      final url2 = 'pdfs/$userID/Invoice_000003728743_040000653226.pdf';
+                                      final url2 = 'pdfs/$phoneNum/Invoice_000003728743_040000653226.pdf';
                                       final file = await PDFApi.loadFirebase(url2);
                                       try{
                                         openPDF(context, file);
@@ -921,6 +928,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                   ElevatedButton(
                                     onPressed: () {
                                       wMeterNumber = documentSnapshot['water meter number'];
+                                      imgFolder = documentSnapshot['cell number'];
                                       showDialog(
                                           barrierDismissible: false,
                                           context: context,
@@ -997,8 +1005,10 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
               },
             );
           }
-          return const Center(
-            child: CircularProgressIndicator(),
+          return const Padding(
+            padding: EdgeInsets.all(10.0),
+            child: Center(
+                child: CircularProgressIndicator()),
           );
         },
       ),

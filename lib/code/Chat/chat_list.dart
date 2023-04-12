@@ -109,7 +109,7 @@ class ChatButtonWidget extends StatelessWidget {
             ElevatedButton(
               onPressed: () async{
                 Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => Chat(chatRoomId: chatRoomId,)));
+                    MaterialPageRoute(builder: (context) => Chat(chatRoomId: '+27${0800001868}',)));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey[350],

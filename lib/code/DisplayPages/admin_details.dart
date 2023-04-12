@@ -1,11 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
 
 class AdminDetails extends StatefulWidget{
+  const AdminDetails({super.key});
 
   @override
   State<AdminDetails> createState() => _AdminDetailsState();
@@ -36,6 +38,7 @@ class _AdminDetailsState extends State<AdminDetails> {
   final _lastNameController = TextEditingController();
   final _userEmailController = TextEditingController();
   final _cellNumberController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   final CollectionReference _usersList =
   FirebaseFirestore.instance.collection('users');
@@ -68,6 +71,27 @@ class _AdminDetailsState extends State<AdminDetails> {
     );
   }
 
+  static Future<UserCredential> register(String email, String password) async {
+    FirebaseApp app = await Firebase.initializeApp(
+        name: 'Secondary', options: Firebase.app().options);
+
+    UserCredential userCredential = await FirebaseAuth.instanceFor(app: app)
+        .createUserWithEmailAndPassword(email: email, password: password);
+
+    try {
+
+    }
+    on FirebaseAuthException catch (e) {
+      // Do something with exception. This try/catch is here to make sure
+      // that even if the user creation fails, app.delete() runs, if is not,
+      // next time Firebase.initializeApp() will fail as the previous one was
+      // not deleted.
+    }
+
+    await app.delete();
+    return Future.sync(() => userCredential);
+  }
+
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
     _userNameController.text = '';
     _userRollController.text = '';
@@ -75,6 +99,7 @@ class _AdminDetailsState extends State<AdminDetails> {
     _lastNameController.text = '';
     _userEmailController.text = '';
     _cellNumberController.text = '';
+    _passwordController.text = '';
 
     await showModalBottomSheet(
         isScrollControlled: true,
@@ -143,6 +168,14 @@ class _AdminDetailsState extends State<AdminDetails> {
                           labelText: 'Phone Number'),
                     ),
                   ),
+                  Visibility(
+                    visible: visShow,
+                    child: TextField(
+                      controller: _passwordController,
+                      decoration: const InputDecoration(
+                          labelText: 'User Password'),
+                    ),
+                  ),
                   const SizedBox(
                     height: 20,
                   ),
@@ -155,6 +188,7 @@ class _AdminDetailsState extends State<AdminDetails> {
                         final String lastName = _lastNameController.text;
                         final String email = _userEmailController.text;
                         final String cellNumber = _cellNumberController.text;
+                        final String password = _passwordController.text;
                         const bool official = true;
 
                         if (userName != null) {
@@ -167,6 +201,8 @@ class _AdminDetailsState extends State<AdminDetails> {
                             "cellNumber": cellNumber,
                             "official": official,
                           });
+
+                          register(email,password);
 
                           _userNameController.text = '';
                           _userRollController.text = '';

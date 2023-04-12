@@ -65,7 +65,7 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
     ///This is the method to get the user id for reference in data upload
     final FirebaseAuth auth = FirebaseAuth.instance;
     final User? user = auth.currentUser;
-    final uid = user?.uid;
+    final uid = user?.phoneNumber;
     String userID = uid as String;
     final String photoName;
 
@@ -75,7 +75,7 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
     ///$fileName creates a folder with random numbers .jpg, the actual jpg gets named 'file' for some reason
     if (_photo == null) return;
     final fileName = basename(_photo!.path);
-    final destination = 'files/$userID/water/'; // /$fileName
+    final destination = 'files/$imgFolder/water/'; // /$fileName
 
     try {
       final ref = firebase_storage.FirebaseStorage.instance

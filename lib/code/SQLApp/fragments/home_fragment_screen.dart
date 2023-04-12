@@ -19,7 +19,7 @@ import 'package:municipal_track/code/ImageUploading/image_upload_page.dart';
 import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_track/code/Reusable/main_menu_reusable_button.dart';
 import 'package:municipal_track/code/Reusable/nav_drawer.dart';
-import 'package:municipal_track/code/SQLApp/faultPages/fault_report_screen.dart';
+import 'package:municipal_track/code/SQLApp/faultSQLPages/fault_report_screen.dart';
 import 'package:municipal_track/code/SQLApp/fragments/profile_fragment_screen.dart';
 import 'package:municipal_track/code/SQLApp/fragments/statement_download.dart';
 import 'package:municipal_track/main.dart';

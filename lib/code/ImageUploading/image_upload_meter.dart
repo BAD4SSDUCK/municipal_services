@@ -59,14 +59,14 @@ class _ImageUploadMeterState extends State<ImageUploadMeter> {
     ///This is the method to get the user id for reference in data upload
     final FirebaseAuth auth = FirebaseAuth.instance;
     final User? user = auth.currentUser;
-    final uid = user?.uid;
+    final uid = user?.phoneNumber;
     String userID = uid as String;
     final String photoName;
 
     ///'files/$userID/$fileName' is used specifically for adding the user id to a table in order to split the users per account
     if (_photo == null) return;
     final fileName = basename(_photo!.path);
-    final destination = 'files/$userID/electricity/'; // /$fileName  $meterNumber
+    final destination = 'files/$imgFolder/electricity/'; // /$fileName  $meterNumber
 
     try {
       final ref = firebase_storage.FirebaseStorage.instance

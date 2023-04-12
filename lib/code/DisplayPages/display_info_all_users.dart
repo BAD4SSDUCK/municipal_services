@@ -35,6 +35,8 @@ String accountNumberW = ' ';
 String locationGivenW = ' ';
 String wMeterNumber = ' ';
 
+String imgFolder = ' ';
+
 bool visibilityState1 = true;
 bool visibilityState2 = false;
 
@@ -463,6 +465,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   billMessage = 'No outstanding payments';
                 }
 
+                imgFolder = documentSnapshot['cell number'];
+
                   return Card(
                     margin: const EdgeInsets.all(10),
                     child: Padding(
@@ -545,44 +549,45 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                           InkWell(
                             ///onTap allows to open image upload page if user taps on the image.
                             ///Can be later changed to display the picture zoomed in if user taps on it.
-                            onTap: () {
-                              eMeterNumber = documentSnapshot['meter number'];
-                              showDialog(
-                                  barrierDismissible: false,
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: const Text("Upload Meter Image"),
-                                      content: const Text("Uploading a new image will replace current image! Are you sure?"),
-                                      actions: [
-                                        IconButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                          icon: const Icon(
-                                            Icons.cancel,
-                                            color: Colors.red,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          onPressed: () async {
-                                            ScaffoldMessenger.of(this.context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Uploading a new image will replace current image!'),
-                                              ),
-                                            );
-                                            Navigator.push(context,
-                                                MaterialPageRoute(builder: (context) => ImageUploadMeter()));
-                                          },
-                                          icon: const Icon(
-                                            Icons.done,
-                                            color: Colors.green,
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  });
-                            },
+                            // onTap: () {
+                            //   eMeterNumber = documentSnapshot['meter number'];
+                            //   showDialog(
+                            //       barrierDismissible: false,
+                            //       context: context,
+                            //       builder: (context) {
+                            //         return AlertDialog(
+                            //           title: const Text("Upload Meter Image"),
+                            //           content: const Text("Uploading a new image will replace current image! Are you sure?"),
+                            //           actions: [
+                            //             IconButton(
+                            //               onPressed: () {
+                            //                 Navigator.pop(context);
+                            //               },
+                            //               icon: const Icon(
+                            //                 Icons.cancel,
+                            //                 color: Colors.red,
+                            //               ),
+                            //             ),
+                            //             IconButton(
+                            //               onPressed: () async {
+                            //                 ScaffoldMessenger.of(this.context).showSnackBar(
+                            //                   const SnackBar(
+                            //                     content: Text('Uploading a new image will replace current image!'),
+                            //                   ),
+                            //                 );
+                            //                 Navigator.push(context,
+                            //                     MaterialPageRoute(builder: (context) => ImageUploadMeter()));
+                            //               },
+                            //               icon: const Icon(
+                            //                 Icons.done,
+                            //                 color: Colors.green,
+                            //               ),
+                            //             ),
+                            //           ],
+                            //         );
+                            //       });
+                            // },
+
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 5),
                               height: 180,
@@ -599,7 +604,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                   child: FutureBuilder(
                                       future: _getImage(
                                         ///Firebase image location must be changed to display image based on the meter number
-                                          context, 'files/$userID/electricity/$eMeterNumber'),
+                                          context, 'files/$imgFolder/electricity/$eMeterNumber'),
                                       builder: (context, snapshot) {
                                         if (snapshot.hasError) {
                                           return Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
@@ -634,44 +639,45 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                           InkWell(
                             ///onTap allows to open image upload page if user taps on the image.
                             ///Can be later changed to display the picture zoomed in if user taps on it.
-                            onTap: () {
-                              wMeterNumber = documentSnapshot['water meter number'];
-                              showDialog(
-                                  barrierDismissible: false,
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: const Text("Upload Water Meter Image"),
-                                      content: const Text("Uploading a new image will replace current image! Are you sure?"),
-                                      actions: [
-                                        IconButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                          icon: const Icon(
-                                            Icons.cancel,
-                                            color: Colors.red,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          onPressed: () async {
-                                            ScaffoldMessenger.of(this.context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Uploading a new image will replace current image!'),
-                                              ),
-                                            );
-                                            Navigator.push(context,
-                                                MaterialPageRoute(builder: (context) => ImageUploadWater()));
-                                          },
-                                          icon: const Icon(
-                                            Icons.done,
-                                            color: Colors.green,
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  });
-                            },
+                            // onTap: () {
+                            //   wMeterNumber = documentSnapshot['water meter number'];
+                            //   showDialog(
+                            //       barrierDismissible: false,
+                            //       context: context,
+                            //       builder: (context) {
+                            //         return AlertDialog(
+                            //           title: const Text("Upload Water Meter Image"),
+                            //           content: const Text("Uploading a new image will replace current image! Are you sure?"),
+                            //           actions: [
+                            //             IconButton(
+                            //               onPressed: () {
+                            //                 Navigator.pop(context);
+                            //               },
+                            //               icon: const Icon(
+                            //                 Icons.cancel,
+                            //                 color: Colors.red,
+                            //               ),
+                            //             ),
+                            //             IconButton(
+                            //               onPressed: () async {
+                            //                 ScaffoldMessenger.of(this.context).showSnackBar(
+                            //                   const SnackBar(
+                            //                     content: Text('Uploading a new image will replace current image!'),
+                            //                   ),
+                            //                 );
+                            //                 Navigator.push(context,
+                            //                     MaterialPageRoute(builder: (context) => ImageUploadWater()));
+                            //               },
+                            //               icon: const Icon(
+                            //                 Icons.done,
+                            //                 color: Colors.green,
+                            //               ),
+                            //             ),
+                            //           ],
+                            //         );
+                            //       });
+                            // },
+
                             child: Container(
                               margin: EdgeInsets.only(bottom: 5),
                               height: 180,
@@ -688,7 +694,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                   child: FutureBuilder(
                                       future: _getImageW(
                                         ///Firebase image location must be changed to display image based on the meter number
-                                          context, 'files/$userID/water/$wMeterNumber'),//$meterNumber
+                                          context, 'files/$imgFolder/water/$wMeterNumber'),//$meterNumber
                                       builder: (context, snapshot) {
                                         if (snapshot.hasError) {
                                           return Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
@@ -771,6 +777,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                   ElevatedButton(
                                     onPressed: () {
                                       eMeterNumber = documentSnapshot['meter number'];
+                                      imgFolder = documentSnapshot['cell number'];
                                       showDialog(
                                           barrierDismissible: false,
                                           context: context,
@@ -873,6 +880,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                   ElevatedButton(
                                     onPressed: () {
                                       wMeterNumber = documentSnapshot['water meter number'];
+                                      imgFolder = documentSnapshot['cell number'];
                                       showDialog(
                                           barrierDismissible: false,
                                           context: context,
