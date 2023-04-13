@@ -24,13 +24,14 @@ final storageRef = FirebaseStorage.instance.ref();
 
 final User? user = auth.currentUser;
 final uid = user?.uid;
+final phone = user?.phoneNumber;
 String userID = uid as String;
+String userPhone = phone as String;
 
 String locationGiven = ' ';
 
 bool visibilityState1 = true;
 bool visibilityState2 = false;
-
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
 
@@ -45,7 +46,6 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
 
   final CollectionReference _propList =
   FirebaseFirestore.instance.collection('properties');
-
 
   @override
   Widget build(BuildContext context) {
@@ -123,24 +123,20 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
 
                                                 ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
                                                 ///no pdfs are uploaded by users
-                                                print(FirebaseAuth.instance
-                                                    .currentUser?.phoneNumber);
-
+                                                print(FirebaseAuth.instance.currentUser?.phoneNumber);
                                                 String accountNumberPDF = documentSnapshot['account number'];
-
                                                 String nameOfUserPdf;
 
                                                 ///todo: make this find the name of documents by the property account number owned by the logged in user for their statement
-                                                if (PDFApi.loadFirebase('pdfs/$userID/Invoice').toString().contains(accountNumberPDF)) {
-                                                  nameOfUserPdf = PDFApi.loadFirebase('pdfs/$userID/').toString();
+                                                if (PDFApi.loadFirebase('pdfs/$userPhone/Invoice').toString().contains(accountNumberPDF)) {
+                                                  nameOfUserPdf = PDFApi.loadFirebase('pdfs/$userPhone/').toString();
 
                                                   final url = nameOfUserPdf; //'pdfs/$userID/ds_wirelessp2p.pdf';
                                                   print(url);
                                                 }
 
-                                                final url2 = 'pdfs/$userID/Invoice_000003728743_040000653226.pdf';
-                                                final file = await PDFApi
-                                                    .loadFirebase(url2);
+                                                final url2 = 'pdfs/$userPhone/Invoice_000003728743_040000653226.pdf';
+                                                final file = await PDFApi.loadFirebase(url2);
                                                 try {
                                                   openPDF(context, file);
                                                 } catch (e) {
@@ -179,7 +175,6 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                   );
                 }///end of single user information display.
                 else {
-                  ///a card to display ALL details for users when role is set to admin is in "display_info_all_users.dart"
                   return Card();
                 }
               },

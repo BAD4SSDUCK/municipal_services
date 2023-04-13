@@ -294,7 +294,7 @@ class MainMenu extends StatefulWidget {
                             children: [
                               ElevatedIconButton(
                                 onPress: () async {
-                                  Fluttertoast.showToast(msg: "Now downloading a list of your statements!\nDownload speed dependent on network connection.", gravity: ToastGravity.CENTER);
+                                  //Fluttertoast.showToast(msg: "Now downloading a list of your statements!\nDownload speed dependent on network connection.", gravity: ToastGravity.CENTER);
 
                                   Navigator.push(context,
                                       MaterialPageRoute(builder: (context) => UsersPdfListViewPage()));
@@ -379,7 +379,9 @@ class MainMenu extends StatefulWidget {
                                             IconButton(
                                               onPressed: () async {
                                                 FirebaseAuth.instance.signOut();
-                                                // Navigator.pop(context);
+                                                Navigator.pop(context);
+
+                                                ///SystemNavigator.pop() closes the entire app
                                                 // SystemNavigator.pop();
                                               },
                                               icon: const Icon(

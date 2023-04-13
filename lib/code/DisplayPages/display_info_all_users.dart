@@ -841,7 +841,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                     onPressed: () async {
                                       ScaffoldMessenger.of(this.context).showSnackBar(
                                         const SnackBar(
-                                          content: Text('Now downloading your statement! Please wait a few seconds!'),
+                                          content: Text('Now downloading property statement! Please wait a few seconds!'),
                                         ),
                                       );
                                       final FirebaseAuth auth = FirebaseAuth.instance;

@@ -44,6 +44,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
   String userPass = '';
   String addressPass = '';
   String accountPass = '';
+  String phoneNumPass = '';
 
   bool elecDesVis = true;
   bool waterDesVis = false;
@@ -73,7 +74,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
   }
 
   Future<void> _addNewFaultReport() async {
-
     await showModalBottomSheet(
         isScrollControlled: true,
         context: context,
@@ -113,70 +113,41 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                   ElevatedButton(
                     child: const Text('Report'),
                     onPressed: () async {
-
                       final String uid = _currentUser;
                       String accountNumber = accountPass;
                       final String addressFault = addressPass;
-                      final String electricityFaultDes = _electricalFaultController.text;
+                      final String repoMobileNum = phoneNumPass;
+                      final String electricityFaultDes = _electricalFaultController
+                          .text;
                       final String waterFaultDes = _waterFaultController.text;
                       DateTime now = DateTime.now();
-                      String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+                      String formattedDate = DateFormat('yyyy-MM-dd – kk:mm')
+                          .format(now);
 
                       if (uid == _currentUser) {
                         await _faultData.add({
                           "uid": uid,
                           "accountNumber": accountNumber,
                           "address": addressFault,
+                          "reporterMobileNum": repoMobileNum,
                           "electricityFaultDes": electricityFaultDes,
                           "waterFaultDes": waterFaultDes,
                           "dateReported": formattedDate,
+                          "depAllocated": '',
+                          "generalFault": '',
+                          "faultResolved": false,
                         });
                       }
 
-                      _electricalFaultController.text ='';
-                      _waterFaultController.text='';
+                      _electricalFaultController.text = '';
+                      _waterFaultController.text = '';
 
-                      Fluttertoast.showToast(msg: "Fault has been reported successfully!",
+                      Fluttertoast.showToast(
+                        msg: "Fault has been reported successfully!",
                         gravity: ToastGravity.CENTER,);
 
                       //Navigator.of(context).pop();
                       Get.back();
-
-                      AlertDialog(
-                        shape: const RoundedRectangleBorder(borderRadius:
-                        BorderRadius.all(Radius.circular(16))),
-                        title: const Text("Call Report Center!"),
-                        content: const Text(
-                            "Would you like to call the report center after sending your report description?"),
-                        actions: [
-                          IconButton(
-                            onPressed: () {
-                              Get.back();
-                              Navigator.of(context).pop();
-                            },
-                            icon: const Icon(
-                              Icons.cancel,
-                              color: Colors.red,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () {
-
-                              final Uri _tel = Uri.parse(
-                                  'tel:+27${0800001868}');
-                              launchUrl(_tel);
-
-                              Navigator.of(context).pop();
-                              Get.back();
-                            },
-                            icon: const Icon(
-                              Icons.done,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ],
-                      );
-
                     },
                   ),
                 ],
@@ -201,17 +172,69 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: ElevatedIconButton(
-                  onPress: () async {
-                    Navigator.push(context,
-                        MaterialPageRoute(
-                            builder: (context) => GeneralFaultReporting()));
-                  },
-                  labelText: 'General Fault',
-                  fSize: 20,
-                  faIcon: const FaIcon(Icons.report_problem),
-                  fgColor: Colors.orangeAccent,
-                  btSize: const Size(280, 60),
+                child: Row(
+                  children: [
+                    ElevatedIconButton(
+                      onPress: () async {
+                        Navigator.push(context,
+                            MaterialPageRoute(
+                                builder: (context) => GeneralFaultReporting()));
+                      },
+                      labelText: 'General Fault',
+                      fSize: 20,
+                      faIcon: const FaIcon(Icons.report_problem),
+                      fgColor: Colors.orangeAccent,
+                      btSize: const Size(250, 60),
+                    ),
+                    ElevatedIconButton(
+                      onPress: () {
+                        showDialog(
+                            barrierDismissible: false,
+                            context: context,
+                            builder: (context) {
+                              return
+                                AlertDialog(
+                                  shape: const RoundedRectangleBorder(
+                                      borderRadius:
+                                      BorderRadius.all(Radius.circular(16))),
+                                  title: const Text("Call Report Center!"),
+                                  content: const Text(
+                                      "Would you like to call the report center directly?"),
+                                  actions: [
+                                    IconButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      icon: const Icon(
+                                        Icons.cancel,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () {
+                                        final Uri _tel = Uri.parse(
+                                            'tel:+27${0800001868}');
+                                        launchUrl(_tel);
+
+                                        Navigator.of(context).pop();
+                                        Get.back();
+                                      },
+                                      icon: const Icon(
+                                        Icons.done,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                            });
+                      },
+                      labelText: '',
+                      fSize: 0,
+                      faIcon: const FaIcon(Icons.phone),
+                      fgColor: Colors.orangeAccent,
+                      btSize: const Size(60, 60),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -228,12 +251,11 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                     itemCount: streamSnapshot.data!.docs.length,
                     itemBuilder: (context, index) {
                       final DocumentSnapshot documentSnapshot = streamSnapshot.data!.docs[index];
-
                       String billMessage;
 
                       ///A check for if payment is outstanding or not
                       if (documentSnapshot['eBill'] != '') {
-                        billMessage = 'Utilities bill outstanding: '+documentSnapshot['eBill'];
+                        billMessage = documentSnapshot['eBill'];
                         buttonEnabled = false;
                       } else {
                         billMessage = 'No outstanding payments';
@@ -243,114 +265,91 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                       ///Check for only user information, this displays only for the users details and not all users in the database.
                       if (streamSnapshot.data!.docs[index]['user id'] == userID) {
                         return Card(
-                            margin: const EdgeInsets.all(10),
-                            child: Padding(
-                                padding: const EdgeInsets.all(20.0),
-                                child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Center(
-                                        child: Text(
-                                          'Property Information',
-                                          style: TextStyle(fontSize: 16,
-                                              fontWeight: FontWeight.w700),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10,),
-                                      Text(
-                                        'Account Number: ' + documentSnapshot['account number'],
-                                        style: const TextStyle(fontSize: 16,
-                                            fontWeight: FontWeight.w400),
-                                      ),
-                                      const SizedBox(height: 5,),
-                                      Text(
-                                        'Street Address: ' + documentSnapshot['address'],
-                                        style: const TextStyle(fontSize: 16,
-                                            fontWeight: FontWeight.w400),
-                                      ),
-                                      const SizedBox(height: 5,),
-                                      Text(
-                                        'Area Code: ' + documentSnapshot['area code'].toString(),
-                                        style: const TextStyle(fontSize: 16,
-                                            fontWeight: FontWeight.w400),
-                                      ),
-                                      const SizedBox(height: 5,),
-                                      Text(
-                                        'Property Bill: $billMessage',
-                                        style: const TextStyle(fontSize: 16,
-                                            fontWeight: FontWeight.w400),
-                                      ),
-
-                                      const SizedBox(height: 20,),
-
-                                      ///button visibility only when the current month is selected
-                                      Center(
-                                        child: ElevatedIconButton(
-                                          onPress: buttonEnabled ? () {
-                                            userPass = _currentUser;
-                                            addressPass = documentSnapshot['address'];
-                                            accountPass = documentSnapshot['account number'];
-                                            elecDesVis = true;
-                                            waterDesVis = false;
-                                            _addNewFaultReport();
-                                          } : () {
-                                            Fluttertoast.showToast(
-                                              msg: "Outstanding bill on property, Fault Reporting unavailable!",
-                                              gravity: ToastGravity.CENTER,);
-                                          },
-                                          labelText: 'Report Electrical Fault',
-                                          fSize: 20,
-                                          faIcon: const FaIcon(
-                                              Icons.electric_bolt),
-                                          fgColor: Colors.amberAccent,
-                                          btSize: const Size(280, 60),
-                                        ),
-                                      ),
-
-                                      const SizedBox(height: 10,),
-
-                                      ///Report adding button
-                                      Center(
-                                          child: ElevatedIconButton(
-                                            onPress: buttonEnabled ? () {
-                                              userPass = _currentUser;
-                                              addressPass = documentSnapshot['address'];
-                                              accountPass = documentSnapshot['account number'];
-                                              elecDesVis = false;
-                                              waterDesVis = true;
-                                              _addNewFaultReport();
-                                            } : () {
-                                              Fluttertoast.showToast(
-                                                msg: "Outstanding bill on property, Fault Reporting unavailable!",
-                                                gravity: ToastGravity.CENTER,);
-                                            },
-                                            labelText: 'Report Water Fault',
-                                            fSize: 20,
-                                            faIcon: const FaIcon(
-                                                Icons.water_drop),
-                                            fgColor: Colors.blue,
-                                            btSize: const Size(280, 60),
-                                          )
-                                      ),
-
-                                      const SizedBox(height: 5,),
-
-                                      // GestureDetector(
-                                      //   onTap: () {
-                                      //     _delete(documentSnapshot.id);
-                                      //   },
-                                      //   child: Row(
-                                      //     children: [
-                                      //       Icon(
-                                      //         Icons.delete,
-                                      //         color: Colors.red[700],
-                                      //       ),
-                                      //     ],
-
-                                    ],
+                          margin: const EdgeInsets.all(10),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Center(
+                                  child: Text(
+                                    'Property Information',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                  ),
                                 ),
+                                const SizedBox(height: 10,),
+                                Text(
+                                  'Account Number: ' + documentSnapshot['account number'],
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                                Text(
+                                  'Street Address: ' + documentSnapshot['address'],
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                                Text(
+                                  'Area Code: ' + documentSnapshot['area code'].toString(),
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                                Text(
+                                  'Property Bill: $billMessage',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 20,),
+
+                                ///button enabled only when the property bill is paid off
+                                Center(
+                                  child: ElevatedIconButton(
+                                    onPress: buttonEnabled ? () {
+                                      userPass = _currentUser;
+                                      addressPass = documentSnapshot['address'];
+                                      accountPass = documentSnapshot['account number'];
+                                      phoneNumPass = documentSnapshot['cell number'];
+                                      elecDesVis = true;
+                                      waterDesVis = false;
+                                      _addNewFaultReport();
+                                    } : () {
+                                      Fluttertoast.showToast(msg: "Outstanding bill on property, Fault Reporting unavailable!",
+                                        gravity: ToastGravity.CENTER,);
+                                    },
+                                    labelText: 'Report Electrical Fault',
+                                    fSize: 20,
+                                    faIcon: const FaIcon(Icons.electric_bolt),
+                                    fgColor: Colors.amberAccent,
+                                    btSize: const Size(280, 60),
+                                  ),
+                                ),
+                                const SizedBox(height: 10,),
+
+                                ///Report adding button
+                                Center(
+                                    child: ElevatedIconButton(
+                                      onPress: buttonEnabled ? () {
+                                        userPass = _currentUser;
+                                        addressPass = documentSnapshot['address'];
+                                        accountPass = documentSnapshot['account number'];
+                                        phoneNumPass = documentSnapshot['cell number'];
+                                        elecDesVis = false;
+                                        waterDesVis = true;
+                                        _addNewFaultReport();
+                                      } : () {
+                                        Fluttertoast.showToast(msg: "Outstanding bill on property, Fault Reporting unavailable!",
+                                          gravity: ToastGravity.CENTER,);
+                                      },
+                                      labelText: 'Report Water Fault',
+                                      fSize: 20,
+                                      faIcon: const FaIcon(Icons.water_drop),
+                                      fgColor: Colors.blue,
+                                      btSize: const Size(280, 60),
+                                    )
+                                ),
+                                const SizedBox(height: 5,),
+                              ],
                             ),
+                          ),
                         );
                       } else {
                         ///a card to display ALL details for users when role is set to admin is in "display_info_all_users.dart"
@@ -361,8 +360,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                 }
                 return const Padding(
                   padding: EdgeInsets.all(10.0),
-                  child: Center(
-                      child: CircularProgressIndicator()),
+                  child: Center(child: CircularProgressIndicator()),
                 );
               },
             ),

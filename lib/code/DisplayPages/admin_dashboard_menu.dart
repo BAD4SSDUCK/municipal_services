@@ -197,7 +197,9 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                               IconButton(
                                                 onPressed: () async {
                                                   FirebaseAuth.instance.signOut();
-                                                  // Navigator.pop(context);
+                                                  Navigator.pop(context);
+
+                                                  ///SystemNavigator.pop() closes the entire app
                                                   // SystemNavigator.pop();
                                                 },
                                                 icon: const Icon(

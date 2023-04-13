@@ -18,6 +18,12 @@ class ChatList extends StatefulWidget {
 final FirebaseAuth auth = FirebaseAuth.instance;
 final storageRef = FirebaseStorage.instance.ref();
 
+final User? user = auth.currentUser;
+final uid = user?.uid;
+final userEmail = user?.email;
+String userID = uid as String;
+String userE = userEmail as String;
+
 class _ChatListState extends State<ChatList> {
 
   final CollectionReference _chatsList =
@@ -25,8 +31,6 @@ class _ChatListState extends State<ChatList> {
 
   final CollectionReference _userList =
   FirebaseFirestore.instance.collection('users');
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +50,7 @@ class _ChatListState extends State<ChatList> {
               itemBuilder: (context, index) {
                 final DocumentSnapshot documentSnapshot = streamSnapshot.data!.docs[index];
 
-                String chatRoomID = documentSnapshot.id.toString();
-
-                String userFullName = documentSnapshot.id.toString();
+                String chatRoomID = userE;
 
                 print('The chat rooms listed are $chatRoomID');
 
@@ -69,9 +71,8 @@ class _ChatListState extends State<ChatList> {
                           ),
                           const SizedBox(height: 10,),
                           Text(
-                            'Chat from: ' +
-                                chatRoomID.toString(),
-                            style: TextStyle(
+                            'Chat from: $chatRoomID',
+                            style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 20,),
@@ -109,7 +110,7 @@ class ChatButtonWidget extends StatelessWidget {
             ElevatedButton(
               onPressed: () async{
                 Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => Chat(chatRoomId: '+27${0800001868}',)));
+                    MaterialPageRoute(builder: (context) => Chat(chatRoomId: 'official',)));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey[350],
@@ -121,7 +122,7 @@ class ChatButtonWidget extends StatelessWidget {
                     color: Theme.of(context).primaryColor,
                   ),
                   const SizedBox(width: 2,),
-                  Text('Chat', style: TextStyle(
+                  const Text('Chat', style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Colors.black,),),
                 ],
