@@ -36,21 +36,41 @@ class _ChatState extends State<Chat> {
     );
   }
 
+  String official = 'official';
+
   addMessage() {
     if (messageEditingController.text.isNotEmpty) {
-      Map<String, dynamic> chatMessageMap = {
-        "sendBy": Constants.myName,
-        "message": messageEditingController.text,
-        'time': DateTime
-            .now()
-            .millisecondsSinceEpoch,
-      };
+      if (Constants.myName == '') {
+        Constants.myName = useEmail;
+        // 'official';
+        Map<String, dynamic> chatMessageMap = {
+          "sendBy": Constants.myName,
+          "message": messageEditingController.text,
+          'time': DateTime
+              .now()
+              .millisecondsSinceEpoch,
+        };
 
-      DatabaseMethods().addMessage(widget.chatRoomId, chatMessageMap);
+        DatabaseMethods().addMessage(widget.chatRoomId, chatMessageMap);
 
-      setState(() {
-        messageEditingController.text = "";
-      });
+        setState(() {
+          messageEditingController.text = "";
+        });
+      } else {
+        Map<String, dynamic> chatMessageMap = {
+          "sendBy": Constants.myName,
+          "message": messageEditingController.text,
+          'time': DateTime
+              .now()
+              .millisecondsSinceEpoch,
+        };
+
+        DatabaseMethods().addMessage(widget.chatRoomId, chatMessageMap);
+
+        setState(() {
+          messageEditingController.text = "";
+        });
+      }
     }
   }
 
@@ -210,6 +230,7 @@ class MessageTile extends StatelessWidget {
 
 final user = FirebaseAuth.instance.currentUser!;
 String useNum = user.phoneNumber!;
+String useEmail = user.email!;
 
 ///Constraints class
 class Constants{

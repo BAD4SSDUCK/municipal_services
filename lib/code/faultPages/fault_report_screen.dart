@@ -26,7 +26,9 @@ final storageRef = FirebaseStorage.instance.ref();
 
 final User? user = auth.currentUser;
 final uid = user?.uid;
+final phone = user?.phoneNumber;
 String userID = uid as String;
+String userPhone = phone as String;
 
 class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
@@ -113,37 +115,35 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                   ElevatedButton(
                     child: const Text('Report'),
                     onPressed: () async {
+                      DateTime now = DateTime.now();
+                      String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+
                       final String uid = _currentUser;
                       String accountNumber = accountPass;
                       final String addressFault = addressPass;
-                      final String repoMobileNum = phoneNumPass;
-                      final String electricityFaultDes = _electricalFaultController
-                          .text;
+                      final String electricityFaultDes = _electricalFaultController.text;
                       final String waterFaultDes = _waterFaultController.text;
-                      DateTime now = DateTime.now();
-                      String formattedDate = DateFormat('yyyy-MM-dd – kk:mm')
-                          .format(now);
 
                       if (uid == _currentUser) {
                         await _faultData.add({
                           "uid": uid,
                           "accountNumber": accountNumber,
                           "address": addressFault,
-                          "reporterMobileNum": repoMobileNum,
+                          "reporterContact": userPhone,
+                          "generalFault": '',
                           "electricityFaultDes": electricityFaultDes,
                           "waterFaultDes": waterFaultDes,
                           "dateReported": formattedDate,
                           "depAllocated": '',
-                          "generalFault": '',
                           "faultResolved": false,
+                          "faultStage": 1,
                         });
                       }
 
                       _electricalFaultController.text = '';
                       _waterFaultController.text = '';
 
-                      Fluttertoast.showToast(
-                        msg: "Fault has been reported successfully!",
+                      Fluttertoast.showToast(msg: "Fault has been reported successfully!",
                         gravity: ToastGravity.CENTER,);
 
                       //Navigator.of(context).pop();

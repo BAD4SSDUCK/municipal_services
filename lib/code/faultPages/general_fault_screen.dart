@@ -31,7 +31,9 @@ final storageRef = FirebaseStorage.instance.ref();
 
 final User? user = auth.currentUser;
 final uid = user?.uid;
+final phone = user?.phoneNumber;
 String userID = uid as String;
+String userPhone = phone as String;
 
 class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
 
@@ -183,22 +185,22 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
     String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
 
     final String accountNumber = _accountNumberController.text;
-    final String address = location;
+    final String addressFault = Address;
     final String faultDescription = _descriptionController.text;
-    final String depAllocated = _depAllocationController.text;
-    const bool faultResolved = false;
-    final String dateRep = formattedDate;
 
     if (_currentUser != null) {
-      await _faultData
-          .add({
+      await _faultData.add({
         "uid": _currentUser,
         "accountNumber": accountNumber,
-        "address": address,
+        "address": addressFault,
+        "reporterContact": userPhone,
         "generalFault": faultDescription,
-        "depAllocated": depAllocated,
-        "faultResolved": faultResolved,
-        "dateReported": dateRep,
+        "electricityFaultDes": '',
+        "waterFaultDes": '',
+        "depAllocated": '',
+        "faultResolved": false,
+        "dateReported": formattedDate,
+        "faultStage": 1,
       });
 
       _accountNumberController.text = '';
@@ -209,7 +211,7 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
       _dateReportedController.text = '';
 
     } else {
-      Fluttertoast.showToast(msg: "Connection failed. Fix your network!",
+      Fluttertoast.showToast(msg: "Connection failed. Fix network!",
           gravity: ToastGravity.CENTER);
     }
   }

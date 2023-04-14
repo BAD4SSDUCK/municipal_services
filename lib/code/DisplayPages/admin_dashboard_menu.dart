@@ -13,12 +13,9 @@ import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:municipal_track/code/DisplayPages/admin_details.dart';
 import 'package:municipal_track/code/MapTools/map_screen_multi.dart';
-import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
-import 'package:municipal_track/code/Reusable/main_menu_reusable_button.dart';
 import 'package:municipal_track/code/Reusable/nav_drawer.dart';
-import 'package:municipal_track/code/SQLApp/faultSQLPages/fault_task_screen.dart';
+import 'package:municipal_track/code/faultPages/fault_task_screen.dart';
 import 'package:municipal_track/code/faultPages/fault_report_screen.dart';
-import 'package:municipal_track/code/SQLApp/fragments/profile_fragment_screen.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:municipal_track/code/DisplayPages/display_info_all_users.dart';

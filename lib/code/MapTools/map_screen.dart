@@ -244,9 +244,7 @@ class _MapScreenState extends State<MapScreen> {
                   ///Positioned badge that shows account number and address shown on the pin
                   Positioned(
                       top: 10, left: 0, right: 0,
-                      child: MapUserBadge(
-                        locationGiven: locationGiven,
-                        accountNumber: accountNumber,)),
+                      child: MapUserBadge(locationGivenGet: locationGiven, accountNumberGet: accountNumber,)),
                 ],
               )
           );

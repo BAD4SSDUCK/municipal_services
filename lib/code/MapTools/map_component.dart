@@ -122,8 +122,7 @@ class _MapPageState extends State<MapPage> {
               top: 100,
               left: 0,
               right: 0,
-              child: MapUserBadge(
-                locationGiven: locationGiven, accountNumber: accountNumber,
+              child: MapUserBadge(locationGivenGet: locationGiven, accountNumberGet: accountNumber,
               )),
 
         ],

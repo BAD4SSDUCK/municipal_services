@@ -9,6 +9,9 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:municipal_track/code/MapTools/map_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../MapTools/map_screen_prop.dart';
 
 class FaultTaskScreen extends StatefulWidget {
   const FaultTaskScreen({Key? key}) : super(key: key);
@@ -25,17 +28,39 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   final _eDescriptionController = TextEditingController();
   final _wDescriptionController = TextEditingController();
   final _depAllocationController = TextEditingController();
-  bool _faultResolvedController = false;
+  late bool _faultResolvedController;
   final _dateReportedController = TextEditingController();
 
   final CollectionReference _faultData =
   FirebaseFirestore.instance.collection('faultReporting');
 
-  String accountNumber = ' ';
-  String locationGiven = ' ';
+  String accountNumberRep = ' ';
+  String locationGivenRep = ' ';
+  String stateGiven = ' ';
+  String reporterCellGiven = ' ';
 
   bool visShow = true;
   bool visHide = false;
+
+  bool managerAcc = false;
+
+  final CollectionReference _listUser =
+  FirebaseFirestore.instance.collection('users');
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
+
+  void initApprover(String stateGivenCheck){
+
+    if(stateGivenCheck == 'manager'){
+      managerAcc = true;
+    }
+
+  }
+
 
 
   //this widget is for displaying a property field of information with an icon next to it, NB. the icon is to make it look good
@@ -72,6 +97,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
       _faultResolvedController = documentSnapshot['faultResolved'];
       _dateReportedController.text = documentSnapshot['dateReported'];
     }
+
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
     await showModalBottomSheet(
         isScrollControlled: true,
@@ -95,14 +121,16 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                     visible: visHide,
                     child: TextField(
                       controller: _accountNumberController,
-                      decoration: const InputDecoration(labelText: 'Account Number'),
+                      decoration: const InputDecoration(
+                          labelText: 'Account Number'),
                     ),
                   ),
                   Visibility(
                     visible: visHide,
                     child: TextField(
                       controller: _addressController,
-                      decoration: const InputDecoration(labelText: 'Street Address'),
+                      decoration: const InputDecoration(
+                          labelText: 'Street Address'),
                     ),
                   ),
                   Visibility(
@@ -111,7 +139,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                       keyboardType:
                       const TextInputType.numberWithOptions(),
                       controller: _descriptionController,
-                      decoration: const InputDecoration(labelText: 'General Fault Description',),
+                      decoration: const InputDecoration(
+                        labelText: 'General Fault Description',),
                     ),
                   ),
                   Visibility(
@@ -120,30 +149,59 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                       keyboardType:
                       const TextInputType.numberWithOptions(),
                       controller: _eDescriptionController,
-                      decoration: const InputDecoration(labelText: 'Electricity Fault Description',),
+                      decoration: const InputDecoration(
+                        labelText: 'Electricity Fault Description',),
                     ),
                   ),
                   Visibility(
                     visible: visHide,
                     child: TextField(
                       controller: _wDescriptionController,
-                      decoration: const InputDecoration(labelText: 'Water Fault Description'),
+                      decoration: const InputDecoration(
+                          labelText: 'Water Fault Description'),
                     ),
                   ),
                   Visibility(
                     visible: visShow,
                     child: TextField(
                       controller: _depAllocationController,
-                      decoration: const InputDecoration(labelText: 'Department Allocation'),
+                      decoration: const InputDecoration(
+                          labelText: 'Department Allocation'),
                     ),
                   ),
+                  const SizedBox(height: 10,),
                   Visibility(
                     visible: visShow,
                     child:
                     Row(
                       children: [
-                        const Text('Fault Resolved?'),
-                        const SizedBox(width: 5,),
+                        Text('Fault Resolved?'),
+                        SizedBox(width: 5,),
+                        Center(
+                          child: InkWell(
+                              onTap: () async {
+                                setState(() {
+                                  _faultResolvedController = !_faultResolvedController;
+                                });
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    shape: BoxShape.circle, color: Colors.blue),
+                                child: Padding(
+                                  padding: EdgeInsets.all(6.0),
+                                  child: _faultResolvedController
+                                      ? Icon(
+                                    Icons.check,
+                                    size: 30.0,
+                                    color: Colors.white,
+                                  )
+                                      : Icon(
+                                    Icons.check_box_outline_blank,
+                                    size: 30.0,
+                                    color: Colors.blue,
+                                  ),
+                                ),)),
+                        ),
                         Checkbox(
                           checkColor: Colors.white,
                           fillColor: MaterialStateProperty.all<Color>(Colors.green),
@@ -161,7 +219,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                     visible: visHide,
                     child: TextField(
                       controller: _dateReportedController,
-                      decoration: const InputDecoration(labelText: 'Date Reported'),
+                      decoration: const InputDecoration(
+                          labelText: 'Date Reported'),
                     ),
                   ),
                   const SizedBox(
@@ -170,8 +229,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                   ElevatedButton(
                     child: const Text('Update'),
                     onPressed: () async {
-
-                      final String accountNumber = _accountNumberController.text;
+                      final String accountNumber = _accountNumberController
+                          .text;
                       final String address = _addressController.text;
                       final String gDescription = _descriptionController.text;
                       final String eDescription = _eDescriptionController.text;
@@ -192,6 +251,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                           "depAllocated": depAllocated,
                           "faultResolved": faultResolved,
                           "dateReported": dateRep,
+                          "faultStage": 2,
                         });
 
                         _accountNumberController.text = '';
@@ -234,7 +294,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                 final DocumentSnapshot documentSnapshot =
                 streamSnapshot.data!.docs[index];
 
-                if(documentSnapshot['faultResolved'] == false) {
+                if(streamSnapshot.data!.docs[index]['faultResolved'] == false){
+                    // || documentSnapshot['faultStage'] == 1) {
                   return Card(
                     margin: const EdgeInsets.all(10),
                     child: Padding(
@@ -252,43 +313,43 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                           ),
                           const SizedBox(height: 10,),
                           Text(
-                            'Reporter Account Number: ' + documentSnapshot['accountMumber'],
+                            'Reporter Account Number: ${documentSnapshot['accountNumber']}',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'Street Address of Fault: ' + documentSnapshot['address'],
+                            'Street Address of Fault: ${documentSnapshot['address']}',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'General Fault: ' + documentSnapshot['generalFault'].toString(),
+                            'General Fault: ${documentSnapshot['generalFault']}',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'Electrical Fault: ' + documentSnapshot['electricityFaultDes'].toString(),
+                            'Electrical Fault: ${documentSnapshot['electricityFaultDes']}',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'Water Fault: ' + documentSnapshot['waterFaultDes'],
+                            'Water Fault: ${documentSnapshot['waterFaultDes']}',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'Resolve State: ' + documentSnapshot['faultResolved'].toString(),
+                            'Resolve State: ${documentSnapshot['faultResolved']}',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'Date of Fault Report: ' + documentSnapshot['dateReported'],
+                            'Date of Fault Report: ${documentSnapshot['dateReported']}',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
@@ -300,6 +361,37 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      accountNumberRep = documentSnapshot['accountNumber'];
+                                      locationGivenRep = documentSnapshot['address'];
+
+                                      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                      //     content: Text('$accountNumber $locationGiven ')));
+
+                                      Navigator.push(context,
+                                          MaterialPageRoute(
+                                              builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
+                                            //MapPage()
+                                          ));
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.grey[350],
+                                      fixedSize: const Size(150, 10),),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.map,
+                                          color: Colors.green[700],
+                                        ),
+                                        const SizedBox(width: 2,),
+                                        const Text('Fault Location', style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black,),),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5,),
                                   ElevatedButton(
                                     onPressed: () {
                                       _updateReport(documentSnapshot);
@@ -323,42 +415,69 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 5,),
-
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      accountNumber =
-                                      documentSnapshot['accountNumber'];
-                                      locationGiven =
-                                      documentSnapshot['address'];
-
-                                      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                      //     content: Text('$accountNumber $locationGiven ')));
-
-                                      Navigator.push(context,
-                                          MaterialPageRoute(
-                                              builder: (context) => MapScreen()
-                                            //MapPage()
-                                          ));
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.grey[350],
-                                      fixedSize: const Size(150, 10),),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.map,
-                                          color: Colors.green[700],
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        const Text('Fault Location', style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black,),),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6,),
                                 ],
                               ),
+
+                              ElevatedButton(
+                                onPressed: () {
+                                  showDialog(
+                                      barrierDismissible: false,
+                                      context: context,
+                                      builder: (context) {
+                                        return
+                                          AlertDialog(
+                                            shape: const RoundedRectangleBorder(
+                                                borderRadius:
+                                                BorderRadius.all(Radius.circular(16))),
+                                            title: const Text("Call User!"),
+                                            content: const Text(
+                                                "Would you like to call the individual who logged the fault?"),
+                                            actions: [
+                                              IconButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop();
+                                                },
+                                                icon: const Icon(
+                                                  Icons.cancel,
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                onPressed: () {
+                                                  reporterCellGiven = documentSnapshot['reporterContact'];
+
+                                                  final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
+                                                  launchUrl(_tel);
+
+                                                  //Navigator.of(context).pop();
+                                                },
+                                                icon: const Icon(
+                                                  Icons.done,
+                                                  color: Colors.green,
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                      });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey[350],
+                                  fixedSize: const Size(115, 10),),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.call,
+                                      color: Colors.orange[700],
+                                    ),
+                                    const SizedBox(width: 2,),
+                                    const Text('Call User', style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black,),),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 5,),
+
                             ],
                           ),
                         ],

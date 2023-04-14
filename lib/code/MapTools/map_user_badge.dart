@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../DisplayPages/display_info.dart';
+import 'package:municipal_track/code/DisplayPages/display_info.dart';
 
 class MapUserBadge extends StatelessWidget {
   const MapUserBadge({
     Key? key,
 
-    required final String locationGiven,
-    required final String accountNumber,
+    required final String locationGivenGet,
+    required final String accountNumberGet,
 
   }) : super(key: key);
 

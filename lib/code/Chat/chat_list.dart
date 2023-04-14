@@ -50,7 +50,7 @@ class _ChatListState extends State<ChatList> {
               itemBuilder: (context, index) {
                 final DocumentSnapshot documentSnapshot = streamSnapshot.data!.docs[index];
 
-                String chatRoomID = userE;
+                String chatRoomID = documentSnapshot.id;
 
                 print('The chat rooms listed are $chatRoomID');
 
@@ -76,7 +76,7 @@ class _ChatListState extends State<ChatList> {
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 20,),
-                          ChatButtonWidget(chatRoomId: chatRoomID.toString()),
+                          ChatButtonWidget(chatRoomId: chatRoomID),
                         ]
                     ),
                   ),
@@ -110,7 +110,7 @@ class ChatButtonWidget extends StatelessWidget {
             ElevatedButton(
               onPressed: () async{
                 Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => Chat(chatRoomId: 'official',)));
+                    MaterialPageRoute(builder: (context) => Chat(chatRoomId: chatRoomId,)));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey[350],

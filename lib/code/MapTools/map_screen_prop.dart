@@ -123,7 +123,6 @@ class _MapScreenPropState extends State<MapScreenProp> {
   void addressConvert() async {
     ///Location change here for address conversion into lat long
     String address = widget.propAddress;
-
     //List<Location> locations = await Geocoding.google(apiKey: "AIzaSyB3p4M0JwkbBauV_5_dIHxWNpk8PSqmmU0").searchByAddress(address);
 
     try {
@@ -141,16 +140,16 @@ class _MapScreenPropState extends State<MapScreenProp> {
       }
 
       _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
-
-    } catch(e) {
+    } catch (e) {
       addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
 
       _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
 
       showPinOnMap();
 
-      Fluttertoast.showToast(msg: "Address not found! Default map location City Hall!", gravity: ToastGravity.CENTER);
-
+      Fluttertoast.showToast(
+          msg: "Address not found! Default map location City Hall!",
+          gravity: ToastGravity.CENTER);
     }
     print('$addressLocation this is the change');
   }
@@ -241,9 +240,7 @@ class _MapScreenPropState extends State<MapScreenProp> {
                   ///Positioned badge that shows account number and address shown on the pin
                   Positioned(
                       top: 10, left: 0, right: 0,
-                      child: MapUserBadge(
-                        locationGiven: widget.propAddress,
-                        accountNumber: widget.propAccNumber,
+                      child: MapUserBadge(locationGivenGet: locationGiven, accountNumberGet: accountNumber,
                       )
                   ),
                 ],

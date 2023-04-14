@@ -10,6 +10,7 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import '../ImageUploading/image_upload_meter.dart';
 import '../ImageUploading/image_upload_water.dart';
 import '../MapTools/map_screen.dart';
+import '../MapTools/map_screen_prop.dart';
 import '../PDFViewer/pdf_api.dart';
 import '../PDFViewer/view_pdf.dart';
 
@@ -28,8 +29,8 @@ final User? user = auth.currentUser;
 final uid = user?.uid;
 String userID = uid as String;
 
-String accountNumber = ' ';
-String locationGiven = ' ';
+String accountNumberAll = ' ';
+String locationGivenAll = ' ';
 String eMeterNumber = ' ';
 String accountNumberW = ' ';
 String locationGivenW = ' ';
@@ -750,14 +751,14 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                   const SizedBox(width: 5,),
                                   ElevatedButton(
                                     onPressed: () {
-                                      accountNumber = documentSnapshot['account number'];
-                                      locationGiven = documentSnapshot['address'];
+                                      accountNumberAll = documentSnapshot['account number'];
+                                      locationGivenAll = documentSnapshot['address'];
 
                                       // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                       //     content: Text('$accountNumber $locationGiven ')));
 
                                       Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) => MapScreen()
+                                          MaterialPageRoute(builder: (context) => MapScreenProp(propAddress: locationGivenAll, propAccNumber: accountNumberAll,)
                                             //MapPage()
                                           ));
                                     },
