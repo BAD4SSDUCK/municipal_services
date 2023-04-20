@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:municipal_track/code/ImageUploading/image_upload_prop_fault.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
@@ -86,10 +87,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                   top: 20,
                   left: 20,
                   right: 20,
-                  bottom: MediaQuery
-                      .of(ctx)
-                      .viewInsets
-                      .bottom + 20),
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,6 +128,10 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           "accountNumber": accountNumber,
                           "address": addressFault,
                           "reporterContact": userPhone,
+                          "depComment1": '',
+                          "depComment2": '',
+                          "handlerCom1": '',
+                          "handlerCom2": '',
                           "generalFault": '',
                           "electricityFaultDes": electricityFaultDes,
                           "waterFaultDes": waterFaultDes,
@@ -334,7 +336,59 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                         phoneNumPass = documentSnapshot['cell number'];
                                         elecDesVis = false;
                                         waterDesVis = true;
-                                        _addNewFaultReport();
+
+                                        showDialog(
+                                            barrierDismissible: false,
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                shape: const RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.all(Radius.circular(16))),
+                                                title: const Text("Complete Your Report!"),
+                                                content: const Text(
+                                                    "Would you like to take a photo of the fault if possible?"),
+                                                actions: [
+                                                  TextButton(
+                                                    child: Row(
+                                                      children: const [
+                                                        Icon(
+                                                          Icons.camera_alt_outlined,
+                                                          color: Colors.tealAccent,
+                                                        ),
+                                                        Text('Take Photo'),
+                                                      ],
+                                                    ),
+                                                    onPressed: () {
+                                                      _addNewFaultReport();
+
+                                                      Fluttertoast.showToast(
+                                                          msg: "Successfully Sent Report!",
+                                                          gravity: ToastGravity.CENTER);
+
+                                                      Navigator.push(context,
+                                                          MaterialPageRoute(builder: (context) => FaultImageUpload(propertyAddress: addressPass)));
+
+                                                      Navigator.of(context).pop(context);
+                                                      // Navigator.of(context).pop(context);
+                                                    },
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                      Icons.cancel, color: Colors.red,
+                                                    ),
+                                                    onPressed: () {
+                                                      _addNewFaultReport();
+
+                                                      Fluttertoast.showToast(
+                                                          msg: "Successfully Sent Report!\nFault Image Not Added.",
+                                                          gravity: ToastGravity.CENTER);
+
+                                                      Navigator.of(context).pop(context);
+                                                    },
+                                                  ),
+                                                ],
+                                              );
+                                            });
                                       } : () {
                                         Fluttertoast.showToast(msg: "Outstanding bill on property, Fault Reporting unavailable!",
                                           gravity: ToastGravity.CENTER,);

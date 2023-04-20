@@ -10,8 +10,10 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:http/http.dart' as http;
 import 'package:geocoding/geocoding.dart';
+import 'package:path/path.dart';
 // import 'package:location/location.dart';
 // import 'package:location/location.dart' as loc;
 
@@ -175,6 +177,9 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
   Future uploadFaultFile() async {
     if (_photo == null) return;
 
+    final fileName = basename(_photo!.path);
+    final destination = 'files/faultImages/general/';
+
     File? imageFile = _photo;
     List<int> imageBytes = imageFile!.readAsBytesSync();
     String imageData = base64Encode(imageBytes);
@@ -191,9 +196,13 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
     if (_currentUser != null) {
       await _faultData.add({
         "uid": _currentUser,
-        "accountNumber": accountNumber,
+        "accountNumber": '',
         "address": addressFault,
         "reporterContact": userPhone,
+        "depComment1": '',
+        "depComment2": '',
+        "handlerCom1": '',
+        "handlerCom2": '',
         "generalFault": faultDescription,
         "electricityFaultDes": '',
         "waterFaultDes": '',
@@ -202,6 +211,17 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
         "dateReported": formattedDate,
         "faultStage": 1,
       });
+
+      try {
+        final ref = firebase_storage.FirebaseStorage.instance
+            .ref(destination)
+            .child('$addressFault/');   ///this is the jpg filename which needs to be named something on the db in order to display in the display screen
+        await ref.putFile(_photo!);
+        photoName = _photo!.toString();
+        print(destination);
+      } catch (e) {
+        print('error occured');
+      }
 
       _accountNumberController.text = '';
       _addressController.text = '';
@@ -310,7 +330,7 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
                   //Text controllers for the properties db visibility only available for the electric and water readings because users must not be able to
                   //edit any other data but the controllers have to be there to prevent updating items to null, this may not be necessary but I left it for null safety
                   Visibility(
-                    visible: visShow,
+                    visible: visHide,
                     child: TextField(
                       controller: _accountNumberController,
                       decoration: const InputDecoration(
@@ -343,73 +363,76 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
                           labelText: 'Department Allocation'),
                     ),
                   ),
-                  Visibility(
-                    visible: visHide,
-                    child: TextField(
-                      controller: _dateReportedController,
-                      decoration: const InputDecoration(
-                          labelText: 'Date of Report'),
-                    ),
-                  ),
                   const SizedBox(
                     height: 20,
                   ),
                   ElevatedButton(
                       child: const Text('Report'),
                       onPressed: () {
-                        AlertDialog(
-                          shape: const RoundedRectangleBorder(borderRadius:
-                          BorderRadius.all(Radius.circular(16))),
-                          title: const Text("Complete Your Report!"),
-                          content: const Text(
-                              "Would you like to call the report center after reporting?"),
-                          actions: [
-                            TextButton(
-                              child: Row(
-                                children: const [
-                                  Icon(
-                                    Icons.call, color: Colors.blueAccent,
+                        showDialog(
+                            barrierDismissible: false,
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                shape: const RoundedRectangleBorder(
+                                    borderRadius:
+                                    BorderRadius.all(Radius.circular(16))),
+                                title: const Text("Complete Your Report!"),
+                                content: const Text(
+                                    "Would you like to call the report center after reporting?"),
+                                actions: [
+                                  TextButton(
+                                    child: Row(
+                                      children: const [
+                                        Icon(
+                                          Icons.call, color: Colors.orangeAccent,
+                                        ),
+                                        Text('Call After Reporting'),
+                                      ],
+                                    ),
+                                    onPressed: () {
+                                      uploadFaultFile();
+                                      Fluttertoast.showToast(
+                                          msg: "Successfully Sent Report!",
+                                          gravity: ToastGravity.CENTER);
+                                      Navigator.of(context).pop(context);
+                                      Navigator.of(context).pop(context);
+                                      final Uri _tel = Uri.parse(
+                                          'tel:+27${0800001868}');
+                                      launchUrl(_tel);
+                                    },
                                   ),
-                                  Text('Call After Reporting'),
-                                ],
-                              ),
-                              onPressed: () {
-                                uploadFaultFile();
-                                Fluttertoast.showToast(msg: "Successfully Sent Report!", gravity: ToastGravity.CENTER);
-                                Navigator.of(context).pop(context);
-                                Navigator.of(context).pop(context);
-                                final Uri _tel = Uri.parse(
-                                    'tel:+27${0800001868}');
-                                launchUrl(_tel);
-                              },
-                            ),
-                            TextButton(
-                              child: Row(
-                                children: const [
-                                  Icon(
-                                    Icons.report_problem, color: Colors.tealAccent,
+                                  TextButton(
+                                    child: Row(
+                                      children: const [
+                                        Icon(
+                                          Icons.report_problem,
+                                          color: Colors.tealAccent,
+                                        ),
+                                        Text('Don\'t Call'),
+                                      ],
+                                    ),
+                                    onPressed: () {
+                                      uploadFaultFile();
+                                      Fluttertoast.showToast(
+                                          msg: "Successfully Sent Report!",
+                                          gravity: ToastGravity.CENTER);
+                                      Navigator.of(context).pop(context);
+                                      Navigator.of(context).pop(context);
+                                    },
                                   ),
-                                  Text('Don\'t Call'),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.cancel, color: Colors.red,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.of(context).pop(context);
+                                    },
+                                  ),
                                 ],
-                              ),
-                              onPressed: () {
-                                uploadFaultFile();
-                                Fluttertoast.showToast(msg: "Successfully Sent Report!", gravity: ToastGravity.CENTER);
-                                Navigator.of(context).pop(context);
-                                Navigator.of(context).pop(context);
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.cancel, color: Colors.red,
-                              ),
-                              onPressed: () {
-                                Navigator.of(context).pop(context);
-                              },
-                            ),
-                          ],
-                        );
-                      }
+                              );
+                            });
+                      },
                   ),
                 ],
               ),

@@ -16,7 +16,7 @@ import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:municipal_track/code/Chat/chat_screen.dart';
 import 'package:municipal_track/code/DisplayPages/display_pdf_list.dart';
-import 'package:municipal_track/code/ImageUploading/image_upload_page.dart';
+import 'package:municipal_track/code/ImageUploading/image_upload_prop_fault.dart';
 import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_track/code/Reusable/main_menu_reusable_button.dart';
 import 'package:municipal_track/code/Reusable/nav_drawer.dart';

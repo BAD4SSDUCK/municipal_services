@@ -3,19 +3,31 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:path/path.dart';
 
-class ImageUploads extends StatefulWidget {
-  ImageUploads({Key? key}) : super(key: key);
+class FaultImageUpload extends StatefulWidget {
+  FaultImageUpload({Key? key, required this.propertyAddress}) : super(key: key);
+
+  final String propertyAddress;
 
   @override
-  _ImageUploadsState createState() => _ImageUploadsState();
+  _FaultImageUploadState createState() => _FaultImageUploadState();
 }
 
-class _ImageUploadsState extends State<ImageUploads> {
+class _FaultImageUploadState extends State<FaultImageUpload> {
+
+  @override
+  void initState(){
+    Fluttertoast.showToast(
+        msg: "Going back will cancel image upload entirely!",
+        gravity: ToastGravity.CENTER);
+    super.initState();
+  }
+
   firebase_storage.FirebaseStorage storage =
       firebase_storage.FirebaseStorage.instance;
 
@@ -51,22 +63,18 @@ class _ImageUploadsState extends State<ImageUploads> {
 
   Future uploadFile() async {
 
-    ///This is the method to get the user id for reference in data upload
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final User? user = auth.currentUser;
-    final uid = user?.uid;
-    String userID = uid as String;
     final String photoName;
+    final String reportAddress = widget.propertyAddress;
 
     ///'files/$userID/$fileName' is used specifically for adding the user id to a table in order to split the users per account
     if (_photo == null) return;
     final fileName = basename(_photo!.path);
-    final destination = 'files/$userID'; // /$fileName
+    final destination = 'files/faultImages/property/';
 
     try {
       final ref = firebase_storage.FirebaseStorage.instance
           .ref(destination)
-          .child('file/');   ///this is the jpg filename which needs to be named something on the db in order to display in the display screen
+          .child('$reportAddress/');   ///this is the jpg filename which needs to be named something on the db in order to display in the display screen
       await ref.putFile(_photo!);
       photoName = _photo!.toString();
       print(destination);
@@ -120,16 +128,14 @@ class _ImageUploadsState extends State<ImageUploads> {
                 onTap: () {
                   if (_photo != null) {
                     uploadFile();
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Image Successfully Uploaded!'),
-                      ),);
+                    Fluttertoast.showToast(
+                        msg: "Image Successfully Uploaded!",
+                        gravity: ToastGravity.CENTER);
                     Navigator.of(context).pop();
                   } else {
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please tap on the image area and select the image to upload!'),
-                      ),);
+                    Fluttertoast.showToast(
+                        msg: "Please tap on the image area and select the image to upload!",
+                        gravity: ToastGravity.CENTER);
                   }
                 },
 
