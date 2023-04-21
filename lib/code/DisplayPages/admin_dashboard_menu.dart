@@ -105,7 +105,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => MapScreenMulti()));
                                   },
-                                  labelText: 'Maps',
+                                  labelText: 'Map',
                                   fSize: 18,
                                   faIcon: const FaIcon(FontAwesomeIcons.map),
                                   fgColor: Colors.purple,

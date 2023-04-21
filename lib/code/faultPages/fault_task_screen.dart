@@ -139,10 +139,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                   top: 20,
                   left: 20,
                   right: 20,
-                  bottom: MediaQuery
-                      .of(ctx)
-                      .viewInsets
-                      .bottom + 20),
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,8 +226,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                     child:
                     Row(
                       children: [
-                        Text('Fault Resolved?'),
-                        SizedBox(width: 5,),
+                        const Text('Fault Resolved?'),
+                        const SizedBox(width: 5,),
                         Checkbox(
                           checkColor: Colors.white,
                           fillColor: MaterialStateProperty.all<Color>(
@@ -259,8 +256,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                   ElevatedButton(
                     child: const Text('Update'),
                     onPressed: () async {
-                      final String accountNumber = _accountNumberController
-                          .text;
+                      final String accountNumber = _accountNumberController.text;
                       final String address = _addressController.text;
                       final String userComment = _commentController.text;
                       final String depAllocated = _depAllocationController.text;

@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
+import 'package:municipal_track/code/AuthGoogle/auth_page_google.dart';
 
 class AdminDetails extends StatefulWidget{
   const AdminDetails({super.key});
@@ -18,6 +19,7 @@ final storageRef = FirebaseStorage.instance.ref();
 
 final User? user = auth.currentUser;
 final uid = user?.uid;
+final uEmail = user?.email;
 String userID = uid as String;
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
@@ -78,16 +80,6 @@ class _AdminDetailsState extends State<AdminDetails> {
     UserCredential userCredential = await FirebaseAuth.instanceFor(app: app)
         .createUserWithEmailAndPassword(email: email, password: password);
 
-    try {
-
-    }
-    on FirebaseAuthException catch (e) {
-      // Do something with exception. This try/catch is here to make sure
-      // that even if the user creation fails, app.delete() runs, if is not,
-      // next time Firebase.initializeApp() will fail as the previous one was
-      // not deleted.
-    }
-
     await app.delete();
     return Future.sync(() => userCredential);
   }
@@ -120,6 +112,13 @@ class _AdminDetailsState extends State<AdminDetails> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Center(
+                    child: Text(
+                      'Create New Official User',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+                  ),
                   Visibility(
                     visible: visShow,
                     child: TextField(
@@ -252,6 +251,13 @@ class _AdminDetailsState extends State<AdminDetails> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Center(
+                    child: Text(
+                      'Edit Official Users Information',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+                  ),
                   Visibility(
                     visible: visShow,
                     child: TextField(
@@ -346,6 +352,7 @@ class _AdminDetailsState extends State<AdminDetails> {
   }
 
   Future<void> _delete(String user) async {
+
     await _usersList.doc(user).delete();
     Fluttertoast.showToast(msg: "You have successfully deleted an account!");
   }
@@ -363,55 +370,96 @@ class _AdminDetailsState extends State<AdminDetails> {
         builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
           if (streamSnapshot.hasData) {
             return ListView.builder(
-
               itemCount: streamSnapshot.data!.docs.length,
               itemBuilder: (context, index) {
-
                 final DocumentSnapshot documentSnapshot =
                 streamSnapshot.data!.docs[index];
 
                 if (streamSnapshot.data!.docs[index]['official'] == true) {
-                  return Column(
-                    children: [
-                      ListView(
-                          padding: const EdgeInsets.all(32),
-                          children: [
-                            const SizedBox(height: 20,),
-                            adminUserField(
-                                "First Name: $documentSnapshot['userName']"),
-                            const SizedBox(height: 10,),
-                            adminUserField(
-                                "Roll: $documentSnapshot['adminRoll']"),
-                            const SizedBox(height: 10,),
-                            adminUserField(
-                                "First Name: $documentSnapshot['firstName']"),
-                            const SizedBox(height: 10,),
-                            adminUserField(
-                                "Last Name: $documentSnapshot['lastName']"),
-                            const SizedBox(height: 10,),
-                            adminUserField(
-                                "Email: $documentSnapshot['email']"),
-                            const SizedBox(height: 10,),
-                            adminUserField(
-                                "Phone Number: $documentSnapshot['cellNumber']"),
-                            const SizedBox(height: 10,),
-                            Visibility(
-                              visible: visShow,
+                  return Card(
+                    margin: const EdgeInsets.all(10),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Center(
+                            child: Text(
+                              'Official User Information',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          const SizedBox(height: 20,),
+                          adminUserField(
+                              "First Name: " + documentSnapshot['userName']),
+                          adminUserField(
+                              "Roll: " + documentSnapshot['adminRoll']),
+                          adminUserField(
+                              "First Name: " + documentSnapshot['firstName']),
+                          adminUserField(
+                              "Last Name: " + documentSnapshot['lastName']),
+                          adminUserField(
+                              "Email: " + documentSnapshot['email']),
+                          adminUserField(
+                              "Phone Number: " + documentSnapshot['cellNumber']),
+                          const SizedBox(height: 20,),
+                          Visibility(
+                            visible: visShow,
+                            child: Center(
                               child: Row(
                                 children: [
+                                  const SizedBox(width: 15,),
                                   Center(
                                       child: Material(
                                         color: Colors.red,
                                         borderRadius: BorderRadius.circular(8),
                                         child: InkWell(
                                           onTap: () {
-                                            String deleteUser = documentSnapshot.reference.id;
-                                            _delete(deleteUser);
+                                            showDialog(
+                                                barrierDismissible: false,
+                                                context: context,
+                                                builder: (context) {
+                                                  return
+                                                    AlertDialog(
+                                                      shape: const RoundedRectangleBorder(
+                                                          borderRadius:
+                                                          BorderRadius.all(Radius.circular(16))),
+                                                      title: const Text("Delete this User!"),
+                                                      content: const Text(
+                                                          "Are you sure about deleting this official user?"),
+                                                      actions: [
+                                                        IconButton(
+                                                          onPressed: () {
+                                                            Navigator.of(context).pop();
+                                                          },
+                                                          icon: const Icon(
+                                                            Icons.cancel,
+                                                            color: Colors.red,
+                                                          ),
+                                                        ),
+                                                        IconButton(
+                                                          onPressed: () {
+                                                            String deleteUser = documentSnapshot.reference.id;
+                                                            _delete(deleteUser);
+
+                                                            Navigator.of(context).pop();
+                                                          },
+                                                          icon: const Icon(
+                                                            Icons.done,
+                                                            color: Colors.green,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    );
+                                                });
                                           },
-                                          borderRadius: BorderRadius.circular(32),
+                                          borderRadius: BorderRadius.circular(
+                                              32),
                                           child: const Padding(
                                             padding: EdgeInsets.symmetric(
-                                              horizontal: 30,
+                                              horizontal: 20,
                                               vertical: 12,
                                             ),
                                             child: Text(
@@ -425,25 +473,24 @@ class _AdminDetailsState extends State<AdminDetails> {
                                         ),
                                       )
                                   ),
-                                  const SizedBox(width: 30,),
+                                  const SizedBox(width: 10,),
                                   Center(
                                       child: Material(
                                         color: Colors.green,
                                         borderRadius: BorderRadius.circular(8),
                                         child: InkWell(
-
-                                          ///This will contain the function that edits the table data of meter readings for the current month only
                                           onTap: () {
                                             _update(documentSnapshot);
                                           },
-                                          borderRadius: BorderRadius.circular(32),
+                                          borderRadius: BorderRadius.circular(
+                                              32),
                                           child: const Padding(
                                             padding: EdgeInsets.symmetric(
-                                              horizontal: 30,
+                                              horizontal: 20,
                                               vertical: 12,
                                             ),
                                             child: Text(
-                                              "Change User Roll",
+                                              "Change User Info",
                                               style: TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 16,
@@ -456,10 +503,11 @@ class _AdminDetailsState extends State<AdminDetails> {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 50,),
-                          ]
+                          ),
+                          const SizedBox(height: 10,),
+                        ],
                       ),
-                    ],
+                    ),
                   );
                 } else {
                   return const Padding(
