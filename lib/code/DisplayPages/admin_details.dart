@@ -352,7 +352,6 @@ class _AdminDetailsState extends State<AdminDetails> {
   }
 
   Future<void> _delete(String user) async {
-
     await _usersList.doc(user).delete();
     Fluttertoast.showToast(msg: "You have successfully deleted an account!");
   }

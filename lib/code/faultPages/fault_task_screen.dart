@@ -180,6 +180,10 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                   ),
                   Visibility(
                     visible: visStage1,
+                    child: Text('Department Allocation'),
+                  ),
+                  Visibility(
+                    visible: visStage1,
                     child: DropdownButtonFormField <String>(
                       // Step 3.
                       value: dropdownValue,
@@ -190,7 +194,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                           value: value,
                           child: Text(
                             value,
-                            style: TextStyle(fontSize: 30),
+                            style: TextStyle(fontSize: 16),
                           ),
                         );
                       }).toList(),
@@ -205,8 +209,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                   Visibility(
                     visible: visStage1,
                     child: TextField(
-                      keyboardType:
-                      const TextInputType.numberWithOptions(),
+                      keyboardType: TextInputType.text,
                       controller: _commentController,
                       decoration: const InputDecoration(
                         labelText: 'Comment to Department',),
@@ -222,7 +225,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                   // ),
                   const SizedBox(height: 10,),
                   Visibility(
-                    visible: visShow,
+                    visible: visStage3,
                     child:
                     Row(
                       children: [
@@ -298,7 +301,114 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                         visStage4 = false;
 
                         Navigator.of(context).pop();
+
+                      } else if (faultStage == 2) {
+                        if (accountNumber != null) {
+                          await _faultData
+                              .doc(documentSnapshot.id)
+                              .update({
+                            "accountNumber": accountNumber,
+                            "address": address,
+                            "depComment1": '',
+                            "depComment2": '',
+                            "handlerCom1": userComment,
+                            "handlerCom2": '',
+                            "depAllocated": depSelected,
+                            "faultResolved": faultResolved,
+                            "dateReported": dateRep,
+                            "faultStage": 3,
+                          });
+                        }
+                        _accountNumberController.text = '';
+                        _addressController.text = '';
+                        _accountNumberController.text = '';
+                        _addressController.text = '';
+                        _commentController.text = '';
+                        _wDescriptionController.text = '';
+                        _depAllocationController.text = '';
+                        dropdownValue = '';
+                        _faultResolvedController = false;
+                        _dateReportedController.text = '';
+
+                        visStage1 = false;
+                        visStage2 = false;
+                        visStage3 = false;
+                        visStage4 = false;
+
+                        Navigator.of(context).pop();
+
+                      } else if (faultStage == 3) {
+                        if (accountNumber != null) {
+                          await _faultData
+                              .doc(documentSnapshot.id)
+                              .update({
+                            "accountNumber": accountNumber,
+                            "address": address,
+                            "depComment1": '',
+                            "depComment2": userComment,
+                            "handlerCom1": '',
+                            "handlerCom2": '',
+                            "depAllocated": depSelected,
+                            "faultResolved": faultResolved,
+                            "dateReported": dateRep,
+                            "faultStage": 4,
+                          });
+                        }
+                        _accountNumberController.text = '';
+                        _addressController.text = '';
+                        _accountNumberController.text = '';
+                        _addressController.text = '';
+                        _commentController.text = '';
+                        _wDescriptionController.text = '';
+                        _depAllocationController.text = '';
+                        dropdownValue = '';
+                        _faultResolvedController = false;
+                        _dateReportedController.text = '';
+
+                        visStage1 = false;
+                        visStage2 = false;
+                        visStage3 = false;
+                        visStage4 = false;
+
+                        Navigator.of(context).pop();
+
+                      } else if (faultStage == 4) {
+                        if (accountNumber != null) {
+                          await _faultData
+                              .doc(documentSnapshot.id)
+                              .update({
+                            "accountNumber": accountNumber,
+                            "address": address,
+                            "depComment1": '',
+                            "depComment2": '',
+                            "handlerCom1": '',
+                            "handlerCom2": userComment,
+                            "depAllocated": depSelected,
+                            "faultResolved": faultResolved,
+                            "dateReported": dateRep,
+                            "faultStage": 5,
+                          });
+                        }
+                        _accountNumberController.text = '';
+                        _addressController.text = '';
+                        _accountNumberController.text = '';
+                        _addressController.text = '';
+                        _commentController.text = '';
+                        _wDescriptionController.text = '';
+                        _depAllocationController.text = '';
+                        dropdownValue = '';
+                        _faultResolvedController = false;
+                        _dateReportedController.text = '';
+
+                        visStage1 = false;
+                        visStage2 = false;
+                        visStage3 = false;
+                        visStage4 = false;
+
+                        Navigator.of(context).pop();
+
                       }
+
                     },
                   )
                 ],
@@ -327,8 +437,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                 final DocumentSnapshot documentSnapshot =
                 streamSnapshot.data!.docs[index];
 
-                if(streamSnapshot.data!.docs[index]['faultResolved'] == false || documentSnapshot['faultStage'] == 1){
-                    // || documentSnapshot['faultStage'] == 1) {
+                if(streamSnapshot.data!.docs[index]['faultResolved'] == false
+                    || documentSnapshot['faultStage'] == 1 || documentSnapshot['faultStage'] == 3){
                   return Card(
                     margin: const EdgeInsets.all(10),
                     child: Padding(

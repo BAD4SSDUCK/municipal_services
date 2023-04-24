@@ -240,7 +240,7 @@ class _MapScreenPropState extends State<MapScreenProp> {
                   ///Positioned badge that shows account number and address shown on the pin
                   Positioned(
                       top: 10, left: 0, right: 0,
-                      child: MapUserBadge(locationGivenGet: locationGiven, accountNumberGet: accountNumber,
+                      child: MapUserBadge(locationGivenGet: widget.propAddress, accountNumberGet: widget.propAccNumber,
                       )
                   ),
                 ],
