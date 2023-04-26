@@ -145,6 +145,12 @@ class MainMenu extends StatefulWidget {
     });
   }
 
+  void saveChatPhoneNumber(String mobile) async{
+    await FirebaseFirestore.instance.collection("chatRoom").doc(user.phoneNumber).set({
+      'chatRoom': mobile,
+    });
+  }
+
   initInfo(){
     var androidInitialize = const AndroidInitializationSettings('@mipmap/ic_launcher');
     //var iOSInitialize = const IOSInitializationSettings();
@@ -161,7 +167,7 @@ class MainMenu extends StatefulWidget {
 
         }
       } catch (e) {
-
+        print(e);
       }
       return;
     }
@@ -269,6 +275,8 @@ class MainMenu extends StatefulWidget {
                                 print('The user name of the logged in person is $userName}');
                                 String id = passedID;
 
+                                saveChatPhoneNumber(id);
+
                                 ///Directly to the chatapp page that creates a chat id that will be saved on the DB. for an admin to access the chat I will have to
                                 ///make a new page that lists all DB chats for the admin to select and connect to for responding to users
                                 Navigator.push(context,
@@ -313,7 +321,7 @@ class MainMenu extends StatefulWidget {
                                   //   Fluttertoast.showToast(msg: "Unable to download statement.", gravity: ToastGravity.CENTER);
                                   // }
                                 },
-                                labelText: 'Download\nStatement',
+                                labelText: 'View\nStatement',
                                 fSize: 16,
                                 faIcon: const FaIcon(FontAwesomeIcons.solidFilePdf),
                                 fgColor: Colors.redAccent,

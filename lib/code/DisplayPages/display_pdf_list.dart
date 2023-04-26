@@ -136,7 +136,8 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                                 }
 
                                                 final url2 = 'pdfs/$userPhone/Invoice_000003728743_040000653226.pdf';
-                                                final file = await PDFApi.loadFirebase(url2);
+                                                final url3 = 'pdfs/Invoice_000003728743_040000653226.pdf';
+                                                final file = await PDFApi.loadFirebase(url3);
                                                 try {
                                                   openPDF(context, file);
                                                 } catch (e) {
