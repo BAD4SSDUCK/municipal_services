@@ -4,12 +4,12 @@ import 'package:municipal_track/code/DisplayPages/display_info.dart';
 
 class MapUserBadge extends StatelessWidget {
   const MapUserBadge({
-    Key? key,
-
-    required final String locationGivenGet,
-    required final String accountNumberGet,
+    Key? key, required this.accountNumberGet, required this.locationGivenGet,
 
   }) : super(key: key);
+
+  final String accountNumberGet;
+  final String locationGivenGet;
 
   @override
   Widget build(BuildContext context) {
@@ -49,13 +49,13 @@ class MapUserBadge extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Account Number: $accountNumber',
+                  Text('Account Number: $accountNumberGet',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.grey,
                     ),
                   ),
-                  Text('Address: $locationGiven',
+                  Text('Address: $locationGivenGet',
                     style: const TextStyle(
                       color: Colors.green,
                     ),),

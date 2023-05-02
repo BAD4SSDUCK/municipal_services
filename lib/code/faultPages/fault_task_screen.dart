@@ -51,11 +51,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   final CollectionReference _listUser =
   FirebaseFirestore.instance.collection('users');
 
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-  }
 
   void initApprover(String stateGivenCheck){
 
@@ -180,7 +175,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                   ),
                   Visibility(
                     visible: visStage1,
-                    child: Text('Department Allocation'),
+                    child: const Text('Department Allocation'),
                   ),
                   Visibility(
                     visible: visStage1,
@@ -468,7 +463,13 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'General Fault: ${documentSnapshot['generalFault']}',
+                            'Fault Type: ${documentSnapshot['faultType']}',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                          Text(
+                            'Public Fault: ${documentSnapshot['generalFault']}',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),

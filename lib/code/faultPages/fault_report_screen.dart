@@ -121,6 +121,13 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                       final String addressFault = addressPass;
                       final String electricityFaultDes = _electricalFaultController.text;
                       final String waterFaultDes = _waterFaultController.text;
+                      String faultType = '';
+
+                      if(elecDesVis){
+                        faultType = 'Electricity';
+                      }else if(waterDesVis){
+                        faultType = 'Water & Sanitation';
+                      }
 
                       if (uid == _currentUser) {
                         await _faultData.add({
@@ -132,6 +139,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           "depComment2": '',
                           "handlerCom1": '',
                           "handlerCom2": '',
+                          "faultType": faultType,
                           "generalFault": '',
                           "electricityFaultDes": electricityFaultDes,
                           "waterFaultDes": waterFaultDes,
@@ -311,6 +319,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                       accountPass = documentSnapshot['account number'];
                                       phoneNumPass = documentSnapshot['cell number'];
                                       elecDesVis = true;
+
                                       waterDesVis = false;
                                       _addNewFaultReport();
                                     } : () {

@@ -309,6 +309,8 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
   }
 
   Future<void> showPressed(BuildContext context) async{
+    String dropdownValue = 'Electricity';
+
      showModalBottomSheet(
         isScrollControlled: true,
         context: context,
@@ -343,6 +345,31 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
                       controller: _addressController,
                       decoration: const InputDecoration(
                           labelText: 'Street Address'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visShow,
+                    child: const Text('Type Of Fault'),
+                  ),
+                  Visibility(
+                    visible: visShow,
+                    child: DropdownButtonFormField <String>(
+                      value: dropdownValue,
+                      items: <String>['Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value,
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          dropdownValue = newValue!;
+                        });
+                      },
                     ),
                   ),
                   Visibility(

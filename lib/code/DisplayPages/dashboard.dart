@@ -194,8 +194,8 @@ class MainMenu extends StatefulWidget {
   }
   ///end of methods for push notifications with firebase and the device specific token
 
-  bool visExternal = true;
-  bool visInternal = false;
+  bool visShow = true;
+  bool visHide = false;
 
   final CollectionReference _chatRoom =
   FirebaseFirestore.instance.collection('chatRoom');
@@ -250,7 +250,7 @@ class MainMenu extends StatefulWidget {
                   Column(
                     children: [
                       Visibility(
-                        visible: visExternal,
+                        visible: visShow,
                         child: Center(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -294,7 +294,7 @@ class MainMenu extends StatefulWidget {
                         ),
                       ),
                       Visibility(
-                        visible: visExternal,
+                        visible: visShow,
                         child: Center(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -327,25 +327,12 @@ class MainMenu extends StatefulWidget {
                                 fgColor: Colors.redAccent,
                                 btSize: const Size(130, 120),
                               ),
-                              ///This user chat list should only be fore managers to chat to listed users
-                              // const SizedBox(width: 40),
-                              // ElevatedIconButton(
-                              //   onPress: (){
-                              //     Navigator.push(context,
-                              //         MaterialPageRoute(builder: (context) => const ChatList()));
-                              //   },
-                              //   labelText: 'User\nChat\nList',
-                              //   fSize: 18,
-                              //   faIcon: const FaIcon(Icons.mark_chat_unread),
-                              //   fgColor: Colors.blue,
-                              //   btSize: const Size(130, 120),
-                              // ),
                             ],
                           ),
                         ),
                       ),
                       Visibility(
-                        visible: visExternal,
+                        visible: visShow,
                         child: Center(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
