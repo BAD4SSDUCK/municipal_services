@@ -12,6 +12,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:municipal_track/code/DisplayPages/admin_details.dart';
+import 'package:municipal_track/code/DisplayPages/configuration_page.dart';
 import 'package:municipal_track/code/MapTools/map_screen_multi.dart';
 import 'package:municipal_track/code/Reusable/nav_drawer.dart';
 import 'package:municipal_track/code/faultPages/fault_task_screen.dart';
@@ -147,10 +148,22 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   btSize: const Size(130, 120),
                                 ),
                                 const SizedBox(width: 20,),
+                                ///old user page
+                                // ElevatedIconButton(
+                                //   onPress: () async {
+                                //     Navigator.push(context,
+                                //         MaterialPageRoute(builder: (context) => AdminDetails()));
+                                //   },
+                                //   labelText: 'Manage\nAdmin',
+                                //   fSize: 18,
+                                //   faIcon: const FaIcon(Icons.people),
+                                //   fgColor: Colors.blue,
+                                //   btSize: const Size(130, 120),
+                                // ),
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => AdminDetails()));
+                                        MaterialPageRoute(builder: (context) => ConfigPage()));
                                   },
                                   labelText: 'Manage\nAdmin',
                                   fSize: 18,

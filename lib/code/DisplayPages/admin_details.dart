@@ -52,7 +52,7 @@ class _AdminDetailsState extends State<AdminDetails> {
   bool visHide = false;
 
   //this widget is for displaying a user information with an icon next to it, NB. the icon is to make it look good
-  Widget adminUserField(String propertyDat) {
+  Widget adminUserField(String dbData) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -63,7 +63,7 @@ class _AdminDetailsState extends State<AdminDetails> {
         children: [
           const SizedBox(width: 6,),
           Text(
-            propertyDat,
+            dbData,
             style: const TextStyle(
               fontSize: 15,
             ),
