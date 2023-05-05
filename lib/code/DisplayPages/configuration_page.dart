@@ -49,8 +49,6 @@ class _ConfigPageState extends State<ConfigPage> {
   final CollectionReference _deptInfo =
   FirebaseFirestore.instance.collection('departments');
 
-  String userPass = '';
-  String addressPass = '';
   String selectedDept = "0";
   String selectedRoll = "0";
 
@@ -789,6 +787,9 @@ class _ConfigPageState extends State<ConfigPage> {
                                 adminUserField(
                                     Icons.switch_account,
                                     "User Name: " + userDocumentSnapshot['userName']),
+                                adminUserField(
+                                    Icons.business_center,
+                                    "Department: " + userDocumentSnapshot['deptName']),
                                 adminUserField(
                                     Icons.business_center,
                                     "Roll: " + userDocumentSnapshot['adminRoll']),
