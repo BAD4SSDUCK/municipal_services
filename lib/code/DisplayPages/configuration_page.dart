@@ -51,6 +51,8 @@ class _ConfigPageState extends State<ConfigPage> {
 
   String userPass = '';
   String addressPass = '';
+  String selectedDept = "0";
+  String selectedRoll = "0";
 
   bool visShow = true;
   bool visHide = false;
@@ -165,14 +167,6 @@ class _ConfigPageState extends State<ConfigPage> {
                   Visibility(
                     visible: visShow,
                     child: TextField(
-                      controller: _userRollController,
-                      decoration: const InputDecoration(
-                          labelText: 'User Roll'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visShow,
-                    child: TextField(
                       controller: _firstNameController,
                       decoration: const InputDecoration(
                           labelText: 'First Name'),
@@ -184,6 +178,22 @@ class _ConfigPageState extends State<ConfigPage> {
                       controller: _lastNameController,
                       decoration: const InputDecoration(
                           labelText: 'Last Name'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visShow,
+                    child: TextField(
+                      controller: _deptNameController,
+                      decoration: const InputDecoration(
+                          labelText: 'User Department'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visShow,
+                    child: TextField(
+                      controller: _userRollController,
+                      decoration: const InputDecoration(
+                          labelText: 'User Roll'),
                     ),
                   ),
                   Visibility(
@@ -217,6 +227,7 @@ class _ConfigPageState extends State<ConfigPage> {
                       child: const Text('Create'),
                       onPressed: () async {
                         final String userName = _userNameController.text;
+                        final String deptName = _deptNameController.text;
                         final String userRoll = _userRollController.text;
                         final String firstName = _firstNameController.text;
                         final String lastName = _lastNameController.text;
@@ -228,6 +239,7 @@ class _ConfigPageState extends State<ConfigPage> {
                         if (userName != null) {
                           await _usersList.add({
                             "userName": userName,
+                            "deptName": deptName,
                             "adminRoll": userRoll,
                             "firstName": firstName,
                             "lastName": lastName,
@@ -239,6 +251,7 @@ class _ConfigPageState extends State<ConfigPage> {
                           register(email,password);
 
                           _userNameController.text = '';
+                          _deptNameController.text = '';
                           _userRollController.text = '';
                           _firstNameController.text = '';
                           _lastNameController.text = '';
@@ -259,6 +272,7 @@ class _ConfigPageState extends State<ConfigPage> {
   Future<void> _update([DocumentSnapshot? documentSnapshot]) async {
     if (documentSnapshot != null) {
       _userNameController.text = documentSnapshot['userName'];
+      _deptNameController.text = documentSnapshot['deptName'];
       _userRollController.text = documentSnapshot['adminRoll'];
       _firstNameController.text = documentSnapshot['firstName'];
       _lastNameController.text = documentSnapshot['lastName'];
@@ -266,7 +280,7 @@ class _ConfigPageState extends State<ConfigPage> {
       _cellNumberController.text = documentSnapshot['cellNumber'];
     }
 
-     await showModalBottomSheet(
+    await showModalBottomSheet(
         isScrollControlled: true,
         context: context,
         builder: (BuildContext ctx) {
@@ -327,6 +341,22 @@ class _ConfigPageState extends State<ConfigPage> {
                   Visibility(
                     visible: visShow,
                     child: TextField(
+                      controller: _deptNameController,
+                      decoration: const InputDecoration(
+                          labelText: 'User Department'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visShow,
+                    child: TextField(
+                      controller: _userRollController,
+                      decoration: const InputDecoration(
+                          labelText: 'User Roll'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visShow,
+                    child: TextField(
                       controller: _userEmailController,
                       decoration: const InputDecoration(
                           labelText: 'User Email'),
@@ -347,6 +377,7 @@ class _ConfigPageState extends State<ConfigPage> {
                       child: const Text('Update'),
                       onPressed: () async {
                         final String userName = _userNameController.text;
+                        final String deptName = _deptNameController.text;
                         final String userRoll = _userRollController.text;
                         final String firstName = _firstNameController.text;
                         final String lastName = _lastNameController.text;
@@ -359,6 +390,7 @@ class _ConfigPageState extends State<ConfigPage> {
                               .doc(documentSnapshot!.id)
                               .update({
                             "userName": userName,
+                            "deptName": deptName,
                             "adminRoll": userRoll,
                             "firstName": firstName,
                             "lastName": lastName,
@@ -555,363 +587,367 @@ class _ConfigPageState extends State<ConfigPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[350],
-      appBar: AppBar(
-        title: const Text('Department and Officials'),
-        backgroundColor: Colors.green,
-        bottom: const TabBar(
-          tabs: [
-            Tab(text: 'Departments List'),
-            Tab(text: 'Users List'),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: Colors.grey[350],
+        appBar: AppBar(
+          title: const Text('Department and Officials'),
+          backgroundColor: Colors.green,
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Departments List'),
+              Tab(text: 'Users List'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            ///Tab for department list view
+            StreamBuilder(
+              stream: _deptInfo.snapshots(),
+              builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+                if (streamSnapshot.hasData) {
+                  return ListView.builder(
+                    itemCount: streamSnapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      final DocumentSnapshot deptDocumentSnapshot =
+                      streamSnapshot.data!.docs[index];
+                      if (streamSnapshot.data!.docs[index]['official'] == true) {
+                        return Card(
+                          margin: const EdgeInsets.all(10),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Center(
+                                  child: Text(
+                                    'Departments Information',
+                                    style: TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                                const SizedBox(height: 20,),
+                                departmentField(
+                                  Icons.business,
+                                  "Department Name: " + deptDocumentSnapshot['deptName'],),
+                                departmentField(
+                                  Icons.account_circle_outlined,
+                                  "Roll: " + deptDocumentSnapshot['adminRoll'],),
+                                const SizedBox(height: 20,),
+                                Visibility(
+                                  visible: visShow,
+                                  child: Center(
+                                    child: Row(
+                                      children: [
+                                        const SizedBox(width: 15,),
+                                        Center(
+                                            child: Material(
+                                              color: Colors.red,
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: InkWell(
+                                                onTap: () {
+                                                  showDialog(
+                                                      barrierDismissible: false,
+                                                      context: context,
+                                                      builder: (context) {
+                                                        return
+                                                          AlertDialog(
+                                                            shape: const RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                BorderRadius.all(Radius.circular(16))),
+                                                            title: const Text("Delete this Roll & Department!"),
+                                                            content: const Text(
+                                                                "Are you sure about deleting this Roll and the Department associated with it?"),
+                                                            actions: [
+                                                              IconButton(
+                                                                onPressed: () {
+                                                                  Navigator.of(context).pop();
+                                                                },
+                                                                icon: const Icon(
+                                                                  Icons.cancel,
+                                                                  color: Colors.red,
+                                                                ),
+                                                              ),
+                                                              IconButton(
+                                                                onPressed: () {
+                                                                  String deleteDept = deptDocumentSnapshot.reference.id;
+                                                                  _deleteDeptInfo(deleteDept);
+
+                                                                  Navigator.of(context).pop();
+                                                                },
+                                                                icon: const Icon(
+                                                                  Icons.done,
+                                                                  color: Colors.green,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          );
+                                                      });
+                                                },
+                                                borderRadius: BorderRadius.circular(
+                                                    32),
+                                                child: const Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 20,
+                                                    vertical: 12,
+                                                  ),
+                                                  child: Text(
+                                                    "Delete Roll",
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                        ),
+                                        const SizedBox(width: 10,),
+                                        Center(
+                                            child: Material(
+                                              color: Colors.green,
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: InkWell(
+                                                onTap: () {
+                                                  _updateDeptInfo(deptDocumentSnapshot);
+                                                },
+                                                borderRadius: BorderRadius.circular(
+                                                    32),
+                                                child: const Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 20,
+                                                    vertical: 12,
+                                                  ),
+                                                  child: Text(
+                                                    "Change Roll Info",
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 10,),
+                              ],
+                            ),
+                          ),
+                        );
+                      } else {
+                        return const Padding(
+                          padding: EdgeInsets.all(50.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                    },
+                  );
+                } else {
+                  return const Padding(
+                    padding: EdgeInsets.all(50.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+              },
+            ),
+
+            ///Tab for users list view
+            StreamBuilder(
+              stream: _usersList.snapshots(),
+              builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+                if (streamSnapshot.hasData) {
+                  return ListView.builder(
+                    itemCount: streamSnapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      final DocumentSnapshot userDocumentSnapshot =
+                      streamSnapshot.data!.docs[index];
+
+                      if (streamSnapshot.data!.docs[index]['official'] == true) {
+                        return Card(
+                          margin: const EdgeInsets.all(10),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Center(
+                                  child: Text(
+                                    'Official User Information',
+                                    style: TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                                const SizedBox(height: 20,),
+                                adminUserField(
+                                    Icons.switch_account,
+                                    "User Name: " + userDocumentSnapshot['userName']),
+                                adminUserField(
+                                    Icons.business_center,
+                                    "Roll: " + userDocumentSnapshot['adminRoll']),
+                                adminUserField(
+                                    Icons.account_circle,
+                                    "First Name: " + userDocumentSnapshot['firstName']),
+                                adminUserField(
+                                    Icons.account_circle,
+                                    "Last Name: " + userDocumentSnapshot['lastName']),
+                                adminUserField(
+                                    Icons.email,
+                                    "Email: " + userDocumentSnapshot['email']),
+                                adminUserField(
+                                    Icons.phone,
+                                    "Phone Number: " + userDocumentSnapshot['cellNumber']),
+                                const SizedBox(height: 20,),
+                                Visibility(
+                                  visible: visShow,
+                                  child: Center(
+                                    child: Row(
+                                      children: [
+                                        const SizedBox(width: 15,),
+                                        Center(
+                                            child: Material(
+                                              color: Colors.red,
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: InkWell(
+                                                onTap: () {
+                                                  showDialog(
+                                                      barrierDismissible: false,
+                                                      context: context,
+                                                      builder: (context) {
+                                                        return
+                                                          AlertDialog(
+                                                            shape: const RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                BorderRadius.all(Radius.circular(16))),
+                                                            title: const Text("Delete this User!"),
+                                                            content: const Text(
+                                                                "Are you sure about deleting this user?"),
+                                                            actions: [
+                                                              IconButton(
+                                                                onPressed: () {
+                                                                  Navigator.of(context).pop();
+                                                                },
+                                                                icon: const Icon(
+                                                                  Icons.cancel,
+                                                                  color: Colors.red,
+                                                                ),
+                                                              ),
+                                                              IconButton(
+                                                                onPressed: () {
+                                                                  String deleteUser = userDocumentSnapshot.reference.id;
+                                                                  _delete(deleteUser);
+
+                                                                  Navigator.of(context).pop();
+                                                                },
+                                                                icon: const Icon(
+                                                                  Icons.done,
+                                                                  color: Colors.green,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          );
+                                                      });
+                                                },
+                                                borderRadius: BorderRadius.circular(
+                                                    32),
+                                                child: const Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 20,
+                                                    vertical: 12,
+                                                  ),
+                                                  child: Text(
+                                                    "Delete User",
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                        ),
+                                        const SizedBox(width: 10,),
+                                        Center(
+                                            child: Material(
+                                              color: Colors.green,
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: InkWell(
+                                                onTap: () {
+                                                  _update(userDocumentSnapshot);
+                                                },
+                                                borderRadius: BorderRadius.circular(
+                                                    32),
+                                                child: const Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 20,
+                                                    vertical: 12,
+                                                  ),
+                                                  child: Text(
+                                                    "Change User Info",
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 50,),
+                              ],
+                            ),
+                          ),
+                        );
+                      } else {
+                        return const Padding(
+                          padding: EdgeInsets.all(50.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                    },
+                  );
+                } else {
+                  return const Padding(
+                    padding: EdgeInsets.all(50.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+              },
+            ),
           ],
         ),
+
+        floatingActionButton: Row(
+          children: [
+            const SizedBox(width: 10,),
+            FloatingActionButton(
+              onPressed: () => _createDeptInfo(),
+              backgroundColor: Colors.green,
+              child: const Icon(Icons.add_business),
+            ),
+            const SizedBox(width: 10,),
+            FloatingActionButton(
+              onPressed: () => _create(),
+              backgroundColor: Colors.green,
+              child: const Icon(Icons.add_reaction),
+            ),
+
+          ],
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+
       ),
-      body: TabBarView(
-        children: [
-          ///Tab for department list view
-          StreamBuilder(
-            stream: _deptInfo.snapshots(),
-            builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-              if (streamSnapshot.hasData) {
-                return ListView.builder(
-                  itemCount: streamSnapshot.data!.docs.length,
-                  itemBuilder: (context, index) {
-                    final DocumentSnapshot deptDocumentSnapshot =
-                    streamSnapshot.data!.docs[index];
-                    if (streamSnapshot.data!.docs[index]['official'] == true) {
-                      return Card(
-                        margin: const EdgeInsets.all(10),
-                        child: Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Center(
-                                child: Text(
-                                  'Departments Information',
-                                  style: TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w700),
-                                ),
-                              ),
-                              const SizedBox(height: 20,),
-                              departmentField(
-                                Icons.business,
-                                "Department Name: " + deptDocumentSnapshot['deptName'],),
-                              departmentField(
-                                Icons.account_circle_outlined,
-                                "Roll: " + deptDocumentSnapshot['adminRoll'],),
-                              const SizedBox(height: 20,),
-                              Visibility(
-                                visible: visShow,
-                                child: Center(
-                                  child: Row(
-                                    children: [
-                                      const SizedBox(width: 15,),
-                                      Center(
-                                          child: Material(
-                                            color: Colors.red,
-                                            borderRadius: BorderRadius.circular(8),
-                                            child: InkWell(
-                                              onTap: () {
-                                                showDialog(
-                                                    barrierDismissible: false,
-                                                    context: context,
-                                                    builder: (context) {
-                                                      return
-                                                        AlertDialog(
-                                                          shape: const RoundedRectangleBorder(
-                                                              borderRadius:
-                                                              BorderRadius.all(Radius.circular(16))),
-                                                          title: const Text("Delete this Roll & Department!"),
-                                                          content: const Text(
-                                                              "Are you sure about deleting this Roll and the Department associated with it?"),
-                                                          actions: [
-                                                            IconButton(
-                                                              onPressed: () {
-                                                                Navigator.of(context).pop();
-                                                              },
-                                                              icon: const Icon(
-                                                                Icons.cancel,
-                                                                color: Colors.red,
-                                                              ),
-                                                            ),
-                                                            IconButton(
-                                                              onPressed: () {
-                                                                String deleteDept = deptDocumentSnapshot.reference.id;
-                                                                _deleteDeptInfo(deleteDept);
-
-                                                                Navigator.of(context).pop();
-                                                              },
-                                                              icon: const Icon(
-                                                                Icons.done,
-                                                                color: Colors.green,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        );
-                                                    });
-                                              },
-                                              borderRadius: BorderRadius.circular(
-                                                  32),
-                                              child: const Padding(
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: 20,
-                                                  vertical: 12,
-                                                ),
-                                                child: Text(
-                                                  "Delete Roll",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 16,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          )
-                                      ),
-                                      const SizedBox(width: 10,),
-                                      Center(
-                                          child: Material(
-                                            color: Colors.green,
-                                            borderRadius: BorderRadius.circular(8),
-                                            child: InkWell(
-                                              onTap: () {
-                                                _updateDeptInfo(deptDocumentSnapshot);
-                                              },
-                                              borderRadius: BorderRadius.circular(
-                                                  32),
-                                              child: const Padding(
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: 20,
-                                                  vertical: 12,
-                                                ),
-                                                child: Text(
-                                                  "Change Roll Info",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 16,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          )
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 10,),
-                            ],
-                          ),
-                        ),
-                      );
-                    } else {
-                      return const Padding(
-                        padding: EdgeInsets.all(50.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                  },
-                );
-              } else {
-                return const Padding(
-                  padding: EdgeInsets.all(50.0),
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-            },
-          ),
-
-          ///Tab for users list view
-          StreamBuilder(
-            stream: _usersList.snapshots(),
-            builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-              if (streamSnapshot.hasData) {
-                return ListView.builder(
-                  itemCount: streamSnapshot.data!.docs.length,
-                  itemBuilder: (context, index) {
-                    final DocumentSnapshot userDocumentSnapshot =
-                    streamSnapshot.data!.docs[index];
-
-                    if (streamSnapshot.data!.docs[index]['official'] == true) {
-                      return Card(
-                        margin: const EdgeInsets.all(10),
-                        child: Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Center(
-                                child: Text(
-                                  'Official User Information',
-                                  style: TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w700),
-                                ),
-                              ),
-                              const SizedBox(height: 20,),
-                              adminUserField(
-                                Icons.switch_account,
-                                  "First Name: " + userDocumentSnapshot['userName']),
-                              adminUserField(
-                                  Icons.business_center,
-                                  "Roll: " + userDocumentSnapshot['adminRoll']),
-                              adminUserField(
-                                  Icons.account_circle,
-                                  "First Name: " + userDocumentSnapshot['firstName']),
-                              adminUserField(
-                                  Icons.account_circle,
-                                  "Last Name: " + userDocumentSnapshot['lastName']),
-                              adminUserField(
-                                  Icons.email,
-                                  "Email: " + userDocumentSnapshot['email']),
-                              adminUserField(
-                                  Icons.phone,
-                                  "Phone Number: " + userDocumentSnapshot['cellNumber']),
-                              const SizedBox(height: 20,),
-                              Visibility(
-                                visible: visShow,
-                                child: Center(
-                                  child: Row(
-                                    children: [
-                                      const SizedBox(width: 15,),
-                                      Center(
-                                          child: Material(
-                                            color: Colors.red,
-                                            borderRadius: BorderRadius.circular(8),
-                                            child: InkWell(
-                                              onTap: () {
-                                                showDialog(
-                                                    barrierDismissible: false,
-                                                    context: context,
-                                                    builder: (context) {
-                                                      return
-                                                        AlertDialog(
-                                                          shape: const RoundedRectangleBorder(
-                                                              borderRadius:
-                                                              BorderRadius.all(Radius.circular(16))),
-                                                          title: const Text("Delete this User!"),
-                                                          content: const Text(
-                                                              "Are you sure about deleting this user?"),
-                                                          actions: [
-                                                            IconButton(
-                                                              onPressed: () {
-                                                                Navigator.of(context).pop();
-                                                              },
-                                                              icon: const Icon(
-                                                                Icons.cancel,
-                                                                color: Colors.red,
-                                                              ),
-                                                            ),
-                                                            IconButton(
-                                                              onPressed: () {
-                                                                String deleteUser = userDocumentSnapshot.reference.id;
-                                                                _delete(deleteUser);
-
-                                                                Navigator.of(context).pop();
-                                                              },
-                                                              icon: const Icon(
-                                                                Icons.done,
-                                                                color: Colors.green,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        );
-                                                    });
-                                              },
-                                              borderRadius: BorderRadius.circular(
-                                                  32),
-                                              child: const Padding(
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: 20,
-                                                  vertical: 12,
-                                                ),
-                                                child: Text(
-                                                  "Delete User",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 16,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          )
-                                      ),
-                                      const SizedBox(width: 10,),
-                                      Center(
-                                          child: Material(
-                                            color: Colors.green,
-                                            borderRadius: BorderRadius.circular(8),
-                                            child: InkWell(
-                                              onTap: () {
-                                                _update(userDocumentSnapshot);
-                                              },
-                                              borderRadius: BorderRadius.circular(
-                                                  32),
-                                              child: const Padding(
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: 20,
-                                                  vertical: 12,
-                                                ),
-                                                child: Text(
-                                                  "Change User Info",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 16,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          )
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 10,),
-                            ],
-                          ),
-                        ),
-                      );
-                    } else {
-                      return const Padding(
-                        padding: EdgeInsets.all(50.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                  },
-                );
-              } else {
-              return const Padding(
-                padding: EdgeInsets.all(50.0),
-                child: Center(child: CircularProgressIndicator()),
-              );
-              }
-            },
-          ),
-
-        ],
-      ),
-
-      floatingActionButton: Row(
-        children: [
-          FloatingActionButton(
-            onPressed: () => _create(),
-            backgroundColor: Colors.green,
-            child: const Icon(Icons.add_reaction),
-          ),
-          const SizedBox(width: 10,),
-          FloatingActionButton(
-            onPressed: () => _createDeptInfo(),
-            backgroundColor: Colors.green,
-            child: const Icon(Icons.add_business),
-          ),
-        ],
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-
     );
   }
 

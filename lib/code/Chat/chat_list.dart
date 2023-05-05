@@ -49,11 +49,7 @@ class _ChatListState extends State<ChatList> {
               itemCount: streamSnapshot.data!.docs.length,
               itemBuilder: (context, index) {
                 final DocumentSnapshot documentSnapshot = streamSnapshot.data!.docs[index];
-
                 String chatRoomID = documentSnapshot.id;
-
-                print('The chat rooms listed are $chatRoomID');
-
                 return Card(
                   margin: const EdgeInsets.all(10),
                   child: Padding(
@@ -75,7 +71,7 @@ class _ChatListState extends State<ChatList> {
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
-                          const SizedBox(height: 20,),
+                          const SizedBox(height: 10,),
                           ChatButtonWidget(chatRoomId: chatRoomID),
                         ]
                     ),
@@ -121,7 +117,7 @@ class ChatButtonWidget extends StatelessWidget {
                     Icons.chat,
                     color: Theme.of(context).primaryColor,
                   ),
-                  const SizedBox(width: 2,),
+                  const SizedBox(width: 10,),
                   const Text('Chat', style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Colors.black,),),
