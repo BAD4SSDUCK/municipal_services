@@ -135,6 +135,7 @@ class MainMenu extends StatefulWidget {
             print("My token is $mtoken");
           });
           saveToken(token!);
+          saveChatPhoneNumber(token!);
         }
     );
   }
@@ -147,7 +148,7 @@ class MainMenu extends StatefulWidget {
 
   void saveChatPhoneNumber(String mobile) async{
     await FirebaseFirestore.instance.collection("chatRoom").doc(user.phoneNumber).set({
-      'chatRoom': mobile,
+      'chatRoom': user.phoneNumber,
     });
   }
 

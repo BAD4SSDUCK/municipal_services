@@ -5,7 +5,9 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:municipal_track/code/AuthGoogle/auth_page_google.dart';
+import 'package:municipal_track/code/DisplayPages/display_info.dart';
 
 class ConfigPage extends StatefulWidget{
   const ConfigPage({super.key});
@@ -42,6 +44,15 @@ class _ConfigPageState extends State<ConfigPage> {
   final _userEmailController = TextEditingController();
   final _cellNumberController = TextEditingController();
   final _passwordController = TextEditingController();
+  late String _deptListController = DropdownMenuItem as String;
+
+  TextEditingController controllerDept = TextEditingController();
+  List<String> deptName =[""];
+  bool displayDeptList = false;
+
+  final _formKey = GlobalKey<FormState>();
+  final List<String> deptSelection = [];
+  late String _currentSelectedDept;
 
   final CollectionReference _usersList =
   FirebaseFirestore.instance.collection('users');
@@ -121,6 +132,7 @@ class _ConfigPageState extends State<ConfigPage> {
 
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
     _userNameController.text = '';
+    _deptNameController.text = '';
     _userRollController.text = '';
     _firstNameController.text = '';
     _lastNameController.text = '';
@@ -186,6 +198,75 @@ class _ConfigPageState extends State<ConfigPage> {
                           labelText: 'User Department'),
                     ),
                   ),
+
+                  // Visibility(
+                  //   visible: visShow,
+                  //     child: Container(
+                  //       width: double.infinity,
+                  //       height: double.infinity,
+                  //       child: Column(
+                  //         crossAxisAlignment: CrossAxisAlignment.center,
+                  //         children: [
+                  //           const Text('Department'),
+                  //           const SizedBox(height: 200,),
+                  //           Container(
+                  //             width: 130,
+                  //             height: 50,
+                  //             decoration: BoxDecoration(
+                  //               border: Border.all(color: Colors.grey),
+                  //               color: Colors.white,
+                  //               borderRadius: BorderRadius.circular(6),
+                  //             ),
+                  //             child: TextField(
+                  //               controller: controllerDept,
+                  //               decoration: InputDecoration(
+                  //                 border: InputBorder.none,
+                  //                 suffixIcon: GestureDetector(
+                  //                     onTap: (){
+                  //                       displayDeptList = !displayDeptList;
+                  //                     },
+                  //                     child: Icon(Icons.arrow_downward),
+                  //                 ),
+                  //               ),
+                  //             ),
+                  //           ),
+                  //           displayDeptList?
+                  //           Container(
+                  //             height: 200,
+                  //             width: 130,
+                  //             decoration: BoxDecoration(
+                  //               borderRadius: BorderRadius.circular(9),
+                  //               color: Colors.white,
+                  //               boxShadow: [
+                  //                 BoxShadow(
+                  //                   color: Colors.grey.withOpacity(0.3),
+                  //                   spreadRadius: 1,
+                  //                   blurRadius: 3,
+                  //                   offset: Offset(0,1),
+                  //                 )
+                  //               ]),
+                  //             child: ListView.builder(
+                  //               itemCount: deptName.length,
+                  //                 itemBuilder: ((context,index){
+                  //               return GestureDetector(
+                  //                 onTap: (){
+                  //                   setState(() {
+                  //                     controllerDept.text = (index+1).toString();
+                  //                     _deptNameController.text = deptName[index].toString();
+                  //                   });
+                  //                 },
+                  //                 child: ListTile(
+                  //                   title: Text(deptName[index]),
+                  //                 ),
+                  //               );
+                  //             })),
+                  //           ):const SizedBox(),
+                  //         ],
+                  //       ),
+                  //     )
+                  // ),
+
+
                   Visibility(
                     visible: visShow,
                     child: TextField(
@@ -194,6 +275,9 @@ class _ConfigPageState extends State<ConfigPage> {
                           labelText: 'User Roll'),
                     ),
                   ),
+
+
+
                   Visibility(
                     visible: visShow,
                     child: TextField(
@@ -238,7 +322,7 @@ class _ConfigPageState extends State<ConfigPage> {
                           await _usersList.add({
                             "userName": userName,
                             "deptName": deptName,
-                            "adminRoll": userRoll,
+                            "userRoll": userRoll,
                             "firstName": firstName,
                             "lastName": lastName,
                             "email": email,
@@ -271,7 +355,7 @@ class _ConfigPageState extends State<ConfigPage> {
     if (documentSnapshot != null) {
       _userNameController.text = documentSnapshot['userName'];
       _deptNameController.text = documentSnapshot['deptName'];
-      _userRollController.text = documentSnapshot['adminRoll'];
+      _userRollController.text = documentSnapshot['userRoll'];
       _firstNameController.text = documentSnapshot['firstName'];
       _lastNameController.text = documentSnapshot['lastName'];
       _userEmailController.text = documentSnapshot['email'];
@@ -310,14 +394,6 @@ class _ConfigPageState extends State<ConfigPage> {
                       controller: _userNameController,
                       decoration: const InputDecoration(
                           labelText: 'User Name'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visShow,
-                    child: TextField(
-                      controller: _userRollController,
-                      decoration: const InputDecoration(
-                          labelText: 'User Roll'),
                     ),
                   ),
                   Visibility(
@@ -389,7 +465,7 @@ class _ConfigPageState extends State<ConfigPage> {
                               .update({
                             "userName": userName,
                             "deptName": deptName,
-                            "adminRoll": userRoll,
+                            "userRoll": userRoll,
                             "firstName": firstName,
                             "lastName": lastName,
                             "email": email,
@@ -463,7 +539,7 @@ class _ConfigPageState extends State<ConfigPage> {
                     child: TextField(
                       controller: _userRollController,
                       decoration: const InputDecoration(
-                          labelText: 'User Rolls'),
+                          labelText: 'User Roll'),
                     ),
                   ),
                   const SizedBox(
@@ -479,7 +555,7 @@ class _ConfigPageState extends State<ConfigPage> {
                         if (deptName != null) {
                           await _deptInfo.add({
                             "deptName": deptName,
-                            "adminRoll": userRoll,
+                            "userRoll": userRoll,
                             "official": official,
                           });
 
@@ -500,7 +576,7 @@ class _ConfigPageState extends State<ConfigPage> {
   Future<void> _updateDeptInfo([DocumentSnapshot? documentSnapshot]) async {
     if (documentSnapshot != null) {
       _deptNameController.text = documentSnapshot['deptName'];
-      _userRollController.text = documentSnapshot['adminRoll'];
+      _userRollController.text = documentSnapshot['userRoll'];
     }
 
     await showModalBottomSheet(
@@ -560,7 +636,7 @@ class _ConfigPageState extends State<ConfigPage> {
                               .doc(documentSnapshot!.id)
                               .update({
                             "deptName": deptName,
-                            "adminRoll": userRoll,
+                            "userRoll": userRoll,
                             "official": official,
                           });
 
@@ -633,7 +709,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                   "Department Name: " + deptDocumentSnapshot['deptName'],),
                                 departmentField(
                                   Icons.account_circle_outlined,
-                                  "Roll: " + deptDocumentSnapshot['adminRoll'],),
+                                  "Roll: " + deptDocumentSnapshot['userRoll'],),
                                 const SizedBox(height: 20,),
                                 Visibility(
                                   visible: visShow,
@@ -792,7 +868,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                     "Department: " + userDocumentSnapshot['deptName']),
                                 adminUserField(
                                     Icons.business_center,
-                                    "Roll: " + userDocumentSnapshot['adminRoll']),
+                                    "Roll: " + userDocumentSnapshot['userRoll']),
                                 adminUserField(
                                     Icons.account_circle,
                                     "First Name: " + userDocumentSnapshot['firstName']),

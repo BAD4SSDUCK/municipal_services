@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -39,8 +40,6 @@ class HomeManagerScreen extends StatefulWidget {
 class _HomeManagerScreenState extends State<HomeManagerScreen>{
 
   bool loading = true;
-  late List pdfList;
-
 
   late FToast fToast;
 
@@ -49,12 +48,35 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
     super.initState();
     fToast =FToast();
     fToast.init(context);
+    visibilityCheckAdmin();
     //Fluttertoast.showToast(msg: "Navigate The App From The Bottom Tabs.", gravity: ToastGravity.CENTER);
 
   }
 
   bool visShow = true;
   bool visHide = false;
+  bool visAdmin = false;
+
+  void visibilityCheckAdmin() {
+    User? user = FirebaseAuth.instance.currentUser;
+    var kk = FirebaseFirestore.instance.collection('users').doc(user!.email).get().then((DocumentSnapshot documentSnapshot)
+    {
+      if (documentSnapshot.exists) {
+        if (documentSnapshot.get('userRoll') == "Admin") {
+          visAdmin = true;
+          print('Is the user email being pulled ::: $user');
+          print(
+              'Is the correct current user logged in ::: ${documentSnapshot.get('userRoll')}');
+        } else {
+          visAdmin = false;
+          print('Is the user email being pulled not Admin::: $user');
+        }
+      } else {
+        print('db Connection not made yet');
+      }
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -160,6 +182,21 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                 //   fgColor: Colors.blue,
                                 //   btSize: const Size(130, 120),
                                 // ),
+                                Visibility(
+                                  visible: visAdmin,
+                                  child: ElevatedIconButton(
+                                    onPress: () async {
+                                      Navigator.push(context,
+                                          MaterialPageRoute(builder: (context) => ConfigPage()));
+                                    },
+                                    labelText: 'Admin\nConfig',
+                                    fSize: 18,
+                                    faIcon: const FaIcon(Icons.people),
+                                    fgColor: Colors.blue,
+                                    btSize: const Size(130, 120),
+                                  ),
+                                ),
+
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
