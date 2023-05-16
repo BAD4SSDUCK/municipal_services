@@ -13,14 +13,23 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:municipal_track/code/MapTools/map_screen_prop.dart';
 
-class FaultTaskScreen extends StatefulWidget {
-  const FaultTaskScreen({Key? key}) : super(key: key);
+class FaultViewingScreen extends StatefulWidget {
+  const FaultViewingScreen({Key? key}) : super(key: key);
 
   @override
-  State<FaultTaskScreen> createState() => _FaultTaskScreenState();
+  State<FaultViewingScreen> createState() => _FaultViewingScreenState();
 }
 
-class _FaultTaskScreenState extends State<FaultTaskScreen> {
+final FirebaseAuth auth = FirebaseAuth.instance;
+final storageRef = FirebaseStorage.instance.ref();
+
+final User? user = auth.currentUser;
+final uid = user?.uid;
+final phone = user?.phoneNumber;
+String userID = uid as String;
+String userPhone = phone as String;
+
+class _FaultViewingScreenState extends State<FaultViewingScreen> {
 
   final _accountNumberController = TextEditingController();
   final _addressController = TextEditingController();
@@ -432,8 +441,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                 final DocumentSnapshot documentSnapshot =
                 streamSnapshot.data!.docs[index];
 
-                if(streamSnapshot.data!.docs[index]['faultResolved'] == false
-                    || documentSnapshot['faultStage'] == 1 || documentSnapshot['faultStage'] == 3){
+                if(streamSnapshot.data!.docs[index]['faultResolved'] == false && streamSnapshot.data!.docs[index]['reporterContact'] == phone){
                   return Card(
                     margin: const EdgeInsets.all(10),
                     child: Padding(
@@ -536,278 +544,90 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 5,),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      faultStage = documentSnapshot['faultStage'];
-                                      _updateReport(documentSnapshot);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.grey[350],
-                                      fixedSize: const Size(150, 10),),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.edit,
-                                          color: Theme.of(context).primaryColor,
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        const Text('Update Details', style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black,),),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5,),
+                                  // ElevatedButton(
+                                  //   onPressed: () {
+                                  //     faultStage = documentSnapshot['faultStage'];
+                                  //     _updateReport(documentSnapshot);
+                                  //   },
+                                  //   style: ElevatedButton.styleFrom(
+                                  //     backgroundColor: Colors.grey[350],
+                                  //     fixedSize: const Size(150, 10),),
+                                  //   child: Row(
+                                  //     children: [
+                                  //       Icon(
+                                  //         Icons.edit,
+                                  //         color: Theme.of(context).primaryColor,
+                                  //       ),
+                                  //       const SizedBox(width: 2,),
+                                  //       const Text('Update Details', style: TextStyle(
+                                  //         fontWeight: FontWeight.w600,
+                                  //         color: Colors.black,),),
+                                  //     ],
+                                  //   ),
+                                  // ),
+                                  // const SizedBox(width: 5,),
                                 ],
                               ),
 
-                              ElevatedButton(
-                                onPressed: () {
-                                  showDialog(
-                                      barrierDismissible: false,
-                                      context: context,
-                                      builder: (context) {
-                                        return
-                                          AlertDialog(
-                                            shape: const RoundedRectangleBorder(
-                                                borderRadius:
-                                                BorderRadius.all(Radius.circular(16))),
-                                            title: const Text("Call Reporter!"),
-                                            content: const Text(
-                                                "Would you like to call the individual who logged the fault?"),
-                                            actions: [
-                                              IconButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(
-                                                  Icons.cancel,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                              IconButton(
-                                                onPressed: () {
-                                                  reporterCellGiven = documentSnapshot['reporterContact'];
-
-                                                  final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                                  launchUrl(_tel);
-
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(
-                                                  Icons.done,
-                                                  color: Colors.green,
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                      });
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey[350],
-                                  fixedSize: const Size(150, 10),),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.call,
-                                      color: Colors.orange[700],
-                                    ),
-                                    const SizedBox(width: 2,),
-                                    const Text('Call Reporter', style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black,),),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 5,),
-
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                } else if(streamSnapshot.data!.docs[index]['faultResolved'] == false || documentSnapshot['faultStage'] == 3){
-                  return Card(
-                    margin: const EdgeInsets.all(10),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Center(
-                            child: Text(
-                              'Fault Information',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                          const SizedBox(height: 10,),
-                          Text(
-                            'Reporter Account Number: ${documentSnapshot['accountNumber']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Street Address of Fault: ${documentSnapshot['address']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'General Fault: ${documentSnapshot['generalFault']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Electrical Fault: ${documentSnapshot['electricityFaultDes']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Water Fault: ${documentSnapshot['waterFaultDes']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Resolve State: ${documentSnapshot['faultResolved'].toString()}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Date of Fault Report: ${documentSnapshot['dateReported']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-
-                          const SizedBox(height: 20,),
-                          Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      accountNumberRep = documentSnapshot['accountNumber'];
-                                      locationGivenRep = documentSnapshot['address'];
-
-                                      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                      //     content: Text('$accountNumber $locationGiven ')));
-
-                                      Navigator.push(context,
-                                          MaterialPageRoute(
-                                              builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                            //MapPage()
-                                          ));
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.grey[350],
-                                      fixedSize: const Size(150, 10),),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.map,
-                                          color: Colors.green[700],
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        const Text('Fault Location', style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black,),),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5,),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      faultStage = documentSnapshot['faultStage'];
-                                      _updateReport(documentSnapshot);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.grey[350],
-                                      fixedSize: const Size(150, 10),),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.edit,
-                                          color: Theme.of(context).primaryColor,
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        const Text('Update Details', style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black,),),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5,),
-                                ],
-                              ),
-
-                              ElevatedButton(
-                                onPressed: () {
-                                  showDialog(
-                                      barrierDismissible: false,
-                                      context: context,
-                                      builder: (context) {
-                                        return
-                                          AlertDialog(
-                                            shape: const RoundedRectangleBorder(
-                                                borderRadius:
-                                                BorderRadius.all(Radius.circular(16))),
-                                            title: const Text("Call User!"),
-                                            content: const Text(
-                                                "Would you like to call the individual who logged the fault?"),
-                                            actions: [
-                                              IconButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(
-                                                  Icons.cancel,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                              IconButton(
-                                                onPressed: () {
-                                                  reporterCellGiven = documentSnapshot['reporterContact'];
-
-                                                  final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                                  launchUrl(_tel);
-
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(
-                                                  Icons.done,
-                                                  color: Colors.green,
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                      });
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey[350],
-                                  fixedSize: const Size(115, 10),),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.call,
-                                      color: Colors.orange[700],
-                                    ),
-                                    const SizedBox(width: 2,),
-                                    const Text('Call User', style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black,),),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 5,),
+                              // ElevatedButton(
+                              //   onPressed: () {
+                              //     showDialog(
+                              //         barrierDismissible: false,
+                              //         context: context,
+                              //         builder: (context) {
+                              //           return
+                              //             AlertDialog(
+                              //               shape: const RoundedRectangleBorder(
+                              //                   borderRadius:
+                              //                   BorderRadius.all(Radius.circular(16))),
+                              //               title: const Text("Call Reporter!"),
+                              //               content: const Text(
+                              //                   "Would you like to call the individual who logged the fault?"),
+                              //               actions: [
+                              //                 IconButton(
+                              //                   onPressed: () {
+                              //                     Navigator.of(context).pop();
+                              //                   },
+                              //                   icon: const Icon(
+                              //                     Icons.cancel,
+                              //                     color: Colors.red,
+                              //                   ),
+                              //                 ),
+                              //                 IconButton(
+                              //                   onPressed: () {
+                              //                     reporterCellGiven = documentSnapshot['reporterContact'];
+                              //
+                              //                     final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
+                              //                     launchUrl(_tel);
+                              //
+                              //                     Navigator.of(context).pop();
+                              //                   },
+                              //                   icon: const Icon(
+                              //                     Icons.done,
+                              //                     color: Colors.green,
+                              //                   ),
+                              //                 ),
+                              //               ],
+                              //             );
+                              //         });
+                              //   },
+                              //   style: ElevatedButton.styleFrom(
+                              //     backgroundColor: Colors.grey[350],
+                              //     fixedSize: const Size(150, 10),),
+                              //   child: Row(
+                              //     children: [
+                              //       Icon(
+                              //         Icons.call,
+                              //         color: Colors.orange[700],
+                              //       ),
+                              //       const SizedBox(width: 2,),
+                              //       const Text('Call Reporter', style: TextStyle(
+                              //         fontWeight: FontWeight.w600,
+                              //         color: Colors.black,),),
+                              //     ],
+                              //   ),
+                              // ),
+                              // const SizedBox(width: 5,),
 
                             ],
                           ),
@@ -816,7 +636,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                     ),
                   );
                 }
-
                 else {
                   return const Card();
                 }

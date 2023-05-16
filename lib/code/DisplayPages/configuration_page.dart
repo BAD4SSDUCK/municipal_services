@@ -199,6 +199,8 @@ class _ConfigPageState extends State<ConfigPage> {
                     ),
                   ),
 
+
+                  ///Need to work on down down menu with information
                   // Visibility(
                   //   visible: visShow,
                   //     child: Container(
@@ -671,7 +673,7 @@ class _ConfigPageState extends State<ConfigPage> {
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Departments List'),
-              Tab(text: 'Users List'),
+              Tab(text: 'Official User List'),
             ],
           ),
         ),

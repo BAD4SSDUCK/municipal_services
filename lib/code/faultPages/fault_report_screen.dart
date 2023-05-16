@@ -368,12 +368,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                                       ],
                                                     ),
                                                     onPressed: () {
-                                                      _addNewFaultReport();
-
-                                                      Fluttertoast.showToast(
-                                                          msg: "Successfully Sent Report!",
-                                                          gravity: ToastGravity.CENTER);
-
                                                       Navigator.push(context,
                                                           MaterialPageRoute(builder: (context) => FaultImageUpload(propertyAddress: addressPass)));
 
