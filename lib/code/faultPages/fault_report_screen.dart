@@ -22,6 +22,7 @@ class ReportPropertyMenu extends StatefulWidget {
   State<ReportPropertyMenu> createState() => _ReportPropertyMenuState();
 }
 
+
 final FirebaseAuth auth = FirebaseAuth.instance;
 final storageRef = FirebaseStorage.instance.ref();
 
@@ -33,8 +34,7 @@ String userPhone = phone as String;
 
 class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
-  final _electricalFaultController = TextEditingController();
-  final _waterFaultController = TextEditingController();
+  final _faultDescriptionController = TextEditingController();
 
   final String _currentUser = userID;
 
@@ -48,9 +48,8 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
   String addressPass = '';
   String accountPass = '';
   String phoneNumPass = '';
+  String dropdownValue = 'Select Fault Type';
 
-  bool elecDesVis = true;
-  bool waterDesVis = false;
   bool buttonEnabled = true;
 
   //this widget is for displaying a property field of information with an icon next to it, NB. the icon is to make it look good
@@ -92,22 +91,28 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  //Text controllers for the properties db visibility only available for the electric and water readings
-                  Visibility(
-                    visible: elecDesVis,
-                    child: TextField(
-                      controller: _electricalFaultController,
-                      decoration: const InputDecoration(
-                          labelText: 'Electrical Fault Description'),
-                    ),
+                  DropdownButtonFormField <String>(
+                    value: dropdownValue,
+                    items: <String>['Select Fault Type', 'Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(
+                          value,
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        dropdownValue = newValue!;
+                      });
+                    },
                   ),
-                  Visibility(
-                    visible: waterDesVis,
-                    child: TextField(
-                      controller: _waterFaultController,
-                      decoration: const InputDecoration(
-                          labelText: 'Water Fault Description'),
-                    ),
+                  TextField(
+                    controller: _faultDescriptionController,
+                    decoration: const InputDecoration(
+                        labelText: 'Electrical Fault Description'),
                   ),
                   const SizedBox(height: 20,),
                   ElevatedButton(
@@ -119,45 +124,42 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                       final String uid = _currentUser;
                       String accountNumber = accountPass;
                       final String addressFault = addressPass;
-                      final String electricityFaultDes = _electricalFaultController.text;
-                      final String waterFaultDes = _waterFaultController.text;
-                      String faultType = '';
+                      final String faultDescription = _faultDescriptionController.text;
+                      String faultType = dropdownValue;
 
-                      if(elecDesVis){
-                        faultType = 'Electricity';
-                      }else if(waterDesVis){
-                        faultType = 'Water & Sanitation';
+                      if (faultType != 'Select Fault Type'){
+                        if (uid == _currentUser) {
+                          await _faultData.add({
+                            "uid": uid,
+                            "accountNumber": accountNumber,
+                            "address": addressFault,
+                            "reporterContact": userPhone,
+                            "depComment1": '',
+                            "depComment2": '',
+                            "handlerCom1": '',
+                            "handlerCom2": '',
+                            "faultType": faultType,
+                            "faultDescription": faultDescription,
+                            "dateReported": formattedDate,
+                            "depAllocated": '',
+                            "faultResolved": false,
+                            "faultStage": 1,
+                          });
+                        }
+                        _faultDescriptionController.text ='';
+                        dropdownValue = 'Select Fault Type';
+
+                        Fluttertoast.showToast(msg: "Fault has been reported successfully!",
+                          gravity: ToastGravity.CENTER,);
+
+
+                        //Navigator.of(context).pop();
+                        Get.back();
+                      } else {
+                        Fluttertoast.showToast(msg: "Please Select Fault Type being Reported!!",
+                          gravity: ToastGravity.CENTER,);
                       }
 
-                      if (uid == _currentUser) {
-                        await _faultData.add({
-                          "uid": uid,
-                          "accountNumber": accountNumber,
-                          "address": addressFault,
-                          "reporterContact": userPhone,
-                          "depComment1": '',
-                          "depComment2": '',
-                          "handlerCom1": '',
-                          "handlerCom2": '',
-                          "faultType": faultType,
-                          "generalFault": '',
-                          "electricityFaultDes": electricityFaultDes,
-                          "waterFaultDes": waterFaultDes,
-                          "dateReported": formattedDate,
-                          "depAllocated": '',
-                          "faultResolved": false,
-                          "faultStage": 1,
-                        });
-                      }
-
-                      _electricalFaultController.text = '';
-                      _waterFaultController.text = '';
-
-                      Fluttertoast.showToast(msg: "Fault has been reported successfully!",
-                        gravity: ToastGravity.CENTER,);
-
-                      //Navigator.of(context).pop();
-                      Get.back();
                     },
                   ),
                 ],
@@ -182,67 +184,96 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Row(
+                child: Column(
                   children: [
-                    ElevatedIconButton(
-                      onPress: () async {
-                        Navigator.push(context,
-                            MaterialPageRoute(
-                                builder: (context) => GeneralFaultReporting()));
-                      },
-                      labelText: 'General Fault',
-                      fSize: 20,
-                      faIcon: const FaIcon(Icons.report_problem),
-                      fgColor: Colors.orangeAccent,
-                      btSize: const Size(250, 60),
-                    ),
-                    ElevatedIconButton(
-                      onPress: () {
-                        showDialog(
-                            barrierDismissible: false,
-                            context: context,
-                            builder: (context) {
-                              return
-                                AlertDialog(
-                                  shape: const RoundedRectangleBorder(
-                                      borderRadius:
-                                      BorderRadius.all(Radius.circular(16))),
-                                  title: const Text("Call Report Center!"),
-                                  content: const Text(
-                                      "Would you like to call the report center directly?"),
-                                  actions: [
-                                    IconButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      icon: const Icon(
-                                        Icons.cancel,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                    IconButton(
-                                      onPressed: () {
-                                        final Uri _tel = Uri.parse(
-                                            'tel:+27${0800001868}');
-                                        launchUrl(_tel);
+                    Row(
+                      children: [
 
-                                        Navigator.of(context).pop();
-                                        Get.back();
-                                      },
-                                      icon: const Icon(
-                                        Icons.done,
-                                        color: Colors.green,
-                                      ),
-                                    ),
-                                  ],
-                                );
+                        DropdownButtonFormField <String>(
+                          value: dropdownValue,
+                          items: <String>['Select Fault Type', 'Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
+                              .map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(
+                                value,
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              dropdownValue = newValue!;
                             });
-                      },
-                      labelText: '',
-                      fSize: 0,
-                      faIcon: const FaIcon(Icons.phone),
-                      fgColor: Colors.orangeAccent,
-                      btSize: const Size(60, 60),
+                          },
+                        ),
+
+                        ElevatedIconButton(
+                          onPress: () async {
+                            if(dropdownValue == 'Select Fault Type'){
+                              Fluttertoast.showToast(msg: "Please Select The Fault Type First!",
+                                gravity: ToastGravity.CENTER,);
+                            } else{
+                              Navigator.push(context,
+                                  MaterialPageRoute(
+                                      builder: (context) => GeneralFaultReporting(faultTypeSelected: dropdownValue,)));
+                            }
+                          },
+                          labelText: 'Report Fault',
+                          fSize: 18,
+                          faIcon: const FaIcon(Icons.report_problem),
+                          fgColor: Colors.orangeAccent,
+                          btSize: const Size(200, 60),
+                        ),
+                        ElevatedIconButton(
+                          onPress: () {
+                            showDialog(
+                                barrierDismissible: false,
+                                context: context,
+                                builder: (context) {
+                                  return
+                                    AlertDialog(
+                                      shape: const RoundedRectangleBorder(
+                                          borderRadius:
+                                          BorderRadius.all(Radius.circular(16))),
+                                      title: const Text("Call Report Center!"),
+                                      content: const Text(
+                                          "Would you like to call the report center directly?"),
+                                      actions: [
+                                        IconButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          icon: const Icon(
+                                            Icons.cancel,
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed: () {
+                                            final Uri _tel = Uri.parse(
+                                                'tel:+27${0800001868}');
+                                            launchUrl(_tel);
+
+                                            Navigator.of(context).pop();
+                                            Get.back();
+                                          },
+                                          icon: const Icon(
+                                            Icons.done,
+                                            color: Colors.green,
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                });
+                          },
+                          labelText: '',
+                          fSize: 0,
+                          faIcon: const FaIcon(Icons.phone),
+                          fgColor: Colors.orangeAccent,
+                          btSize: const Size(60, 60),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -310,31 +341,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                 ),
                                 const SizedBox(height: 20,),
 
-                                ///button enabled only when the property bill is paid off
-                                Center(
-                                  child: ElevatedIconButton(
-                                    onPress: buttonEnabled ? () {
-                                      userPass = _currentUser;
-                                      addressPass = documentSnapshot['address'];
-                                      accountPass = documentSnapshot['account number'];
-                                      phoneNumPass = documentSnapshot['cell number'];
-                                      elecDesVis = true;
-
-                                      waterDesVis = false;
-                                      _addNewFaultReport();
-                                    } : () {
-                                      Fluttertoast.showToast(msg: "Outstanding bill on property, Fault Reporting unavailable!",
-                                        gravity: ToastGravity.CENTER,);
-                                    },
-                                    labelText: 'Report Electrical Fault',
-                                    fSize: 20,
-                                    faIcon: const FaIcon(Icons.electric_bolt),
-                                    fgColor: Colors.amberAccent,
-                                    btSize: const Size(280, 60),
-                                  ),
-                                ),
-                                const SizedBox(height: 10,),
-
                                 ///Report adding button
                                 Center(
                                     child: ElevatedIconButton(
@@ -343,62 +349,16 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                         addressPass = documentSnapshot['address'];
                                         accountPass = documentSnapshot['account number'];
                                         phoneNumPass = documentSnapshot['cell number'];
-                                        elecDesVis = false;
-                                        waterDesVis = true;
 
-                                        showDialog(
-                                            barrierDismissible: false,
-                                            context: context,
-                                            builder: (context) {
-                                              return AlertDialog(
-                                                shape: const RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.all(Radius.circular(16))),
-                                                title: const Text("Complete Your Report!"),
-                                                content: const Text(
-                                                    "Would you like to take a photo of the fault if possible?"),
-                                                actions: [
-                                                  TextButton(
-                                                    child: Row(
-                                                      children: const [
-                                                        Icon(
-                                                          Icons.camera_alt_outlined,
-                                                          color: Colors.tealAccent,
-                                                        ),
-                                                        Text('Take Photo'),
-                                                      ],
-                                                    ),
-                                                    onPressed: () {
-                                                      Navigator.push(context,
-                                                          MaterialPageRoute(builder: (context) => FaultImageUpload(propertyAddress: addressPass)));
+                                        _addNewFaultReport();
 
-                                                      Navigator.of(context).pop(context);
-                                                      // Navigator.of(context).pop(context);
-                                                    },
-                                                  ),
-                                                  IconButton(
-                                                    icon: const Icon(
-                                                      Icons.cancel, color: Colors.red,
-                                                    ),
-                                                    onPressed: () {
-                                                      _addNewFaultReport();
-
-                                                      Fluttertoast.showToast(
-                                                          msg: "Successfully Sent Report!\nFault Image Not Added.",
-                                                          gravity: ToastGravity.CENTER);
-
-                                                      Navigator.of(context).pop(context);
-                                                    },
-                                                  ),
-                                                ],
-                                              );
-                                            });
                                       } : () {
                                         Fluttertoast.showToast(msg: "Outstanding bill on property, Fault Reporting unavailable!",
                                           gravity: ToastGravity.CENTER,);
                                       },
-                                      labelText: 'Report Water Fault',
-                                      fSize: 20,
-                                      faIcon: const FaIcon(Icons.water_drop),
+                                      labelText: 'Report Property Fault',
+                                      fSize: 18,
+                                      faIcon: const FaIcon(Icons.report),
                                       fgColor: Colors.blue,
                                       btSize: const Size(280, 60),
                                     )

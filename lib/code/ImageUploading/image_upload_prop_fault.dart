@@ -87,7 +87,7 @@ class _FaultImageUploadState extends State<FaultImageUpload> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Required Meter Image'),
+        title: const Text('Required Fault Image'),
         backgroundColor: Colors.green,
       ),
       body: SingleChildScrollView(

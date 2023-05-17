@@ -22,7 +22,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 class GeneralFaultReporting extends StatefulWidget {
 
-  const GeneralFaultReporting({Key? key}) : super(key: key);
+  const GeneralFaultReporting({Key? key, required this.faultTypeSelected}) : super(key: key);
+
+  final String faultTypeSelected;
 
   @override
   State<GeneralFaultReporting> createState() => _GeneralFaultReportingState();
@@ -109,7 +111,7 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
                     Fluttertoast.showToast(msg: "Please tap on the image area and select the image to upload!", gravity: ToastGravity.CENTER);
                   }
                 } : (){
-                  Fluttertoast.showToast(msg: "Please fill all fields!", gravity: ToastGravity.CENTER);
+                  Fluttertoast.showToast(msg: "Please allow location access!", gravity: ToastGravity.CENTER);
                 },
                 child: Container(
                   padding: const EdgeInsets.all(20),
@@ -120,6 +122,35 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
                   child: const Center(
                     child: Text(
                       'Report Fault With Image',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 5,),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25.0),
+              child: GestureDetector(
+                onTap: buttonEnabled? () {
+                  showPressed(context);
+                } : (){
+                  Fluttertoast.showToast(msg: "Please allow location access!", gravity: ToastGravity.CENTER);
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'Report Fault Without Image',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -153,7 +184,6 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
     setState(() {
       if (pickedFile != null) {
         _photo = File(pickedFile.path);
-        uploadFaultFile();
       } else {
         print('No image selected.');
       }
@@ -167,7 +197,6 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
     setState(() {
       if (pickedFile != null) {
         _photo = File(pickedFile.path);
-        uploadFaultFile();
       } else {
         print('No image selected.');
       }
@@ -198,14 +227,13 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
         "uid": _currentUser,
         "accountNumber": '',
         "address": addressFault,
+        "faultType": widget.faultTypeSelected,
         "reporterContact": userPhone,
         "depComment1": '',
         "depComment2": '',
         "handlerCom1": '',
         "handlerCom2": '',
-        "generalFault": faultDescription,
-        "electricityFaultDes": '',
-        "waterFaultDes": '',
+        "faultDescription": faultDescription,
         "depAllocated": '',
         "faultResolved": false,
         "dateReported": formattedDate,
@@ -278,6 +306,7 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
     Address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
   }
 
+
   void _showPicker(context) {
     showModalBottomSheet(
         context: context,
@@ -309,7 +338,7 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
   }
 
   Future<void> showPressed(BuildContext context) async{
-    String dropdownValue = 'Electricity';
+    String dropdownValue = 'Select Fault Type';
 
      showModalBottomSheet(
         isScrollControlled: true,
@@ -340,7 +369,7 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
                     ),
                   ),
                   Visibility(
-                    visible: visHide,
+                    visible: visShow,
                     child: TextField(
                       controller: _addressController,
                       decoration: const InputDecoration(
@@ -352,7 +381,7 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
                     child: const Text('Type Of Fault'),
                   ),
                   Visibility(
-                    visible: visShow,
+                    visible: visHide,
                     child: DropdownButtonFormField <String>(
                       value: dropdownValue,
                       items: <String>['Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
@@ -379,7 +408,7 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
                       const TextInputType.numberWithOptions(),
                       controller: _descriptionController,
                       decoration: const InputDecoration(
-                        labelText: 'Fault Description',),
+                        labelText: 'Enter Fault Description',),
                     ),
                   ),
                   Visibility(

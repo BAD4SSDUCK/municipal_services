@@ -23,6 +23,15 @@ class FaultViewingScreen extends StatefulWidget {
 final FirebaseAuth auth = FirebaseAuth.instance;
 final storageRef = FirebaseStorage.instance.ref();
 
+final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
+
+class FireStorageService extends ChangeNotifier{
+  FireStorageService();
+  static Future<String> loadImage(BuildContext context, String image) async{
+    return await FirebaseStorage.instance.ref().child(image).getDownloadURL();
+  }
+}
+
 final User? user = auth.currentUser;
 final uid = user?.uid;
 final phone = user?.phoneNumber;
@@ -43,6 +52,9 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
   final CollectionReference _faultData =
   FirebaseFirestore.instance.collection('faultReporting');
 
+  final CollectionReference _listUser =
+  FirebaseFirestore.instance.collection('users');
+
   String accountNumberRep = ' ';
   String locationGivenRep = ' ';
   int faultStage = 0;
@@ -57,18 +69,11 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
   bool visStage3 = false;
   bool visStage4 = false;
 
-  final CollectionReference _listUser =
-  FirebaseFirestore.instance.collection('users');
-
-
-  void initApprover(String stateGivenCheck){
-
+  void initApprove(String stateGivenCheck){
     if(stateGivenCheck == 'manager'){
       managerAcc = true;
     }
-
   }
-
 
   //this widget is for displaying a property field of information with an icon next to it, NB. the icon is to make it look good
   //it is called within a listview page widget
@@ -91,6 +96,16 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
         ],
       ),
     );
+  }
+
+  Future<Widget> _getImage(BuildContext context, String imageName) async{
+    Image image;
+    final value = await FireStorageService.loadImage(context, imageName);
+    image =Image.network(
+      value.toString(),
+      fit: BoxFit.fill,
+    );
+    return image;
   }
 
   Future<void> _updateReport([DocumentSnapshot? documentSnapshot]) async {
@@ -422,6 +437,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
         });
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -476,24 +492,79 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
-                          Text(
-                            'Public Fault: ${documentSnapshot['generalFault']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
+
+                          Column(
+                            children: [
+                              if(documentSnapshot['faultDescription'] != "")...[
+                                Text(
+                                  'Fault Description: ${documentSnapshot['faultDescription']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                              ] else ...[
+
+                              ],
+                            ],
                           ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Electrical Fault: ${documentSnapshot['electricityFaultDes']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
+
+                          Column(
+                            children: [
+                              if(documentSnapshot['handlerCom1'] != "")...[
+                                Text(
+                                  'Handler Comment: ${documentSnapshot['handlerCom1']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                              ] else ...[
+
+                              ],
+                            ],
                           ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Water Fault: ${documentSnapshot['waterFaultDes']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
+                          Column(
+                            children: [
+                              if(documentSnapshot['depComment1'] != "")...[
+                                Text(
+                                  'Department Comment 1: ${documentSnapshot['depComment1']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                              ] else ...[
+
+                              ],
+                            ],
                           ),
-                          const SizedBox(height: 5,),
+                          Column(
+                            children: [
+                              if(documentSnapshot['handlerCom2'] != "")...[
+                                Text(
+                                  'Handler Final Comment: ${documentSnapshot['handlerCom2']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                              ] else ...[
+
+                              ],
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              if(documentSnapshot['depComment2'] != "")...[
+                                Text(
+                                  'Department Comment 2: ${documentSnapshot['depComment2']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                              ] else ...[
+
+                              ],
+                            ],
+                          ),
+
                           Text(
                             'Resolve State: ${documentSnapshot['faultResolved'].toString()}',
                             style: const TextStyle(
@@ -504,6 +575,47 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                             'Date of Fault Report: ${documentSnapshot['dateReported']}',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+
+                          InkWell(
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 5),
+                              height: 180,
+                              child: Center(
+                                child: Card(
+                                  color: Colors.blue,
+                                  semanticContainer: true,
+                                  clipBehavior: Clip.antiAliasWithSaveLayer,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                  elevation: 0,
+                                  margin: const EdgeInsets.all(10.0),
+                                  child: FutureBuilder(
+                                      future: _getImage(
+                                        ///Firebase image location must be changed to display image based on the address
+                                          context, 'files/faultImages/property/${documentSnapshot['address']}'),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.hasError) {
+                                          return const Text('Image not uploaded for Fault.'); //${snapshot.error} if error needs to be displayed instead
+                                        }
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.done) {
+                                          return Container(
+                                            child: snapshot.data,
+                                          );
+                                        }
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          return Container(
+                                            child: const CircularProgressIndicator(),);
+                                        }
+                                        return Container();
+                                      }
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
 
                           const SizedBox(height: 20,),
@@ -517,9 +629,6 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                                     onPressed: () {
                                       accountNumberRep = documentSnapshot['accountNumber'];
                                       locationGivenRep = documentSnapshot['address'];
-
-                                      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                      //     content: Text('$accountNumber $locationGiven ')));
 
                                       Navigator.push(context,
                                           MaterialPageRoute(
