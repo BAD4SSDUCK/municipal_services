@@ -62,6 +62,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
 
   bool visShow = true;
   bool visHide = false;
+  bool imageVisibility = true;
 
   bool managerAcc = false;
   bool visStage1 = false;
@@ -448,7 +449,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
       ),
 
       body: StreamBuilder(
-        stream: _faultData.snapshots(),
+        stream: _faultData.orderBy('dateReported', descending: true).snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
           if (streamSnapshot.hasData) {
             return ListView.builder(
@@ -577,46 +578,59 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
 
-                          InkWell(
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 5),
-                              height: 180,
-                              child: Center(
-                                child: Card(
-                                  color: Colors.blue,
-                                  semanticContainer: true,
-                                  clipBehavior: Clip.antiAliasWithSaveLayer,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10.0),
-                                  ),
-                                  elevation: 0,
-                                  margin: const EdgeInsets.all(10.0),
-                                  child: FutureBuilder(
-                                      future: _getImage(
-                                        ///Firebase image location must be changed to display image based on the address
-                                          context, 'files/faultImages/property/${documentSnapshot['address']}'),
-                                      builder: (context, snapshot) {
-                                        if (snapshot.hasError) {
-                                          return const Text('Image not uploaded for Fault.'); //${snapshot.error} if error needs to be displayed instead
-                                        }
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.done) {
-                                          return Container(
-                                            child: snapshot.data,
-                                          );
-                                        }
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.waiting) {
-                                          return Container(
-                                            child: const CircularProgressIndicator(),);
-                                        }
-                                        return Container();
-                                      }
+                          Column(
+                            children: [
+                              if(documentSnapshot['faultDescription'] != "")...[
+                                Visibility(
+                                  visible: imageVisibility,
+                                  child: InkWell(
+                                    child: Container(
+                                      margin: const EdgeInsets.only(bottom: 5),
+                                      height: 180,
+                                      child: Center(
+                                        child: Card(
+                                          color: Colors.blue,
+                                          semanticContainer: true,
+                                          clipBehavior: Clip.antiAliasWithSaveLayer,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10.0),
+                                          ),
+                                          elevation: 0,
+                                          margin: const EdgeInsets.all(10.0),
+                                          child: FutureBuilder(
+                                              future: _getImage(
+                                                ///Firebase image location must be changed to display image based on the address
+                                                  context, 'files/faultImages/property/${documentSnapshot['address']}'),
+                                              builder: (context, snapshot) {
+                                                if (snapshot.hasError) {
+                                                  imageVisibility = false;
+                                                  //return const Text('Image not uploaded for Fault.'); //${snapshot.error} if error needs to be displayed instead
+                                                }
+                                                if (snapshot.connectionState ==
+                                                    ConnectionState.done) {
+                                                  return Container(
+                                                    child: snapshot.data,
+                                                  );
+                                                }
+                                                if (snapshot.connectionState ==
+                                                    ConnectionState.waiting) {
+                                                  return Container(
+                                                    child: const CircularProgressIndicator(),);
+                                                }
+                                                return Container();
+                                              }
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
+                              ] else ...[
+
+                              ],
+                            ],
                           ),
+
 
                           const SizedBox(height: 20,),
                           Column(
@@ -754,8 +768,18 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
           return const Padding(
             padding: EdgeInsets.all(10.0),
             child: Center(
-                child: CircularProgressIndicator()),
-          );
+                child: Card(
+                  margin: EdgeInsets.all(10),
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text(
+                        'No Faults Reported',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                      ),                      ),
+                    ),
+                  ),
+                ),);
         },
       ),
     );

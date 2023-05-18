@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_prop_fault.dart';
+import 'package:municipal_track/code/faultPages/fault_viewing_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
@@ -40,6 +41,9 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
   final CollectionReference _faultData =
   FirebaseFirestore.instance.collection('faultReporting');
+
+  final CollectionReference _deptInfo =
+  FirebaseFirestore.instance.collection('departments');
 
   final CollectionReference _propList =
   FirebaseFirestore.instance.collection('properties');
@@ -112,55 +116,130 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                   TextField(
                     controller: _faultDescriptionController,
                     decoration: const InputDecoration(
-                        labelText: 'Electrical Fault Description'),
+                        labelText: 'Fault Description'),
                   ),
                   const SizedBox(height: 20,),
-                  ElevatedButton(
-                    child: const Text('Report'),
-                    onPressed: () async {
-                      DateTime now = DateTime.now();
-                      String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+                  Center(
+                    child: Row(
+                      children: [
+                        ElevatedButton(
+                          child: const Text('Report With Photo'),
+                          onPressed: () async {
+                            DateTime now = DateTime.now();
+                            String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
 
-                      final String uid = _currentUser;
-                      String accountNumber = accountPass;
-                      final String addressFault = addressPass;
-                      final String faultDescription = _faultDescriptionController.text;
-                      String faultType = dropdownValue;
+                            final String uid = _currentUser;
+                            String accountNumber = accountPass;
+                            final String addressFault = addressPass;
+                            final String faultDescription = _faultDescriptionController.text;
+                            String faultType = dropdownValue;
 
-                      if (faultType != 'Select Fault Type'){
-                        if (uid == _currentUser) {
-                          await _faultData.add({
-                            "uid": uid,
-                            "accountNumber": accountNumber,
-                            "address": addressFault,
-                            "reporterContact": userPhone,
-                            "depComment1": '',
-                            "depComment2": '',
-                            "handlerCom1": '',
-                            "handlerCom2": '',
-                            "faultType": faultType,
-                            "faultDescription": faultDescription,
-                            "dateReported": formattedDate,
-                            "depAllocated": '',
-                            "faultResolved": false,
-                            "faultStage": 1,
-                          });
-                        }
-                        _faultDescriptionController.text ='';
-                        dropdownValue = 'Select Fault Type';
+                            if (faultType != 'Select Fault Type'){
+                              if(faultDescription!=''){
+                                if (uid == _currentUser) {
+                                  await _faultData.add({
+                                    "uid": uid,
+                                    "accountNumber": accountNumber,
+                                    "address": addressFault,
+                                    "reporterContact": userPhone,
+                                    "depComment1": '',
+                                    "depComment2": '',
+                                    "handlerCom1": '',
+                                    "handlerCom2": '',
+                                    "faultType": faultType,
+                                    "faultDescription": faultDescription,
+                                    "dateReported": formattedDate,
+                                    "depAllocated": '',
+                                    "faultResolved": false,
+                                    "faultStage": 1,
+                                  });
 
-                        Fluttertoast.showToast(msg: "Fault has been reported successfully!",
-                          gravity: ToastGravity.CENTER,);
+                                }
+                                _faultDescriptionController.text ='';
+                                dropdownValue = 'Select Fault Type';
+
+                                Fluttertoast.showToast(msg: "Fault has been reported successfully!",
+                                  gravity: ToastGravity.CENTER,);
 
 
-                        //Navigator.of(context).pop();
-                        Get.back();
-                      } else {
-                        Fluttertoast.showToast(msg: "Please Select Fault Type being Reported!!",
-                          gravity: ToastGravity.CENTER,);
-                      }
+                                // if (!mounted) return;
+                                // Navigator.push(context,
+                                //     MaterialPageRoute(builder: (context) => FaultImageUpload(propertyAddress: addressFault)
+                                //     ));
+                                //
+                                // final navigator = Navigator.of(context);
+                                // navigator.popAndPushNamed(FaultImageUpload(propertyAddress: addressFault) as String);
 
-                    },
+                                // Navigator.of(context).popAndPushNamed(FaultImageUpload(propertyAddress: addressFault) as String);
+
+                                Get.back();
+
+                              } else {
+                                Fluttertoast.showToast(msg: "Please Give A Fault Description!",
+                                  gravity: ToastGravity.CENTER,);
+                              }
+                            } else {
+                              Fluttertoast.showToast(msg: "Please Select Fault Type being Reported!!",
+                                gravity: ToastGravity.CENTER,);
+                            }
+                          },
+                        ),
+
+                        const SizedBox(width: 20,),
+
+                        ElevatedButton(
+                          child: const Text('Report'),
+                          onPressed: () async {
+                            DateTime now = DateTime.now();
+                            String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+
+                            final String uid = _currentUser;
+                            String accountNumber = accountPass;
+                            final String addressFault = addressPass;
+                            final String faultDescription = _faultDescriptionController.text;
+                            String faultType = dropdownValue;
+
+                            if (faultType != 'Select Fault Type'){
+                              if(faultDescription!=''){
+                                if (uid == _currentUser) {
+                                  await _faultData.add({
+                                    "uid": uid,
+                                    "accountNumber": accountNumber,
+                                    "address": addressFault,
+                                    "reporterContact": userPhone,
+                                    "depComment1": '',
+                                    "depComment2": '',
+                                    "handlerCom1": '',
+                                    "handlerCom2": '',
+                                    "faultType": faultType,
+                                    "faultDescription": faultDescription,
+                                    "dateReported": formattedDate,
+                                    "depAllocated": '',
+                                    "faultResolved": false,
+                                    "faultStage": 1,
+                                  });
+
+                                }
+                                _faultDescriptionController.text ='';
+                                dropdownValue = 'Select Fault Type';
+
+                                Fluttertoast.showToast(msg: "Fault has been reported successfully!",
+                                  gravity: ToastGravity.CENTER,);
+
+                                //Navigator.of(context).pop();
+                                Get.back();
+                              } else {
+                                Fluttertoast.showToast(msg: "Please Give A Fault Description!",
+                                  gravity: ToastGravity.CENTER,);
+                              }
+                            } else {
+                              Fluttertoast.showToast(msg: "Please Select Fault Type being Reported!!",
+                                gravity: ToastGravity.CENTER,);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -186,27 +265,64 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
                   children: [
+                    const Center(
+                      child: Text(
+                        'Report Public Fault',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    const SizedBox(height: 10,),
+
                     Row(
                       children: [
-
-                        DropdownButtonFormField <String>(
-                          value: dropdownValue,
-                          items: <String>['Select Fault Type', 'Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
-                              .map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(
-                                value,
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              dropdownValue = newValue!;
-                            });
-                          },
+                        Column(
+                          children: [
+                            DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.lightGreen,
+                              border: Border.all(color: Colors.black38, width:3),
+                              borderRadius: BorderRadius.circular(50),
+                              boxShadow: const <BoxShadow>[
+                                BoxShadow(
+                                  color: Color.fromRGBO(0, 0, 0, 0.57),
+                                  blurRadius: 5),
+                              ]
+                            ),
+                            // child: DropdownButton <String>( //DropdownButtonFormField
+                            //   value: dropdownValue,
+                            //   items: <String>['Select Fault Type', 'Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
+                            //       .map<DropdownMenuItem<String>>((String value) {
+                            //         return DropdownMenuItem<String>(
+                            //           value: value,
+                            //           child: Text(
+                            //             value,
+                            //             style: const TextStyle(fontSize: 16),
+                            //           ),
+                            //         );
+                            //       }).toList(),
+                            //   onChanged: (String? newValue) {
+                            //     setState(() {
+                            //       dropdownValue = newValue!;
+                            //     });
+                            //     },
+                            //   icon: const Padding(
+                            //     padding: EdgeInsets.only(left: 20),
+                            //     child: Icon(Icons.arrow_circle_down_sharp),
+                            //   ),
+                            //   iconEnabledColor: Colors.white,
+                            //   style: const TextStyle(
+                            //     color: Colors.white,
+                            //     fontSize: 18
+                            //   ),
+                            //   dropdownColor: Colors.green,
+                            //   underline: Container(),
+                            //   isExpanded: true,
+                            //
+                            // ),
+                          ),
+                          ]
                         ),
+
 
                         ElevatedIconButton(
                           onPress: () async {
@@ -219,11 +335,29 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                       builder: (context) => GeneralFaultReporting(faultTypeSelected: dropdownValue,)));
                             }
                           },
-                          labelText: 'Report Fault',
-                          fSize: 18,
+                          labelText: 'Report',
+                          fSize: 16,
                           faIcon: const FaIcon(Icons.report_problem),
                           fgColor: Colors.orangeAccent,
-                          btSize: const Size(200, 60),
+                          btSize: const Size(50, 50),
+                        ),
+
+                      ],
+                    ),
+
+                    Row(
+                      children: [
+                        ElevatedIconButton(
+                          onPress: () {
+                            Navigator.push(context,
+                                MaterialPageRoute(
+                                    builder: (context) => FaultViewingScreen()));
+                          },
+                          labelText: 'Current Reports',
+                          fSize: 15,
+                          faIcon: const FaIcon(Icons.list),
+                          fgColor: Colors.green,
+                          btSize: const Size(50, 50),
                         ),
                         ElevatedIconButton(
                           onPress: () {
@@ -267,14 +401,16 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                     );
                                 });
                           },
-                          labelText: '',
-                          fSize: 0,
+                          labelText: 'Call Center',
+                          fSize: 16,
                           faIcon: const FaIcon(Icons.phone),
                           fgColor: Colors.orangeAccent,
-                          btSize: const Size(60, 60),
+                          btSize: const Size(50, 50),
                         ),
+
                       ],
                     ),
+
                   ],
                 ),
               ),
@@ -316,10 +452,10 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                 const Center(
                                   child: Text(
                                     'Property Information',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                                   ),
                                 ),
-                                const SizedBox(height: 10,),
+                                const SizedBox(height: 20,),
                                 Text(
                                   'Account Number: ' + documentSnapshot['account number'],
                                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
@@ -357,13 +493,12 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                           gravity: ToastGravity.CENTER,);
                                       },
                                       labelText: 'Report Property Fault',
-                                      fSize: 18,
+                                      fSize: 16,
                                       faIcon: const FaIcon(Icons.report),
                                       fgColor: Colors.blue,
-                                      btSize: const Size(280, 60),
+                                      btSize: const Size(200, 50),
                                     )
                                 ),
-                                const SizedBox(height: 5,),
                               ],
                             ),
                           ),

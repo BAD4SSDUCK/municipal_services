@@ -460,6 +460,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
 
                 eMeterNumber = documentSnapshot['meter number'];
                 wMeterNumber = documentSnapshot['water meter number'];
+                imgFolder = documentSnapshot['cell number'];
 
                 String billMessage;///A check for if payment is outstanding or not
                 if(documentSnapshot['eBill'] != ''){

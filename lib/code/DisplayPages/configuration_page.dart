@@ -60,6 +60,9 @@ class _ConfigPageState extends State<ConfigPage> {
   final CollectionReference _deptInfo =
   FirebaseFirestore.instance.collection('departments');
 
+  final CollectionReference _deptRolls =
+  FirebaseFirestore.instance.collection('departmentRolls');
+
   String selectedDept = "0";
   String selectedRoll = "0";
 
@@ -498,7 +501,7 @@ class _ConfigPageState extends State<ConfigPage> {
     Fluttertoast.showToast(msg: "You have successfully deleted an account!");
   }
 
-  Future<void> _createDeptInfo([DocumentSnapshot? documentSnapshot]) async {
+  Future<void> _createDeptRolls([DocumentSnapshot? documentSnapshot]) async {
     _deptNameController.text = '';
     _userRollController.text = '';
 
@@ -555,7 +558,7 @@ class _ConfigPageState extends State<ConfigPage> {
                         const bool official = true;
 
                         if (deptName != null) {
-                          await _deptInfo.add({
+                          await _deptRolls.add({
                             "deptName": deptName,
                             "userRoll": userRoll,
                             "official": official,
@@ -575,7 +578,7 @@ class _ConfigPageState extends State<ConfigPage> {
         });
   }
 
-  Future<void> _updateDeptInfo([DocumentSnapshot? documentSnapshot]) async {
+  Future<void> _updateDeptRolls([DocumentSnapshot? documentSnapshot]) async {
     if (documentSnapshot != null) {
       _deptNameController.text = documentSnapshot['deptName'];
       _userRollController.text = documentSnapshot['userRoll'];
@@ -634,7 +637,7 @@ class _ConfigPageState extends State<ConfigPage> {
                         const bool official = true;
 
                         if (deptName != null) {
-                          await _usersList
+                          await _deptRolls
                               .doc(documentSnapshot!.id)
                               .update({
                             "deptName": deptName,
@@ -656,7 +659,77 @@ class _ConfigPageState extends State<ConfigPage> {
         });
   }
 
-  Future<void> _deleteDeptInfo(String deptID) async {
+  Future<void> _deleteDeptRoll(String deptID) async {
+    await _deptInfo.doc(deptID).delete();
+    Fluttertoast.showToast(msg: "You have successfully deleted a department & roll!");
+  }
+
+  Future<void> _createDept([DocumentSnapshot? documentSnapshot]) async {
+    _deptNameController.text = '';
+
+    await showModalBottomSheet(
+        isScrollControlled: true,
+        context: context,
+        builder: (BuildContext ctx) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: 20,
+                  left: 20,
+                  right: 20,
+                  bottom: MediaQuery
+                      .of(ctx)
+                      .viewInsets
+                      .bottom + 20
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(
+                    child: Text(
+                      'Create Department',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visShow,
+                    child: TextField(
+                      controller: _deptNameController,
+                      decoration: const InputDecoration(
+                          labelText: 'Department'),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  ElevatedButton(
+                      child: const Text('Create'),
+                      onPressed: () async {
+                        final String deptName = _deptNameController.text;
+                        const bool official = true;
+
+                        if (deptName != null) {
+                          await _deptInfo.add({
+                            "deptName": deptName,
+                            "official": official,
+                          });
+
+                          _deptNameController.text = '';
+
+                          Navigator.of(context).pop();
+                        }
+                      }
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
+  Future<void> _deleteDept(String deptID) async {
     await _deptInfo.doc(deptID).delete();
     Fluttertoast.showToast(msg: "You have successfully deleted a department & roll!");
   }
@@ -664,7 +737,7 @@ class _ConfigPageState extends State<ConfigPage> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
@@ -673,6 +746,7 @@ class _ConfigPageState extends State<ConfigPage> {
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Departments List'),
+              Tab(text: 'Rolls List'),
               Tab(text: 'Official User List'),
             ],
           ),
@@ -681,7 +755,159 @@ class _ConfigPageState extends State<ConfigPage> {
           children: [
             ///Tab for department list view
             StreamBuilder(
-              stream: _deptInfo.snapshots(),
+              stream: _deptRolls.snapshots(),
+              builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+                if (streamSnapshot.hasData) {
+                  return ListView.builder(
+                    itemCount: streamSnapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      final DocumentSnapshot deptDocumentSnapshot =
+                      streamSnapshot.data!.docs[index];
+                      if (streamSnapshot.data!.docs[index]['official'] == true) {
+                        return Card(
+                          margin: const EdgeInsets.all(10),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Center(
+                                  child: Text(
+                                    'Departments Information',
+                                    style: TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                                const SizedBox(height: 20,),
+                                departmentField(
+                                  Icons.business,
+                                  "Department Name: " + deptDocumentSnapshot['deptName'],),
+                                const SizedBox(height: 20,),
+                                Visibility(
+                                  visible: visShow,
+                                  child: Center(
+                                    child: Row(
+                                      children: [
+                                        const SizedBox(width: 15,),
+                                        Center(
+                                            child: Material(
+                                              color: Colors.red,
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: InkWell(
+                                                onTap: () {
+                                                  showDialog(
+                                                      barrierDismissible: false,
+                                                      context: context,
+                                                      builder: (context) {
+                                                        return
+                                                          AlertDialog(
+                                                            shape: const RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                BorderRadius.all(Radius.circular(16))),
+                                                            title: const Text("Delete this Department!"),
+                                                            content: const Text(
+                                                                "Are you sure about deleting this Department?"),
+                                                            actions: [
+                                                              IconButton(
+                                                                onPressed: () {
+                                                                  Navigator.of(context).pop();
+                                                                },
+                                                                icon: const Icon(
+                                                                  Icons.cancel,
+                                                                  color: Colors.red,
+                                                                ),
+                                                              ),
+                                                              IconButton(
+                                                                onPressed: () {
+                                                                  String deleteDept = deptDocumentSnapshot.reference.id;
+                                                                  _deleteDept(deleteDept);
+
+                                                                  Navigator.of(context).pop();
+                                                                },
+                                                                icon: const Icon(
+                                                                  Icons.done,
+                                                                  color: Colors.green,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          );
+                                                      });
+                                                },
+                                                borderRadius: BorderRadius.circular(
+                                                    32),
+                                                child: const Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 20,
+                                                    vertical: 12,
+                                                  ),
+                                                  child: Text(
+                                                    "Delete Department",
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                        ),
+                                        const SizedBox(width: 10,),
+                                        Center(
+                                            child: Material(
+                                              color: Colors.green,
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: InkWell(
+                                                onTap: () {
+                                                  _updateDeptRolls(deptDocumentSnapshot);
+                                                },
+                                                borderRadius: BorderRadius.circular(
+                                                    32),
+                                                child: const Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 20,
+                                                    vertical: 12,
+                                                  ),
+                                                  child: Text(
+                                                    "Change Roll Info",
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 10,),
+                              ],
+                            ),
+                          ),
+                        );
+                      } else {
+                        return const Padding(
+                          padding: EdgeInsets.all(50.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                    },
+                  );
+                } else {
+                  return const Padding(
+                    padding: EdgeInsets.all(50.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+              },
+            ),
+
+            ///Tab for department rolls
+            StreamBuilder(
+              stream: _deptRolls.snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
                 if (streamSnapshot.hasData) {
                   return ListView.builder(
@@ -750,7 +976,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                                               IconButton(
                                                                 onPressed: () {
                                                                   String deleteDept = deptDocumentSnapshot.reference.id;
-                                                                  _deleteDeptInfo(deleteDept);
+                                                                  _deleteDeptRoll(deleteDept);
 
                                                                   Navigator.of(context).pop();
                                                                 },
@@ -788,7 +1014,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                               borderRadius: BorderRadius.circular(8),
                                               child: InkWell(
                                                 onTap: () {
-                                                  _updateDeptInfo(deptDocumentSnapshot);
+                                                  _updateDeptRolls(deptDocumentSnapshot);
                                                 },
                                                 borderRadius: BorderRadius.circular(
                                                     32),
@@ -1011,7 +1237,13 @@ class _ConfigPageState extends State<ConfigPage> {
           children: [
             const SizedBox(width: 10,),
             FloatingActionButton(
-              onPressed: () => _createDeptInfo(),
+              onPressed: () => _createDept(),
+              backgroundColor: Colors.green,
+              child: const Icon(Icons.business),
+            ),
+            const SizedBox(width: 10,),
+            FloatingActionButton(
+              onPressed: () => _createDeptRolls(),
               backgroundColor: Colors.green,
               child: const Icon(Icons.add_business),
             ),

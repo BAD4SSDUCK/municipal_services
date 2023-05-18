@@ -458,6 +458,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
                 eMeterNumber = documentSnapshot['meter number'];
                 wMeterNumber = documentSnapshot['water meter number'];
+                imgFolder = documentSnapshot['cell number'];
 
                 String billMessage;///A check for if payment is outstanding or not
                 if(documentSnapshot['eBill'] != ''){
@@ -466,7 +467,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   billMessage = 'No outstanding payments';
                 }
 
-                imgFolder = documentSnapshot['cell number'];
 
                   return Card(
                     margin: const EdgeInsets.all(10),

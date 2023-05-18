@@ -255,42 +255,43 @@ class MainMenu extends StatefulWidget {
                         child: Center(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            ElevatedIconButton(
-                              onPress: (){
-                                Navigator.push(context,
-                                    MaterialPageRoute(builder: (context) => const UsersTableViewPage()));
-                              },
-                              labelText: 'View\nDetails',
-                              fSize: 18,
-                              faIcon: const FaIcon(FontAwesomeIcons.houseCircleExclamation),
-                              fgColor: Colors.green,
-                              btSize: const Size(130, 120),
-                            ),
-                            const SizedBox(width: 40),
-                            ElevatedIconButton(
-                              onPress: () {
-                                String passedID = user.phoneNumber!;
-                                String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
-                                print('The user name of the logged in person is $userName}');
-                                String id = passedID;
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              ElevatedIconButton(
+                                onPress: () {
+                                  String passedID = user.phoneNumber!;
+                                  String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
+                                  print('The user name of the logged in person is $userName}');
+                                  String id = passedID;
 
-                                saveChatPhoneNumber(id);
+                                  saveChatPhoneNumber(id);
 
-                                ///Directly to the chatapp page that creates a chat id that will be saved on the DB. for an admin to access the chat I will have to
-                                ///make a new page that lists all DB chats for the admin to select and connect to for responding to users
-                                Navigator.push(context,
-                                    MaterialPageRoute(builder: (context) =>
-                                        Chat(chatRoomId: id,)));
-                              },
-                              labelText: 'Admin\nChat',
-                              fSize: 18,
-                              faIcon: const FaIcon(FontAwesomeIcons.message),
-                              fgColor: Colors.blue,
-                              btSize: const Size(130, 120),
-                            ),
-                          ],
+                                  ///Directly to the chatapp page that creates a chat id that will be saved on the DB. for an admin to access the chat I will have to
+                                  ///make a new page that lists all DB chats for the admin to select and connect to for responding to users
+                                  Navigator.push(context,
+                                      MaterialPageRoute(builder: (context) =>
+                                          Chat(chatRoomId: id,)));
+                                  },
+                                labelText: 'Admin\nChat',
+                                fSize: 18,
+                                faIcon: const FaIcon(FontAwesomeIcons.message),
+                                fgColor: Colors.blue,
+                                btSize: const Size(130, 120),
+                              ),
+                              const SizedBox(width: 40),
+                              ElevatedIconButton(
+                                onPress: (){
+                                  Navigator.push(context,
+                                      MaterialPageRoute(builder: (context) => const UsersTableViewPage()));
+                                  },
+                                labelText: 'View\nDetails',
+                                fSize: 18,
+                                faIcon: const FaIcon(FontAwesomeIcons.houseCircleExclamation),
+                                fgColor: Colors.green,
+                                btSize: const Size(130, 120),
+                              ),
+
+                            ],
                           ),
                         ),
                       ),
