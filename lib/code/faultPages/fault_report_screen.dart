@@ -258,72 +258,79 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
       ),
       body: Column(
         children: <Widget>[
-          Card(
-            margin: const EdgeInsets.all(10),
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  children: [
-                    const Center(
-                      child: Text(
-                        'Report Public Fault',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                      ),
+          SizedBox(
+            height: 200,
+            child: Card(
+              margin: const EdgeInsets.all(10),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10,),
+                  const Center(
+                    child: Text(
+                      'Report Public Fault',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: 10,),
+                  ),
+                  const SizedBox(height: 10,),
 
-                    Row(
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 0.0,horizontal: 10),
+                    child: Row(
                       children: [
                         Column(
-                          children: [
-                            DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: Colors.lightGreen,
-                              border: Border.all(color: Colors.black38, width:3),
-                              borderRadius: BorderRadius.circular(50),
-                              boxShadow: const <BoxShadow>[
-                                BoxShadow(
-                                  color: Color.fromRGBO(0, 0, 0, 0.57),
-                                  blurRadius: 5),
-                              ]
-                            ),
-                            // child: DropdownButton <String>( //DropdownButtonFormField
-                            //   value: dropdownValue,
-                            //   items: <String>['Select Fault Type', 'Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
-                            //       .map<DropdownMenuItem<String>>((String value) {
-                            //         return DropdownMenuItem<String>(
-                            //           value: value,
-                            //           child: Text(
-                            //             value,
-                            //             style: const TextStyle(fontSize: 16),
-                            //           ),
-                            //         );
-                            //       }).toList(),
-                            //   onChanged: (String? newValue) {
-                            //     setState(() {
-                            //       dropdownValue = newValue!;
-                            //     });
-                            //     },
-                            //   icon: const Padding(
-                            //     padding: EdgeInsets.only(left: 20),
-                            //     child: Icon(Icons.arrow_circle_down_sharp),
-                            //   ),
-                            //   iconEnabledColor: Colors.white,
-                            //   style: const TextStyle(
-                            //     color: Colors.white,
-                            //     fontSize: 18
-                            //   ),
-                            //   dropdownColor: Colors.green,
-                            //   underline: Container(),
-                            //   isExpanded: true,
-                            //
-                            // ),
-                          ),
-                          ]
+                            children: [
+                              SizedBox(
+                                width: 210,
+                                height: 50,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 10, right: 10),
+                                  child: Center(
+                                    child: TextField(
+                                      decoration: InputDecoration(
+                                        enabledBorder: const OutlineInputBorder(
+                                            borderSide: BorderSide(width: 3, color: Colors.black54)
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(vertical: 5 ,horizontal: 5),
+                                        suffixIcon: DropdownButtonFormField <String>( //DropdownButtonFormField
+                                          value: dropdownValue,
+                                          items: <String>['Select Fault Type', 'Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
+                                              .map<DropdownMenuItem<String>>((String value) {
+                                            return DropdownMenuItem<String>(
+                                              value: value,
+                                              child: Padding(
+                                                padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 6.0),
+                                                child: Text(
+                                                  value,
+                                                  style: const TextStyle(fontSize: 16),
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                          onChanged: (String? newValue) {
+                                            setState(() {
+                                              dropdownValue = newValue!;
+                                            });
+                                          },
+                                          icon: const Padding(
+                                            padding: EdgeInsets.only(left: 20, right: 10),
+                                            child: Icon(Icons.arrow_circle_down_sharp),
+                                          ),
+                                          iconEnabledColor: Colors.green,
+                                          style: const TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 18
+                                          ),
+                                          dropdownColor: Colors.grey[50],
+                                          isExpanded: true,
+
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ]
                         ),
-
-
                         ElevatedIconButton(
                           onPress: () async {
                             if(dropdownValue == 'Select Fault Type'){
@@ -341,11 +348,13 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           fgColor: Colors.orangeAccent,
                           btSize: const Size(50, 50),
                         ),
-
                       ],
                     ),
+                  ),
 
-                    Row(
+                  Padding(
+                    padding: const EdgeInsets.only(left: 10),
+                    child: Row(
                       children: [
                         ElevatedIconButton(
                           onPress: () {
@@ -410,12 +419,13 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
                       ],
                     ),
+                  ),
 
-                  ],
-                ),
+                ],
               ),
             ),
           ),
+
           Expanded(
             child: StreamBuilder(
               stream: _propList.snapshots(),
@@ -495,7 +505,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                       labelText: 'Report Property Fault',
                                       fSize: 16,
                                       faIcon: const FaIcon(Icons.report),
-                                      fgColor: Colors.blue,
+                                      fgColor: Colors.orangeAccent,
                                       btSize: const Size(200, 50),
                                     )
                                 ),

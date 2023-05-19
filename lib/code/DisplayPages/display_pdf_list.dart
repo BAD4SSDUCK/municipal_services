@@ -7,9 +7,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
+
+import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 
 
 class UsersPdfListViewPage extends StatefulWidget {
@@ -116,8 +119,8 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           crossAxisAlignment: CrossAxisAlignment.center,
                                           children: [
-                                            ElevatedButton(
-                                              onPressed: () async {
+                                            ElevatedIconButton(
+                                              onPress: () async {
                                                 Fluttertoast.showToast(
                                                     msg: "Now downloading your statement!\nPlease wait a few seconds!");
 
@@ -144,22 +147,13 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                                   Fluttertoast.showToast(msg: "Unable to download statement.");
                                                 }
                                               },
-                                              style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350]),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.picture_as_pdf,
-                                                    color: Colors.orange[200],
-                                                  ),
-                                                  const SizedBox(width: 5,),
-                                                  const Text('Statement',
-                                                    style: TextStyle(
-                                                        fontWeight: FontWeight.w600,
-                                                        color: Colors.black),
-                                                  ),
-                                                ],
-                                              ),
+                                              labelText: 'Statement',
+                                              fSize: 16,
+                                              faIcon: const FaIcon(Icons.picture_as_pdf),
+                                              fgColor: Colors.orangeAccent,
+                                              btSize: const Size(50, 50),
                                             ),
+
                                             const SizedBox(width: 5,),
                                           ],
                                         ),

@@ -13,6 +13,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:municipal_track/code/MapTools/map_screen_prop.dart';
 
+import '../Reusable/icon_elevated_button.dart';
+
 class FaultViewingScreen extends StatefulWidget {
   const FaultViewingScreen({Key? key}) : super(key: key);
 
@@ -639,8 +641,8 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  ElevatedButton(
-                                    onPressed: () {
+                                  ElevatedIconButton(
+                                    onPress: () {
                                       accountNumberRep = documentSnapshot['accountNumber'];
                                       locationGivenRep = documentSnapshot['address'];
 
@@ -649,22 +651,12 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                                               builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
                                             //MapPage()
                                           ));
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.grey[350],
-                                      fixedSize: const Size(150, 10),),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.map,
-                                          color: Colors.green[700],
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        const Text('Fault Location', style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black,),),
-                                      ],
-                                    ),
+                                      },
+                                    labelText: 'Fault Location',
+                                    fSize: 15,
+                                    faIcon: const FaIcon(Icons.map),
+                                    fgColor: Colors.green,
+                                    btSize: const Size(50, 50),
                                   ),
                                   const SizedBox(width: 5,),
                                   // ElevatedButton(
