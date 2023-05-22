@@ -8,12 +8,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:municipal_track/code/ImageUploading/image_upload_prop_fault.dart';
 import 'package:municipal_track/code/MapTools/map_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:municipal_track/code/MapTools/map_screen_prop.dart';
 
-import '../Reusable/icon_elevated_button.dart';
+import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 
 class FaultViewingScreen extends StatefulWidget {
   const FaultViewingScreen({Key? key}) : super(key: key);
@@ -61,6 +62,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
   String locationGivenRep = ' ';
   int faultStage = 0;
   String reporterCellGiven = ' ';
+  String reporterDateGiven = ' ';
 
   bool visShow = true;
   bool visHide = false;
@@ -71,6 +73,12 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
   bool visStage2 = false;
   bool visStage3 = false;
   bool visStage4 = false;
+
+  @override
+  void initState() {
+
+    super.initState();
+  }
 
   void initApprove(String stateGivenCheck){
     if(stateGivenCheck == 'manager'){
@@ -591,7 +599,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                                       height: 180,
                                       child: Center(
                                         child: Card(
-                                          color: Colors.blue,
+                                          color: Colors.grey,
                                           semanticContainer: true,
                                           clipBehavior: Clip.antiAliasWithSaveLayer,
                                           shape: RoundedRectangleBorder(
@@ -602,11 +610,11 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                                           child: FutureBuilder(
                                               future: _getImage(
                                                 ///Firebase image location must be changed to display image based on the address
-                                                  context, 'files/faultImages/property/${documentSnapshot['address']}'),
+                                                  context, 'files/faultImages/${documentSnapshot['dateReported']}/${documentSnapshot['address']}'),
                                               builder: (context, snapshot) {
                                                 if (snapshot.hasError) {
-                                                  imageVisibility = false;
-                                                  //return const Text('Image not uploaded for Fault.'); //${snapshot.error} if error needs to be displayed instead
+                                                  //imageVisibility = false;
+                                                  return const Text('Image not uploaded for Fault.', style: TextStyle(fontSize: 18),); //${snapshot.error} if error needs to be displayed instead
                                                 }
                                                 if (snapshot.connectionState ==
                                                     ConnectionState.done) {
@@ -658,29 +666,24 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                                     fgColor: Colors.green,
                                     btSize: const Size(50, 50),
                                   ),
-                                  const SizedBox(width: 5,),
-                                  // ElevatedButton(
-                                  //   onPressed: () {
-                                  //     faultStage = documentSnapshot['faultStage'];
-                                  //     _updateReport(documentSnapshot);
-                                  //   },
-                                  //   style: ElevatedButton.styleFrom(
-                                  //     backgroundColor: Colors.grey[350],
-                                  //     fixedSize: const Size(150, 10),),
-                                  //   child: Row(
-                                  //     children: [
-                                  //       Icon(
-                                  //         Icons.edit,
-                                  //         color: Theme.of(context).primaryColor,
-                                  //       ),
-                                  //       const SizedBox(width: 2,),
-                                  //       const Text('Update Details', style: TextStyle(
-                                  //         fontWeight: FontWeight.w600,
-                                  //         color: Colors.black,),),
-                                  //     ],
-                                  //   ),
-                                  // ),
-                                  // const SizedBox(width: 5,),
+                                  ElevatedIconButton(
+                                    onPress: () {
+
+                                      locationGivenRep = documentSnapshot['address'];
+                                      reporterDateGiven = documentSnapshot['dateReported'];
+
+                                      Navigator.push(context,
+                                          MaterialPageRoute(
+                                              builder: (context) => FaultImageUpload(propertyAddress: locationGivenRep, reportedDate: reporterDateGiven)
+                                            //MapPage()
+                                          ));
+                                    },
+                                    labelText: 'Add Image',
+                                    fSize: 15,
+                                    faIcon: const FaIcon(Icons.photo_camera),
+                                    fgColor: Colors.blueGrey,
+                                    btSize: const Size(50, 50),
+                                  ),
                                 ],
                               ),
 

@@ -76,93 +76,217 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
         title: const Text('General Fault Reporting'),
         backgroundColor: Colors.green,
       ),
+      backgroundColor: Colors.grey[300],
       body: SingleChildScrollView(
-        child: Column(
-          children: <Widget>[
-            const SizedBox(height: 50,),
-            Center(
-              child: GestureDetector(
-                onTap: () {
-                  _showPicker(context);
-                },
-                child: CircleAvatar(
-                  radius: 190,
-                  backgroundColor: Colors.grey[400],
-                  child: _photo != null ? ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.file(
-                      _photo!, width: 250, height: 250, fit: BoxFit.cover,),
-                  )
-                      : Container(decoration: BoxDecoration(color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(10)), width: 250, height: 250, child: Icon(Icons.camera_alt, color: Colors.grey[800],),
+        child: Card(
+          margin: const EdgeInsets.all(10),
+          child: Column(
+            children: <Widget>[
+              const SizedBox(height: 40,),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                child: TextFormField(
+                  controller: _addressController,
+                  validator: (val) =>
+                  val == ""
+                      ? "Please enter an Address"
+                      : null,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(
+                      Icons.house,
+                      color: Colors.black87,
+                    ),
+                    hintText: "Address...",
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                            30),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                        )
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                            30),
+                        borderSide: const BorderSide(
+                                color: Colors.grey,
+                        )
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                            30),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                        )
+                    ),
+                    disabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                            30),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                        )
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6
+                    ),
+                    fillColor: Colors.white,
+                    filled: true,
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 80,),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25.0),
-              child: GestureDetector(
-                onTap: buttonEnabled? () {
-                  if (_photo != null) {
-                    showPressed(context);
-                  } else {
-                    Fluttertoast.showToast(msg: "Please tap on the image area and select the image to upload!", gravity: ToastGravity.CENTER);
-                  }
-                } : (){
-                  Fluttertoast.showToast(msg: "Please allow location access!", gravity: ToastGravity.CENTER);
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.circular(12),
+              const SizedBox(height: 20,),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                child: TextFormField(
+                  controller: _descriptionController,
+                  validator: (val) =>
+                  val == ""
+                      ? "Please describe the fault"
+                      : null,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(
+                      Icons.details,
+                      color: Colors.black87,
+                    ),
+                    hintText: "Fault Description...",
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                            30),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                        )
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                            30),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                        )
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                            30),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                        )
+                    ),
+                    disabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                            30),
+                        borderSide: const BorderSide(
+                          color: Colors.grey,
+                        )
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6
+                    ),
+                    fillColor: Colors.white,
+                    filled: true,
                   ),
-                  child: const Center(
-                    child: Text(
-                      'Report Fault With Image',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                ),
+              ),
+
+              const SizedBox(height: 60,),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 50.0),
+                child: GestureDetector(
+                  onTap: () {
+                    _showPicker(context);
+                  },
+                  child: CircleAvatar(
+                    radius: 100,
+                    backgroundColor: Colors.grey[400],
+                    child: _photo != null ? ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.file(
+                        _photo!, width: 140, height: 140, fit: BoxFit.cover,),
+                    )
+                        : Container(decoration: BoxDecoration(color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(10)), width: 100, height: 100, child: Icon(Icons.camera_alt, color: Colors.grey[800],),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 60,),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 50.0),
+                child: GestureDetector(
+                  onTap: buttonEnabled? () {
+                    if (_photo != null) {
+                      if(_addressController.text.isNotEmpty || _descriptionController.text.isNotEmpty){
+                        uploadFaultFile();
+                        Fluttertoast.showToast(msg: "Fault has been Reported with Image!", gravity: ToastGravity.CENTER);
+                        navigator?.pop();
+                      } else {
+                        Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
+                      }
+                    } else {
+                      Fluttertoast.showToast(msg: "Please tap on the image area and select the image to upload!", gravity: ToastGravity.CENTER);
+                    }
+                  } : (){
+                    Fluttertoast.showToast(msg: "Please allow location access!", gravity: ToastGravity.CENTER);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'Report Fault With Image',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 5,),
+              const SizedBox(height: 10,),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25.0),
-              child: GestureDetector(
-                onTap: buttonEnabled? () {
-                  showPressed(context);
-                } : (){
-                  Fluttertoast.showToast(msg: "Please allow location access!", gravity: ToastGravity.CENTER);
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'Report Fault Without Image',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 50.0),
+                child: GestureDetector(
+                  onTap: buttonEnabled? () {
+                    if(_addressController.isBlank != null || _descriptionController.isBlank != null){
+                      uploadFault();
+                      Fluttertoast.showToast(msg: "Fault has been Reported!", gravity: ToastGravity.CENTER);
+                      navigator?.pop();
+                    } else {
+                      Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
+                    }
+                  } : (){
+                    Fluttertoast.showToast(msg: "Please allow location access!", gravity: ToastGravity.CENTER);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'Report Fault Without Image',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 10,),
-          ],
+              const SizedBox(height: 40,),
+            ],
+          ),
         ),
       ),
     );
@@ -207,7 +331,6 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
     if (_photo == null) return;
 
     final fileName = basename(_photo!.path);
-    final destination = 'files/faultImages/general/';
 
     File? imageFile = _photo;
     List<int> imageBytes = imageFile!.readAsBytesSync();
@@ -217,6 +340,8 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
 
     DateTime now = DateTime.now();
     String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+
+    final destination = 'files/faultImages/general/$formattedDate';
 
     final String accountNumber = _accountNumberController.text;
     final String addressFault = Address;
@@ -263,7 +388,47 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
           gravity: ToastGravity.CENTER);
     }
   }
-  
+
+  Future uploadFault() async {
+
+    DateTime now = DateTime.now();
+    String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+
+    final String accountNumber = _accountNumberController.text;
+    final String addressFault = Address;
+    final String faultDescription = _descriptionController.text;
+
+    if (_currentUser != null) {
+      await _faultData.add({
+        "uid": _currentUser,
+        "accountNumber": '',
+        "address": addressFault,
+        "faultType": widget.faultTypeSelected,
+        "reporterContact": userPhone,
+        "depComment1": '',
+        "depComment2": '',
+        "handlerCom1": '',
+        "handlerCom2": '',
+        "faultDescription": faultDescription,
+        "depAllocated": '',
+        "faultResolved": false,
+        "dateReported": formattedDate,
+        "faultStage": 1,
+      });
+
+      _accountNumberController.text = '';
+      _addressController.text = '';
+      _accountNumberController.text = '';
+      _addressController.text = '';
+      _depAllocationController.text = '';
+      _dateReportedController.text = '';
+
+    } else {
+      Fluttertoast.showToast(msg: "Connection failed. Fix network!",
+          gravity: ToastGravity.CENTER);
+    }
+  }
+
   showImage(String image){
     return Image.memory(base64Decode(image));
   }
@@ -305,7 +470,6 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
     Placemark place = placemarks[0];
     Address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
   }
-
 
   void _showPicker(context) {
     showModalBottomSheet(

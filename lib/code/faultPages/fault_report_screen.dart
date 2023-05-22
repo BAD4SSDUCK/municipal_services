@@ -123,71 +123,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                     child: Row(
                       children: [
                         ElevatedButton(
-                          child: const Text('Report With Photo'),
-                          onPressed: () async {
-                            DateTime now = DateTime.now();
-                            String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-
-                            final String uid = _currentUser;
-                            String accountNumber = accountPass;
-                            final String addressFault = addressPass;
-                            final String faultDescription = _faultDescriptionController.text;
-                            String faultType = dropdownValue;
-
-                            if (faultType != 'Select Fault Type'){
-                              if(faultDescription!=''){
-                                if (uid == _currentUser) {
-                                  await _faultData.add({
-                                    "uid": uid,
-                                    "accountNumber": accountNumber,
-                                    "address": addressFault,
-                                    "reporterContact": userPhone,
-                                    "depComment1": '',
-                                    "depComment2": '',
-                                    "handlerCom1": '',
-                                    "handlerCom2": '',
-                                    "faultType": faultType,
-                                    "faultDescription": faultDescription,
-                                    "dateReported": formattedDate,
-                                    "depAllocated": '',
-                                    "faultResolved": false,
-                                    "faultStage": 1,
-                                  });
-
-                                }
-                                _faultDescriptionController.text ='';
-                                dropdownValue = 'Select Fault Type';
-
-                                Fluttertoast.showToast(msg: "Fault has been reported successfully!",
-                                  gravity: ToastGravity.CENTER,);
-
-
-                                // if (!mounted) return;
-                                // Navigator.push(context,
-                                //     MaterialPageRoute(builder: (context) => FaultImageUpload(propertyAddress: addressFault)
-                                //     ));
-                                //
-                                // final navigator = Navigator.of(context);
-                                // navigator.popAndPushNamed(FaultImageUpload(propertyAddress: addressFault) as String);
-
-                                // Navigator.of(context).popAndPushNamed(FaultImageUpload(propertyAddress: addressFault) as String);
-
-                                Get.back();
-
-                              } else {
-                                Fluttertoast.showToast(msg: "Please Give A Fault Description!",
-                                  gravity: ToastGravity.CENTER,);
-                              }
-                            } else {
-                              Fluttertoast.showToast(msg: "Please Select Fault Type being Reported!!",
-                                gravity: ToastGravity.CENTER,);
-                            }
-                          },
-                        ),
-
-                        const SizedBox(width: 20,),
-
-                        ElevatedButton(
                           child: const Text('Report'),
                           onPressed: () async {
                             DateTime now = DateTime.now();
@@ -280,7 +215,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                         Column(
                             children: [
                               SizedBox(
-                                width: 210,
+                                width: 220,
                                 height: 50,
                                 child: Padding(
                                   padding: const EdgeInsets.only(left: 10, right: 10),
@@ -312,7 +247,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                             });
                                           },
                                           icon: const Padding(
-                                            padding: EdgeInsets.only(left: 20, right: 10),
+                                            padding: EdgeInsets.only(left: 10, right: 10),
                                             child: Icon(Icons.arrow_circle_down_sharp),
                                           ),
                                           iconEnabledColor: Colors.green,
@@ -497,6 +432,10 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                         phoneNumPass = documentSnapshot['cell number'];
 
                                         _addNewFaultReport();
+
+                                        Fluttertoast.showToast(
+                                            msg: "Go to current reports to add image to reported fault",
+                                            gravity: ToastGravity.CENTER);
 
                                       } : () {
                                         Fluttertoast.showToast(msg: "Outstanding bill on property, Fault Reporting unavailable!",

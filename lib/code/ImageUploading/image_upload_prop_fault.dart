@@ -10,9 +10,10 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:path/path.dart';
 
 class FaultImageUpload extends StatefulWidget {
-  FaultImageUpload({Key? key, required this.propertyAddress}) : super(key: key);
+  FaultImageUpload({Key? key, required this.propertyAddress, required this.reportedDate}) : super(key: key);
 
   final String propertyAddress;
+  final String reportedDate;
 
   @override
   _FaultImageUploadState createState() => _FaultImageUploadState();
@@ -65,11 +66,12 @@ class _FaultImageUploadState extends State<FaultImageUpload> {
 
     final String photoName;
     final String reportAddress = widget.propertyAddress;
+    final String dateReported = widget.reportedDate;
 
     ///'files/$userID/$fileName' is used specifically for adding the user id to a table in order to split the users per account
     if (_photo == null) return;
     final fileName = basename(_photo!.path);
-    final destination = 'files/faultImages/property/';
+    final destination = 'files/faultImages/$dateReported/';
 
     try {
       final ref = firebase_storage.FirebaseStorage.instance
@@ -87,7 +89,7 @@ class _FaultImageUploadState extends State<FaultImageUpload> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Required Fault Image'),
+        title: const Text('Property Fault Photo'),
         backgroundColor: Colors.green,
       ),
       body: SingleChildScrollView(
@@ -98,9 +100,10 @@ class _FaultImageUploadState extends State<FaultImageUpload> {
               child: GestureDetector(
                 onTap: () {
                   _showPicker(context);
+
                 },
                 child: CircleAvatar(
-                  radius: 190,
+                  radius: 180,
                   backgroundColor: Colors.grey[400],
                   child: _photo != null ? ClipRRect(
                     borderRadius: BorderRadius.circular(10),
@@ -129,7 +132,7 @@ class _FaultImageUploadState extends State<FaultImageUpload> {
                   if (_photo != null) {
                     uploadFile();
                     Fluttertoast.showToast(
-                        msg: "Image Successfully Uploaded!",
+                        msg: "Report Image Successfully Uploaded!",
                         gravity: ToastGravity.CENTER);
                     Navigator.of(context).pop();
                   } else {
@@ -147,7 +150,7 @@ class _FaultImageUploadState extends State<FaultImageUpload> {
                   ),
                   child: const Center(
                     child: Text(
-                      'Upload Image',
+                      'Upload Report Image',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
