@@ -363,7 +363,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                             child: GestureDetector(
                               onTap: buttonEnabled? () {
                                 if (_photo != null) {
-                                  if(_addressController.text.isNotEmpty || _faultDescriptionController.text.isNotEmpty || _reporterPhoneController.text.isNotEmpty){
+                                  if(dropdownValue !='Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty){
                                     if(_reporterPhoneController.text.contains('+27')){
                                       uploadFaultFile();
                                       Fluttertoast.showToast(msg: "Fault has been Reported with Image!", gravity: ToastGravity.CENTER);
@@ -400,9 +400,19 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                               ),
                                               IconButton(
                                                 onPressed: () {
+                                                  if(dropdownValue !='Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty){
+                                                    if(_reporterPhoneController.text.contains('+27')){
+                                                      uploadFault();
+                                                      Fluttertoast.showToast(msg: "Fault has been Reported!", gravity: ToastGravity.CENTER);
+                                                      Navigator.of(context).pop();
+                                                    } else {
+                                                      Fluttertoast.showToast(msg: "Contact number must have +27 country code!", gravity: ToastGravity.CENTER);
+                                                    }
+                                                  } else {
+                                                    Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
+                                                  }
                                                   if(_reporterPhoneController.text.contains('+27')){
-                                                    uploadFault();
-                                                    Navigator.of(context).pop();
+
                                                   } else {
                                                     Fluttertoast.showToast(msg: "Contact number must have +27 country code!", gravity: ToastGravity.CENTER);
                                                   }
@@ -691,7 +701,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                       fontSize: 16, fontWeight: FontWeight.w400),
                                 ),
                                 const SizedBox(height: 5,),
-
                                 Column(
                                   children: [
                                     if(documentSnapshot['faultDescription'] != "")...[
@@ -706,7 +715,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                     ],
                                   ],
                                 ),
-
                                 Column(
                                   children: [
                                     if(documentSnapshot['handlerCom1'] != "")...[
@@ -763,7 +771,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                     ],
                                   ],
                                 ),
-
                                 Text(
                                   'Resolve State: ${documentSnapshot['faultResolved'].toString()}',
                                   style: const TextStyle(
@@ -775,7 +782,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                   style: const TextStyle(
                                       fontSize: 16, fontWeight: FontWeight.w400),
                                 ),
-
                                 Column(
                                   children: [
                                     if(documentSnapshot['faultDescription'] != "")...[
@@ -854,10 +860,8 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                         ),
                                         ElevatedIconButton(
                                           onPress: () {
-
                                             locationGivenRep = documentSnapshot['address'];
                                             reporterDateGiven = documentSnapshot['dateReported'];
-
                                             Navigator.push(context,
                                                 MaterialPageRoute(
                                                     builder: (context) => FaultImageUpload(propertyAddress: locationGivenRep, reportedDate: reporterDateGiven)
@@ -964,7 +968,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                   ),);
               },
             ),
-
           ],
         ),
       ),
@@ -1091,7 +1094,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
     DateTime now = DateTime.now();
     String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
 
-    final destination = 'files/faultImages/general/$formattedDate';
+    final destination = 'files/faultImages/$formattedDate';
 
     String addressFault = _addressController.text;
 
@@ -1132,6 +1135,9 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
       _addressController.text = '';
       _faultDescriptionController.text = '';
+      setState(() {
+        dropdownValue = 'Select Fault Type';
+      });
 
     } else {
       Fluttertoast.showToast(msg: "Connection failed. Fix network!",
@@ -1167,6 +1173,9 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
       _addressController.text = '';
       _faultDescriptionController.text = '';
+      setState(() {
+        dropdownValue = 'Select Fault Type';
+      });
 
     } else {
       Fluttertoast.showToast(msg: "Connection failed. Fix network!",
@@ -1252,6 +1261,8 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                   });
 
                                 }
+
+                                _addressController.text = '';
                                 _faultDescriptionController.text ='';
                                 dropdownValue = 'Select Fault Type';
 
