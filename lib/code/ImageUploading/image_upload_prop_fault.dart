@@ -89,13 +89,13 @@ class _FaultImageUploadState extends State<FaultImageUpload> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Property Fault Photo'),
+        title: const Text('Fault Photo Upload'),
         backgroundColor: Colors.green,
       ),
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            SizedBox(height: 100,),
+            const SizedBox(height: 100,),
             Center(
               child: GestureDetector(
                 onTap: () {
@@ -150,7 +150,7 @@ class _FaultImageUploadState extends State<FaultImageUpload> {
                   ),
                   child: const Center(
                     child: Text(
-                      'Upload Report Image',
+                      'Upload Fault Image',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

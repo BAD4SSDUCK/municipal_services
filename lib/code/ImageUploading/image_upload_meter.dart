@@ -97,7 +97,7 @@ class _ImageUploadMeterState extends State<ImageUploadMeter> {
                   _showPicker(context);
                 },
                 child: CircleAvatar(
-                  radius: 190,
+                  radius: 180,
                   backgroundColor: Colors.grey[400],
                   child: _photo != null ? ClipRRect(
                     borderRadius: BorderRadius.circular(10),

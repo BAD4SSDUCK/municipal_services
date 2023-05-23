@@ -3,14 +3,20 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_prop_fault.dart';
+import 'package:municipal_track/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_track/code/faultPages/fault_viewing_screen.dart';
+import 'package:path/path.dart' as pathing;
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
@@ -36,6 +42,8 @@ String userPhone = phone as String;
 class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
   final _faultDescriptionController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _reporterPhoneController = TextEditingController();
 
   final String _currentUser = userID;
 
@@ -54,31 +62,1120 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
   String phoneNumPass = '';
   String dropdownValue = 'Select Fault Type';
 
-  bool buttonEnabled = true;
+  String reporterCellGiven = '';
+  String reporterDateGiven = '';
+  String accountNumberRep = '';
+  String locationGivenRep = '';
+  bool imageVisibility = true;
 
-  //this widget is for displaying a property field of information with an icon next to it, NB. the icon is to make it look good
-  //it is called within a listview page widget
-  Widget faultItemField(String propertyDat) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
+  File? _photo;
+  final ImagePicker _picker = ImagePicker();
+  String? meterType;
+
+  TextEditingController nameController = TextEditingController();
+
+  bool buttonEnabled = true;
+  String location ='Null, Press Button';
+  String Address = 'search';
+
+  @override
+  void initState() {
+    locationAllow();
+    _reporterPhoneController.text = userPhone;
+    super.initState();
+  }
+
+  ///Form text field decoration style
+  InputDecoration formItemDecoration(String hintTextString, Icon iconItem){
+    return InputDecoration(
+      prefixIcon: iconItem,
+      hintText: hintTextString,
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(
+              30),
+          borderSide: const BorderSide(
+            color: Colors.grey,
+          )
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8,),
-      child: Row(
-        children: [
-          const SizedBox(width: 6,),
-          Text(
-            propertyDat,
-            style: const TextStyle(
-              fontSize: 15,
-            ),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(
+              30),
+          borderSide: const BorderSide(
+            color: Colors.grey,
+          )
+      ),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(
+              30),
+          borderSide: const BorderSide(
+            color: Colors.grey,
+          )
+      ),
+      disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(
+              30),
+          borderSide: const BorderSide(
+            color: Colors.grey,
+          )
+      ),
+      contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 6
+      ),
+      fillColor: Colors.white,
+      filled: true,
+    );
+  }
+
+  Future<Widget> _getImage(BuildContext context, String imageName) async{
+    Image image;
+    final value = await FireStorageService.loadImage(context, imageName);
+    image =Image.network(
+      value.toString(),
+      fit: BoxFit.fill,
+    );
+    return image;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        backgroundColor: Colors.grey[350],
+        appBar: AppBar(
+          title: const Text('Report Fault'),
+          backgroundColor: Colors.green,
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Public Fault'),
+              Tab(text: 'Property Fault'),
+              Tab(text: 'Current Faults'),
+            ],
           ),
-        ],
+        ),
+        body: TabBarView(
+          children: [
+            ///Tab for public fault reporting
+            SingleChildScrollView(
+              child: Column(
+                children: <Widget>[
+                  SizedBox(
+                    // height: 500,
+                    child: Card(
+                      margin: const EdgeInsets.all(10),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20,),
+                          const Center(
+                            child: Text(
+                              'Report Public Fault',
+                              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          const SizedBox(height: 20,),
+
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 0.0,horizontal: 15.0),
+                            child: Column(
+                                children: [
+                                  SizedBox(
+                                    width: 400,
+                                    height: 50,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 10, right: 10),
+                                      child: Center(
+                                        child: TextField(
+                                          ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
+                                          decoration: InputDecoration(
+                                            border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(
+                                                    30),
+                                                borderSide: const BorderSide(
+                                                  color: Colors.grey,
+                                                )
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(
+                                                    30),
+                                                borderSide: const BorderSide(
+                                                  color: Colors.grey,
+                                                )
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(
+                                                    30),
+                                                borderSide: const BorderSide(
+                                                  color: Colors.grey,
+                                                )
+                                            ),
+                                            disabledBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(
+                                                    30),
+                                                borderSide: const BorderSide(
+                                                  color: Colors.grey,
+                                                )
+                                            ),
+                                            contentPadding: const EdgeInsets.symmetric(
+                                                horizontal: 14,
+                                                vertical: 6
+                                            ),
+                                            fillColor: Colors.white,
+                                            filled: true,
+
+                                            suffixIcon: DropdownButtonFormField <String>(
+                                              value: dropdownValue,
+                                              items: <String>['Select Fault Type', 'Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
+                                                  .map<DropdownMenuItem<String>>((String value) {
+                                                return DropdownMenuItem<String>(
+                                                  value: value,
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 20.0),
+                                                    child: Text(
+                                                      value,
+                                                      style: const TextStyle(fontSize: 16),
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                              onChanged: (String? newValue) {
+                                                setState(() {
+                                                  dropdownValue = newValue!;
+                                                  _addressController.text = Address;
+                                                  if(dropdownValue == 'Select Fault Type'){
+                                                    _addressController.text = '';
+                                                  }
+                                                });
+                                              },
+                                              icon: const Padding(
+                                                padding: EdgeInsets.only(left: 10, right: 10),
+                                                child: Icon(Icons.arrow_circle_down_sharp),
+                                              ),
+                                              iconEnabledColor: Colors.green,
+                                              style: const TextStyle(
+                                                  color: Colors.black,
+                                                  fontSize: 18
+                                              ),
+                                              dropdownColor: Colors.grey[50],
+                                              isExpanded: true,
+
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ]
+                            ),
+                          ),
+
+
+                          const SizedBox(height: 20,),
+
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                            child: TextFormField(
+                              controller: _addressController,
+                              validator: (val) =>
+                              val == ""
+                                  ? "Please enter an Address"
+                                  : null,
+                              decoration: formItemDecoration("Address...", const Icon(
+                                Icons.location_on_sharp,
+                                color: Colors.black87,),
+                            ),
+                          ),
+                          ),
+
+                          const SizedBox(height: 20,),
+
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                            child: TextFormField(
+                              controller: _faultDescriptionController,
+                              validator: (val) =>
+                              val == ""
+                                  ? "Please describe the fault"
+                                  : null,
+                              decoration: formItemDecoration("Fault Description...", const Icon(
+                                Icons.note_alt_outlined,
+                                color: Colors.black87,),
+                            ),
+                          ),
+                          ),
+
+                          const SizedBox(height: 20,),
+
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                            child: TextFormField(
+                              controller: _reporterPhoneController,
+                              validator: (val) =>
+                              val == ""
+                                  ? "Enter reporters contact number"
+                                  : null,
+                              decoration: formItemDecoration("Reporter Phone Number...", const Icon(
+                                Icons.phone_in_talk,
+                                color: Colors.black87,),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20,),
+
+                          Row(
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 50.0),
+                                child: Text(
+                                  'Add Photo?',
+                                  style: TextStyle(fontSize: 16, ),//fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    _showPicker(context);
+                                  },
+                                  child: CircleAvatar(
+                                    radius: 50,
+                                    backgroundColor: Colors.grey[400],
+                                    child: _photo != null ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Image.file(
+                                        _photo!, width: 60, height: 60, fit: BoxFit.cover,),
+                                    )
+                                        : Container(decoration: BoxDecoration(color: Colors.grey[200],
+                                        borderRadius: BorderRadius.circular(10)), width: 60, height: 60, child: Icon(Icons.camera_alt, color: Colors.grey[800],),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20,),
+
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                            child: GestureDetector(
+                              onTap: buttonEnabled? () {
+                                if (_photo != null) {
+                                  if(_addressController.text.isNotEmpty || _faultDescriptionController.text.isNotEmpty || _reporterPhoneController.text.isNotEmpty){
+                                    if(_reporterPhoneController.text.contains('+27')){
+                                      uploadFaultFile();
+                                      Fluttertoast.showToast(msg: "Fault has been Reported with Image!", gravity: ToastGravity.CENTER);
+                                      navigator?.pop();
+                                    } else {
+                                      Fluttertoast.showToast(msg: "Contact number must have +27 country code!", gravity: ToastGravity.CENTER);
+                                    }
+                                  } else {
+                                    Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
+                                  }
+                                } else {
+                                  showDialog(
+                                      barrierDismissible: false,
+                                      context: context,
+                                      builder: (context) {
+                                        return
+                                          AlertDialog(
+                                            shape: const RoundedRectangleBorder(
+                                                borderRadius:
+                                                BorderRadius.all(Radius.circular(16))),
+                                            title: const Text("Report Fault Without Image!"),
+                                            content: const Text(
+                                                "Reporting a fault without a photo is possible. A photo can be added later on if necessary,\n\nare you sure you want to leave out a photo?"),
+                                            actions: [
+                                              IconButton(
+                                                onPressed: () {
+                                                  Fluttertoast.showToast(msg: "Please tap on the image area and select the image to upload!", gravity: ToastGravity.CENTER);
+                                                  Navigator.of(context).pop();
+                                                },
+                                                icon: const Icon(
+                                                  Icons.cancel,
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                onPressed: () {
+                                                  if(_reporterPhoneController.text.contains('+27')){
+                                                    uploadFault();
+                                                    Navigator.of(context).pop();
+                                                  } else {
+                                                    Fluttertoast.showToast(msg: "Contact number must have +27 country code!", gravity: ToastGravity.CENTER);
+                                                  }
+                                                },
+                                                icon: const Icon(
+                                                  Icons.done,
+                                                  color: Colors.green,
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                      });
+
+                                }
+                              } : (){
+                                Fluttertoast.showToast(msg: "Please allow location access!", gravity: ToastGravity.CENTER);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'Report Fault',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10,),
+
+                          // ElevatedIconButton(
+                          //   onPress: () async {
+                          //     if(dropdownValue == 'Select Fault Type'){
+                          //       Fluttertoast.showToast(msg: "Please Select The Fault Type First!",
+                          //         gravity: ToastGravity.CENTER,);
+                          //     } else{
+                          //       Navigator.push(context,
+                          //           MaterialPageRoute(
+                          //               builder: (context) => GeneralFaultReporting(faultTypeSelected: dropdownValue,)));
+                          //     }
+                          //   },
+                          //   labelText: 'Report',
+                          //   fSize: 16,
+                          //   faIcon: const FaIcon(Icons.report_problem),
+                          //   fgColor: Colors.orangeAccent,
+                          //   btSize: const Size(50, 50),
+                          // ),
+
+                          Padding(
+                            padding: const EdgeInsets.only(left: 10),
+                            child: Row(
+                              children: [
+
+                                ///Old buttion before Current Faults tab
+                                // ElevatedIconButton(
+                                //   onPress: () {
+                                //     Navigator.push(context,
+                                //         MaterialPageRoute(
+                                //             builder: (context) => FaultViewingScreen()));
+                                //   },
+                                //   labelText: 'Current Reports',
+                                //   fSize: 15,
+                                //   faIcon: const FaIcon(Icons.list),
+                                //   fgColor: Colors.green,
+                                //   btSize: const Size(50, 50),
+                                // ),
+
+                                ///button for calling municipality report center
+                                // ElevatedIconButton(
+                                //   onPress: () {
+                                //     showDialog(
+                                //         barrierDismissible: false,
+                                //         context: context,
+                                //         builder: (context) {
+                                //           return
+                                //             AlertDialog(
+                                //               shape: const RoundedRectangleBorder(
+                                //                   borderRadius:
+                                //                   BorderRadius.all(Radius.circular(16))),
+                                //               title: const Text("Call Report Center!"),
+                                //               content: const Text(
+                                //                   "Would you like to call the report center directly?"),
+                                //               actions: [
+                                //                 IconButton(
+                                //                   onPressed: () {
+                                //                     Navigator.of(context).pop();
+                                //                   },
+                                //                   icon: const Icon(
+                                //                     Icons.cancel,
+                                //                     color: Colors.red,
+                                //                   ),
+                                //                 ),
+                                //                 IconButton(
+                                //                   onPressed: () {
+                                //                     final Uri _tel = Uri.parse(
+                                //                         'tel:+27${0800001868}');
+                                //                     launchUrl(_tel);
+                                //
+                                //                     Navigator.of(context).pop();
+                                //                     Get.back();
+                                //                   },
+                                //                   icon: const Icon(
+                                //                     Icons.done,
+                                //                     color: Colors.green,
+                                //                   ),
+                                //                 ),
+                                //               ],
+                                //             );
+                                //         });
+                                //   },
+                                //   labelText: 'Call Center',
+                                //   fSize: 16,
+                                //   faIcon: const FaIcon(Icons.phone),
+                                //   fgColor: Colors.orangeAccent,
+                                //   btSize: const Size(50, 50),
+                                // ),
+
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 20,),
+
+                        ],
+                      ),
+                    ),
+                  ),
+
+                ],
+              ),
+            ),
+
+            ///TAB for property fault report view
+            Expanded(
+              child: StreamBuilder(
+                stream: _propList.snapshots(),
+                builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+                  if (streamSnapshot.hasData) {
+                    return ListView.builder(
+                      ///this call is to display all details for all users but is only displaying for the current user account.
+                      ///it can be changed to display all users for the staff to see if the role is set to all later on.
+                      itemCount: streamSnapshot.data!.docs.length,
+                      itemBuilder: (context, index) {
+                        final DocumentSnapshot documentSnapshot = streamSnapshot.data!.docs[index];
+                        String billMessage;
+                        ///A check for if payment is outstanding or not
+                        if (documentSnapshot['eBill'] != '') {
+                          billMessage = documentSnapshot['eBill'];
+                          buttonEnabled = false;
+                        } else {
+                          billMessage = 'No outstanding payments';
+                          buttonEnabled = true;
+                        }
+                        ///Check for only user information, this displays only for the users details and not all users in the database.
+                        if (streamSnapshot.data!.docs[index]['user id'] == userID) {
+                          return Card(
+                            margin: const EdgeInsets.all(10),
+                            child: Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Center(
+                                    child: Text(
+                                      'Property Information',
+                                      style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20,),
+                                  Text(
+                                    'Account Number: ' + documentSnapshot['account number'],
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                  Text(
+                                    'Street Address: ' + documentSnapshot['address'],
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                  Text(
+                                    'Area Code: ' + documentSnapshot['area code'].toString(),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                  Text(
+                                    'Property Bill: $billMessage',
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 20,),
+                                  ///Report adding button
+                                  Center(
+                                      child: ElevatedIconButton(
+                                        onPress: buttonEnabled ? () {
+                                          userPass = _currentUser;
+                                          addressPass = documentSnapshot['address'];
+                                          accountPass = documentSnapshot['account number'];
+                                          phoneNumPass = documentSnapshot['cell number'];
+
+                                          _addNewFaultReport();
+
+                                          Fluttertoast.showToast(
+                                              msg: "Go to current reports to add image to reported fault",
+                                              gravity: ToastGravity.CENTER);
+
+                                        } : () {
+                                          Fluttertoast.showToast(msg: "Outstanding bill on property, Fault Reporting unavailable!",
+                                            gravity: ToastGravity.CENTER,);
+                                        },
+                                        labelText: 'Report Property Fault',
+                                        fSize: 16,
+                                        faIcon: const FaIcon(Icons.report),
+                                        fgColor: Colors.orangeAccent,
+                                        btSize: const Size(200, 50),
+                                      )
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        } else {
+                          ///a card to display ALL details for users when role is set to admin is in "display_info_all_users.dart"
+                          return Card();
+                        }
+                      },
+                    );
+                  }
+                  return const Padding(
+                    padding: EdgeInsets.all(10.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                },
+              ),
+            ),
+
+            ///TAB for viewing all current reports ordered latest to oldest and not completed
+            StreamBuilder(
+              stream: _faultData.orderBy('dateReported', descending: true).snapshots(),
+              builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+                if (streamSnapshot.hasData) {
+                  return ListView.builder(
+                    itemCount: streamSnapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      final DocumentSnapshot documentSnapshot =
+                      streamSnapshot.data!.docs[index];
+                      if(streamSnapshot.data!.docs[index]['faultResolved'] == false && streamSnapshot.data!.docs[index]['reporterContact'] == phone){
+                        return Card(
+                          margin: const EdgeInsets.all(10),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Center(
+                                  child: Text(
+                                    'Fault Information',
+                                    style: TextStyle(
+                                        fontSize: 19, fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                                const SizedBox(height: 10,),
+                                Text(
+                                  'Reporter Account Number: ${documentSnapshot['accountNumber']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                                Text(
+                                  'Street Address of Fault: ${documentSnapshot['address']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                                Text(
+                                  'Fault Type: ${documentSnapshot['faultType']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+
+                                Column(
+                                  children: [
+                                    if(documentSnapshot['faultDescription'] != "")...[
+                                      Text(
+                                        'Fault Description: ${documentSnapshot['faultDescription']}',
+                                        style: const TextStyle(
+                                            fontSize: 16, fontWeight: FontWeight.w400),
+                                      ),
+                                      const SizedBox(height: 5,),
+                                    ] else ...[
+
+                                    ],
+                                  ],
+                                ),
+
+                                Column(
+                                  children: [
+                                    if(documentSnapshot['handlerCom1'] != "")...[
+                                      Text(
+                                        'Handler Comment: ${documentSnapshot['handlerCom1']}',
+                                        style: const TextStyle(
+                                            fontSize: 16, fontWeight: FontWeight.w400),
+                                      ),
+                                      const SizedBox(height: 5,),
+                                    ] else ...[
+
+                                    ],
+                                  ],
+                                ),
+                                Column(
+                                  children: [
+                                    if(documentSnapshot['depComment1'] != "")...[
+                                      Text(
+                                        'Department Comment 1: ${documentSnapshot['depComment1']}',
+                                        style: const TextStyle(
+                                            fontSize: 16, fontWeight: FontWeight.w400),
+                                      ),
+                                      const SizedBox(height: 5,),
+                                    ] else ...[
+
+                                    ],
+                                  ],
+                                ),
+                                Column(
+                                  children: [
+                                    if(documentSnapshot['handlerCom2'] != "")...[
+                                      Text(
+                                        'Handler Final Comment: ${documentSnapshot['handlerCom2']}',
+                                        style: const TextStyle(
+                                            fontSize: 16, fontWeight: FontWeight.w400),
+                                      ),
+                                      const SizedBox(height: 5,),
+                                    ] else ...[
+
+                                    ],
+                                  ],
+                                ),
+                                Column(
+                                  children: [
+                                    if(documentSnapshot['depComment2'] != "")...[
+                                      Text(
+                                        'Department Comment 2: ${documentSnapshot['depComment2']}',
+                                        style: const TextStyle(
+                                            fontSize: 16, fontWeight: FontWeight.w400),
+                                      ),
+                                      const SizedBox(height: 5,),
+                                    ] else ...[
+
+                                    ],
+                                  ],
+                                ),
+
+                                Text(
+                                  'Resolve State: ${documentSnapshot['faultResolved'].toString()}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                                Text(
+                                  'Date of Fault Report: ${documentSnapshot['dateReported']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+
+                                Column(
+                                  children: [
+                                    if(documentSnapshot['faultDescription'] != "")...[
+                                      Visibility(
+                                        visible: imageVisibility,
+                                        child: InkWell(
+                                          child: Container(
+                                            margin: const EdgeInsets.only(bottom: 5),
+                                            height: 180,
+                                            child: Center(
+                                              child: Card(
+                                                color: Colors.grey,
+                                                semanticContainer: true,
+                                                clipBehavior: Clip.antiAliasWithSaveLayer,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(10.0),
+                                                ),
+                                                elevation: 0,
+                                                margin: const EdgeInsets.all(10.0),
+                                                child: FutureBuilder(
+                                                    future: _getImage(
+                                                      ///Firebase image location must be changed to display image based on the address
+                                                        context, 'files/faultImages/${documentSnapshot['dateReported']}/${documentSnapshot['address']}'),
+                                                    builder: (context, snapshot) {
+                                                      if (snapshot.hasError) {
+                                                        //imageVisibility = false;
+                                                        return const Text('Image not uploaded for Fault.', style: TextStyle(fontSize: 18),); //${snapshot.error} if error needs to be displayed instead
+                                                      }
+                                                      if (snapshot.connectionState ==
+                                                          ConnectionState.done) {
+                                                        return Container(
+                                                          child: snapshot.data,
+                                                        );
+                                                      }
+                                                      if (snapshot.connectionState ==
+                                                          ConnectionState.waiting) {
+                                                        return Container(
+                                                          child: const CircularProgressIndicator(),);
+                                                      }
+                                                      return Container();
+                                                    }
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ] else ...[
+
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 20,),
+                                Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        ElevatedIconButton(
+                                          onPress: () {
+                                            accountNumberRep = documentSnapshot['accountNumber'];
+                                            locationGivenRep = documentSnapshot['address'];
+
+                                            Navigator.push(context,
+                                                MaterialPageRoute(
+                                                    builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
+                                                  //MapPage()
+                                                ));
+                                          },
+                                          labelText: 'Fault Location',
+                                          fSize: 15,
+                                          faIcon: const FaIcon(Icons.map),
+                                          fgColor: Colors.green,
+                                          btSize: const Size(50, 50),
+                                        ),
+                                        ElevatedIconButton(
+                                          onPress: () {
+
+                                            locationGivenRep = documentSnapshot['address'];
+                                            reporterDateGiven = documentSnapshot['dateReported'];
+
+                                            Navigator.push(context,
+                                                MaterialPageRoute(
+                                                    builder: (context) => FaultImageUpload(propertyAddress: locationGivenRep, reportedDate: reporterDateGiven)
+                                                  //MapPage()
+                                                ));
+                                          },
+                                          labelText: 'Add Image',
+                                          fSize: 15,
+                                          faIcon: const FaIcon(Icons.photo_camera),
+                                          fgColor: Colors.blueGrey,
+                                          btSize: const Size(50, 50),
+                                        ),
+                                      ],
+                                    ),
+
+                                    ///Button for staff to use in calling the user that reported this fault, not needed here
+                                    // ElevatedButton(
+                                    //   onPressed: () {
+                                    //     showDialog(
+                                    //         barrierDismissible: false,
+                                    //         context: context,
+                                    //         builder: (context) {
+                                    //           return
+                                    //             AlertDialog(
+                                    //               shape: const RoundedRectangleBorder(
+                                    //                   borderRadius:
+                                    //                   BorderRadius.all(Radius.circular(16))),
+                                    //               title: const Text("Call Reporter!"),
+                                    //               content: const Text(
+                                    //                   "Would you like to call the individual who logged the fault?"),
+                                    //               actions: [
+                                    //                 IconButton(
+                                    //                   onPressed: () {
+                                    //                     Navigator.of(context).pop();
+                                    //                   },
+                                    //                   icon: const Icon(
+                                    //                     Icons.cancel,
+                                    //                     color: Colors.red,
+                                    //                   ),
+                                    //                 ),
+                                    //                 IconButton(
+                                    //                   onPressed: () {
+                                    //                     reporterCellGiven = documentSnapshot['reporterContact'];
+                                    //
+                                    //                     final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
+                                    //                     launchUrl(_tel);
+                                    //
+                                    //                     Navigator.of(context).pop();
+                                    //                   },
+                                    //                   icon: const Icon(
+                                    //                     Icons.done,
+                                    //                     color: Colors.green,
+                                    //                   ),
+                                    //                 ),
+                                    //               ],
+                                    //             );
+                                    //         });
+                                    //   },
+                                    //   style: ElevatedButton.styleFrom(
+                                    //     backgroundColor: Colors.grey[350],
+                                    //     fixedSize: const Size(150, 10),),
+                                    //   child: Row(
+                                    //     children: [
+                                    //       Icon(
+                                    //         Icons.call,
+                                    //         color: Colors.orange[700],
+                                    //       ),
+                                    //       const SizedBox(width: 2,),
+                                    //       const Text('Call Reporter', style: TextStyle(
+                                    //         fontWeight: FontWeight.w600,
+                                    //         color: Colors.black,),),
+                                    //     ],
+                                    //   ),
+                                    // ),
+                                    // const SizedBox(width: 5,),
+
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      else {
+                        return const Card();
+                      }
+                    },
+                  );
+                }
+                return const Padding(
+                  padding: EdgeInsets.all(10.0),
+                  child: Center(
+                    child: Card(
+                      margin: EdgeInsets.all(10),
+                      child: Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'No Faults Reported',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                          ),                      ),
+                      ),
+                    ),
+                  ),);
+              },
+            ),
+
+          ],
+        ),
       ),
     );
   }
 
+  ///All code bellow for geolocation and adding fault with and without an image
+  Future<void> locationAllow() async {
+    Position position = await _getGeoLocationPosition();
+    location ='Lat: ${position.latitude} , Long: ${position.longitude}';
+    GetAddressFromLatLong(position);
+    if(_getGeoLocationPosition.isBlank == false){
+      buttonEnabled = true;
+    }
+  }
+  Future<Position> _getGeoLocationPosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled don't continue
+      // accessing the position and request users of the
+      // App to enable the location services.
+      await Geolocator.openLocationSettings();
+      return Future.error('Location services are disabled.');
+    }
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+
+        return Future.error('Location permissions are denied');
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    // When we reach here, permissions are granted and we can
+    // continue accessing the position of the device.
+    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  }
+  Future<void> GetAddressFromLatLong(Position position)async {
+    List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+    print(placemarks);
+    Placemark place = placemarks[0];
+    Address = '${place.street} ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+  }
+
+  //Used to set the _photo file as image from gallery
+  Future imgFromGallery() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 60,);
+
+    setState(() {
+      if (pickedFile != null) {
+        _photo = File(pickedFile.path);
+      } else {
+        print('No image selected.');
+      }
+    });
+  }
+  //Used to set the _photo file as image from gallery
+  Future imgFromCamera() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.camera, imageQuality: 60,);
+
+    setState(() {
+      if (pickedFile != null) {
+        _photo = File(pickedFile.path);
+      } else {
+        print('No image selected.');
+      }
+    });
+  }
+
+  showImage(String image){
+    return Image.memory(base64Decode(image));
+  }
+
+  void _showPicker(context) {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext bc) {
+          return SafeArea(
+            child: Container(
+              child: new Wrap(
+                children: <Widget>[
+                  new ListTile(
+                      leading: new Icon(Icons.photo_library),
+                      title: new Text('Gallery'),
+                      onTap: () {
+                        imgFromGallery();
+                        Navigator.of(context).pop();
+                      }),
+                  new ListTile(
+                    leading: new Icon(Icons.photo_camera),
+                    title: new Text('Camera'),
+                    onTap: () {
+                      imgFromCamera();
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
+  ///Upload fault with an image file included
+  Future uploadFaultFile() async {
+    if (_photo == null) return;
+
+    final fileName = pathing.basename(_photo!.path);
+
+    File? imageFile = _photo;
+    List<int> imageBytes = imageFile!.readAsBytesSync();
+    String imageData = base64Encode(imageBytes);
+
+    final String photoName;
+
+    DateTime now = DateTime.now();
+    String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+
+    final destination = 'files/faultImages/general/$formattedDate';
+
+    String addressFault = _addressController.text;
+
+    if(_addressController.text.isEmpty){
+      addressFault = Address;
+    }
+
+    final String faultDescription = _faultDescriptionController.text;
+
+    if (_currentUser != null) {
+      await _faultData.add({
+        "uid": _currentUser,
+        "accountNumber": '',
+        "address": addressFault,
+        "faultType": dropdownValue,
+        "reporterContact": userPhone,
+        "depComment1": '',
+        "depComment2": '',
+        "handlerCom1": '',
+        "handlerCom2": '',
+        "faultDescription": faultDescription,
+        "depAllocated": '',
+        "faultResolved": false,
+        "dateReported": formattedDate,
+        "faultStage": 1,
+      });
+
+      try {
+        final ref = firebase_storage.FirebaseStorage.instance
+            .ref(destination)
+            .child('$addressFault/');   ///this is the jpg filename which needs to be named something on the db in order to display in the display screen
+        await ref.putFile(_photo!);
+        photoName = _photo!.toString();
+        print(destination);
+      } catch (e) {
+        print('error occured');
+      }
+
+      _addressController.text = '';
+      _faultDescriptionController.text = '';
+
+    } else {
+      Fluttertoast.showToast(msg: "Connection failed. Fix network!",
+          gravity: ToastGravity.CENTER);
+    }
+  }
+  ///Upload fault without an image file included and an image may be added later on
+  Future uploadFault() async {
+
+    DateTime now = DateTime.now();
+    String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+
+    final String addressFault = Address;
+    final String faultDescription = _faultDescriptionController.text;
+
+    if (_currentUser != null) {
+      await _faultData.add({
+        "uid": _currentUser,
+        "accountNumber": '',
+        "address": addressFault,
+        "faultType": dropdownValue,
+        "reporterContact": userPhone,
+        "depComment1": '',
+        "depComment2": '',
+        "handlerCom1": '',
+        "handlerCom2": '',
+        "faultDescription": faultDescription,
+        "depAllocated": '',
+        "faultResolved": false,
+        "dateReported": formattedDate,
+        "faultStage": 1,
+      });
+
+      _addressController.text = '';
+      _faultDescriptionController.text = '';
+
+    } else {
+      Fluttertoast.showToast(msg: "Connection failed. Fix network!",
+          gravity: ToastGravity.CENTER);
+    }
+  }
+
+  ///Modal for adding fault report to property since address and details not needed,
+  ///a check is also made beforehand if the property has outstanding bill and blocks unpaid bill property fault reporting
   Future<void> _addNewFaultReport() async {
     await showModalBottomSheet(
         isScrollControlled: true,
@@ -183,291 +1280,4 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
         });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[350],
-      appBar: AppBar(
-        title: const Text('Report Fault'),
-        backgroundColor: Colors.green,
-      ),
-      body: Column(
-        children: <Widget>[
-          SizedBox(
-            height: 200,
-            child: Card(
-              margin: const EdgeInsets.all(10),
-              child: Column(
-                children: [
-                  const SizedBox(height: 10,),
-                  const Center(
-                    child: Text(
-                      'Report Public Fault',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  const SizedBox(height: 10,),
-
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 0.0,horizontal: 10),
-                    child: Row(
-                      children: [
-                        Column(
-                            children: [
-                              SizedBox(
-                                width: 220,
-                                height: 50,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(left: 10, right: 10),
-                                  child: Center(
-                                    child: TextField(
-                                      decoration: InputDecoration(
-                                        enabledBorder: const OutlineInputBorder(
-                                            borderSide: BorderSide(width: 3, color: Colors.black54)
-                                        ),
-                                        contentPadding: const EdgeInsets.symmetric(vertical: 5 ,horizontal: 5),
-                                        suffixIcon: DropdownButtonFormField <String>( //DropdownButtonFormField
-                                          value: dropdownValue,
-                                          items: <String>['Select Fault Type', 'Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
-                                              .map<DropdownMenuItem<String>>((String value) {
-                                            return DropdownMenuItem<String>(
-                                              value: value,
-                                              child: Padding(
-                                                padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 6.0),
-                                                child: Text(
-                                                  value,
-                                                  style: const TextStyle(fontSize: 16),
-                                                ),
-                                              ),
-                                            );
-                                          }).toList(),
-                                          onChanged: (String? newValue) {
-                                            setState(() {
-                                              dropdownValue = newValue!;
-                                            });
-                                          },
-                                          icon: const Padding(
-                                            padding: EdgeInsets.only(left: 10, right: 10),
-                                            child: Icon(Icons.arrow_circle_down_sharp),
-                                          ),
-                                          iconEnabledColor: Colors.green,
-                                          style: const TextStyle(
-                                              color: Colors.black,
-                                              fontSize: 18
-                                          ),
-                                          dropdownColor: Colors.grey[50],
-                                          isExpanded: true,
-
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ]
-                        ),
-                        ElevatedIconButton(
-                          onPress: () async {
-                            if(dropdownValue == 'Select Fault Type'){
-                              Fluttertoast.showToast(msg: "Please Select The Fault Type First!",
-                                gravity: ToastGravity.CENTER,);
-                            } else{
-                              Navigator.push(context,
-                                  MaterialPageRoute(
-                                      builder: (context) => GeneralFaultReporting(faultTypeSelected: dropdownValue,)));
-                            }
-                          },
-                          labelText: 'Report',
-                          fSize: 16,
-                          faIcon: const FaIcon(Icons.report_problem),
-                          fgColor: Colors.orangeAccent,
-                          btSize: const Size(50, 50),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Padding(
-                    padding: const EdgeInsets.only(left: 10),
-                    child: Row(
-                      children: [
-                        ElevatedIconButton(
-                          onPress: () {
-                            Navigator.push(context,
-                                MaterialPageRoute(
-                                    builder: (context) => FaultViewingScreen()));
-                          },
-                          labelText: 'Current Reports',
-                          fSize: 15,
-                          faIcon: const FaIcon(Icons.list),
-                          fgColor: Colors.green,
-                          btSize: const Size(50, 50),
-                        ),
-                        ElevatedIconButton(
-                          onPress: () {
-                            showDialog(
-                                barrierDismissible: false,
-                                context: context,
-                                builder: (context) {
-                                  return
-                                    AlertDialog(
-                                      shape: const RoundedRectangleBorder(
-                                          borderRadius:
-                                          BorderRadius.all(Radius.circular(16))),
-                                      title: const Text("Call Report Center!"),
-                                      content: const Text(
-                                          "Would you like to call the report center directly?"),
-                                      actions: [
-                                        IconButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                          icon: const Icon(
-                                            Icons.cancel,
-                                            color: Colors.red,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          onPressed: () {
-                                            final Uri _tel = Uri.parse(
-                                                'tel:+27${0800001868}');
-                                            launchUrl(_tel);
-
-                                            Navigator.of(context).pop();
-                                            Get.back();
-                                          },
-                                          icon: const Icon(
-                                            Icons.done,
-                                            color: Colors.green,
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                });
-                          },
-                          labelText: 'Call Center',
-                          fSize: 16,
-                          faIcon: const FaIcon(Icons.phone),
-                          fgColor: Colors.orangeAccent,
-                          btSize: const Size(50, 50),
-                        ),
-
-                      ],
-                    ),
-                  ),
-
-                ],
-              ),
-            ),
-          ),
-
-          Expanded(
-            child: StreamBuilder(
-              stream: _propList.snapshots(),
-              builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-                if (streamSnapshot.hasData) {
-                  return ListView.builder(
-
-                    ///this call is to display all details for all users but is only displaying for the current user account.
-                    ///it can be changed to display all users for the staff to see if the role is set to all later on.
-                    itemCount: streamSnapshot.data!.docs.length,
-                    itemBuilder: (context, index) {
-                      final DocumentSnapshot documentSnapshot = streamSnapshot.data!.docs[index];
-                      String billMessage;
-
-                      ///A check for if payment is outstanding or not
-                      if (documentSnapshot['eBill'] != '') {
-                        billMessage = documentSnapshot['eBill'];
-                        buttonEnabled = false;
-                      } else {
-                        billMessage = 'No outstanding payments';
-                        buttonEnabled = true;
-                      }
-
-                      ///Check for only user information, this displays only for the users details and not all users in the database.
-                      if (streamSnapshot.data!.docs[index]['user id'] == userID) {
-                        return Card(
-                          margin: const EdgeInsets.all(10),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Center(
-                                  child: Text(
-                                    'Property Information',
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                                  ),
-                                ),
-                                const SizedBox(height: 20,),
-                                Text(
-                                  'Account Number: ' + documentSnapshot['account number'],
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                                ),
-                                const SizedBox(height: 5,),
-                                Text(
-                                  'Street Address: ' + documentSnapshot['address'],
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                                ),
-                                const SizedBox(height: 5,),
-                                Text(
-                                  'Area Code: ' + documentSnapshot['area code'].toString(),
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                                ),
-                                const SizedBox(height: 5,),
-                                Text(
-                                  'Property Bill: $billMessage',
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                                ),
-                                const SizedBox(height: 20,),
-
-                                ///Report adding button
-                                Center(
-                                    child: ElevatedIconButton(
-                                      onPress: buttonEnabled ? () {
-                                        userPass = _currentUser;
-                                        addressPass = documentSnapshot['address'];
-                                        accountPass = documentSnapshot['account number'];
-                                        phoneNumPass = documentSnapshot['cell number'];
-
-                                        _addNewFaultReport();
-
-                                        Fluttertoast.showToast(
-                                            msg: "Go to current reports to add image to reported fault",
-                                            gravity: ToastGravity.CENTER);
-
-                                      } : () {
-                                        Fluttertoast.showToast(msg: "Outstanding bill on property, Fault Reporting unavailable!",
-                                          gravity: ToastGravity.CENTER,);
-                                      },
-                                      labelText: 'Report Property Fault',
-                                      fSize: 16,
-                                      faIcon: const FaIcon(Icons.report),
-                                      fgColor: Colors.orangeAccent,
-                                      btSize: const Size(200, 50),
-                                    )
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      } else {
-                        ///a card to display ALL details for users when role is set to admin is in "display_info_all_users.dart"
-                        return Card();
-                      }
-                    },
-                  );
-                }
-                return const Padding(
-                  padding: EdgeInsets.all(10.0),
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

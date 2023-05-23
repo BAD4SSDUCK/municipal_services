@@ -779,8 +779,8 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           context: context,
                                           builder: (context) {
                                             return AlertDialog(
-                                              title: const Text("Upload Meter Image"),
-                                              content: const Text("Uploading a new image will replace current image! Are you sure?"),
+                                              title: const Text("Upload Electric Meter Image"),
+                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
                                               actions: [
                                                 IconButton(
                                                   onPressed: () {
@@ -936,7 +936,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           builder: (context) {
                                             return AlertDialog(
                                               title: const Text("Upload Water Meter Image"),
-                                              content: const Text("Uploading a new image\nwill replace current image! Are you sure?"),
+                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
                                               actions: [
                                                 IconButton(
                                                   onPressed: () {

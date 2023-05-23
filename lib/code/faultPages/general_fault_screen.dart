@@ -190,6 +190,7 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
                 ),
               ),
 
+
               const SizedBox(height: 60,),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 50.0),
