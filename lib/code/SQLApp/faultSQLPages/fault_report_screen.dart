@@ -203,7 +203,7 @@ class ReportPropertyMenu extends StatelessWidget {
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: ElevatedIconButton(
+                child: BasicIconButtonGreen(
                   onPress: () async {
                     Navigator.push(context,
                         MaterialPageRoute(
@@ -258,7 +258,7 @@ class ReportPropertyMenu extends StatelessWidget {
                   ///button visibility only when the current month is selected
                   Center(
                       child: Material(
-                        child: ElevatedIconButton(
+                        child: BasicIconButtonGreen(
                           onPress: buttonEnabled ? () {
                             userPass = _currentUser.user.uid.toString();
                             addressPass = _propertiesData.properties.address.toString();
@@ -281,7 +281,7 @@ class ReportPropertyMenu extends StatelessWidget {
 
                   ///Report adding button
                   Center(
-                      child: ElevatedIconButton(
+                      child: BasicIconButtonGreen(
                         onPress: buttonEnabled ? () {
                           userPass = _currentUser.user.uid.toString();
                           addressPass = _propertiesData.properties.address.toString();
@@ -303,7 +303,7 @@ class ReportPropertyMenu extends StatelessWidget {
                 } else {
                   return Column(
                     children: [
-                      ElevatedIconButton(
+                      BasicIconButtonGreen(
                         onPress: () async {
                           Fluttertoast.showToast(
                             msg: "Reporting a non-property related fault!",

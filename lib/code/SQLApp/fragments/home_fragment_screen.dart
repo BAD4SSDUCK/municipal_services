@@ -114,7 +114,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                ElevatedIconButton(
+                                BasicIconButtonGreen(
                                   onPress: () async {
                                     Fluttertoast.showToast(msg: "Now downloading your statements!\nPlease wait a few seconds!",
                                       gravity: ToastGravity.CENTER,);
@@ -143,7 +143,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                ElevatedIconButton(
+                                BasicIconButtonGreen(
                                   onPress: () async {
                                     // Fluttertoast.showToast(msg: "Now downloading your statements!\nPlease wait a few seconds!",
                                     //   gravity: ToastGravity.CENTER,);
@@ -171,7 +171,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                ElevatedIconButton(
+                                BasicIconButtonGreen(
                                   onPress: (){
                                     ProfileFragmentScreen().signOutUser();
                                   },

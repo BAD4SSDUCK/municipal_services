@@ -649,7 +649,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  ElevatedIconButton(
+                                  BasicIconButtonGreen(
                                     onPress: () {
                                       accountNumberRep = documentSnapshot['accountNumber'];
                                       locationGivenRep = documentSnapshot['address'];
@@ -663,10 +663,10 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                                     labelText: 'Fault Location',
                                     fSize: 15,
                                     faIcon: const FaIcon(Icons.map),
-                                    fgColor: Colors.green,
+                                    fgColor: Colors.purple,
                                     btSize: const Size(50, 50),
                                   ),
-                                  ElevatedIconButton(
+                                  BasicIconButtonGreen(
                                     onPress: () {
 
                                       locationGivenRep = documentSnapshot['address'];

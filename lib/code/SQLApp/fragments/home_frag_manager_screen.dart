@@ -125,7 +125,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                ElevatedIconButton(
+                                BasicIconButtonGreen(
                                   onPress: () async {
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => MapScreenMulti()));
@@ -137,7 +137,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   btSize: const Size(130, 120),
                                 ),
                                 const SizedBox(width: 20,),
-                                ElevatedIconButton(
+                                BasicIconButtonGreen(
                                   onPress: () async {
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => FaultManageScreen()));
@@ -160,7 +160,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                ElevatedIconButton(
+                                BasicIconButtonGreen(
                                   onPress: () async {
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => ChatList()));
@@ -172,7 +172,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   btSize: const Size(130, 120),
                                 ),
                                 const SizedBox(width: 20,),
-                                ElevatedIconButton(
+                                BasicIconButtonGreen(
                                   onPress: () async {
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => AdminManagementScreen()));
@@ -195,7 +195,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                ElevatedIconButton(
+                                BasicIconButtonGreen(
                                   onPress: (){
                                     ProfileFragmentScreen().signOutUser();
                                   },
@@ -206,7 +206,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   btSize: const Size(130, 120),
                                 ),
                                 const SizedBox(width: 20,),
-                                ElevatedIconButton(
+                                BasicIconButtonGreen(
                                   onPress: () async {
 
                                     Navigator.push(context,

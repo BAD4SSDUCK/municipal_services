@@ -271,6 +271,22 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                             ),
                           ),
 
+                          const SizedBox(height: 20,),
+
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                            child: TextFormField(
+                              controller: _faultDescriptionController,
+                              validator: (val) =>
+                              val == ""
+                                  ? "Please describe the fault"
+                                  : null,
+                              decoration: formItemDecoration("Fault Description...", const Icon(
+                                Icons.note_alt_outlined,
+                                color: Colors.black87,),
+                              ),
+                            ),
+                          ),
 
                           const SizedBox(height: 20,),
 
@@ -289,22 +305,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           ),
                           ),
 
-                          const SizedBox(height: 20,),
-
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                            child: TextFormField(
-                              controller: _faultDescriptionController,
-                              validator: (val) =>
-                              val == ""
-                                  ? "Please describe the fault"
-                                  : null,
-                              decoration: formItemDecoration("Fault Description...", const Icon(
-                                Icons.note_alt_outlined,
-                                color: Colors.black87,),
-                            ),
-                          ),
-                          ),
 
                           const SizedBox(height: 20,),
 
@@ -613,7 +613,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                   const SizedBox(height: 20,),
                                   ///Report adding button
                                   Center(
-                                      child: ElevatedIconButton(
+                                      child: BasicIconButtonGreen(
                                         onPress: buttonEnabled ? () {
                                           userPass = _currentUser;
                                           addressPass = documentSnapshot['address'];
@@ -841,7 +841,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
-                                        ElevatedIconButton(
+                                        BasicIconButtonGreen(
                                           onPress: () {
                                             accountNumberRep = documentSnapshot['accountNumber'];
                                             locationGivenRep = documentSnapshot['address'];
@@ -855,10 +855,10 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                           labelText: 'Fault Location',
                                           fSize: 15,
                                           faIcon: const FaIcon(Icons.map),
-                                          fgColor: Colors.green,
+                                          fgColor: Colors.purple,
                                           btSize: const Size(50, 50),
                                         ),
-                                        ElevatedIconButton(
+                                        BasicIconButtonGreen(
                                           onPress: () {
                                             locationGivenRep = documentSnapshot['address'];
                                             reporterDateGiven = documentSnapshot['dateReported'];

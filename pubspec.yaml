@@ -36,7 +36,9 @@ dependencies:
   http: ^0.13.5
   fluttertoast: ^8.0.9
   font_awesome_flutter: ^10.3.0
-  intl: ^0.17.0
+  intl: ^0.18.1
+
+  flutter_plugin_android_lifecycle: ^2.0.15
 
   animated_background: ^2.0.0
 
@@ -59,12 +61,16 @@ dependencies:
   ##I need to figure out why this pdf viewer breaks dependencies and causes version conflicts despite being the latest and not beta version ^3.0.0
   #pdf_viewer_plugin: ^2.0.1
 
+  win32: ^4.1.4
+
   flutter_pdfview: ^1.2.5
-  path_provider: ^2.0.8
-  file_picker: ^4.3.3
+#  path_provider: ^2.0.8
+  path_provider: ^2.0.15
+#  file_picker: ^4.3.3
+  file_picker: ^5.3.1
 
   google_sign_in: ^5.4.2
-  google_fonts: ^3.0.1
+  google_fonts: ^4.0.4
   google_maps_flutter: 2.2.1
   flutter_google_places: ^0.3.0
   geolocator: ^9.0.2
