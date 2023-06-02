@@ -443,7 +443,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Account Details'),
+        title: const Text('Account Management'),
         backgroundColor: Colors.green,
       ),
       body: StreamBuilder(
@@ -743,7 +743,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(width: 5,),
+                                  const SizedBox(width: 10,),
                                   ElevatedButton(
                                     onPressed: () {
                                       accountNumber = documentSnapshot['account number'];
@@ -770,54 +770,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                     ),
                                   ),
                                   const SizedBox(width: 5,),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      eMeterNumber = documentSnapshot['meter number'];
-                                      imgFolder = documentSnapshot['cell number'];
-                                      showDialog(
-                                          barrierDismissible: false,
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: const Text("Upload Electric Meter Image"),
-                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () async {
-                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                                    Navigator.push(context,
-                                                        MaterialPageRoute(builder: (context) => ImageUploadMeter()));
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          });
-                                    },
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(115, 10),),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.camera_alt,
-                                          color: Colors.grey[700],
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        Text('E-Meter',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
-                                      ],
-                                    ),
-                                  ),
+
                                   ///No need for a delete button but this is what a delete would look like
                                   // GestureDetector(
                                   //   onTap: () {
@@ -875,7 +828,6 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 0,),
                           Column(
                             children: [
                               Row(
@@ -900,9 +852,9 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
 
                                       ///todo: make this find the name of documents by the property account number owned by the logged in user for their statement
                                       if(PDFApi.loadFirebase('pdfs/$phoneNum/').toString().contains(accountNumberPDF)){
-                                          nameOfUserPdf = PDFApi.loadFirebase('pdfs/$phoneNum/').toString();
+                                        nameOfUserPdf = PDFApi.loadFirebase('pdfs/$phoneNum/').toString();
 
-                                          final url = nameOfUserPdf;//'pdfs/$userID/ds_wirelessp2p.pdf';
+                                        final url = nameOfUserPdf;//'pdfs/$userID/ds_wirelessp2p.pdf';
                                       }
 
                                       final url2 = 'pdfs/$phoneNum/Invoice_000003728743_040000653226.pdf';
@@ -925,7 +877,16 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(width: 5,),
+                                ],
+                              )
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
                                   ElevatedButton(
                                     onPressed: () {
                                       wMeterNumber = documentSnapshot['water meter number'];
@@ -965,16 +926,66 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                     style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350] ),
                                     child: Row(
                                       children: [
-                                      Icon(
-                                      Icons.camera_alt,
-                                      color: Colors.grey[700],
-                                    ),
+                                        Icon(
+                                          Icons.camera_alt,
+                                          color: Colors.grey[700],
+                                        ),
                                         const SizedBox(width: 2,),
                                         Text('W-Meter' ,style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black),),
                                       ],
                                     ),
 
                                   ),
+                                  const SizedBox(width: 10,),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      eMeterNumber = documentSnapshot['meter number'];
+                                      imgFolder = documentSnapshot['cell number'];
+                                      showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text("Upload Electric Meter Image"),
+                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                              actions: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.cancel,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () async {
+                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                                                    Navigator.push(context,
+                                                        MaterialPageRoute(builder: (context) => ImageUploadMeter()));
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.done,
+                                                    color: Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          });
+                                    },
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(115, 10),),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.camera_alt,
+                                          color: Colors.grey[700],
+                                        ),
+                                        const SizedBox(width: 2,),
+                                        Text('E-Meter',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
+                                      ],
+                                    ),
+                                  ),
+
                                   const SizedBox(width: 6,),
                                   // GestureDetector(
                                   //   onTap: () {

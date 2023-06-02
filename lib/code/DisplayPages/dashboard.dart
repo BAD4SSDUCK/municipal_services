@@ -31,6 +31,7 @@ import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 import 'package:municipal_track/code/Reusable/menu_reusable_elevated_button.dart';
 import 'package:path/path.dart';
+import '../main_page.dart';
 import 'add_details.dart';
 import 'display_info.dart';
 import 'display_info_all_users.dart';
@@ -378,6 +379,7 @@ class MainMenu extends StatefulWidget {
                                                 FirebaseAuth.instance.signOut();
                                                 Navigator.pop(context);
 
+                                                // Navigator.popAndPushNamed(context, const MainPage() as String);
                                                 ///SystemNavigator.pop() closes the entire app
                                                 // SystemNavigator.pop();
                                               },

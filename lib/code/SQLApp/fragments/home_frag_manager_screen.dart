@@ -15,7 +15,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:municipal_track/code/Chat/chat_screen.dart';
-import 'package:municipal_track/code/ImageUploading/image_upload_prop_fault.dart';
 import 'package:municipal_track/code/MapTools/map_screen_multi.dart';
 import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_track/code/Reusable/main_menu_reusable_button.dart';
@@ -125,7 +124,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                BasicIconButtonGreen(
+                                ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => MapScreenMulti()));
@@ -137,7 +136,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   btSize: const Size(130, 120),
                                 ),
                                 const SizedBox(width: 20,),
-                                BasicIconButtonGreen(
+                                ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => FaultManageScreen()));
@@ -160,7 +159,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                BasicIconButtonGreen(
+                                ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => ChatList()));
@@ -172,7 +171,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   btSize: const Size(130, 120),
                                 ),
                                 const SizedBox(width: 20,),
-                                BasicIconButtonGreen(
+                                ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => AdminManagementScreen()));
@@ -195,9 +194,9 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                BasicIconButtonGreen(
+                                ElevatedIconButton(
                                   onPress: (){
-                                    ProfileFragmentScreen().signOutUser();
+                                    // ProfileFragmentScreen().signOutUser();
                                   },
                                   labelText: 'Logout',
                                   fSize: 18,
@@ -206,11 +205,11 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   btSize: const Size(130, 120),
                                 ),
                                 const SizedBox(width: 20,),
-                                BasicIconButtonGreen(
+                                ElevatedIconButton(
                                   onPress: () async {
 
-                                    Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => PropertyFragmentScreenAll()));
+                                    // Navigator.push(context,
+                                        // MaterialPageRoute(builder: (context) => PropertyFragmentScreenAll()));
                                   },
                                   labelText: 'Reading\nCapture',
                                   fSize: 16,

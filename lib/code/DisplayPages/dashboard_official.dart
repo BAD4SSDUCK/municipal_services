@@ -29,6 +29,8 @@ import 'package:municipal_track/code/Reusable/menu_reusable_elevated_button.dart
 
 import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 
+import '../main_page.dart';
+
 
 class HomeManagerScreen extends StatefulWidget {
   const HomeManagerScreen({Key? key}) : super(key: key);
@@ -246,6 +248,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                                   FirebaseAuth.instance.signOut();
                                                   Navigator.pop(context);
 
+                                                  // Navigator.popAndPushNamed(context, const MainPage() as String);
                                                   ///SystemNavigator.pop() closes the entire app
                                                   // SystemNavigator.pop();
                                                 },

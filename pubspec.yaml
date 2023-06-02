@@ -49,7 +49,7 @@ dependencies:
 
   sql_conn: ^0.0.3
 
-  firebase_core: ^2.2.0
+  firebase_core: ^2.8.0
   firebase_auth: ^4.2.10
   firebase_auth_web: ^5.2.3
   firebase_database: ^10.0.5

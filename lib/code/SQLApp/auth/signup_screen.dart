@@ -537,7 +537,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 const Text("Already have an Account?"),
                                 TextButton(
                                   onPressed: () {
-                                    Get.to(LoginScreen());
+                                    // Get.to(LoginScreen());
                                   },
                                   child: const Text("Login Here",
                                     style: TextStyle(

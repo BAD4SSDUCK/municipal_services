@@ -374,59 +374,94 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                   } else {
                                     Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
                                   }
-                                } else {
-                                  showDialog(
-                                      barrierDismissible: false,
-                                      context: context,
-                                      builder: (context) {
-                                        return
-                                          AlertDialog(
-                                            shape: const RoundedRectangleBorder(
-                                                borderRadius:
-                                                BorderRadius.all(Radius.circular(16))),
-                                            title: const Text("Report Fault Without Image!"),
-                                            content: const Text(
-                                                "Reporting a fault without a photo is possible. A photo can be added later on if necessary,\n\nare you sure you want to leave out a photo?"),
-                                            actions: [
-                                              IconButton(
-                                                onPressed: () {
-                                                  Fluttertoast.showToast(msg: "Please tap on the image area and select the image to upload!", gravity: ToastGravity.CENTER);
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(
-                                                  Icons.cancel,
-                                                  color: Colors.red,
+                                } else if (_photo == null) {
+                                  if(dropdownValue !='Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty) {
+                                    showDialog(
+                                        barrierDismissible: false,
+                                        context: context,
+                                        builder: (context) {
+                                          return
+                                            AlertDialog(
+                                              shape: const RoundedRectangleBorder(
+                                                  borderRadius:
+                                                  BorderRadius.all(
+                                                      Radius.circular(16))),
+                                              title: const Text(
+                                                  "Report Fault Without Image!"),
+                                              content: const Text(
+                                                  "Reporting a fault without a photo is possible. A photo can be added later on if necessary,\n\nare you sure you want to leave out a photo?"),
+                                              actions: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Fluttertoast.showToast(
+                                                        msg: "Please tap on the image area and select the image to upload!",
+                                                        gravity: ToastGravity
+                                                            .CENTER);
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.cancel,
+                                                    color: Colors.red,
+                                                  ),
                                                 ),
-                                              ),
-                                              IconButton(
-                                                onPressed: () {
-                                                  if(dropdownValue !='Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty){
-                                                    if(_reporterPhoneController.text.contains('+27')){
-                                                      uploadFault();
-                                                      Fluttertoast.showToast(msg: "Fault has been Reported!", gravity: ToastGravity.CENTER);
-                                                      Navigator.of(context).pop();
+                                                IconButton(
+                                                  onPressed: () {
+                                                    if (dropdownValue !=
+                                                        'Select Fault Type' &&
+                                                        _addressController.text
+                                                            .isNotEmpty &&
+                                                        _faultDescriptionController
+                                                            .text.isNotEmpty &&
+                                                        _reporterPhoneController
+                                                            .text.isNotEmpty) {
+                                                      if (_reporterPhoneController
+                                                          .text.contains(
+                                                          '+27')) {
+                                                        uploadFault();
+                                                        Fluttertoast.showToast(
+                                                            msg: "Fault has been Reported!",
+                                                            gravity: ToastGravity
+                                                                .CENTER);
+                                                        Navigator.of(context)
+                                                            .pop();
+                                                      } else {
+                                                        Fluttertoast.showToast(
+                                                            msg: "Contact number must have +27 country code!",
+                                                            gravity: ToastGravity
+                                                                .CENTER);
+                                                      }
                                                     } else {
-                                                      Fluttertoast.showToast(msg: "Contact number must have +27 country code!", gravity: ToastGravity.CENTER);
+                                                      Fluttertoast.showToast(
+                                                          msg: "Please fill all fields to report!",
+                                                          gravity: ToastGravity
+                                                              .CENTER);
                                                     }
-                                                  } else {
-                                                    Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
-                                                  }
-                                                  if(_reporterPhoneController.text.contains('+27')){
+                                                    if (_reporterPhoneController
+                                                        .text.contains('+27')) {
 
-                                                  } else {
-                                                    Fluttertoast.showToast(msg: "Contact number must have +27 country code!", gravity: ToastGravity.CENTER);
-                                                  }
-                                                },
-                                                icon: const Icon(
-                                                  Icons.done,
-                                                  color: Colors.green,
+                                                    } else {
+                                                      Fluttertoast.showToast(
+                                                          msg: "Contact number must have +27 country code!",
+                                                          gravity: ToastGravity
+                                                              .CENTER);
+                                                    }
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.done,
+                                                    color: Colors.green,
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
-                                          );
-                                      });
+                                              ],
+                                            );
+                                        });
+                                  } else {
+                                    Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
+                                  }
 
+                                } else {
+                                  Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
                                 }
+
                               } : (){
                                 Fluttertoast.showToast(msg: "Please allow location access!", gravity: ToastGravity.CENTER);
                               },
@@ -834,111 +869,109 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                     ],
                                   ],
                                 ),
-                                const SizedBox(height: 20,),
-                                Column(
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        BasicIconButtonGreen(
-                                          onPress: () {
-                                            accountNumberRep = documentSnapshot['accountNumber'];
-                                            locationGivenRep = documentSnapshot['address'];
+                                const SizedBox(height: 10,),
+                                Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      BasicIconButtonGreen(
+                                        onPress: () {
+                                          accountNumberRep = documentSnapshot['accountNumber'];
+                                          locationGivenRep = documentSnapshot['address'];
 
-                                            Navigator.push(context,
-                                                MaterialPageRoute(
-                                                    builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                                  //MapPage()
-                                                ));
-                                          },
-                                          labelText: 'Fault Location',
-                                          fSize: 15,
-                                          faIcon: const FaIcon(Icons.map),
-                                          fgColor: Colors.purple,
-                                          btSize: const Size(50, 50),
-                                        ),
-                                        BasicIconButtonGreen(
-                                          onPress: () {
-                                            locationGivenRep = documentSnapshot['address'];
-                                            reporterDateGiven = documentSnapshot['dateReported'];
-                                            Navigator.push(context,
-                                                MaterialPageRoute(
-                                                    builder: (context) => FaultImageUpload(propertyAddress: locationGivenRep, reportedDate: reporterDateGiven)
-                                                  //MapPage()
-                                                ));
-                                          },
-                                          labelText: 'Add Image',
-                                          fSize: 15,
-                                          faIcon: const FaIcon(Icons.photo_camera),
-                                          fgColor: Colors.blueGrey,
-                                          btSize: const Size(50, 50),
-                                        ),
-                                      ],
-                                    ),
+                                          Navigator.push(context,
+                                              MaterialPageRoute(
+                                                  builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
+                                                //MapPage()
+                                              ));
+                                        },
+                                        labelText: 'Fault Location',
+                                        fSize: 15,
+                                        faIcon: const FaIcon(Icons.map),
+                                        fgColor: Colors.purple,
+                                        btSize: const Size(50, 50),
+                                      ),
+                                      BasicIconButtonGreen(
+                                        onPress: () {
+                                          locationGivenRep = documentSnapshot['address'];
+                                          reporterDateGiven = documentSnapshot['dateReported'];
+                                          Navigator.push(context,
+                                              MaterialPageRoute(
+                                                  builder: (context) => FaultImageUpload(propertyAddress: locationGivenRep, reportedDate: reporterDateGiven)
+                                                //MapPage()
+                                              ));
+                                        },
+                                        labelText: 'Add Image',
+                                        fSize: 15,
+                                        faIcon: const FaIcon(Icons.photo_camera),
+                                        fgColor: Colors.blueGrey,
+                                        btSize: const Size(50, 50),
+                                      ),
 
-                                    ///Button for staff to use in calling the user that reported this fault, not needed here
-                                    // ElevatedButton(
-                                    //   onPressed: () {
-                                    //     showDialog(
-                                    //         barrierDismissible: false,
-                                    //         context: context,
-                                    //         builder: (context) {
-                                    //           return
-                                    //             AlertDialog(
-                                    //               shape: const RoundedRectangleBorder(
-                                    //                   borderRadius:
-                                    //                   BorderRadius.all(Radius.circular(16))),
-                                    //               title: const Text("Call Reporter!"),
-                                    //               content: const Text(
-                                    //                   "Would you like to call the individual who logged the fault?"),
-                                    //               actions: [
-                                    //                 IconButton(
-                                    //                   onPressed: () {
-                                    //                     Navigator.of(context).pop();
-                                    //                   },
-                                    //                   icon: const Icon(
-                                    //                     Icons.cancel,
-                                    //                     color: Colors.red,
-                                    //                   ),
-                                    //                 ),
-                                    //                 IconButton(
-                                    //                   onPressed: () {
-                                    //                     reporterCellGiven = documentSnapshot['reporterContact'];
-                                    //
-                                    //                     final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                    //                     launchUrl(_tel);
-                                    //
-                                    //                     Navigator.of(context).pop();
-                                    //                   },
-                                    //                   icon: const Icon(
-                                    //                     Icons.done,
-                                    //                     color: Colors.green,
-                                    //                   ),
-                                    //                 ),
-                                    //               ],
-                                    //             );
-                                    //         });
-                                    //   },
-                                    //   style: ElevatedButton.styleFrom(
-                                    //     backgroundColor: Colors.grey[350],
-                                    //     fixedSize: const Size(150, 10),),
-                                    //   child: Row(
-                                    //     children: [
-                                    //       Icon(
-                                    //         Icons.call,
-                                    //         color: Colors.orange[700],
-                                    //       ),
-                                    //       const SizedBox(width: 2,),
-                                    //       const Text('Call Reporter', style: TextStyle(
-                                    //         fontWeight: FontWeight.w600,
-                                    //         color: Colors.black,),),
-                                    //     ],
-                                    //   ),
-                                    // ),
-                                    // const SizedBox(width: 5,),
+                                      ///Button for staff to use in calling the user that reported this fault, not needed here
+                                      // ElevatedButton(
+                                      //   onPressed: () {
+                                      //     showDialog(
+                                      //         barrierDismissible: false,
+                                      //         context: context,
+                                      //         builder: (context) {
+                                      //           return
+                                      //             AlertDialog(
+                                      //               shape: const RoundedRectangleBorder(
+                                      //                   borderRadius:
+                                      //                   BorderRadius.all(Radius.circular(16))),
+                                      //               title: const Text("Call Reporter!"),
+                                      //               content: const Text(
+                                      //                   "Would you like to call the individual who logged the fault?"),
+                                      //               actions: [
+                                      //                 IconButton(
+                                      //                   onPressed: () {
+                                      //                     Navigator.of(context).pop();
+                                      //                   },
+                                      //                   icon: const Icon(
+                                      //                     Icons.cancel,
+                                      //                     color: Colors.red,
+                                      //                   ),
+                                      //                 ),
+                                      //                 IconButton(
+                                      //                   onPressed: () {
+                                      //                     reporterCellGiven = documentSnapshot['reporterContact'];
+                                      //
+                                      //                     final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
+                                      //                     launchUrl(_tel);
+                                      //
+                                      //                     Navigator.of(context).pop();
+                                      //                   },
+                                      //                   icon: const Icon(
+                                      //                     Icons.done,
+                                      //                     color: Colors.green,
+                                      //                   ),
+                                      //                 ),
+                                      //               ],
+                                      //             );
+                                      //         });
+                                      //   },
+                                      //   style: ElevatedButton.styleFrom(
+                                      //     backgroundColor: Colors.grey[350],
+                                      //     fixedSize: const Size(150, 10),),
+                                      //   child: Row(
+                                      //     children: [
+                                      //       Icon(
+                                      //         Icons.call,
+                                      //         color: Colors.orange[700],
+                                      //       ),
+                                      //       const SizedBox(width: 2,),
+                                      //       const Text('Call Reporter', style: TextStyle(
+                                      //         fontWeight: FontWeight.w600,
+                                      //         color: Colors.black,),),
+                                      //     ],
+                                      //   ),
+                                      // ),
+                                      // const SizedBox(width: 5,),
 
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
