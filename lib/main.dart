@@ -7,24 +7,22 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:municipal_track/code/MapTools/location_controller.dart';
+
 import 'package:municipal_track/code/SQLApp/fragments/home_frag_manager_screen.dart';
 import 'package:municipal_track/code/SQLInt/sql_main.dart';
 import 'package:municipal_track/code/SQLApp/auth/login_screen.dart';
 import 'package:municipal_track/code/login/citizen_otp_page.dart';
 import 'package:municipal_track/code/login/login_page.dart';
-
 import 'code/SQLApp/fragments/dashboard_of_fragments_sql.dart';
+
 import 'code/main_page.dart';
 
 
 void main() async{
 
   WidgetsFlutterBinding.ensureInitialized();
-
   HttpOverrides.global = MyHttpOverrides();
-
   await Firebase.initializeApp();
-
   await FirebaseMessaging.instance.getInitialMessage();
 
   ///notification section
@@ -100,4 +98,3 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print('Handling a background message ${message.messageId}');
 }
 ///notification handler end
-
