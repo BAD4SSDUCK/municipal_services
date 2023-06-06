@@ -35,7 +35,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   final _addressController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _commentController = TextEditingController();
-  final _wDescriptionController = TextEditingController();
   final _depAllocationController = TextEditingController();
   late bool _faultResolvedController;
   final _dateReportedController = TextEditingController();
@@ -131,9 +130,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     if (documentSnapshot != null) {
       _accountNumberController.text = documentSnapshot['accountNumber'];
       _addressController.text = documentSnapshot['address'];
-      _descriptionController.text = documentSnapshot['generalFault'];
+      _descriptionController.text = documentSnapshot['faultDescription'];
       _commentController.text = '';
-      _wDescriptionController.text = documentSnapshot['waterFaultDes'];
       _depAllocationController.text = documentSnapshot['depAllocated'];
       _faultResolvedController = documentSnapshot['faultResolved'];
       _dateReportedController.text = documentSnapshot['dateReported'];
@@ -182,14 +180,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                     ),
                   ),
                   Visibility(
-                    visible: visHide,
-                    child: TextField(
-                      controller: _wDescriptionController,
-                      decoration: const InputDecoration(
-                          labelText: 'Water Fault Description'),
-                    ),
-                  ),
-                  Visibility(
                     visible: visStage1,
                     child: const Text('Department Allocation'),
                   ),
@@ -226,14 +216,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                         labelText: 'Comment to Department',),
                     ),
                   ),
-                  // Visibility(
-                  //   visible: visShow,
-                  //   child: TextField(
-                  //     controller: _depAllocationController,
-                  //     decoration: const InputDecoration(
-                  //         labelText: 'Department Allocation'),
-                  //   ),
-                  // ),
                   const SizedBox(height: 10,),
                   Visibility(
                     visible: visStage3,
@@ -271,6 +253,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                     child: const Text('Update'),
                     onPressed: () async {
                       final String accountNumber = _accountNumberController.text;
+                      final String reporterNumber = documentSnapshot['cell number'];
                       final String address = _addressController.text;
                       final String userComment = _commentController.text;
                       final String depAllocated = _depAllocationController.text;
@@ -280,16 +263,13 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
 
                       if (faultStage == 1) {
-                        if (accountNumber != null) {
+                        if (reporterNumber != null) {
                           await _faultData
                               .doc(documentSnapshot.id)
                               .update({
                             "accountNumber": accountNumber,
                             "address": address,
                             "depComment1": userComment,
-                            "depComment2": '',
-                            "handlerCom1": '',
-                            "handlerCom2": '',
                             "depAllocated": depSelected,
                             "faultResolved": faultResolved,
                             "dateReported": dateRep,
@@ -301,7 +281,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                         _accountNumberController.text = '';
                         _addressController.text = '';
                         _commentController.text = '';
-                        _wDescriptionController.text = '';
                         _depAllocationController.text = '';
                         dropdownValue = '';
                         _faultResolvedController = false;
@@ -315,16 +294,13 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                         Navigator.of(context).pop();
 
                       } else if (faultStage == 2) {
-                        if (accountNumber != null) {
+                        if (reporterNumber != null) {
                           await _faultData
                               .doc(documentSnapshot.id)
                               .update({
                             "accountNumber": accountNumber,
                             "address": address,
-                            "depComment1": '',
-                            "depComment2": '',
                             "handlerCom1": userComment,
-                            "handlerCom2": '',
                             "depAllocated": depSelected,
                             "faultResolved": faultResolved,
                             "dateReported": dateRep,
@@ -336,7 +312,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                         _accountNumberController.text = '';
                         _addressController.text = '';
                         _commentController.text = '';
-                        _wDescriptionController.text = '';
                         _depAllocationController.text = '';
                         dropdownValue = '';
                         _faultResolvedController = false;
@@ -350,16 +325,13 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                         Navigator.of(context).pop();
 
                       } else if (faultStage == 3) {
-                        if (accountNumber != null) {
+                        if (reporterNumber != null) {
                           await _faultData
                               .doc(documentSnapshot.id)
                               .update({
                             "accountNumber": accountNumber,
                             "address": address,
-                            "depComment1": '',
                             "depComment2": userComment,
-                            "handlerCom1": '',
-                            "handlerCom2": '',
                             "depAllocated": depSelected,
                             "faultResolved": faultResolved,
                             "dateReported": dateRep,
@@ -371,7 +343,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                         _accountNumberController.text = '';
                         _addressController.text = '';
                         _commentController.text = '';
-                        _wDescriptionController.text = '';
                         _depAllocationController.text = '';
                         dropdownValue = '';
                         _faultResolvedController = false;
@@ -385,15 +356,12 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                         Navigator.of(context).pop();
 
                       } else if (faultStage == 4) {
-                        if (accountNumber != null) {
+                        if (reporterNumber != null) {
                           await _faultData
                               .doc(documentSnapshot.id)
                               .update({
                             "accountNumber": accountNumber,
                             "address": address,
-                            "depComment1": '',
-                            "depComment2": '',
-                            "handlerCom1": '',
                             "handlerCom2": userComment,
                             "depAllocated": depSelected,
                             "faultResolved": faultResolved,
@@ -406,7 +374,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                         _accountNumberController.text = '';
                         _addressController.text = '';
                         _commentController.text = '';
-                        _wDescriptionController.text = '';
                         _depAllocationController.text = '';
                         dropdownValue = '';
                         _faultResolvedController = false;
@@ -548,7 +515,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                             children: [
                               if(documentSnapshot['depComment2'] != "")...[
                                 Text(
-                                  'Department Comment 2: ${documentSnapshot['depComment2']}',
+                                  'Department Final Comment: ${documentSnapshot['depComment2']}',
                                   style: const TextStyle(
                                       fontSize: 16, fontWeight: FontWeight.w400),
                                 ),
@@ -558,7 +525,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                               ],
                             ],
                           ),
-
                           Text(
                             'Resolve State: ${documentSnapshot['faultResolved'].toString()}',
                             style: const TextStyle(
@@ -570,7 +536,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
-
                           InkWell(
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 5),
@@ -741,7 +706,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                       ),
                     ),
                   );
-                } else if(streamSnapshot.data!.docs[index]['faultResolved'] == false || documentSnapshot['faultStage'] == 3){
+                } else if(streamSnapshot.data!.docs[index]['faultResolved'] == false || documentSnapshot['faultStage'] == 2 || documentSnapshot['faultStage'] == 4){
                   return Card(
                     margin: const EdgeInsets.all(10),
                     child: Padding(
@@ -771,19 +736,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'General Fault: ${documentSnapshot['generalFault']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Electrical Fault: ${documentSnapshot['electricityFaultDes']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Water Fault: ${documentSnapshot['waterFaultDes']}',
+                            'Fault Description: ${documentSnapshot['faultDescription']}',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),

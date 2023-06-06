@@ -796,7 +796,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                   children: [
                                     if(documentSnapshot['depComment2'] != "")...[
                                       Text(
-                                        'Department Comment 2: ${documentSnapshot['depComment2']}',
+                                        'Department Final Comment: ${documentSnapshot['depComment2']}',
                                         style: const TextStyle(
                                             fontSize: 16, fontWeight: FontWeight.w400),
                                       ),
