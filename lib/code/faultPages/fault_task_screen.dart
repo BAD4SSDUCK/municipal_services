@@ -208,7 +208,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                     ),
                   ),
                   Visibility(
-                    visible: visStage1,
+                    visible: visShow,
                     child: TextField(
                       keyboardType: TextInputType.text,
                       controller: _commentController,
@@ -219,6 +219,27 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                   const SizedBox(height: 10,),
                   Visibility(
                     visible: visStage3,
+                    child:
+                    Row(
+                      children: [
+                        const Text('Fault Resolved?'),
+                        const SizedBox(width: 5,),
+                        Checkbox(
+                          checkColor: Colors.white,
+                          fillColor: MaterialStateProperty.all<Color>(
+                              Colors.green),
+                          value: _faultResolvedController,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _faultResolvedController = value!;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  Visibility(
+                    visible: visStage4,
                     child:
                     Row(
                       children: [
@@ -452,7 +473,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
-
                           Column(
                             children: [
                               if(documentSnapshot['faultDescription'] != "")...[
@@ -467,8 +487,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                               ],
                             ],
                           ),
-
-
                           Column(
                             children: [
                               if(documentSnapshot['handlerCom1'] != "")...[
@@ -576,7 +594,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                               ),
                             ),
                           ),
-
                           const SizedBox(height: 20,),
                           Column(
                             children: [
@@ -639,7 +656,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                   const SizedBox(width: 5,),
                                 ],
                               ),
-
                               ElevatedButton(
                                 onPressed: () {
                                   showDialog(
@@ -699,7 +715,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 ),
                               ),
                               const SizedBox(width: 5,),
-
                             ],
                           ),
                         ],
@@ -752,7 +767,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
-
                           const SizedBox(height: 20,),
                           Column(
                             children: [
@@ -771,7 +785,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                       Navigator.push(context,
                                           MaterialPageRoute(
                                               builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                            //MapPage()
                                           ));
                                     },
                                     style: ElevatedButton.styleFrom(
@@ -815,7 +828,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                   const SizedBox(width: 5,),
                                 ],
                               ),
-
                               ElevatedButton(
                                 onPressed: () {
                                   showDialog(
@@ -875,7 +887,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 ),
                               ),
                               const SizedBox(width: 5,),
-
                             ],
                           ),
                         ],
@@ -883,7 +894,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                     ),
                   );
                 }
-
                 else {
                   return const Card();
                 }
