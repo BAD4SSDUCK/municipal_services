@@ -132,7 +132,7 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
         }
       }
     } catch(e) {
-      print("Error :: " + e.toString());
+      print("Error :: $e");
       Fluttertoast.showToast(msg: e.toString(), gravity: ToastGravity.CENTER);
     }
   }
@@ -255,18 +255,18 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
         builder: (BuildContext bc) {
           return SafeArea(
             child: Container(
-              child: new Wrap(
+              child: Wrap(
                 children: <Widget>[
-                  new ListTile(
-                      leading: new Icon(Icons.photo_library),
-                      title: new Text('Gallery'),
+                  ListTile(
+                      leading: const Icon(Icons.photo_library),
+                      title: const Text('Gallery'),
                       onTap: () {
                         imgFromGallery();
                         Navigator.of(context).pop();
                       }),
-                  new ListTile(
-                    leading: new Icon(Icons.photo_camera),
-                    title: new Text('Camera'),
+                  ListTile(
+                    leading: const Icon(Icons.photo_camera),
+                    title: const Text('Camera'),
                     onTap: () {
                       imgFromCamera();
                       Navigator.of(context).pop();
@@ -356,8 +356,8 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
                               "Would you like to call the report center after reporting?"),
                           actions: [
                             TextButton(
-                              child: Row(
-                                children: const [
+                              child: const Row(
+                                children: [
                                   Icon(
                                     Icons.call, color: Colors.blueAccent,
                                   ),
@@ -375,8 +375,8 @@ class _GeneralFaultReportingState extends State<GeneralFaultReporting> {
                               },
                             ),
                             TextButton(
-                              child: Row(
-                                children: const [
+                              child: const Row(
+                                children: [
                                   Icon(
                                     Icons.report_problem, color: Colors.tealAccent,
                                   ),

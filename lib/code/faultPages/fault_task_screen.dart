@@ -195,7 +195,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                           value: value,
                           child: Text(
                             value,
-                            style: TextStyle(fontSize: 16),
+                            style: const TextStyle(fontSize: 16),
                           ),
                         );
                       }).toList(),

@@ -301,8 +301,8 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                               decoration: formItemDecoration("Address...", const Icon(
                                 Icons.location_on_sharp,
                                 color: Colors.black87,),
+                              ),
                             ),
-                          ),
                           ),
 
 
@@ -386,17 +386,14 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                                   borderRadius:
                                                   BorderRadius.all(
                                                       Radius.circular(16))),
-                                              title: const Text(
-                                                  "Report Fault Without Image!"),
-                                              content: const Text(
-                                                  "Reporting a fault without a photo is possible. A photo can be added later on if necessary,\n\nare you sure you want to leave out a photo?"),
+                                              title: const Text("Report Fault Without Image!"),
+                                              content: const Text("Reporting a fault without a photo is possible. A photo can be added later on if necessary,\n\nare you sure you want to leave out a photo?"),
                                               actions: [
                                                 IconButton(
                                                   onPressed: () {
                                                     Fluttertoast.showToast(
                                                         msg: "Please tap on the image area and select the image to upload!",
-                                                        gravity: ToastGravity
-                                                            .CENTER);
+                                                        gravity: ToastGravity.CENTER);
                                                     Navigator.of(context).pop();
                                                   },
                                                   icon: const Icon(
@@ -406,44 +403,29 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                                 ),
                                                 IconButton(
                                                   onPressed: () {
-                                                    if (dropdownValue !=
-                                                        'Select Fault Type' &&
-                                                        _addressController.text
-                                                            .isNotEmpty &&
-                                                        _faultDescriptionController
-                                                            .text.isNotEmpty &&
-                                                        _reporterPhoneController
-                                                            .text.isNotEmpty) {
-                                                      if (_reporterPhoneController
-                                                          .text.contains(
-                                                          '+27')) {
+                                                    if (dropdownValue != 'Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty) {
+                                                      if (_reporterPhoneController.text.contains('+27')) {
                                                         uploadFault();
                                                         Fluttertoast.showToast(
                                                             msg: "Fault has been Reported!",
-                                                            gravity: ToastGravity
-                                                                .CENTER);
-                                                        Navigator.of(context)
-                                                            .pop();
+                                                            gravity: ToastGravity.CENTER);
+                                                        Navigator.of(context).pop();
                                                       } else {
                                                         Fluttertoast.showToast(
                                                             msg: "Contact number must have +27 country code!",
-                                                            gravity: ToastGravity
-                                                                .CENTER);
+                                                            gravity: ToastGravity.CENTER);
                                                       }
                                                     } else {
                                                       Fluttertoast.showToast(
                                                           msg: "Please fill all fields to report!",
-                                                          gravity: ToastGravity
-                                                              .CENTER);
+                                                          gravity: ToastGravity.CENTER);
                                                     }
-                                                    if (_reporterPhoneController
-                                                        .text.contains('+27')) {
+                                                    if (_reporterPhoneController.text.contains('+27')) {
 
                                                     } else {
                                                       Fluttertoast.showToast(
                                                           msg: "Contact number must have +27 country code!",
-                                                          gravity: ToastGravity
-                                                              .CENTER);
+                                                          gravity: ToastGravity.CENTER);
                                                     }
                                                   },
                                                   icon: const Icon(
@@ -457,11 +439,9 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                   } else {
                                     Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
                                   }
-
                                 } else {
                                   Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
                                 }
-
                               } : (){
                                 Fluttertoast.showToast(msg: "Please allow location access!", gravity: ToastGravity.CENTER);
                               },
@@ -472,13 +452,8 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Center(
-                                  child: Text(
-                                    'Report Fault',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                    ),
+                                  child: Text('Report Fault',
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18,),
                                   ),
                                 ),
                               ),
@@ -486,29 +461,11 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           ),
                           const SizedBox(height: 10,),
 
-                          // ElevatedIconButton(
-                          //   onPress: () async {
-                          //     if(dropdownValue == 'Select Fault Type'){
-                          //       Fluttertoast.showToast(msg: "Please Select The Fault Type First!",
-                          //         gravity: ToastGravity.CENTER,);
-                          //     } else{
-                          //       Navigator.push(context,
-                          //           MaterialPageRoute(
-                          //               builder: (context) => GeneralFaultReporting(faultTypeSelected: dropdownValue,)));
-                          //     }
-                          //   },
-                          //   labelText: 'Report',
-                          //   fSize: 16,
-                          //   faIcon: const FaIcon(Icons.report_problem),
-                          //   fgColor: Colors.orangeAccent,
-                          //   btSize: const Size(50, 50),
-                          // ),
-
-                          Padding(
-                            padding: const EdgeInsets.only(left: 10),
-                            child: Row(
-                              children: [
-
+                          // Padding(
+                          //   padding: const EdgeInsets.only(left: 10),
+                          //   child: Row(
+                          //     children: [
+                          //
                                 ///Old buttion before Current Faults tab
                                 // ElevatedIconButton(
                                 //   onPress: () {
@@ -572,10 +529,10 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                 //   fgColor: Colors.orangeAccent,
                                 //   btSize: const Size(50, 50),
                                 // ),
-
-                              ],
-                            ),
-                          ),
+                          //
+                          //     ],
+                          //   ),
+                          // ),
 
                           const SizedBox(height: 20,),
 
@@ -1088,18 +1045,18 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
         builder: (BuildContext bc) {
           return SafeArea(
             child: Container(
-              child: new Wrap(
+              child: Wrap(
                 children: <Widget>[
-                  new ListTile(
-                      leading: new Icon(Icons.photo_library),
-                      title: new Text('Gallery'),
+                  ListTile(
+                      leading: const Icon(Icons.photo_library),
+                      title: const Text('Gallery'),
                       onTap: () {
                         imgFromGallery();
                         Navigator.of(context).pop();
                       }),
-                  new ListTile(
-                    leading: new Icon(Icons.photo_camera),
-                    title: new Text('Camera'),
+                  ListTile(
+                    leading: const Icon(Icons.photo_camera),
+                    title: const Text('Camera'),
                     onTap: () {
                       imgFromCamera();
                       Navigator.of(context).pop();
