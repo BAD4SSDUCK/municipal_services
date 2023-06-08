@@ -61,22 +61,31 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
 
   void visibilityCheckAdmin() {
     User? user = FirebaseAuth.instance.currentUser;
-    var kk = FirebaseFirestore.instance.collection('users').doc(user!.email).get().then((DocumentSnapshot documentSnapshot)
-    {
-      if (documentSnapshot.exists) {
-        if (documentSnapshot.get('userRoll') == "Admin") {
-          visAdmin = true;
-          print('Is the user email being pulled ::: $user');
-          print(
-              'Is the correct current user logged in ::: ${documentSnapshot.get('userRoll')}');
-        } else {
-          visAdmin = false;
-          print('Is the user email being pulled not Admin::: $user');
-        }
-      } else {
-        print('db Connection not made yet');
-      }
-    });
+    String? emailLogged = user?.email.toString();
+
+    if(emailLogged?.contains("admin") == true){
+      visAdmin = true;
+    } else {
+      visAdmin = false;
+    }
+
+    // var kk = FirebaseFirestore.instance.collection('users').doc(user!.email).get().then((DocumentSnapshot documentSnapshot)
+    // {
+    //   if (documentSnapshot.exists) {
+    //     if (documentSnapshot.get('userRoll') == "Admin") {
+    //       visAdmin = true;
+    //       print('Is the user email being pulled ::: $user');
+    //       print(
+    //           'Is the correct current user logged in ::: ${documentSnapshot.get('userRoll')}');
+    //     } else {
+    //       visAdmin = false;
+    //       print('Is the user email being pulled not Admin::: $user');
+    //     }
+    //   } else {
+    //     print('db Connection not made yet');
+    //   }
+    // });
+
   }
 
 
@@ -99,7 +108,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
         backgroundColor: Colors.transparent,//Colors.grey,
         ///App bar text removed for aesthetic
         appBar: AppBar(
-          title: Text(''),
+          title: const Text(''),
           backgroundColor: Colors.black87,
         ),
         drawer: const NavDrawer(),
@@ -172,24 +181,12 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   btSize: const Size(130, 120),
                                 ),
                                 const SizedBox(width: 20,),
-                                ///old user page
-                                // ElevatedIconButton(
-                                //   onPress: () async {
-                                //     Navigator.push(context,
-                                //         MaterialPageRoute(builder: (context) => AdminDetails()));
-                                //   },
-                                //   labelText: 'Manage\nAdmin',
-                                //   fSize: 18,
-                                //   faIcon: const FaIcon(Icons.people),
-                                //   fgColor: Colors.blue,
-                                //   btSize: const Size(130, 120),
-                                // ),
                                 Visibility(
                                   visible: visAdmin,
                                   child: ElevatedIconButton(
                                     onPress: () async {
                                       Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) => ConfigPage()));
+                                          MaterialPageRoute(builder: (context) => const ConfigPage()));
                                     },
                                     labelText: 'Admin\nConfig',
                                     fSize: 18,
@@ -199,17 +196,18 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   ),
                                 ),
 
-                                ElevatedIconButton(
-                                  onPress: () async {
-                                    Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => ConfigPage()));
-                                  },
-                                  labelText: 'Manage\nAdmin',
-                                  fSize: 18,
-                                  faIcon: const FaIcon(Icons.people),
-                                  fgColor: Colors.blue,
-                                  btSize: const Size(130, 120),
-                                ),
+                                ///Button without visibility setting
+                                // ElevatedIconButton(
+                                //   onPress: () async {
+                                //     Navigator.push(context,
+                                //         MaterialPageRoute(builder: (context) => const ConfigPage()));
+                                //   },
+                                //   labelText: 'Manage\nAdmin',
+                                //   fSize: 18,
+                                //   faIcon: const FaIcon(Icons.people),
+                                //   fgColor: Colors.blue,
+                                //   btSize: const Size(130, 120),
+                                // ),
                               ],
                             ),
                           ),

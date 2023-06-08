@@ -729,6 +729,75 @@ class _ConfigPageState extends State<ConfigPage> {
         });
   }
 
+  Future<void> _updateDept([DocumentSnapshot? documentSnapshot]) async {
+    if (documentSnapshot != null) {
+      _deptNameController.text = documentSnapshot['deptName'];
+    }
+
+    await showModalBottomSheet(
+        isScrollControlled: true,
+        context: context,
+        builder: (BuildContext ctx) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: 20,
+                  left: 20,
+                  right: 20,
+                  bottom: MediaQuery
+                      .of(ctx)
+                      .viewInsets
+                      .bottom + 20
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(
+                    child: Text(
+                      'Edit Department Information',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visShow,
+                    child: TextField(
+                      controller: _deptNameController,
+                      decoration: const InputDecoration(
+                          labelText: 'Department Name'),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  ElevatedButton(
+                      child: const Text('Update'),
+                      onPressed: () async {
+                        final String deptName = _deptNameController.text;
+                        const bool official = true;
+
+                        if (deptName != null) {
+                          await _deptInfo
+                              .doc(documentSnapshot!.id)
+                              .update({
+                            "deptName": deptName,
+                            "official": official,
+                          });
+
+                          _deptNameController.text = '';
+
+                          Navigator.of(context).pop();
+                        }
+                      }
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
   Future<void> _deleteDept(String deptID) async {
     await _deptInfo.doc(deptID).delete();
     Fluttertoast.showToast(msg: "You have successfully deleted a department & roll!");
@@ -745,7 +814,7 @@ class _ConfigPageState extends State<ConfigPage> {
           backgroundColor: Colors.green,
           bottom: const TabBar(
             tabs: [
-              Tab(text: 'Departments List'),
+              Tab(text: 'Departments'),
               Tab(text: 'Rolls List'),
               Tab(text: 'Official User List'),
             ],
@@ -779,17 +848,16 @@ class _ConfigPageState extends State<ConfigPage> {
                                         fontSize: 16, fontWeight: FontWeight.w700),
                                   ),
                                 ),
-                                const SizedBox(height: 20,),
+                                const SizedBox(height: 15,),
                                 departmentField(
                                   Icons.business,
-                                  "Department Name: " + deptDocumentSnapshot['deptName'],),
-                                const SizedBox(height: 20,),
+                                  "Department: " + deptDocumentSnapshot['deptName'],),
+                                const SizedBox(height: 15,),
                                 Visibility(
                                   visible: visShow,
                                   child: Center(
-                                    child: Row(
+                                    child: Column(
                                       children: [
-                                        const SizedBox(width: 15,),
                                         Center(
                                             child: Material(
                                               color: Colors.red,
@@ -852,14 +920,14 @@ class _ConfigPageState extends State<ConfigPage> {
                                               ),
                                             )
                                         ),
-                                        const SizedBox(width: 10,),
+                                        const SizedBox(height: 10,),
                                         Center(
                                             child: Material(
                                               color: Colors.green,
                                               borderRadius: BorderRadius.circular(8),
                                               child: InkWell(
                                                 onTap: () {
-                                                  _updateDeptRolls(deptDocumentSnapshot);
+                                                  _updateDept(deptDocumentSnapshot);
                                                 },
                                                 borderRadius: BorderRadius.circular(
                                                     32),
@@ -869,7 +937,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                                     vertical: 12,
                                                   ),
                                                   child: Text(
-                                                    "Change Roll Info",
+                                                    "Edit Dept. Name",
                                                     style: TextStyle(
                                                       color: Colors.white,
                                                       fontSize: 16,
@@ -883,7 +951,6 @@ class _ConfigPageState extends State<ConfigPage> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 10,),
                               ],
                             ),
                           ),
@@ -934,7 +1001,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                 const SizedBox(height: 20,),
                                 departmentField(
                                   Icons.business,
-                                  "Department Name: " + deptDocumentSnapshot['deptName'],),
+                                  "Department: " + deptDocumentSnapshot['deptName'],),
                                 departmentField(
                                   Icons.account_circle_outlined,
                                   "Roll: " + deptDocumentSnapshot['userRoll'],),
@@ -942,9 +1009,8 @@ class _ConfigPageState extends State<ConfigPage> {
                                 Visibility(
                                   visible: visShow,
                                   child: Center(
-                                    child: Row(
+                                    child: Column(
                                       children: [
-                                        const SizedBox(width: 15,),
                                         Center(
                                             child: Material(
                                               color: Colors.red,
@@ -1007,7 +1073,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                               ),
                                             )
                                         ),
-                                        const SizedBox(width: 10,),
+                                        const SizedBox(height: 10,),
                                         Center(
                                             child: Material(
                                               color: Colors.green,
@@ -1024,7 +1090,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                                     vertical: 12,
                                                   ),
                                                   child: Text(
-                                                    "Change Roll Info",
+                                                    "Edit Roll Info",
                                                     style: TextStyle(
                                                       color: Colors.white,
                                                       fontSize: 16,
@@ -1038,7 +1104,6 @@ class _ConfigPageState extends State<ConfigPage> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 10,),
                               ],
                             ),
                           ),
@@ -1113,9 +1178,8 @@ class _ConfigPageState extends State<ConfigPage> {
                                 Visibility(
                                   visible: visShow,
                                   child: Center(
-                                    child: Row(
+                                    child: Column(
                                       children: [
-                                        const SizedBox(width: 15,),
                                         Center(
                                             child: Material(
                                               color: Colors.red,
@@ -1178,7 +1242,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                               ),
                                             )
                                         ),
-                                        const SizedBox(width: 10,),
+                                        const SizedBox(height: 10,),
                                         Center(
                                             child: Material(
                                               color: Colors.green,
@@ -1195,7 +1259,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                                     vertical: 12,
                                                   ),
                                                   child: Text(
-                                                    "Change User Info",
+                                                    "Edit User Info",
                                                     style: TextStyle(
                                                       color: Colors.white,
                                                       fontSize: 16,
@@ -1209,7 +1273,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 50,),
+                                const SizedBox(height: 0,),
                               ],
                             ),
                           ),

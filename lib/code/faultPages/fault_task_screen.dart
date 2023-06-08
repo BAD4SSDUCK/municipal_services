@@ -617,7 +617,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.grey[350],
-                                      fixedSize: const Size(150, 10),),
+                                      fixedSize: const Size(160, 10),),
                                     child: Row(
                                       children: [
                                         Icon(
@@ -639,7 +639,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.grey[350],
-                                      fixedSize: const Size(150, 10),),
+                                      fixedSize: const Size(110, 10),),
                                     child: Row(
                                       children: [
                                         Icon(
@@ -647,7 +647,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                           color: Theme.of(context).primaryColor,
                                         ),
                                         const SizedBox(width: 2,),
-                                        const Text('Update Details', style: TextStyle(
+                                        const Text('Update', style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                           color: Colors.black,),),
                                       ],

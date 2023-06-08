@@ -776,59 +776,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(width: 5,),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      eMeterNumber = documentSnapshot['meter number'];
-                                      imgFolder = documentSnapshot['cell number'];
-                                      showDialog(
-                                          barrierDismissible: false,
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: const Text("Upload Meter Image"),
-                                              content: const Text("Uploading a new image will replace current image! Are you sure?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () async {
-                                                    ScaffoldMessenger.of(this.context).showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text('Uploading a new image will replace current image!'),
-                                                      ),
-                                                    );
-                                                    Navigator.push(context,
-                                                        MaterialPageRoute(builder: (context) => ImageUploadMeter()));
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          });
-                                    },
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(115, 10),),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.camera_alt,
-                                          color: Colors.grey[700],
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        Text('E-Meter',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
-                                      ],
-                                    ),
-                                  ),
                                 ],
                               ),
                             ],
