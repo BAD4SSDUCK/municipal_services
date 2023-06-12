@@ -439,485 +439,516 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
         backgroundColor: Colors.green,
       ),
 
-      body: StreamBuilder(
-        stream: _faultData.orderBy('dateReported', descending: true).snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-          if (streamSnapshot.hasData) {
-            return ListView.builder(
-              itemCount: streamSnapshot.data!.docs.length,
-              itemBuilder: (context, index) {
-                final DocumentSnapshot documentSnapshot =
-                streamSnapshot.data!.docs[index];
+      body:
+      Column(
+        children: [
+          const SizedBox(height: 10,),
+          /// Search bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,0),
+            child: TextFormField(
+              onChanged: (value) {
+                setState(() {
+                  searchText = value;
+                });
+              },
+              controller: _searchBarController,
+              decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search),
+                  hintText: 'Search by address',
+                  focusColor: Colors.white,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: const BorderSide(color: Colors.black),
+                  ),
+              ),
+            ),
+          ),
+          /// Search bar end
+          Expanded(
+            child: StreamBuilder(
+              stream: _faultData.orderBy('dateReported', descending: true).snapshots(),
+              builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+                if (streamSnapshot.hasData) {
+                  return ListView.builder(
+                    itemCount: streamSnapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      final DocumentSnapshot documentSnapshot =
+                      streamSnapshot.data!.docs[index];
 
-                if(streamSnapshot.data!.docs[index]['faultResolved'] == false
-                    || documentSnapshot['faultStage'] == 1 || documentSnapshot['faultStage'] == 3){
-                  return Card(
-                    margin: const EdgeInsets.all(10),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Center(
-                            child: Text(
-                              'Fault Information',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w700),
+                      if(streamSnapshot.data!.docs[index]['faultResolved'] == false
+                          || documentSnapshot['faultStage'] == 1 || documentSnapshot['faultStage'] == 3){
+                        return Card(
+                          margin: const EdgeInsets.all(10),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Center(
+                                  child: Text(
+                                    'Fault Information',
+                                    style: TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                                const SizedBox(height: 10,),
+                                Text(
+                                  'Reporter Account Number: ${documentSnapshot['accountNumber']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                                Text(
+                                  'Street Address of Fault: ${documentSnapshot['address']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                                Text(
+                                  'Fault Type: ${documentSnapshot['faultType']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                                Column(
+                                  children: [
+                                    if(documentSnapshot['faultDescription'] != "")...[
+                                      Text(
+                                        'Fault Description: ${documentSnapshot['faultDescription']}',
+                                        style: const TextStyle(
+                                            fontSize: 16, fontWeight: FontWeight.w400),
+                                      ),
+                                      const SizedBox(height: 5,),
+                                    ] else ...[
+
+                                    ],
+                                  ],
+                                ),
+                                Column(
+                                  children: [
+                                    if(documentSnapshot['handlerCom1'] != "")...[
+                                      Text(
+                                        'Handler Comment: ${documentSnapshot['handlerCom1']}',
+                                        style: const TextStyle(
+                                            fontSize: 16, fontWeight: FontWeight.w400),
+                                      ),
+                                      const SizedBox(height: 5,),
+                                    ] else ...[
+
+                                    ],
+                                  ],
+                                ),
+                                Column(
+                                  children: [
+                                    if(documentSnapshot['depComment1'] != "")...[
+                                      Text(
+                                        'Department Comment 1: ${documentSnapshot['depComment1']}',
+                                        style: const TextStyle(
+                                            fontSize: 16, fontWeight: FontWeight.w400),
+                                      ),
+                                      const SizedBox(height: 5,),
+                                    ] else ...[
+
+                                    ],
+                                  ],
+                                ),
+                                Column(
+                                  children: [
+                                    if(documentSnapshot['handlerCom2'] != "")...[
+                                      Text(
+                                        'Handler Final Comment: ${documentSnapshot['handlerCom2']}',
+                                        style: const TextStyle(
+                                            fontSize: 16, fontWeight: FontWeight.w400),
+                                      ),
+                                      const SizedBox(height: 5,),
+                                    ] else ...[
+
+                                    ],
+                                  ],
+                                ),
+                                Column(
+                                  children: [
+                                    if(documentSnapshot['depComment2'] != "")...[
+                                      Text(
+                                        'Department Final Comment: ${documentSnapshot['depComment2']}',
+                                        style: const TextStyle(
+                                            fontSize: 16, fontWeight: FontWeight.w400),
+                                      ),
+                                      const SizedBox(height: 5,),
+                                    ] else ...[
+
+                                    ],
+                                  ],
+                                ),
+                                Text(
+                                  'Resolve State: ${documentSnapshot['faultResolved'].toString()}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                                Text(
+                                  'Date of Fault Report: ${documentSnapshot['dateReported']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                InkWell(
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 5),
+                                    height: 180,
+                                    child: Center(
+                                      child: Card(
+                                        color: Colors.blue,
+                                        semanticContainer: true,
+                                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(10.0),
+                                        ),
+                                        elevation: 0,
+                                        margin: const EdgeInsets.all(10.0),
+                                        child: FutureBuilder(
+                                            future: _getImage(
+                                              ///Firebase image location must be changed to display image based on the address
+                                                context, 'files/faultImages/property/${documentSnapshot['address']}'),
+                                            builder: (context, snapshot) {
+                                              if (snapshot.hasError) {
+                                                return const Text('Image not uploaded for Fault.'); //${snapshot.error} if error needs to be displayed instead
+                                              }
+                                              if (snapshot.connectionState ==
+                                                  ConnectionState.done) {
+                                                return Container(
+                                                  child: snapshot.data,
+                                                );
+                                              }
+                                              if (snapshot.connectionState ==
+                                                  ConnectionState.waiting) {
+                                                return Container(
+                                                  child: const CircularProgressIndicator(),);
+                                              }
+                                              return Container();
+                                            }
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 20,),
+                                Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            accountNumberRep = documentSnapshot['accountNumber'];
+                                            locationGivenRep = documentSnapshot['address'];
+
+                                            // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                            //     content: Text('$accountNumber $locationGiven ')));
+
+                                            Navigator.push(context,
+                                                MaterialPageRoute(
+                                                    builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
+                                                  //MapPage()
+                                                ));
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.grey[350],
+                                            fixedSize: const Size(160, 10),),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.map,
+                                                color: Colors.green[700],
+                                              ),
+                                              const SizedBox(width: 2,),
+                                              const Text('Fault Location', style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black,),),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 5,),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            faultStage = documentSnapshot['faultStage'];
+                                            _updateReport(documentSnapshot);
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.grey[350],
+                                            fixedSize: const Size(110, 10),),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.edit,
+                                                color: Theme.of(context).primaryColor,
+                                              ),
+                                              const SizedBox(width: 2,),
+                                              const Text('Update', style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black,),),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 5,),
+                                      ],
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        showDialog(
+                                            barrierDismissible: false,
+                                            context: context,
+                                            builder: (context) {
+                                              return
+                                                AlertDialog(
+                                                  shape: const RoundedRectangleBorder(
+                                                      borderRadius:
+                                                      BorderRadius.all(Radius.circular(16))),
+                                                  title: const Text("Call Reporter!"),
+                                                  content: const Text(
+                                                      "Would you like to call the individual who logged the fault?"),
+                                                  actions: [
+                                                    IconButton(
+                                                      onPressed: () {
+                                                        Navigator.of(context).pop();
+                                                      },
+                                                      icon: const Icon(
+                                                        Icons.cancel,
+                                                        color: Colors.red,
+                                                      ),
+                                                    ),
+                                                    IconButton(
+                                                      onPressed: () {
+                                                        reporterCellGiven = documentSnapshot['reporterContact'];
+
+                                                        final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
+                                                        launchUrl(_tel);
+
+                                                        Navigator.of(context).pop();
+                                                      },
+                                                      icon: const Icon(
+                                                        Icons.done,
+                                                        color: Colors.green,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                            });
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.grey[350],
+                                        fixedSize: const Size(150, 10),),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.call,
+                                            color: Colors.orange[700],
+                                          ),
+                                          const SizedBox(width: 2,),
+                                          const Text('Call Reporter', style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black,),),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 5,),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 10,),
-                          Text(
-                            'Reporter Account Number: ${documentSnapshot['accountNumber']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Street Address of Fault: ${documentSnapshot['address']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Fault Type: ${documentSnapshot['faultType']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Column(
-                            children: [
-                              if(documentSnapshot['faultDescription'] != "")...[
+                        );
+                      } else if(streamSnapshot.data!.docs[index]['faultResolved'] == false || documentSnapshot['faultStage'] == 2 || documentSnapshot['faultStage'] == 4){
+                        return Card(
+                          margin: const EdgeInsets.all(10),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Center(
+                                  child: Text(
+                                    'Fault Information',
+                                    style: TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                                const SizedBox(height: 10,),
+                                Text(
+                                  'Reporter Account Number: ${documentSnapshot['accountNumber']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
+                                Text(
+                                  'Street Address of Fault: ${documentSnapshot['address']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5,),
                                 Text(
                                   'Fault Description: ${documentSnapshot['faultDescription']}',
                                   style: const TextStyle(
                                       fontSize: 16, fontWeight: FontWeight.w400),
                                 ),
                                 const SizedBox(height: 5,),
-                              ] else ...[
-
-                              ],
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              if(documentSnapshot['handlerCom1'] != "")...[
                                 Text(
-                                  'Handler Comment: ${documentSnapshot['handlerCom1']}',
+                                  'Resolve State: ${documentSnapshot['faultResolved'].toString()}',
                                   style: const TextStyle(
                                       fontSize: 16, fontWeight: FontWeight.w400),
                                 ),
                                 const SizedBox(height: 5,),
-                              ] else ...[
-
-                              ],
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              if(documentSnapshot['depComment1'] != "")...[
                                 Text(
-                                  'Department Comment 1: ${documentSnapshot['depComment1']}',
+                                  'Date of Fault Report: ${documentSnapshot['dateReported']}',
                                   style: const TextStyle(
                                       fontSize: 16, fontWeight: FontWeight.w400),
                                 ),
-                                const SizedBox(height: 5,),
-                              ] else ...[
-
-                              ],
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              if(documentSnapshot['handlerCom2'] != "")...[
-                                Text(
-                                  'Handler Final Comment: ${documentSnapshot['handlerCom2']}',
-                                  style: const TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w400),
-                                ),
-                                const SizedBox(height: 5,),
-                              ] else ...[
-
-                              ],
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              if(documentSnapshot['depComment2'] != "")...[
-                                Text(
-                                  'Department Final Comment: ${documentSnapshot['depComment2']}',
-                                  style: const TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w400),
-                                ),
-                                const SizedBox(height: 5,),
-                              ] else ...[
-
-                              ],
-                            ],
-                          ),
-                          Text(
-                            'Resolve State: ${documentSnapshot['faultResolved'].toString()}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Date of Fault Report: ${documentSnapshot['dateReported']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          InkWell(
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 5),
-                              height: 180,
-                              child: Center(
-                                child: Card(
-                                  color: Colors.blue,
-                                  semanticContainer: true,
-                                  clipBehavior: Clip.antiAliasWithSaveLayer,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10.0),
-                                  ),
-                                  elevation: 0,
-                                  margin: const EdgeInsets.all(10.0),
-                                  child: FutureBuilder(
-                                      future: _getImage(
-                                        ///Firebase image location must be changed to display image based on the address
-                                          context, 'files/faultImages/property/${documentSnapshot['address']}'),
-                                      builder: (context, snapshot) {
-                                        if (snapshot.hasError) {
-                                          return const Text('Image not uploaded for Fault.'); //${snapshot.error} if error needs to be displayed instead
-                                        }
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.done) {
-                                          return Container(
-                                            child: snapshot.data,
-                                          );
-                                        }
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.waiting) {
-                                          return Container(
-                                            child: const CircularProgressIndicator(),);
-                                        }
-                                        return Container();
-                                      }
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20,),
-                          Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      accountNumberRep = documentSnapshot['accountNumber'];
-                                      locationGivenRep = documentSnapshot['address'];
-
-                                      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                      //     content: Text('$accountNumber $locationGiven ')));
-
-                                      Navigator.push(context,
-                                          MaterialPageRoute(
-                                              builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                            //MapPage()
-                                          ));
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.grey[350],
-                                      fixedSize: const Size(160, 10),),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.map,
-                                          color: Colors.green[700],
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        const Text('Fault Location', style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black,),),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5,),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      faultStage = documentSnapshot['faultStage'];
-                                      _updateReport(documentSnapshot);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.grey[350],
-                                      fixedSize: const Size(110, 10),),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.edit,
-                                          color: Theme.of(context).primaryColor,
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        const Text('Update', style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black,),),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5,),
-                                ],
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  showDialog(
-                                      barrierDismissible: false,
-                                      context: context,
-                                      builder: (context) {
-                                        return
-                                          AlertDialog(
-                                            shape: const RoundedRectangleBorder(
-                                                borderRadius:
-                                                BorderRadius.all(Radius.circular(16))),
-                                            title: const Text("Call Reporter!"),
-                                            content: const Text(
-                                                "Would you like to call the individual who logged the fault?"),
-                                            actions: [
-                                              IconButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(
-                                                  Icons.cancel,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                              IconButton(
-                                                onPressed: () {
-                                                  reporterCellGiven = documentSnapshot['reporterContact'];
-
-                                                  final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                                  launchUrl(_tel);
-
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(
-                                                  Icons.done,
-                                                  color: Colors.green,
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                      });
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey[350],
-                                  fixedSize: const Size(150, 10),),
-                                child: Row(
+                                const SizedBox(height: 20,),
+                                Column(
                                   children: [
-                                    Icon(
-                                      Icons.call,
-                                      color: Colors.orange[700],
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            accountNumberRep = documentSnapshot['accountNumber'];
+                                            locationGivenRep = documentSnapshot['address'];
+
+                                            // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                            //     content: Text('$accountNumber $locationGiven ')));
+
+                                            Navigator.push(context,
+                                                MaterialPageRoute(
+                                                    builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
+                                                ));
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.grey[350],
+                                            fixedSize: const Size(150, 10),),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.map,
+                                                color: Colors.green[700],
+                                              ),
+                                              const SizedBox(width: 2,),
+                                              const Text('Fault Location', style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black,),),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 5,),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            faultStage = documentSnapshot['faultStage'];
+                                            _updateReport(documentSnapshot);
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.grey[350],
+                                            fixedSize: const Size(150, 10),),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.edit,
+                                                color: Theme.of(context).primaryColor,
+                                              ),
+                                              const SizedBox(width: 2,),
+                                              const Text('Update Details', style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black,),),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 5,),
+                                      ],
                                     ),
-                                    const SizedBox(width: 2,),
-                                    const Text('Call Reporter', style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black,),),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        showDialog(
+                                            barrierDismissible: false,
+                                            context: context,
+                                            builder: (context) {
+                                              return
+                                                AlertDialog(
+                                                  shape: const RoundedRectangleBorder(
+                                                      borderRadius:
+                                                      BorderRadius.all(Radius.circular(16))),
+                                                  title: const Text("Call User!"),
+                                                  content: const Text(
+                                                      "Would you like to call the individual who logged the fault?"),
+                                                  actions: [
+                                                    IconButton(
+                                                      onPressed: () {
+                                                        Navigator.of(context).pop();
+                                                      },
+                                                      icon: const Icon(
+                                                        Icons.cancel,
+                                                        color: Colors.red,
+                                                      ),
+                                                    ),
+                                                    IconButton(
+                                                      onPressed: () {
+                                                        reporterCellGiven = documentSnapshot['reporterContact'];
+
+                                                        final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
+                                                        launchUrl(_tel);
+
+                                                        Navigator.of(context).pop();
+                                                      },
+                                                      icon: const Icon(
+                                                        Icons.done,
+                                                        color: Colors.green,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                            });
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.grey[350],
+                                        fixedSize: const Size(115, 10),),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.call,
+                                            color: Colors.orange[700],
+                                          ),
+                                          const SizedBox(width: 2,),
+                                          const Text('Call User', style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black,),),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 5,),
                                   ],
                                 ),
-                              ),
-                              const SizedBox(width: 5,),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                } else if(streamSnapshot.data!.docs[index]['faultResolved'] == false || documentSnapshot['faultStage'] == 2 || documentSnapshot['faultStage'] == 4){
-                  return Card(
-                    margin: const EdgeInsets.all(10),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Center(
-                            child: Text(
-                              'Fault Information',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w700),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 10,),
-                          Text(
-                            'Reporter Account Number: ${documentSnapshot['accountNumber']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Street Address of Fault: ${documentSnapshot['address']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Fault Description: ${documentSnapshot['faultDescription']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Resolve State: ${documentSnapshot['faultResolved'].toString()}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Date of Fault Report: ${documentSnapshot['dateReported']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 20,),
-                          Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      accountNumberRep = documentSnapshot['accountNumber'];
-                                      locationGivenRep = documentSnapshot['address'];
-
-                                      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                      //     content: Text('$accountNumber $locationGiven ')));
-
-                                      Navigator.push(context,
-                                          MaterialPageRoute(
-                                              builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                          ));
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.grey[350],
-                                      fixedSize: const Size(150, 10),),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.map,
-                                          color: Colors.green[700],
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        const Text('Fault Location', style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black,),),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5,),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      faultStage = documentSnapshot['faultStage'];
-                                      _updateReport(documentSnapshot);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.grey[350],
-                                      fixedSize: const Size(150, 10),),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.edit,
-                                          color: Theme.of(context).primaryColor,
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        const Text('Update Details', style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black,),),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5,),
-                                ],
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  showDialog(
-                                      barrierDismissible: false,
-                                      context: context,
-                                      builder: (context) {
-                                        return
-                                          AlertDialog(
-                                            shape: const RoundedRectangleBorder(
-                                                borderRadius:
-                                                BorderRadius.all(Radius.circular(16))),
-                                            title: const Text("Call User!"),
-                                            content: const Text(
-                                                "Would you like to call the individual who logged the fault?"),
-                                            actions: [
-                                              IconButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(
-                                                  Icons.cancel,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                              IconButton(
-                                                onPressed: () {
-                                                  reporterCellGiven = documentSnapshot['reporterContact'];
-
-                                                  final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                                  launchUrl(_tel);
-
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(
-                                                  Icons.done,
-                                                  color: Colors.green,
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                      });
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey[350],
-                                  fixedSize: const Size(115, 10),),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.call,
-                                      color: Colors.orange[700],
-                                    ),
-                                    const SizedBox(width: 2,),
-                                    const Text('Call User', style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black,),),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 5,),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                        );
+                      }
+                      else {
+                        return const Card();
+                      }
+                    },
                   );
                 }
-                else {
-                  return const Card();
-                }
+                return const Padding(
+                  padding: EdgeInsets.all(10.0),
+                  child: Center(
+                      child: CircularProgressIndicator()),
+                );
               },
-            );
-          }
-          return const Padding(
-            padding: EdgeInsets.all(10.0),
-            child: Center(
-                child: CircularProgressIndicator()),
-          );
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
