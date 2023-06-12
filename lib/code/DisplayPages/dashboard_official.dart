@@ -12,24 +12,21 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
+import 'package:http/http.dart' as http;
 import 'package:municipal_track/code/DisplayPages/admin_details.dart';
+import 'package:municipal_track/code/DisplayPages/display_info_all_users.dart';
 import 'package:municipal_track/code/DisplayPages/configuration_page.dart';
 import 'package:municipal_track/code/MapTools/map_screen_multi.dart';
+import 'package:municipal_track/code/MapTools/map_screen.dart';
+import 'package:municipal_track/code/MapTools/location_controller.dart';
+import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
+import 'package:municipal_track/code/Reusable/menu_reusable_elevated_button.dart';
+import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 import 'package:municipal_track/code/Reusable/nav_drawer.dart';
 import 'package:municipal_track/code/faultPages/fault_task_screen.dart';
 import 'package:municipal_track/code/faultPages/fault_report_screen.dart';
-import 'package:http/http.dart' as http;
-
-import 'package:municipal_track/code/DisplayPages/display_info_all_users.dart';
 import 'package:municipal_track/code/Chat/chat_list.dart';
-import 'package:municipal_track/code/MapTools/location_controller.dart';
-import 'package:municipal_track/code/MapTools/map_screen.dart';
-import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
-import 'package:municipal_track/code/Reusable/menu_reusable_elevated_button.dart';
-
-import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
-
-import '../main_page.dart';
+import 'package:municipal_track/code/main_page.dart';
 
 
 class HomeManagerScreen extends StatefulWidget {
@@ -68,24 +65,6 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
     } else {
       visAdmin = false;
     }
-
-    // var kk = FirebaseFirestore.instance.collection('users').doc(user!.email).get().then((DocumentSnapshot documentSnapshot)
-    // {
-    //   if (documentSnapshot.exists) {
-    //     if (documentSnapshot.get('userRoll') == "Admin") {
-    //       visAdmin = true;
-    //       print('Is the user email being pulled ::: $user');
-    //       print(
-    //           'Is the correct current user logged in ::: ${documentSnapshot.get('userRoll')}');
-    //     } else {
-    //       visAdmin = false;
-    //       print('Is the user email being pulled not Admin::: $user');
-    //     }
-    //   } else {
-    //     print('db Connection not made yet');
-    //   }
-    // });
-
   }
 
 

@@ -38,14 +38,16 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   final _depAllocationController = TextEditingController();
   late bool _faultResolvedController;
   final _dateReportedController = TextEditingController();
+  final _searchBarController = TextEditingController();
 
   final CollectionReference _faultData =
   FirebaseFirestore.instance.collection('faultReporting');
 
-  String accountNumberRep = ' ';
-  String locationGivenRep = ' ';
+  String accountNumberRep = '';
+  String locationGivenRep = '';
   int faultStage = 0;
-  String reporterCellGiven = ' ';
+  String reporterCellGiven = '';
+  String searchText = '';
 
   bool visShow = true;
   bool visHide = false;
@@ -59,10 +61,20 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   final CollectionReference _listUser =
   FirebaseFirestore.instance.collection('users');
 
+  @override
+  void initState() {
+    checkAdmin();
+    super.initState();
+  }
 
-  void initApprover(String stateGivenCheck){
-    if(stateGivenCheck == 'manager'){
+  User? user = FirebaseAuth.instance.currentUser;
+
+  void checkAdmin() {
+    String? emailLogged = user?.email.toString();
+    if(emailLogged?.contains("admin") == true){
       managerAcc = true;
+    } else {
+      managerAcc = false;
     }
   }
 
@@ -428,7 +440,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
       ),
 
       body: StreamBuilder(
-        stream: _faultData.snapshots(),
+        stream: _faultData.orderBy('dateReported', descending: true).snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
           if (streamSnapshot.hasData) {
             return ListView.builder(
