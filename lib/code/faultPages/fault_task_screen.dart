@@ -445,10 +445,12 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           const SizedBox(height: 10,),
           /// Search bar
           Padding(
-            padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,0),
+            padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
             child: TextFormField(
               onChanged: (value) {
                 setState(() {
+
+
                   searchText = value;
                 });
               },
@@ -480,7 +482,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                       if(streamSnapshot.data!.docs[index]['faultResolved'] == false
                           || documentSnapshot['faultStage'] == 1 || documentSnapshot['faultStage'] == 3){
                         return Card(
-                          margin: const EdgeInsets.all(10),
+                          margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,10.0),
                           child: Padding(
                             padding: const EdgeInsets.all(20.0),
                             child: Column(
