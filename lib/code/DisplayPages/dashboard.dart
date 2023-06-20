@@ -13,7 +13,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:municipal_track/code/Chat/chat_screen.dart';
 import 'package:municipal_track/code/DisplayPages/display_pdf_list.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_prop_fault.dart';
@@ -31,8 +30,6 @@ import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 import 'package:municipal_track/code/Reusable/menu_reusable_elevated_button.dart';
 import 'package:path/path.dart';
-import '../main_page.dart';
-import 'add_details.dart';
 import 'display_info.dart';
 import 'display_info_all_users.dart';
 
@@ -243,11 +240,9 @@ class MainMenu extends StatefulWidget {
                 // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 //  crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
-
                   const SizedBox(height: 30),
                   Image.asset('assets/images/logo.png', height: 180, width: 180,),
                   const SizedBox(height: 20),
-
                   ///For Icon buttons
                   Column(
                     children: [
@@ -264,9 +259,7 @@ class MainMenu extends StatefulWidget {
                                   String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
                                   print('The user name of the logged in person is $userName}');
                                   String id = passedID;
-
                                   saveChatPhoneNumber(id);
-
                                   ///Directly to the chatapp page that creates a chat id that will be saved on the DB. for an admin to access the chat I will have to
                                   ///make a new page that lists all DB chats for the admin to select and connect to for responding to users
                                   Navigator.push(context,
@@ -291,7 +284,6 @@ class MainMenu extends StatefulWidget {
                                 fgColor: Colors.green,
                                 btSize: const Size(130, 120),
                               ),
-
                             ],
                           ),
                         ),
@@ -305,24 +297,8 @@ class MainMenu extends StatefulWidget {
                             children: [
                               ElevatedIconButton(
                                 onPress: () async {
-                                  //Fluttertoast.showToast(msg: "Now downloading a list of your statements!\nDownload speed dependent on network connection.", gravity: ToastGravity.CENTER);
-
                                   Navigator.push(context,
                                       MaterialPageRoute(builder: (context) => UsersPdfListViewPage()));
-
-                                  ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
-                                  ///no pdfs are uploaded by users
-                                  ///todo get the document name by account number
-                                  // print(FirebaseAuth.instance.currentUser);
-                                  //
-                                  // final url = 'pdfs/$userID/ds_wirelessp2p.pdf';
-                                  // final url2 = 'pdfs/$userID/Invoice_000003728743_040000653226.PDF';
-                                  // final file = await PDFApi.loadFirebase(url2);
-                                  // try{
-                                  //   openPDF(context, file);
-                                  // } catch(e){
-                                  //   Fluttertoast.showToast(msg: "Unable to download statement.", gravity: ToastGravity.CENTER);
-                                  // }
                                 },
                                 labelText: 'View\nStatement',
                                 fSize: 16,
@@ -341,18 +317,6 @@ class MainMenu extends StatefulWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              ElevatedIconButton(
-                                onPress: (){
-                                  Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) => ReportPropertyMenu()));
-                                },
-                                labelText: 'Report\nFaults',
-                                fSize: 18,
-                                faIcon: const FaIcon(Icons.report_problem),
-                                fgColor: Colors.orangeAccent,
-                                btSize: const Size(130, 120),
-                              ),
-                              const SizedBox(width: 40),
                               ElevatedIconButton(
                                 onPress: (){
                                   showDialog(
@@ -379,7 +343,6 @@ class MainMenu extends StatefulWidget {
                                                 FirebaseAuth.instance.signOut();
                                                 Navigator.pop(context);
 
-                                                // Navigator.popAndPushNamed(context, const MainPage() as String);
                                                 ///SystemNavigator.pop() closes the entire app
                                                 // SystemNavigator.pop();
                                               },
@@ -398,13 +361,24 @@ class MainMenu extends StatefulWidget {
                                 fgColor: Colors.red,
                                 btSize: const Size(130, 120),
                               ),
+                              const SizedBox(width: 40),
+                              ElevatedIconButton(
+                                onPress: (){
+                                  Navigator.push(context,
+                                      MaterialPageRoute(builder: (context) => ReportPropertyMenu()));
+                                },
+                                labelText: 'Report\nFaults',
+                                fSize: 18,
+                                faIcon: const FaIcon(Icons.report_problem),
+                                fgColor: Colors.orangeAccent,
+                                btSize: const Size(130, 120),
+                              ),
                             ],
                           ),
                         ),
                       ),
                     ],
                   ),
-
 
                   ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
                   ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
@@ -435,9 +409,9 @@ class MainMenu extends StatefulWidget {
                   // ),
 
                   const SizedBox(height: 30),
-                  Column(
+                  const Column(
                     mainAxisAlignment: MainAxisAlignment.end,
-                      children: const <Widget>[
+                      children: <Widget>[
                         Text('Copyright Cyberfox ',
                           //textAlign: TextAlign.end,
                           style: TextStyle(
@@ -463,5 +437,4 @@ class MainMenu extends StatefulWidget {
   void openPDF(BuildContext context, File file) => Navigator.of(context).push(
     MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
   );
-
 }

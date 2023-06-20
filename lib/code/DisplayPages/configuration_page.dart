@@ -851,7 +851,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                 const SizedBox(height: 15,),
                                 departmentField(
                                   Icons.business,
-                                  "Department: " + deptDocumentSnapshot['deptName'],),
+                                  "Department: ${deptDocumentSnapshot['deptName']}",),
                                 const SizedBox(height: 15,),
                                 Visibility(
                                   visible: visShow,
@@ -1001,10 +1001,10 @@ class _ConfigPageState extends State<ConfigPage> {
                                 const SizedBox(height: 20,),
                                 departmentField(
                                   Icons.business,
-                                  "Department: " + deptDocumentSnapshot['deptName'],),
+                                  "Department: ${deptDocumentSnapshot['deptName']}",),
                                 departmentField(
                                   Icons.account_circle_outlined,
-                                  "Roll: " + deptDocumentSnapshot['userRoll'],),
+                                  "Roll: ${deptDocumentSnapshot['userRoll']}",),
                                 const SizedBox(height: 20,),
                                 Visibility(
                                   visible: visShow,
@@ -1155,25 +1155,25 @@ class _ConfigPageState extends State<ConfigPage> {
                                 const SizedBox(height: 20,),
                                 adminUserField(
                                     Icons.switch_account,
-                                    "User Name: " + userDocumentSnapshot['userName']),
+                                    "User Name: ${userDocumentSnapshot['userName']}"),
                                 adminUserField(
                                     Icons.business_center,
-                                    "Department: " + userDocumentSnapshot['deptName']),
+                                    "Department: ${userDocumentSnapshot['deptName']}"),
                                 adminUserField(
                                     Icons.business_center,
-                                    "Roll: " + userDocumentSnapshot['userRoll']),
+                                    "Roll: ${userDocumentSnapshot['userRoll']}"),
                                 adminUserField(
                                     Icons.account_circle,
-                                    "First Name: " + userDocumentSnapshot['firstName']),
+                                    "First Name: ${userDocumentSnapshot['firstName']}"),
                                 adminUserField(
                                     Icons.account_circle,
-                                    "Last Name: " + userDocumentSnapshot['lastName']),
+                                    "Last Name: ${userDocumentSnapshot['lastName']}"),
                                 adminUserField(
                                     Icons.email,
-                                    "Email: " + userDocumentSnapshot['email']),
+                                    "Email: ${userDocumentSnapshot['email']}"),
                                 adminUserField(
                                     Icons.phone,
-                                    "Phone Number: " + userDocumentSnapshot['cellNumber']),
+                                    "Phone Number: ${userDocumentSnapshot['cellNumber']}"),
                                 const SizedBox(height: 20,),
                                 Visibility(
                                   visible: visShow,

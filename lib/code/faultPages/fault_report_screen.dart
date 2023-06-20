@@ -18,9 +18,7 @@ import 'package:municipal_track/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_track/code/faultPages/fault_viewing_screen.dart';
 import 'package:path/path.dart' as pathing;
 import 'package:url_launcher/url_launcher.dart';
-
 import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
-import 'package:municipal_track/code/faultPages/general_fault_screen.dart';
 
 class ReportPropertyMenu extends StatefulWidget {
   const ReportPropertyMenu({Key? key}) : super(key: key);
@@ -176,7 +174,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                             ),
                           ),
                           const SizedBox(height: 20,),
-
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 0.0,horizontal: 15.0),
                             child: Column(
@@ -224,7 +221,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                             ),
                                             fillColor: Colors.white,
                                             filled: true,
-
                                             suffixIcon: DropdownButtonFormField <String>(
                                               value: dropdownValue,
                                               items: <String>['Select Fault Type', 'Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
@@ -270,9 +266,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                 ]
                             ),
                           ),
-
                           const SizedBox(height: 20,),
-
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 25.0),
                             child: TextFormField(
@@ -287,9 +281,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                               ),
                             ),
                           ),
-
                           const SizedBox(height: 20,),
-
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 25.0),
                             child: TextFormField(
@@ -304,10 +296,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                               ),
                             ),
                           ),
-
-
                           const SizedBox(height: 20,),
-
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 25.0),
                             child: TextFormField(
@@ -322,9 +311,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                               ),
                             ),
                           ),
-
                           const SizedBox(height: 20,),
-
                           Row(
                             children: [
                               const Padding(
@@ -357,7 +344,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                             ],
                           ),
                           const SizedBox(height: 20,),
-
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 30.0),
                             child: GestureDetector(
@@ -535,19 +521,17 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           // ),
 
                           const SizedBox(height: 20,),
-
                         ],
                       ),
                     ),
                   ),
-
                 ],
               ),
             ),
 
             ///TAB for property fault report view
             Expanded(
-              child: StreamBuilder(
+              child: StreamBuilder<QuerySnapshot>(
                 stream: _propList.snapshots(),
                 builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
                   if (streamSnapshot.hasData) {
@@ -584,17 +568,17 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                   ),
                                   const SizedBox(height: 20,),
                                   Text(
-                                    'Account Number: ' + documentSnapshot['account number'],
+                                    'Account Number: ${documentSnapshot['account number']}',
                                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                   ),
                                   const SizedBox(height: 5,),
                                   Text(
-                                    'Street Address: ' + documentSnapshot['address'],
+                                    'Street Address: ${documentSnapshot['address']}',
                                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                   ),
                                   const SizedBox(height: 5,),
                                   Text(
-                                    'Area Code: ' + documentSnapshot['area code'].toString(),
+                                    'Area Code: ${documentSnapshot['area code'].toString()}',
                                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                   ),
                                   const SizedBox(height: 5,),
@@ -635,7 +619,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           );
                         } else {
                           ///a card to display ALL details for users when role is set to admin is in "display_info_all_users.dart"
-                          return Card();
+                          return const Card();
                         }
                       },
                     );
@@ -649,7 +633,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
             ),
 
             ///TAB for viewing all current reports ordered latest to oldest and not completed
-            StreamBuilder(
+            StreamBuilder<QuerySnapshot>(
               stream: _faultData.orderBy('dateReported', descending: true).snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
                 if (streamSnapshot.hasData) {
@@ -799,8 +783,10 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                                         context, 'files/faultImages/${documentSnapshot['dateReported']}/${documentSnapshot['address']}'),
                                                     builder: (context, snapshot) {
                                                       if (snapshot.hasError) {
-                                                        //imageVisibility = false;
-                                                        return const Text('Image not uploaded for Fault.', style: TextStyle(fontSize: 18),); //${snapshot.error} if error needs to be displayed instead
+                                                        return const Padding(
+                                                          padding: EdgeInsets.all(20.0),
+                                                          child: Text('Image not uploaded for Fault.',),
+                                                        ); //${snapshot.error} if error needs to be displayed instead
                                                       }
                                                       if (snapshot.connectionState ==
                                                           ConnectionState.done) {
@@ -926,7 +912,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                       //   ),
                                       // ),
                                       // const SizedBox(width: 5,),
-
                                     ],
                                   ),
                                 ),
@@ -1280,5 +1265,4 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
           );
         });
   }
-
 }

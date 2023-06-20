@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -11,7 +10,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:http/http.dart' as http;
 import 'package:municipal_track/code/DisplayPages/admin_details.dart';
 import 'package:municipal_track/code/DisplayPages/display_info_all_users.dart';
@@ -28,7 +26,6 @@ import 'package:municipal_track/code/faultPages/fault_report_screen.dart';
 import 'package:municipal_track/code/Chat/chat_list.dart';
 import 'package:municipal_track/code/main_page.dart';
 
-
 class HomeManagerScreen extends StatefulWidget {
   const HomeManagerScreen({Key? key}) : super(key: key);
 
@@ -39,7 +36,6 @@ class HomeManagerScreen extends StatefulWidget {
 class _HomeManagerScreenState extends State<HomeManagerScreen>{
 
   bool loading = true;
-
   late FToast fToast;
 
   @override
@@ -66,7 +62,6 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
       visAdmin = false;
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -289,5 +284,4 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
   void openPDF(BuildContext context, File file) => Navigator.of(context).push(
     MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
   );
-
 }

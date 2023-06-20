@@ -134,7 +134,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                     billMessage = 'No outstanding payments';
                   }
 
-                  if(documentSnapshot['account number'].contains(_searchBarController.text)){
+                  if(((documentSnapshot['address'].trim()).toLowerCase()).contains((_searchBarController.text.trim()).toLowerCase())){
                     return Card(
                       margin: const EdgeInsets.all(10),
                       child: Padding(
@@ -261,7 +261,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                 height: 180,
                                 child: Center(
                                   child: Card(
-                                    color: Colors.blue,
+                                    color: Colors.grey,
                                     semanticContainer: true,
                                     clipBehavior: Clip.antiAliasWithSaveLayer,
                                     shape: RoundedRectangleBorder(
@@ -275,7 +275,10 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                             context, 'files/$imgFolder/electricity/$eMeterNumber'),
                                         builder: (context, snapshot) {
                                           if (snapshot.hasError) {
-                                            return Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
+                                            return const Padding(
+                                              padding: EdgeInsets.all(20.0),
+                                              child: Text('Image not yet uploaded.',), //${snapshot.error} if error needs to be displayed instead
+                                            );
                                           }
                                           if (snapshot.connectionState ==
                                               ConnectionState.done) {
@@ -351,7 +354,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                 height: 180,
                                 child: Center(
                                   child: Card(
-                                    color: Colors.blue,
+                                    color: Colors.grey,
                                     semanticContainer: true,
                                     clipBehavior: Clip.antiAliasWithSaveLayer,
                                     shape: RoundedRectangleBorder(
@@ -365,7 +368,10 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                             context, 'files/$imgFolder/water/$wMeterNumber'),//$meterNumber
                                         builder: (context, snapshot) {
                                           if (snapshot.hasError) {
-                                            return const Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
+                                            return const Padding(
+                                              padding: EdgeInsets.all(20.0),
+                                              child: Text('Image not yet uploaded.',), //${snapshot.error} if error needs to be displayed instead
+                                            );//${snapshot.error} if error needs to be displayed instead
                                           }
                                           if (snapshot.connectionState ==
                                               ConnectionState.done) {
@@ -469,18 +475,15 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
                                         String nameOfUserPdf;
 
+                                        ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
+                                        ///no pdfs are uploaded by users
+
                                         ///todo: make this find the name of documents by the property account number owned by the logged in user for their statement
-                                        if(PDFApi.loadFirebase('pdfs/$phoneNum/').toString().contains(accountNumberPDF)){
-                                          nameOfUserPdf = PDFApi.loadFirebase('pdfs/$phoneNum/').toString();
-
-                                          final url = nameOfUserPdf;//'pdfs/$userID/ds_wirelessp2p.pdf';
-                                        }
-
-                                        final url2 = 'pdfs/$phoneNum/Invoice_000003728743_040000653226.pdf';
-                                        final file = await PDFApi.loadFirebase(url2);
-                                        try{
+                                        const url = 'pdfs/Invoice_000003728743_040000653226.PDF';
+                                        final file = await PDFApi.loadFirebase(url);
+                                        try {
                                           openPDF(context, file);
-                                        } catch(e){
+                                        } catch (e) {
                                           Fluttertoast.showToast(msg: "Unable to download statement.");
                                         }
                                       },
@@ -1050,7 +1053,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                       print('this is the input text ::: $searchText');
                     });
                   },
-                  autofocus: true,
+                  autofocus: false,
                   controller: _searchBarController,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.search),

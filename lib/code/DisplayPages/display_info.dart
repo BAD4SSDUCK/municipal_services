@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
@@ -464,7 +463,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
 
                 String billMessage;///A check for if payment is outstanding or not
                 if(documentSnapshot['eBill'] != ''){
-                  billMessage = 'Utilities bill outstanding: '+documentSnapshot['eBill'];
+                  billMessage = 'Utilities bill outstanding: ${documentSnapshot['eBill']}';
                 } else {
                   billMessage = 'No outstanding payments';
                 }
@@ -487,58 +486,58 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                           ),
                           const SizedBox(height: 10,),
                           Text(
-                            'Account Number: ' + documentSnapshot['account number'],
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            'Account Number: ${documentSnapshot['account number']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'Street Address: ' + documentSnapshot['address'],
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            'Street Address: ${documentSnapshot['address']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'Area Code: ' + documentSnapshot['area code'].toString(),
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            'Area Code: ${documentSnapshot['area code']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'Electric Meter Number: ' + documentSnapshot['meter number'],
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            'Electric Meter Number: ${documentSnapshot['meter number']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'Electric Meter Reading: ' + documentSnapshot['meter reading'],
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            'Electric Meter Reading: ${documentSnapshot['meter reading']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'Water Meter Number: ' + documentSnapshot['water meter number'],
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            'Water Meter Number: ${documentSnapshot['water meter number']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'Water Meter Reading: ' + documentSnapshot['water meter reading'],
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            'Water Meter Reading: ${documentSnapshot['water meter reading']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'Phone Number: ' + documentSnapshot['cell number'],
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            'Phone Number: ${documentSnapshot['cell number']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'First Name: ' + documentSnapshot['first name'],
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            'First Name: ${documentSnapshot['first name']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'Surname: ' + documentSnapshot['last name'],
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            'Surname: ${documentSnapshot['last name']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                           Text(
-                            'ID Number: ' + documentSnapshot['id number'],
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            'ID Number: ${documentSnapshot['id number']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 20,),
 
@@ -593,7 +592,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                               height: 180,
                               child: Center(
                                 child: Card(
-                                  color: Colors.blue,
+                                  color: Colors.grey,
                                   semanticContainer: true,
                                   clipBehavior: Clip.antiAliasWithSaveLayer,
                                   shape: RoundedRectangleBorder(
@@ -607,7 +606,10 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           context, 'files/$imgFolder/electricity/$eMeterNumber'),
                                       builder: (context, snapshot) {
                                         if (snapshot.hasError) {
-                                          return const Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
+                                          return const Padding(
+                                            padding: EdgeInsets.all(20.0),
+                                            child: Text('Image not yet uploaded.',), //${snapshot.error} if error needs to be displayed instead
+                                          );
                                         }
                                         if (snapshot.connectionState ==
                                             ConnectionState.done) {
@@ -675,11 +677,11 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                             // },
 
                             child: Container(
-                              margin: EdgeInsets.only(bottom: 5),
+                              margin: const EdgeInsets.only(bottom: 5),
                               height: 180,
                               child: Center(
                                 child: Card(
-                                  color: Colors.blue,
+                                  color: Colors.grey,
                                   semanticContainer: true,
                                   clipBehavior: Clip.antiAliasWithSaveLayer,
                                   shape: RoundedRectangleBorder(
@@ -693,7 +695,10 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           context, 'files/$imgFolder/water/$wMeterNumber'),//$meterNumber
                                       builder: (context, snapshot) {
                                         if (snapshot.hasError) {
-                                          return Text('Image not uploaded yet.'); //${snapshot.error} if error needs to be displayed instead
+                                          return const Padding(
+                                            padding: EdgeInsets.all(20.0),
+                                            child: Text('Image not yet uploaded.',), //${snapshot.error} if error needs to be displayed instead
+                                          );
                                         }
                                         if (snapshot.connectionState ==
                                             ConnectionState.done) {
@@ -704,7 +709,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                         if (snapshot.connectionState ==
                                             ConnectionState.waiting) {
                                           return Container(
-                                            child: CircularProgressIndicator(),);
+                                            child: const CircularProgressIndicator(),);
                                         }
                                         return Container();
                                       }
@@ -765,7 +770,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           color: Colors.green[700],
                                         ),
                                         const SizedBox(width: 2,),
-                                        Text('Map',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
+                                        const Text('Map',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
                                       ],
                                     ),
                                   ),
@@ -854,11 +859,11 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       if(PDFApi.loadFirebase('pdfs/$phoneNum/').toString().contains(accountNumberPDF)){
                                         nameOfUserPdf = PDFApi.loadFirebase('pdfs/$phoneNum/').toString();
 
-                                        final url = nameOfUserPdf;//'pdfs/$userID/ds_wirelessp2p.pdf';
+                                        final url2 = nameOfUserPdf;//'pdfs/$userID/ds_wirelessp2p.pdf';
                                       }
 
-                                      final url2 = 'pdfs/$phoneNum/Invoice_000003728743_040000653226.pdf';
-                                      final file = await PDFApi.loadFirebase(url2);
+                                      const url = 'pdfs/Invoice_000003728743_040000653226.PDF';
+                                      final file = await PDFApi.loadFirebase(url);
                                       try{
                                         openPDF(context, file);
                                       } catch(e){
@@ -873,7 +878,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           color: Colors.orange[200],
                                         ),
                                         const SizedBox(width: 2,),
-                                        Text('Statement',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black),),
+                                        const Text('Statement',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black),),
                                       ],
                                     ),
                                   ),
@@ -931,7 +936,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           color: Colors.grey[700],
                                         ),
                                         const SizedBox(width: 2,),
-                                        Text('W-Meter' ,style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black),),
+                                        const Text('W-Meter' ,style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black),),
                                       ],
                                     ),
 
@@ -981,7 +986,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           color: Colors.grey[700],
                                         ),
                                         const SizedBox(width: 2,),
-                                        Text('E-Meter',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
+                                        const Text('E-Meter',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
                                       ],
                                     ),
                                   ),

@@ -135,7 +135,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                 final DocumentSnapshot documentSnapshot =
                 streamSnapshot.data!.docs[index];
 
-                if(documentSnapshot['address'].toLowerCase().contains(_searchBarController.text.toLowerCase())){
+                if(((documentSnapshot['address'].trim()).toLowerCase()).contains((_searchBarController.text.trim()).toLowerCase())){
                   if(streamSnapshot.data!.docs[index]['faultResolved'] == false
                       || documentSnapshot['faultStage'] == 1 || documentSnapshot['faultStage'] == 3){
                     return Card(
@@ -259,7 +259,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 height: 180,
                                 child: Center(
                                   child: Card(
-                                    color: Colors.blue,
+                                    color: Colors.grey,
                                     semanticContainer: true,
                                     clipBehavior: Clip.antiAliasWithSaveLayer,
                                     shape: RoundedRectangleBorder(
@@ -273,7 +273,10 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                             context, 'files/faultImages/property/${documentSnapshot['address']}'),
                                         builder: (context, snapshot) {
                                           if (snapshot.hasError) {
-                                            return const Text('Image not uploaded for Fault.'); //${snapshot.error} if error needs to be displayed instead
+                                            return const Padding(
+                                              padding: EdgeInsets.all(20.0),
+                                              child: Text('Image not uploaded for Fault.',),
+                                            ); //${snapshot.error} if error needs to be displayed instead
                                           }
                                           if (snapshot.connectionState ==
                                               ConnectionState.done) {
@@ -956,7 +959,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                       print('this is the input text ::: $searchText');
                     });
                   },
-                  autofocus: true,
+                  autofocus: false,
                   controller: _searchBarController,
                   decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.search),
