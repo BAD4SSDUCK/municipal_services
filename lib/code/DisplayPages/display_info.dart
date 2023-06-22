@@ -850,15 +850,12 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
                                       ///no pdfs are uploaded by users
                                       print(FirebaseAuth.instance.currentUser);
-
                                       String accountNumberPDF = documentSnapshot['account number'];
-
                                       String nameOfUserPdf;
 
                                       ///todo: make this find the name of documents by the property account number owned by the logged in user for their statement
                                       if(PDFApi.loadFirebase('pdfs/$phoneNum/').toString().contains(accountNumberPDF)){
                                         nameOfUserPdf = PDFApi.loadFirebase('pdfs/$phoneNum/').toString();
-
                                         final url2 = nameOfUserPdf;//'pdfs/$userID/ds_wirelessp2p.pdf';
                                       }
 

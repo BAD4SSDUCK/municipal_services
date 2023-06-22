@@ -980,8 +980,7 @@ class _ConfigPageState extends State<ConfigPage> {
                   return ListView.builder(
                     itemCount: streamSnapshot.data!.docs.length,
                     itemBuilder: (context, index) {
-                      final DocumentSnapshot deptDocumentSnapshot =
-                      streamSnapshot.data!.docs[index];
+                      final DocumentSnapshot deptDocumentSnapshot = streamSnapshot.data!.docs[index];
                       if (streamSnapshot.data!.docs[index]['official'] == true) {
                         return Card(
                           margin: const EdgeInsets.all(10),
@@ -1043,7 +1042,6 @@ class _ConfigPageState extends State<ConfigPage> {
                                                                 onPressed: () {
                                                                   String deleteDept = deptDocumentSnapshot.reference.id;
                                                                   _deleteDeptRole(deleteDept);
-
                                                                   Navigator.of(context).pop();
                                                                 },
                                                                 icon: const Icon(
@@ -1133,9 +1131,7 @@ class _ConfigPageState extends State<ConfigPage> {
                   return ListView.builder(
                     itemCount: streamSnapshot.data!.docs.length,
                     itemBuilder: (context, index) {
-                      final DocumentSnapshot userDocumentSnapshot =
-                      streamSnapshot.data!.docs[index];
-
+                      final DocumentSnapshot userDocumentSnapshot = streamSnapshot.data!.docs[index];
                       if (streamSnapshot.data!.docs[index]['official'] == true) {
                         return Card(
                           margin: const EdgeInsets.all(10),
@@ -1212,7 +1208,6 @@ class _ConfigPageState extends State<ConfigPage> {
                                                                 onPressed: () {
                                                                   String deleteUser = userDocumentSnapshot.reference.id;
                                                                   _delete(deleteUser);
-
                                                                   Navigator.of(context).pop();
                                                                 },
                                                                 icon: const Icon(
@@ -1317,11 +1312,9 @@ class _ConfigPageState extends State<ConfigPage> {
               backgroundColor: Colors.green,
               child: const Icon(Icons.add_reaction),
             ),
-
           ],
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-
       ),
     );
   }
