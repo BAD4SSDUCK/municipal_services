@@ -37,7 +37,7 @@ class _ConfigPageState extends State<ConfigPage> {
 
   //text fields' controllers
   final _deptNameController = TextEditingController();
-  final _userRollController = TextEditingController();
+  final _userRoleController = TextEditingController();
   final _userNameController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -60,11 +60,11 @@ class _ConfigPageState extends State<ConfigPage> {
   final CollectionReference _deptInfo =
   FirebaseFirestore.instance.collection('departments');
 
-  final CollectionReference _deptRolls =
-  FirebaseFirestore.instance.collection('departmentRolls');
+  final CollectionReference _deptRoles =
+  FirebaseFirestore.instance.collection('departmentRoles');
 
   String selectedDept = "0";
-  String selectedRoll = "0";
+  String selectedRole = "0";
 
   bool visShow = true;
   bool visHide = false;
@@ -136,7 +136,7 @@ class _ConfigPageState extends State<ConfigPage> {
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
     _userNameController.text = '';
     _deptNameController.text = '';
-    _userRollController.text = '';
+    _userRoleController.text = '';
     _firstNameController.text = '';
     _lastNameController.text = '';
     _userEmailController.text = '';
@@ -275,9 +275,9 @@ class _ConfigPageState extends State<ConfigPage> {
                   Visibility(
                     visible: visShow,
                     child: TextField(
-                      controller: _userRollController,
+                      controller: _userRoleController,
                       decoration: const InputDecoration(
-                          labelText: 'User Roll'),
+                          labelText: 'User Role'),
                     ),
                   ),
 
@@ -315,7 +315,7 @@ class _ConfigPageState extends State<ConfigPage> {
                       onPressed: () async {
                         final String userName = _userNameController.text;
                         final String deptName = _deptNameController.text;
-                        final String userRoll = _userRollController.text;
+                        final String userRole = _userRoleController.text;
                         final String firstName = _firstNameController.text;
                         final String lastName = _lastNameController.text;
                         final String email = _userEmailController.text;
@@ -327,7 +327,7 @@ class _ConfigPageState extends State<ConfigPage> {
                           await _usersList.add({
                             "userName": userName,
                             "deptName": deptName,
-                            "userRoll": userRoll,
+                            "userRole": userRole,
                             "firstName": firstName,
                             "lastName": lastName,
                             "email": email,
@@ -339,7 +339,7 @@ class _ConfigPageState extends State<ConfigPage> {
 
                           _userNameController.text = '';
                           _deptNameController.text = '';
-                          _userRollController.text = '';
+                          _userRoleController.text = '';
                           _firstNameController.text = '';
                           _lastNameController.text = '';
                           _cellNumberController.text = '';
@@ -360,7 +360,7 @@ class _ConfigPageState extends State<ConfigPage> {
     if (documentSnapshot != null) {
       _userNameController.text = documentSnapshot['userName'];
       _deptNameController.text = documentSnapshot['deptName'];
-      _userRollController.text = documentSnapshot['userRoll'];
+      _userRoleController.text = documentSnapshot['userRole'];
       _firstNameController.text = documentSnapshot['firstName'];
       _lastNameController.text = documentSnapshot['lastName'];
       _userEmailController.text = documentSnapshot['email'];
@@ -428,9 +428,9 @@ class _ConfigPageState extends State<ConfigPage> {
                   Visibility(
                     visible: visShow,
                     child: TextField(
-                      controller: _userRollController,
+                      controller: _userRoleController,
                       decoration: const InputDecoration(
-                          labelText: 'User Roll'),
+                          labelText: 'User Role'),
                     ),
                   ),
                   Visibility(
@@ -457,7 +457,7 @@ class _ConfigPageState extends State<ConfigPage> {
                       onPressed: () async {
                         final String userName = _userNameController.text;
                         final String deptName = _deptNameController.text;
-                        final String userRoll = _userRollController.text;
+                        final String userRole = _userRoleController.text;
                         final String firstName = _firstNameController.text;
                         final String lastName = _lastNameController.text;
                         final String email = _userEmailController.text;
@@ -470,7 +470,7 @@ class _ConfigPageState extends State<ConfigPage> {
                               .update({
                             "userName": userName,
                             "deptName": deptName,
-                            "userRoll": userRoll,
+                            "userRole": userRole,
                             "firstName": firstName,
                             "lastName": lastName,
                             "email": email,
@@ -479,7 +479,7 @@ class _ConfigPageState extends State<ConfigPage> {
                           });
 
                           _userNameController.text = '';
-                          _userRollController.text = '';
+                          _userRoleController.text = '';
                           _firstNameController.text = '';
                           _lastNameController.text = '';
                           _cellNumberController.text = '';
@@ -501,9 +501,9 @@ class _ConfigPageState extends State<ConfigPage> {
     Fluttertoast.showToast(msg: "You have successfully deleted an account!");
   }
 
-  Future<void> _createDeptRolls([DocumentSnapshot? documentSnapshot]) async {
+  Future<void> _createDeptRoles([DocumentSnapshot? documentSnapshot]) async {
     _deptNameController.text = '';
-    _userRollController.text = '';
+    _userRoleController.text = '';
 
     await showModalBottomSheet(
         isScrollControlled: true,
@@ -542,9 +542,9 @@ class _ConfigPageState extends State<ConfigPage> {
                   Visibility(
                     visible: visShow,
                     child: TextField(
-                      controller: _userRollController,
+                      controller: _userRoleController,
                       decoration: const InputDecoration(
-                          labelText: 'User Roll'),
+                          labelText: 'User Role'),
                     ),
                   ),
                   const SizedBox(
@@ -554,18 +554,18 @@ class _ConfigPageState extends State<ConfigPage> {
                       child: const Text('Create'),
                       onPressed: () async {
                         final String deptName = _deptNameController.text;
-                        final String userRoll = _userRollController.text;
+                        final String userRole = _userRoleController.text;
                         const bool official = true;
 
                         if (deptName != null) {
-                          await _deptRolls.add({
+                          await _deptRoles.add({
                             "deptName": deptName,
-                            "userRoll": userRoll,
+                            "userRole": userRole,
                             "official": official,
                           });
 
                           _deptNameController.text = '';
-                          _userRollController.text = '';
+                          _userRoleController.text = '';
 
                           Navigator.of(context).pop();
                         }
@@ -578,10 +578,10 @@ class _ConfigPageState extends State<ConfigPage> {
         });
   }
 
-  Future<void> _updateDeptRolls([DocumentSnapshot? documentSnapshot]) async {
+  Future<void> _updateDeptRoles([DocumentSnapshot? documentSnapshot]) async {
     if (documentSnapshot != null) {
       _deptNameController.text = documentSnapshot['deptName'];
-      _userRollController.text = documentSnapshot['userRoll'];
+      _userRoleController.text = documentSnapshot['userRole'];
     }
 
     await showModalBottomSheet(
@@ -621,9 +621,9 @@ class _ConfigPageState extends State<ConfigPage> {
                   Visibility(
                     visible: visShow,
                     child: TextField(
-                      controller: _userRollController,
+                      controller: _userRoleController,
                       decoration: const InputDecoration(
-                          labelText: 'User Roll'),
+                          labelText: 'User Role'),
                     ),
                   ),
                   const SizedBox(
@@ -633,20 +633,20 @@ class _ConfigPageState extends State<ConfigPage> {
                       child: const Text('Update'),
                       onPressed: () async {
                         final String deptName = _deptNameController.text;
-                        final String userRoll = _userRollController.text;
+                        final String userRole = _userRoleController.text;
                         const bool official = true;
 
                         if (deptName != null) {
-                          await _deptRolls
+                          await _deptRoles
                               .doc(documentSnapshot!.id)
                               .update({
                             "deptName": deptName,
-                            "userRoll": userRoll,
+                            "userRole": userRole,
                             "official": official,
                           });
 
                           _deptNameController.text = '';
-                          _userRollController.text = '';
+                          _userRoleController.text = '';
 
                           Navigator.of(context).pop();
                         }
@@ -659,9 +659,9 @@ class _ConfigPageState extends State<ConfigPage> {
         });
   }
 
-  Future<void> _deleteDeptRoll(String deptID) async {
+  Future<void> _deleteDeptRole(String deptID) async {
     await _deptInfo.doc(deptID).delete();
-    Fluttertoast.showToast(msg: "You have successfully deleted a department & roll!");
+    Fluttertoast.showToast(msg: "You have successfully deleted a department & role!");
   }
 
   Future<void> _createDept([DocumentSnapshot? documentSnapshot]) async {
@@ -800,7 +800,7 @@ class _ConfigPageState extends State<ConfigPage> {
 
   Future<void> _deleteDept(String deptID) async {
     await _deptInfo.doc(deptID).delete();
-    Fluttertoast.showToast(msg: "You have successfully deleted a department & roll!");
+    Fluttertoast.showToast(msg: "You have successfully deleted a department & role!");
   }
 
   @override
@@ -815,7 +815,7 @@ class _ConfigPageState extends State<ConfigPage> {
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Departments'),
-              Tab(text: 'Rolls List'),
+              Tab(text: 'Roles List'),
               Tab(text: 'Official User List'),
             ],
           ),
@@ -824,7 +824,7 @@ class _ConfigPageState extends State<ConfigPage> {
           children: [
             ///Tab for department list view
             StreamBuilder(
-              stream: _deptRolls.snapshots(),
+              stream: _deptRoles.snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
                 if (streamSnapshot.hasData) {
                   return ListView.builder(
@@ -907,13 +907,13 @@ class _ConfigPageState extends State<ConfigPage> {
                                                 child: const Padding(
                                                   padding: EdgeInsets.symmetric(
                                                     horizontal: 20,
-                                                    vertical: 12,
+                                                    vertical: 10,
                                                   ),
                                                   child: Text(
                                                     "Delete Department",
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontSize: 16,
+                                                      fontSize: 14,
                                                     ),
                                                   ),
                                                 ),
@@ -934,13 +934,13 @@ class _ConfigPageState extends State<ConfigPage> {
                                                 child: const Padding(
                                                   padding: EdgeInsets.symmetric(
                                                     horizontal: 20,
-                                                    vertical: 12,
+                                                    vertical: 10,
                                                   ),
                                                   child: Text(
-                                                    "Edit Dept. Name",
+                                                    "  Edit Dept. Name  ",
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontSize: 16,
+                                                      fontSize: 14,
                                                     ),
                                                   ),
                                                 ),
@@ -972,9 +972,9 @@ class _ConfigPageState extends State<ConfigPage> {
               },
             ),
 
-            ///Tab for department rolls
+            ///Tab for department roles
             StreamBuilder(
-              stream: _deptRolls.snapshots(),
+              stream: _deptRoles.snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
                 if (streamSnapshot.hasData) {
                   return ListView.builder(
@@ -1004,7 +1004,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                   "Department: ${deptDocumentSnapshot['deptName']}",),
                                 departmentField(
                                   Icons.account_circle_outlined,
-                                  "Roll: ${deptDocumentSnapshot['userRoll']}",),
+                                  "Role: ${deptDocumentSnapshot['userRole']}",),
                                 const SizedBox(height: 20,),
                                 Visibility(
                                   visible: visShow,
@@ -1026,9 +1026,9 @@ class _ConfigPageState extends State<ConfigPage> {
                                                             shape: const RoundedRectangleBorder(
                                                                 borderRadius:
                                                                 BorderRadius.all(Radius.circular(16))),
-                                                            title: const Text("Delete this Roll & Department!"),
+                                                            title: const Text("Delete this Role & Department!"),
                                                             content: const Text(
-                                                                "Are you sure about deleting this Roll and the Department associated with it?"),
+                                                                "Are you sure about deleting this Role linked to the Department associated with it?"),
                                                             actions: [
                                                               IconButton(
                                                                 onPressed: () {
@@ -1042,7 +1042,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                                               IconButton(
                                                                 onPressed: () {
                                                                   String deleteDept = deptDocumentSnapshot.reference.id;
-                                                                  _deleteDeptRoll(deleteDept);
+                                                                  _deleteDeptRole(deleteDept);
 
                                                                   Navigator.of(context).pop();
                                                                 },
@@ -1060,13 +1060,13 @@ class _ConfigPageState extends State<ConfigPage> {
                                                 child: const Padding(
                                                   padding: EdgeInsets.symmetric(
                                                     horizontal: 20,
-                                                    vertical: 12,
+                                                    vertical: 10,
                                                   ),
                                                   child: Text(
-                                                    "Delete Roll",
+                                                    "  Delete Role  ",
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontSize: 16,
+                                                      fontSize: 14,
                                                     ),
                                                   ),
                                                 ),
@@ -1080,20 +1080,20 @@ class _ConfigPageState extends State<ConfigPage> {
                                               borderRadius: BorderRadius.circular(8),
                                               child: InkWell(
                                                 onTap: () {
-                                                  _updateDeptRolls(deptDocumentSnapshot);
+                                                  _updateDeptRoles(deptDocumentSnapshot);
                                                 },
                                                 borderRadius: BorderRadius.circular(
                                                     32),
                                                 child: const Padding(
                                                   padding: EdgeInsets.symmetric(
                                                     horizontal: 20,
-                                                    vertical: 12,
+                                                    vertical: 10,
                                                   ),
                                                   child: Text(
-                                                    "Edit Roll Info",
+                                                    "Edit Role Info",
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontSize: 16,
+                                                      fontSize: 14,
                                                     ),
                                                   ),
                                                 ),
@@ -1161,7 +1161,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                     "Department: ${userDocumentSnapshot['deptName']}"),
                                 adminUserField(
                                     Icons.business_center,
-                                    "Roll: ${userDocumentSnapshot['userRoll']}"),
+                                    "Role: ${userDocumentSnapshot['userRole']}"),
                                 adminUserField(
                                     Icons.account_circle,
                                     "First Name: ${userDocumentSnapshot['firstName']}"),
@@ -1229,13 +1229,13 @@ class _ConfigPageState extends State<ConfigPage> {
                                                 child: const Padding(
                                                   padding: EdgeInsets.symmetric(
                                                     horizontal: 20,
-                                                    vertical: 12,
+                                                    vertical: 10,
                                                   ),
                                                   child: Text(
-                                                    "Delete User",
+                                                    "  Delete User  ",
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontSize: 16,
+                                                      fontSize: 14,
                                                     ),
                                                   ),
                                                 ),
@@ -1256,13 +1256,13 @@ class _ConfigPageState extends State<ConfigPage> {
                                                 child: const Padding(
                                                   padding: EdgeInsets.symmetric(
                                                     horizontal: 20,
-                                                    vertical: 12,
+                                                    vertical: 10,
                                                   ),
                                                   child: Text(
                                                     "Edit User Info",
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontSize: 16,
+                                                      fontSize: 14,
                                                     ),
                                                   ),
                                                 ),
@@ -1307,7 +1307,7 @@ class _ConfigPageState extends State<ConfigPage> {
             ),
             const SizedBox(width: 10,),
             FloatingActionButton(
-              onPressed: () => _createDeptRolls(),
+              onPressed: () => _createDeptRoles(),
               backgroundColor: Colors.green,
               child: const Icon(Icons.add_business),
             ),
