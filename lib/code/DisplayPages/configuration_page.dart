@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
@@ -51,7 +52,7 @@ class _ConfigPageState extends State<ConfigPage> {
   bool displayDeptList = false;
 
   final _formKey = GlobalKey<FormState>();
-  final List<String> deptSelection = [];
+  late List<String> deptSelection = [];
   late String _currentSelectedDept;
 
   final CollectionReference _usersList =
@@ -202,20 +203,29 @@ class _ConfigPageState extends State<ConfigPage> {
                     ),
                   ),
 
-
-                  ///Need to work on down down menu with information
+                  ///Need to work on drop down menu with information
+                  // Visibility(
+                  //   visible: true,
+                  //   child: SizedBox(
+                  //     width: 180,
+                  //     height: 100,
+                  //     child: Text(
+                  //         DeptWidget().deptRepository.deptDBRetrieveRef.toString()),
+                  //   ),
+                  // ),
+                  ///Need to work on drop down menu with information
                   // Visibility(
                   //   visible: visShow,
-                  //     child: Container(
-                  //       width: double.infinity,
-                  //       height: double.infinity,
+                  //     child: SizedBox(
+                  //       width: 200,//double.infinity,//10
+                  //       height: 180,//double.infinity,//10
                   //       child: Column(
                   //         crossAxisAlignment: CrossAxisAlignment.center,
                   //         children: [
-                  //           const Text('Department'),
-                  //           const SizedBox(height: 200,),
+                  //           const Text('User Department'),
+                  //           // const SizedBox(height: 200,),
                   //           Container(
-                  //             width: 130,
+                  //             width: 300,
                   //             height: 50,
                   //             decoration: BoxDecoration(
                   //               border: Border.all(color: Colors.grey),
@@ -256,8 +266,9 @@ class _ConfigPageState extends State<ConfigPage> {
                   //               return GestureDetector(
                   //                 onTap: (){
                   //                   setState(() {
+                  //                     deptSelection.add(DeptWidget().deptRepository.deptDBRetrieveRef.get().toString());
                   //                     controllerDept.text = (index+1).toString();
-                  //                     _deptNameController.text = deptName[index].toString();
+                  //                     _deptNameController.text = deptSelection[index].toString();
                   //                   });
                   //                 },
                   //                 child: ListTile(
@@ -425,14 +436,91 @@ class _ConfigPageState extends State<ConfigPage> {
                           labelText: 'User Department'),
                     ),
                   ),
+
                   Visibility(
-                    visible: visShow,
-                    child: TextField(
-                      controller: _userRoleController,
-                      decoration: const InputDecoration(
-                          labelText: 'User Role'),
-                    ),
+                    visible: false,
+                    child: Text(
+                        DeptWidget().deptRepository.deptDBRetrieveRef.toString()),
                   ),
+                  ///Need to work on drop down menu with information
+                  Visibility(
+                      visible: visShow,
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: double.infinity,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Text('Department'),
+                            // const SizedBox(height: 200,),
+                            Container(
+                              width: 130,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: TextField(
+                                controller: controllerDept,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  suffixIcon: GestureDetector(
+                                    onTap: (){
+                                      displayDeptList = !displayDeptList;
+                                    },
+                                    child: Icon(Icons.arrow_downward),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            displayDeptList?
+                            Container(
+                              height: 200,
+                              width: 130,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(9),
+                                  color: Colors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.3),
+                                      spreadRadius: 1,
+                                      blurRadius: 3,
+                                      offset: Offset(0,1),
+                                    )
+                                  ]),
+                              child: ListView.builder(
+                                  itemCount: deptName.length,
+                                  itemBuilder: ((context,index){
+                                    return GestureDetector(
+                                      onTap: (){
+                                        setState(() {
+                                          deptSelection: DeptWidget().deptRepository.deptDBRetrieveRef.toString();
+                                          controllerDept.text = (index+1).toString();
+                                          _deptNameController.text = deptSelection[index].toString();
+                                        });
+                                      },
+                                      child: ListTile(
+                                        title: Text(deptName[index]),
+                                      ),
+                                    );
+                                  })),
+                            ):const SizedBox(),
+                          ],
+                        ),
+                      )
+                  ),
+
+                  // Visibility(
+                  //   visible: visShow,
+                  //   child: TextField(
+                  //     controller: _userRoleController,
+                  //     decoration: const InputDecoration(
+                  //         labelText: 'User Role'),
+                  //   ),
+                  // ),
+
+
                   Visibility(
                     visible: visShow,
                     child: TextField(
@@ -1319,4 +1407,89 @@ class _ConfigPageState extends State<ConfigPage> {
     );
   }
 
+}
+
+class DeptDBRetrieve{
+  String id;
+  String deptName;
+  bool official;
+
+  DeptDBRetrieve({
+    required this.id,
+    required this.deptName,
+    required this.official,
+  });
+}
+
+class DeptRoleDBRetrieve{
+  String id;
+  String deptName;
+  String userRole;
+  bool official;
+
+  DeptRoleDBRetrieve({
+    required this.id,
+    required this.deptName,
+    required this.userRole,
+    required this.official,
+  });
+}
+
+class DeptRepository {
+  final DatabaseReference deptDBRetrieveRef =
+  FirebaseDatabase.instance.ref().child('departments');
+
+  Future<List<DeptDBRetrieve>> fetchDept() async {
+    final DatabaseEvent event = await deptDBRetrieveRef.once();
+    final DataSnapshot deptSnapshot = event.snapshot;
+    final dynamic data = deptSnapshot.value;
+    final List<DeptDBRetrieve> deptList = [];
+
+    if (data != null) {
+      data.forEach((key, value) {
+        deptList.add(
+          DeptDBRetrieve(
+            id: key,
+            deptName: value['deptName'],
+            official: value['official'],
+          ),
+        );
+      });
+    }
+    return deptList;
+  }
+}
+
+class DeptWidget extends StatelessWidget {
+  final DeptRepository deptRepository = DeptRepository();
+
+  DeptWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: FutureBuilder<List<DeptDBRetrieve>>(
+        future: deptRepository.fetchDept(),
+        builder: (BuildContext context, AsyncSnapshot<List<DeptDBRetrieve>> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const CircularProgressIndicator();
+          } else if (snapshot.hasError) {
+            return Text('Error: ${snapshot.error}');
+          } else {
+            final List<DeptDBRetrieve> dept = snapshot.data!;
+            // Use the todos list to build your UI
+            return ListView.builder(
+              itemCount: dept.length,
+              itemBuilder: (BuildContext context, int index) {
+                return ListTile(
+                  title: Text(dept[index].deptName),
+                  // subtitle: Text(dept[index].official ? 'official' : 'Pending'),
+                );
+              },
+            );
+          }
+        },
+      ),
+    );
+  }
 }

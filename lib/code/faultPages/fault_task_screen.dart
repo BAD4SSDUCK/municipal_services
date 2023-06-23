@@ -270,7 +270,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                     child: FutureBuilder(
                                         future: _getImage(
                                           ///Firebase image location must be changed to display image based on the address
-                                            context, 'files/faultImages/property/${documentSnapshot['address']}'),
+                                            context, 'files/faultImages/${documentSnapshot['dateReported']}/${documentSnapshot['address']}'),
                                         builder: (context, snapshot) {
                                           if (snapshot.hasError) {
                                             return const Padding(
