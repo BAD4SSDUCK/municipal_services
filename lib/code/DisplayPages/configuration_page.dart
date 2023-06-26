@@ -437,88 +437,88 @@ class _ConfigPageState extends State<ConfigPage> {
                     ),
                   ),
 
-                  Visibility(
-                    visible: false,
-                    child: Text(
-                        DeptWidget().deptRepository.deptDBRetrieveRef.toString()),
-                  ),
-                  ///Need to work on drop down menu with information
-                  Visibility(
-                      visible: visShow,
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: double.infinity,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const Text('Department'),
-                            // const SizedBox(height: 200,),
-                            Container(
-                              width: 130,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey),
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: TextField(
-                                controller: controllerDept,
-                                decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  suffixIcon: GestureDetector(
-                                    onTap: (){
-                                      displayDeptList = !displayDeptList;
-                                    },
-                                    child: Icon(Icons.arrow_downward),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            displayDeptList?
-                            Container(
-                              height: 200,
-                              width: 130,
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(9),
-                                  color: Colors.white,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withOpacity(0.3),
-                                      spreadRadius: 1,
-                                      blurRadius: 3,
-                                      offset: Offset(0,1),
-                                    )
-                                  ]),
-                              child: ListView.builder(
-                                  itemCount: deptName.length,
-                                  itemBuilder: ((context,index){
-                                    return GestureDetector(
-                                      onTap: (){
-                                        setState(() {
-                                          deptSelection: DeptWidget().deptRepository.deptDBRetrieveRef.toString();
-                                          controllerDept.text = (index+1).toString();
-                                          _deptNameController.text = deptSelection[index].toString();
-                                        });
-                                      },
-                                      child: ListTile(
-                                        title: Text(deptName[index]),
-                                      ),
-                                    );
-                                  })),
-                            ):const SizedBox(),
-                          ],
-                        ),
-                      )
-                  ),
-
                   // Visibility(
-                  //   visible: visShow,
-                  //   child: TextField(
-                  //     controller: _userRoleController,
-                  //     decoration: const InputDecoration(
-                  //         labelText: 'User Role'),
-                  //   ),
+                  //   visible: false,
+                  //   child: Text(
+                  //       DeptWidget().deptRepository.deptDBRetrieveRef.toString()),
                   // ),
+                  // ///Need to work on drop down menu with information
+                  // Visibility(
+                  //     visible: visShow,
+                  //     child: SizedBox(
+                  //       width: double.infinity,
+                  //       height: double.infinity,
+                  //       child: Column(
+                  //         crossAxisAlignment: CrossAxisAlignment.center,
+                  //         children: [
+                  //           const Text('Department'),
+                  //           // const SizedBox(height: 200,),
+                  //           Container(
+                  //             width: 130,
+                  //             height: 50,
+                  //             decoration: BoxDecoration(
+                  //               border: Border.all(color: Colors.grey),
+                  //               color: Colors.white,
+                  //               borderRadius: BorderRadius.circular(6),
+                  //             ),
+                  //             child: TextField(
+                  //               controller: controllerDept,
+                  //               decoration: InputDecoration(
+                  //                 border: InputBorder.none,
+                  //                 suffixIcon: GestureDetector(
+                  //                   onTap: (){
+                  //                     displayDeptList = !displayDeptList;
+                  //                   },
+                  //                   child: Icon(Icons.arrow_downward),
+                  //                 ),
+                  //               ),
+                  //             ),
+                  //           ),
+                  //           displayDeptList?
+                  //           Container(
+                  //             height: 200,
+                  //             width: 130,
+                  //             decoration: BoxDecoration(
+                  //                 borderRadius: BorderRadius.circular(9),
+                  //                 color: Colors.white,
+                  //                 boxShadow: [
+                  //                   BoxShadow(
+                  //                     color: Colors.grey.withOpacity(0.3),
+                  //                     spreadRadius: 1,
+                  //                     blurRadius: 3,
+                  //                     offset: Offset(0,1),
+                  //                   )
+                  //                 ]),
+                  //             child: ListView.builder(
+                  //                 itemCount: deptName.length,
+                  //                 itemBuilder: ((context,index){
+                  //                   return GestureDetector(
+                  //                     onTap: (){
+                  //                       setState(() {
+                  //                         deptSelection: DeptWidget().deptRepository.deptDBRetrieveRef.toString();
+                  //                         controllerDept.text = (index+1).toString();
+                  //                         _deptNameController.text = deptSelection[index].toString();
+                  //                       });
+                  //                     },
+                  //                     child: ListTile(
+                  //                       title: Text(deptName[index]),
+                  //                     ),
+                  //                   );
+                  //                 })),
+                  //           ):const SizedBox(),
+                  //         ],
+                  //       ),
+                  //     )
+                  // ),
+
+                  Visibility(
+                    visible: visShow,
+                    child: TextField(
+                      controller: _userRoleController,
+                      decoration: const InputDecoration(
+                          labelText: 'User Role'),
+                    ),
+                  ),
 
 
                   Visibility(
