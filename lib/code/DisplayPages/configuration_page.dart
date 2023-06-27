@@ -45,15 +45,22 @@ class _ConfigPageState extends State<ConfigPage> {
   final _userEmailController = TextEditingController();
   final _cellNumberController = TextEditingController();
   final _passwordController = TextEditingController();
-  late String _deptListController = DropdownMenuItem as String;
+  late final String _deptListController = DropdownMenuItem as String;
 
   TextEditingController controllerDept = TextEditingController();
   List<String> deptName =[""];
   bool displayDeptList = false;
 
+
+  // Stream<List<dynamic>> returnDept() {
+  //   return _deptRoles
+  //       .snapshots()
+  //       .map((querySnap) => querySnap.docs.map((doc) => doc.id.('deptName')).toList());
+  // }
+
   final _formKey = GlobalKey<FormState>();
   late List<String> deptSelection = [];
-  late String _currentSelectedDept;
+  String _currentSelectedDept = "Select Department...";
 
   final CollectionReference _usersList =
   FirebaseFirestore.instance.collection('users');
@@ -368,6 +375,10 @@ class _ConfigPageState extends State<ConfigPage> {
   }
 
   Future<void> _update([DocumentSnapshot? documentSnapshot]) async {
+    // final docRef = _deptInfo.snapshots();
+    //
+    // deptName.add()
+
     if (documentSnapshot != null) {
       _userNameController.text = documentSnapshot['userName'];
       _deptNameController.text = documentSnapshot['deptName'];
@@ -437,12 +448,12 @@ class _ConfigPageState extends State<ConfigPage> {
                     ),
                   ),
 
-                  // Visibility(
-                  //   visible: false,
-                  //   child: Text(
-                  //       DeptWidget().deptRepository.deptDBRetrieveRef.toString()),
-                  // ),
-                  // ///Need to work on drop down menu with information
+                  Visibility(
+                    visible: false,
+                    child: Text(
+                        DeptWidget().deptRepository.deptDBRetrieveRef.toString()),
+                  ),
+                  ///Need to work on drop down menu with information
                   // Visibility(
                   //     visible: visShow,
                   //     child: SizedBox(
@@ -451,61 +462,98 @@ class _ConfigPageState extends State<ConfigPage> {
                   //       child: Column(
                   //         crossAxisAlignment: CrossAxisAlignment.center,
                   //         children: [
-                  //           const Text('Department'),
-                  //           // const SizedBox(height: 200,),
                   //           Container(
-                  //             width: 130,
-                  //             height: 50,
-                  //             decoration: BoxDecoration(
-                  //               border: Border.all(color: Colors.grey),
-                  //               color: Colors.white,
-                  //               borderRadius: BorderRadius.circular(6),
-                  //             ),
-                  //             child: TextField(
-                  //               controller: controllerDept,
-                  //               decoration: InputDecoration(
-                  //                 border: InputBorder.none,
-                  //                 suffixIcon: GestureDetector(
-                  //                   onTap: (){
-                  //                     displayDeptList = !displayDeptList;
-                  //                   },
-                  //                   child: Icon(Icons.arrow_downward),
-                  //                 ),
-                  //               ),
-                  //             ),
-                  //           ),
-                  //           displayDeptList?
-                  //           Container(
-                  //             height: 200,
-                  //             width: 130,
-                  //             decoration: BoxDecoration(
-                  //                 borderRadius: BorderRadius.circular(9),
-                  //                 color: Colors.white,
-                  //                 boxShadow: [
-                  //                   BoxShadow(
-                  //                     color: Colors.grey.withOpacity(0.3),
-                  //                     spreadRadius: 1,
-                  //                     blurRadius: 3,
-                  //                     offset: Offset(0,1),
-                  //                   )
-                  //                 ]),
-                  //             child: ListView.builder(
-                  //                 itemCount: deptName.length,
-                  //                 itemBuilder: ((context,index){
-                  //                   return GestureDetector(
-                  //                     onTap: (){
+                  //             padding: const EdgeInsets.all(5),
+                  //             child: StreamBuilder<QuerySnapshot>(
+                  //               // stream: _deptInfo.getStream(),
+                  //               stream: docRef,
+                  //               builder: (context, snapshot) {
+                  //                 if (!snapshot.hasData) {
+                  //                   return const Center(
+                  //                     child: CircularProgressIndicator(),
+                  //                   );
+                  //                 }
+                  //
+                  //                 return Container(
+                  //                   padding: const EdgeInsets.all(5),
+                  //                   child: DropdownButton(
+                  //                     value: _deptListController,
+                  //                     isDense: true,
+                  //                     items:
+                  //                     snapshot.data?.docs.map((DocumentSnapshot doc) {
+                  //                       return DropdownMenuItem<String>(
+                  //                           value: doc["deptName"],
+                  //                           child: Text(doc["deptName"]));
+                  //                     }).toList(),
+                  //                     hint: const Text("Choose Department"),
+                  //                     underline: Container(
+                  //
+                  //                     ),
+                  //                     onChanged: (value) {
                   //                       setState(() {
-                  //                         deptSelection: DeptWidget().deptRepository.deptDBRetrieveRef.toString();
-                  //                         controllerDept.text = (index+1).toString();
-                  //                         _deptNameController.text = deptSelection[index].toString();
+                  //                         _currentSelectedDept = value as String;
                   //                       });
                   //                     },
-                  //                     child: ListTile(
-                  //                       title: Text(deptName[index]),
-                  //                     ),
-                  //                   );
-                  //                 })),
-                  //           ):const SizedBox(),
+                  //                   ),
+                  //                 );
+                  //               },
+                  //             ),
+                  //           ),
+                  //           // const Text('Department'),
+                  //           // // const SizedBox(height: 200,),
+                  //           // Container(
+                  //           //   width: 130,
+                  //           //   height: 50,
+                  //           //   decoration: BoxDecoration(
+                  //           //     border: Border.all(color: Colors.grey),
+                  //           //     color: Colors.white,
+                  //           //     borderRadius: BorderRadius.circular(6),
+                  //           //   ),
+                  //           //   child: TextField(
+                  //           //     controller: controllerDept,
+                  //           //     decoration: InputDecoration(
+                  //           //       border: InputBorder.none,
+                  //           //       suffixIcon: GestureDetector(
+                  //           //         onTap: (){
+                  //           //           displayDeptList = !displayDeptList;
+                  //           //         },
+                  //           //         child: Icon(Icons.arrow_downward),
+                  //           //       ),
+                  //           //     ),
+                  //           //   ),
+                  //           // ),
+                  //           // displayDeptList?
+                  //           // Container(
+                  //           //   height: 200,
+                  //           //   width: 130,
+                  //           //   decoration: BoxDecoration(
+                  //           //       borderRadius: BorderRadius.circular(9),
+                  //           //       color: Colors.white,
+                  //           //       boxShadow: [
+                  //           //         BoxShadow(
+                  //           //           color: Colors.grey.withOpacity(0.3),
+                  //           //           spreadRadius: 1,
+                  //           //           blurRadius: 3,
+                  //           //           offset: const Offset(0,1),
+                  //           //         )
+                  //           //       ]),
+                  //           //   child: ListView.builder(
+                  //           //       itemCount: deptName.length,
+                  //           //       itemBuilder: ((context,index){
+                  //           //         return GestureDetector(
+                  //           //           onTap: (){
+                  //           //             setState(() {
+                  //           //               deptSelection: DeptWidget().deptRepository.deptDBRetrieveRef.toString();
+                  //           //               controllerDept.text = (index+1).toString();
+                  //           //               _deptNameController.text = deptSelection[index].toString();
+                  //           //             });
+                  //           //           },
+                  //           //           child: ListTile(
+                  //           //             title: Text(deptName[index]),
+                  //           //           ),
+                  //           //         );
+                  //           //       })),
+                  //           // ):const SizedBox(),
                   //         ],
                   //       ),
                   //     )
