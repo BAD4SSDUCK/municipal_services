@@ -119,7 +119,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           crossAxisAlignment: CrossAxisAlignment.center,
                                           children: [
-                                            ElevatedIconButton(
+                                            BasicIconButtonGrey(
                                               onPress: () async {
                                                 Fluttertoast.showToast(
                                                     msg: "Now downloading your statement!\nPlease wait a few seconds!");
@@ -149,8 +149,8 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                               },
                                               labelText: 'Statement',
                                               fSize: 16,
-                                              faIcon: const FaIcon(Icons.picture_as_pdf),
-                                              fgColor: Colors.orangeAccent,
+                                              faIcon: const FaIcon(Icons.download),
+                                              fgColor: Colors.green,
                                               btSize: const Size(50, 50),
                                             ),
 
