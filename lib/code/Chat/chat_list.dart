@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 import 'chat_screen.dart';
 
 class ChatList extends StatefulWidget {
@@ -93,7 +95,7 @@ class _ChatListState extends State<ChatList> {
 class ChatButtonWidget extends StatelessWidget {
   final String chatRoomId;
 
-  ChatButtonWidget({required this.chatRoomId});
+  ChatButtonWidget({super.key, required this.chatRoomId});
 
   @override
   Widget build(BuildContext context) {
@@ -103,26 +105,17 @@ class ChatButtonWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            ElevatedButton(
-              onPressed: () async{
+            BasicIconButtonGrey(
+              onPress: () async {
+
                 Navigator.push(context,
                     MaterialPageRoute(builder: (context) => Chat(chatRoomId: chatRoomId,)));
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[350],
-                fixedSize: const Size(108, 10),),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.chat,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  const SizedBox(width: 10,),
-                  const Text('Chat', style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,),),
-                ],
-              ),
+              labelText: 'Chat',
+              fSize: 16,
+              faIcon: const FaIcon(Icons.chat,),
+              fgColor: Theme.of(context).primaryColor,
+              btSize: const Size(100, 38),
             ),
             const SizedBox(width: 5,),
           ],

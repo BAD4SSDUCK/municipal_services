@@ -75,10 +75,10 @@ class BasicIconButtonGreen extends StatelessWidget {
           disabledForegroundColor: Colors.red.withOpacity(0.38), //foreground
           backgroundColor: Colors.green,
           shadowColor: Colors.black,
-          // side: const BorderSide(
-          //   width: 5,
-          //   color: Colors.black54,
-          // ),
+          side: const BorderSide(
+            width: 1,
+            color: Colors.black38,
+          ),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10)),
         ),
@@ -100,7 +100,7 @@ class BasicIconButtonGrey extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB( 10.0,5.0,10.0,5.0),
+      padding: const EdgeInsets.fromLTRB( 8.0,2.0,8.0,1.0),
       child: ElevatedButton.icon(
         onPressed: (){
           onPress();
@@ -110,7 +110,7 @@ class BasicIconButtonGrey extends StatelessWidget {
             color: Colors.black,
             fontSize:fSize,
             fontFamily: 'Gotham',
-            fontWeight: FontWeight.w900),
+            fontWeight: FontWeight.w700),
         ),
         style: IconButton.styleFrom(
           foregroundColor: fgColor,

@@ -1,6 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:external_app_launcher/external_app_launcher.dart';
+import 'package:device_apps/device_apps.dart';
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:municipal_track/code/Reusable/menu_reusable_elevated_button.dart';
 
 class NavDrawer extends StatelessWidget {
@@ -89,9 +94,25 @@ Widget buildMenuItems(BuildContext context) => Wrap(
             child: ListTile(
               leading: const Icon(Icons.facebook_rounded, size: 20,),
               title: const Text('Cyberfox Facebook'),
-              onTap: (){
-                final Uri _url1 = Uri.parse('https://www.facebook.com/cyberfoxit');
-                _launchURL(_url1);
+              onTap: () async {
+
+                ///could work but opens to facebook google play app install and not the app directly
+                // await LaunchApp.openApp(
+                //   // androidPackageName: 'com.android.chrome',
+                //   androidPackageName: 'com.facebook.katana',
+                //   appStoreLink: 'com.facebook.katana',
+                //   openStore: false,
+                // );
+
+                ///trying new method
+                _launchSocial(Uri.parse('fb://page/122574191145679'), Uri.parse('https://www.facebook.com/cyberfoxit'));
+
+                ///works but breaks once web view completes loading and user is not logged into facebook
+                // final Uri _url1 = Uri.parse("fb://facewebmodal/f?href=https://www.facebook.com/cyberfoxit");
+                ///new url launcher
+                // launchFacebook(_url1);
+                ///old url Launcher
+                // _launchURL(_url1);
               },
             ),
           ),
@@ -100,9 +121,39 @@ Widget buildMenuItems(BuildContext context) => Wrap(
             child: ListTile(
               leading: const Icon(Icons.video_collection_rounded, size: 20,),
               title: const Text('Subscribe on YouTube'),
-              onTap: (){
-                final Uri _url2 = Uri.parse('https://www.youtube.com/user/axed25');
-                _launchURL(_url2);
+              onTap: () async {
+
+                ///could work but opens to youtube app installed and not the channel directly
+                // await LaunchApp.openApp(
+                //   // androidPackageName: 'com.android.chrome',
+                //   androidPackageName: 'com.google.android.youtube',
+                //   appStoreLink: 'com.google.android.youtube',
+                //   openStore: false,
+                // );
+
+                ///canLaunch claims depreciated but still works
+                const url = 'https://www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ';
+                if (await canLaunch(url)) {
+                  await launch(url);
+                } else {
+                  _launchSocial(Uri.parse('youtube:www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ'), Uri.parse('https://www.youtube.com/user/axed25'));
+                  throw 'Could not launch $url';
+                }
+
+                // final Uri ytUrl = Uri.parse('https://www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ');
+                // if (await canLaunchUrl(ytUrl)) {
+                //   await launchUrl(ytUrl);
+                // } else {
+                //   _launchSocial(Uri.parse('youtube:www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ'), Uri.parse('https://www.youtube.com/user/axed25'));
+                //   throw 'Could not launch youtube app $ytUrl';
+                // }
+
+                //youtube:https://www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ < Cyberfox yt
+                // _launchSocial(Uri.parse('youtube:www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ'), Uri.parse('https://www.youtube.com/user/axed25'));
+
+                ///old method
+                // final Uri _url2 = Uri.parse('https://www.youtube.com/user/axed25');
+                // _launchURL(_url2);
               },
             ),
           ),
@@ -156,10 +207,60 @@ Widget buildMenuItems(BuildContext context) => Wrap(
   ],
 );
 
-_launchURL(_url) async {
-  if (await canLaunchUrl(_url)) {
-    await launchUrl(_url);
+///unused web view page component, left for reference
+class WebViewApp extends StatefulWidget {
+  final Uri webUrl;
+  const WebViewApp({super.key, required this.webUrl});
+
+  @override
+  State<WebViewApp> createState() => _WebViewAppState();
+}
+
+class _WebViewAppState extends State<WebViewApp> {
+  late final WebViewController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = WebViewController()
+      ..loadRequest(
+        widget.webUrl,
+      );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Web View'),
+      ),
+      body:
+      // WebViewApp(webUrl: widget.webUrl)
+      WebViewWidget(controller: controller,),
+    );
+  }
+}
+///how to call web view page
+// Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewApp(webUrl: _url1)));
+///end of web view page component
+
+void _launchSocial(Uri url, Uri fallbackUrl) async {
+  try {
+    bool launched =
+    await launchUrl(url, mode: LaunchMode.externalApplication,);
+    if (!launched) {
+      await launchUrl(fallbackUrl, mode: LaunchMode.externalApplication,);
+    }
+  } catch (e) {
+    await launchUrl(fallbackUrl, mode: LaunchMode.inAppWebView,);
+    Fluttertoast.showToast(msg: "Failed to open in Youtube App!");
+  }
+}
+
+_launchURL(url) async {
+  if (await canLaunchUrl(url)) {
+    await launchUrl(url);
   } else {
-    throw 'Could not launch $_url';
+    throw 'Could not launch $url';
   }
 }

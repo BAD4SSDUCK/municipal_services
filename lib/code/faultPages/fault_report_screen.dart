@@ -346,8 +346,9 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           const SizedBox(height: 20,),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 30.0),
-                            child: GestureDetector(
-                              onTap: buttonEnabled? () {
+                            child:
+                            BasicIconButtonGreen(
+                              onPress: buttonEnabled? () {
                                 if (_photo != null) {
                                   if(dropdownValue !='Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty){
                                     if(_reporterPhoneController.text.contains('+27')){
@@ -431,18 +432,11 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                               } : (){
                                 Fluttertoast.showToast(msg: "Please allow location access!", gravity: ToastGravity.CENTER);
                               },
-                              child: Container(
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Center(
-                                  child: Text('Report Fault',
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18,),
-                                  ),
-                                ),
-                              ),
+                              labelText: 'Report Fault',
+                              fSize: 20,
+                              faIcon: const FaIcon(Icons.report),
+                              fgColor: Colors.orangeAccent,
+                              btSize: const Size(500, 60),
                             ),
                           ),
                           const SizedBox(height: 10,),

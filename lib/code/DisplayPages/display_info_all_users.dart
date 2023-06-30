@@ -7,12 +7,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:municipal_track/code/ImageUploading/image_upload_meter.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_water.dart';
 import 'package:municipal_track/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
+import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 
 
 class UsersPropsAll extends StatefulWidget {
@@ -398,32 +400,25 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
 
-                            const SizedBox(height: 20,),
+                            const SizedBox(height: 10,),
                             Column(
                               children: [
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    ElevatedButton(
-                                      onPressed: () {
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
                                         _update(documentSnapshot);
                                       },
-                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(112, 10),),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.edit,
-                                            color: Theme.of(context).primaryColor,
-                                          ),
-                                          const SizedBox(width: 2,),
-                                          const Text('Capture',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
-                                        ],
-                                      ),
+                                      labelText: 'Capture',
+                                      fSize: 16,
+                                      faIcon: const FaIcon(Icons.edit,),
+                                      fgColor: Theme.of(context).primaryColor,
+                                      btSize: const Size(100, 38),
                                     ),
-                                    const SizedBox(width: 10,),
-                                    ElevatedButton(
-                                      onPressed: () {
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
                                         accountNumberAll = documentSnapshot['account number'];
                                         locationGivenAll = documentSnapshot['address'];
 
@@ -435,18 +430,13 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                               //MapPage()
                                             ));
                                       },
-                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(90, 10),),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.map,
-                                            color: Colors.green[700],
-                                          ),
-                                          const SizedBox(width: 2,),
-                                          const Text('Map',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
-                                        ],
-                                      ),
+                                      labelText: 'Map',
+                                      fSize: 16,
+                                      faIcon: const FaIcon(Icons.map,),
+                                      fgColor: Colors.green,
+                                      btSize: const Size(100, 38),
                                     ),
+                                    const SizedBox(width: 5,),
                                   ],
                                 ),
                               ],
@@ -457,8 +447,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    ElevatedButton(
-                                      onPressed: () async {
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
                                         Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!");
                                         final FirebaseAuth auth = FirebaseAuth.instance;
                                         final User? user = auth.currentUser;
@@ -468,36 +458,28 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                         ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
                                         ///no pdfs are uploaded by users
                                         print(FirebaseAuth.instance.currentUser);
-
                                         String accountNumberPDF = documentSnapshot['account number'];
-
-                                        phoneNum = documentSnapshot['cell number'];
-
                                         String nameOfUserPdf;
 
-                                        ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
-                                        ///no pdfs are uploaded by users
-
                                         ///todo: make this find the name of documents by the property account number owned by the logged in user for their statement
+                                        if(PDFApi.loadFirebase('pdfs/$phoneNum/').toString().contains(accountNumberPDF)){
+                                          nameOfUserPdf = PDFApi.loadFirebase('pdfs/$phoneNum/').toString();
+                                          final url2 = nameOfUserPdf;//'pdfs/$userID/ds_wirelessp2p.pdf';
+                                        }
+
                                         const url = 'pdfs/Invoice_000003728743_040000653226.PDF';
                                         final file = await PDFApi.loadFirebase(url);
-                                        try {
+                                        try{
                                           openPDF(context, file);
-                                        } catch (e) {
+                                        } catch(e){
                                           Fluttertoast.showToast(msg: "Unable to download statement.");
                                         }
                                       },
-                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350] ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.picture_as_pdf,
-                                            color: Colors.orange[200],
-                                          ),
-                                          const SizedBox(width: 2,),
-                                          const Text('Statement',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black),),
-                                        ],
-                                      ),
+                                      labelText: 'Statement',
+                                      fSize: 16,
+                                      faIcon: const FaIcon(Icons.picture_as_pdf,),
+                                      fgColor: Colors.orangeAccent,
+                                      btSize: const Size(100, 38),
                                     ),
                                   ],
                                 )
@@ -509,8 +491,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    ElevatedButton(
-                                      onPressed: () {
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
                                         wMeterNumber = documentSnapshot['water meter number'];
                                         imgFolder = documentSnapshot['cell number'];
                                         showDialog(
@@ -545,22 +527,14 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                               );
                                             });
                                       },
-                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350] ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.camera_alt,
-                                            color: Colors.grey[700],
-                                          ),
-                                          const SizedBox(width: 2,),
-                                          const Text('W-Meter' ,style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black),),
-                                        ],
-                                      ),
-
+                                      labelText: 'W-Meter',
+                                      fSize: 16,
+                                      faIcon: const FaIcon(Icons.camera_alt,),
+                                      fgColor: Colors.black38,
+                                      btSize: const Size(100, 38),
                                     ),
-                                    const SizedBox(width: 10,),
-                                    ElevatedButton(
-                                      onPressed: () {
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
                                         eMeterNumber = documentSnapshot['meter number'];
                                         imgFolder = documentSnapshot['cell number'];
                                         showDialog(
@@ -595,20 +569,12 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                               );
                                             });
                                       },
-                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(115, 10),),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.camera_alt,
-                                            color: Colors.grey[700],
-                                          ),
-                                          const SizedBox(width: 2,),
-                                          const Text('E-Meter',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
-                                        ],
-                                      ),
+                                      labelText: 'E-Meter',
+                                      fSize: 16,
+                                      faIcon: const FaIcon(Icons.camera_alt,),
+                                      fgColor: Colors.black38,
+                                      btSize: const Size(100, 38),
                                     ),
-
-                                    const SizedBox(width: 6,),
                                     ///No need for a delete button but this is what a delete would look like
                                     // GestureDetector(
                                     //   onTap: () {
@@ -666,7 +632,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                 ),
                               ],
                             ),
-
                           ],
                         ),
                       ),

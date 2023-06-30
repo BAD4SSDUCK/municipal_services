@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:municipal_track/code/ImageUploading/image_upload_meter.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_water.dart';
 import 'package:municipal_track/code/MapTools/map_screen.dart';
 import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
+import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 
 
 class UsersTableViewPage extends StatefulWidget {
@@ -725,32 +727,26 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
 
-                          const SizedBox(height: 20,),
+                          const SizedBox(height: 10,),
                           Column(
                             children: [
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  ElevatedButton(
-                                    onPressed: () {
+                                  BasicIconButtonGrey(
+                                    onPress: () async {
                                       _update(documentSnapshot);
                                     },
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(112, 10),),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.edit,
-                                          color: Theme.of(context).primaryColor,
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        const Text('Capture',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
-                                      ],
-                                    ),
+                                    labelText: 'Capture',
+                                    fSize: 16,
+                                    faIcon: const FaIcon(Icons.edit,),
+                                    fgColor: Theme.of(context).primaryColor,
+                                    btSize: const Size(100, 38),
                                   ),
-                                  const SizedBox(width: 10,),
-                                  ElevatedButton(
-                                    onPressed: () {
+                                  const SizedBox(width: 0,),
+                                  BasicIconButtonGrey(
+                                    onPress: () async {
                                       accountNumber = documentSnapshot['account number'];
                                       locationGiven = documentSnapshot['address'];
 
@@ -762,20 +758,152 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                             //MapPage()
                                           ));
                                     },
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(90, 10),),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.map,
-                                          color: Colors.green[700],
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        const Text('Map',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
-                                      ],
-                                    ),
+                                    labelText: 'Map',
+                                    fSize: 16,
+                                    faIcon: const FaIcon(Icons.map,),
+                                    fgColor: Colors.green,
+                                    btSize: const Size(100, 38),
                                   ),
                                   const SizedBox(width: 5,),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  BasicIconButtonGrey(
+                                    onPress: () async {
+                                      Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!");
+                                      final FirebaseAuth auth = FirebaseAuth.instance;
+                                      final User? user = auth.currentUser;
+                                      final uid = user?.uid;
+                                      String userID = uid as String;
 
+                                      ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
+                                      ///no pdfs are uploaded by users
+                                      print(FirebaseAuth.instance.currentUser);
+                                      String accountNumberPDF = documentSnapshot['account number'];
+                                      String nameOfUserPdf;
+
+                                      ///todo: make this find the name of documents by the property account number owned by the logged in user for their statement
+                                      if(PDFApi.loadFirebase('pdfs/$phoneNum/').toString().contains(accountNumberPDF)){
+                                        nameOfUserPdf = PDFApi.loadFirebase('pdfs/$phoneNum/').toString();
+                                        final url2 = nameOfUserPdf;//'pdfs/$userID/ds_wirelessp2p.pdf';
+                                      }
+
+                                      const url = 'pdfs/Invoice_000003728743_040000653226.PDF';
+                                      final file = await PDFApi.loadFirebase(url);
+                                      try{
+                                        openPDF(context, file);
+                                      } catch(e){
+                                        Fluttertoast.showToast(msg: "Unable to download statement.");
+                                      }
+                                    },
+                                    labelText: 'Statement',
+                                    fSize: 16,
+                                    faIcon: const FaIcon(Icons.picture_as_pdf,),
+                                    fgColor: Colors.orangeAccent,
+                                    btSize: const Size(100, 38),
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  BasicIconButtonGrey(
+                                    onPress: () async {
+                                      wMeterNumber = documentSnapshot['water meter number'];
+                                      imgFolder = documentSnapshot['cell number'];
+                                      showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text("Upload Water Meter Image"),
+                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                              actions: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.cancel,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () async {
+                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                                                    Navigator.push(context,
+                                                        MaterialPageRoute(builder: (context) => ImageUploadWater()));
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.done,
+                                                    color: Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          });
+                                    },
+                                    labelText: 'W-Meter',
+                                    fSize: 16,
+                                    faIcon: const FaIcon(Icons.camera_alt,),
+                                    fgColor: Colors.black38,
+                                    btSize: const Size(100, 38),
+                                  ),
+                                  BasicIconButtonGrey(
+                                    onPress: () async {
+                                      eMeterNumber = documentSnapshot['meter number'];
+                                      imgFolder = documentSnapshot['cell number'];
+                                      showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text("Upload Electric Meter Image"),
+                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                              actions: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.cancel,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () async {
+                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                                                    Navigator.push(context,
+                                                        MaterialPageRoute(builder: (context) => ImageUploadMeter()));
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.done,
+                                                    color: Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          });
+                                    },
+                                    labelText: 'E-Meter',
+                                    fSize: 16,
+                                    faIcon: const FaIcon(Icons.camera_alt,),
+                                    fgColor: Colors.black38,
+                                    btSize: const Size(100, 38),
+                                  ),
+                                  const SizedBox(width: 6,),
                                   ///No need for a delete button but this is what a delete would look like
                                   // GestureDetector(
                                   //   onTap: () {
@@ -820,179 +948,6 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                   //           );
                                   //         });
                                   //  },
-                                  //   child: Row(
-                                  //     children: [
-                                  //       Icon(
-                                  //         Icons.delete,
-                                  //         color: Colors.red[700],
-                                  //       ),
-                                  //     ],
-                                  //   ),
-                                  // ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () async {
-                                      Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!");
-                                      final FirebaseAuth auth = FirebaseAuth.instance;
-                                      final User? user = auth.currentUser;
-                                      final uid = user?.uid;
-                                      String userID = uid as String;
-
-                                      ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
-                                      ///no pdfs are uploaded by users
-                                      print(FirebaseAuth.instance.currentUser);
-                                      String accountNumberPDF = documentSnapshot['account number'];
-                                      String nameOfUserPdf;
-
-                                      ///todo: make this find the name of documents by the property account number owned by the logged in user for their statement
-                                      if(PDFApi.loadFirebase('pdfs/$phoneNum/').toString().contains(accountNumberPDF)){
-                                        nameOfUserPdf = PDFApi.loadFirebase('pdfs/$phoneNum/').toString();
-                                        final url2 = nameOfUserPdf;//'pdfs/$userID/ds_wirelessp2p.pdf';
-                                      }
-
-                                      const url = 'pdfs/Invoice_000003728743_040000653226.PDF';
-                                      final file = await PDFApi.loadFirebase(url);
-                                      try{
-                                        openPDF(context, file);
-                                      } catch(e){
-                                        Fluttertoast.showToast(msg: "Unable to download statement.");
-                                      }
-                                    },
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350] ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.picture_as_pdf,
-                                          color: Colors.orange[200],
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        const Text('Statement',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black),),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              )
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      wMeterNumber = documentSnapshot['water meter number'];
-                                      imgFolder = documentSnapshot['cell number'];
-                                      showDialog(
-                                          barrierDismissible: false,
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: const Text("Upload Water Meter Image"),
-                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () async {
-                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                                    Navigator.push(context,
-                                                        MaterialPageRoute(builder: (context) => ImageUploadWater()));
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          });
-                                    },
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350] ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.camera_alt,
-                                          color: Colors.grey[700],
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        const Text('W-Meter' ,style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black),),
-                                      ],
-                                    ),
-
-                                  ),
-                                  const SizedBox(width: 10,),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      eMeterNumber = documentSnapshot['meter number'];
-                                      imgFolder = documentSnapshot['cell number'];
-                                      showDialog(
-                                          barrierDismissible: false,
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: const Text("Upload Electric Meter Image"),
-                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () async {
-                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                                    Navigator.push(context,
-                                                        MaterialPageRoute(builder: (context) => ImageUploadMeter()));
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          });
-                                    },
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(115, 10),),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.camera_alt,
-                                          color: Colors.grey[700],
-                                        ),
-                                        const SizedBox(width: 2,),
-                                        const Text('E-Meter',style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
-                                      ],
-                                    ),
-                                  ),
-
-                                  const SizedBox(width: 6,),
-                                  // GestureDetector(
-                                  //   onTap: () {
-                                  //     _delete(documentSnapshot.id);
-                                  //   },
                                   //   child: Row(
                                   //     children: [
                                   //       Icon(

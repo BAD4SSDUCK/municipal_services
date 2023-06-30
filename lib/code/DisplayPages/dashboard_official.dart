@@ -251,7 +251,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   labelText: 'Readings\nCapture',
                                   fSize: 16,
                                   faIcon: const FaIcon(Icons.holiday_village),
-                                  fgColor: Colors.brown,
+                                  fgColor: Colors.black54,
                                   btSize: const Size(130, 120),
                                 ),
                               ],
