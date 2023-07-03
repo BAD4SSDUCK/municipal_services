@@ -12,16 +12,15 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:municipal_track/code/MapTools/map_screen.dart';
-import 'package:municipal_track/code/faultPages/fault_task_screen_archive.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:municipal_track/code/MapTools/map_screen_prop.dart';
 
-class FaultTaskScreen extends StatefulWidget {
-  const FaultTaskScreen({Key? key}) : super(key: key);
+class FaultTaskScreenArchive extends StatefulWidget {
+  const FaultTaskScreenArchive({Key? key}) : super(key: key);
 
   @override
-  State<FaultTaskScreen> createState() => _FaultTaskScreenState();
+  State<FaultTaskScreenArchive> createState() => _FaultTaskScreenArchiveState();
 }
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
@@ -33,7 +32,7 @@ class FireStorageService extends ChangeNotifier{
   }
 }
 
-class _FaultTaskScreenState extends State<FaultTaskScreen> {
+class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
 
   final _accountNumberController = TextEditingController();
   final _addressController = TextEditingController();
@@ -63,6 +62,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   bool visStage2 = false;
   bool visStage3 = false;
   bool visStage4 = false;
+  bool visStage5 = false;
 
   final CollectionReference _listUser =
   FirebaseFirestore.instance.collection('users');
@@ -138,10 +138,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                 streamSnapshot.data!.docs[index];
 
                 if(((documentSnapshot['address'].trim()).toLowerCase()).contains((_searchBarController.text.trim()).toLowerCase())){
-                  if(streamSnapshot.data!.docs[index]['faultResolved'] == false
-                      || documentSnapshot['faultStage'] == 1 || documentSnapshot['faultStage'] == 3){
+                  if(streamSnapshot.data!.docs[index]['faultResolved'] == true || documentSnapshot['faultStage'] >= 5){
                     return Card(
-                      margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,10.0),
+                      margin: const EdgeInsets.fromLTRB(10.0,0.0,10.0,10.0),
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Column(
@@ -168,41 +167,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                   fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
-                            Column(
-                              children: [
-                                if(documentSnapshot['faultStage'] == 1)...[
-                                  Text(
-                                    'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else if(documentSnapshot['faultStage'] == 2) ...[
-                                  Text(
-                                    'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else if(documentSnapshot['faultStage'] == 3) ...[
-                                  Text(
-                                    'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else if(documentSnapshot['faultStage'] == 4) ...[
-                                  Text(
-                                    'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else ...[
-
-                                ],
-                              ],
-                            ),
                             Text(
                               'Fault Type: ${documentSnapshot['faultType']}',
                               style: const TextStyle(
@@ -214,20 +178,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 if(documentSnapshot['faultDescription'] != "")...[
                                   Text(
                                     'Fault Description: ${documentSnapshot['faultDescription']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else ...[
-
-                                ],
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                if(documentSnapshot['depComment1'] != "")...[
-                                  Text(
-                                    'Department Comment: ${documentSnapshot['depComment1']}',
                                     style: const TextStyle(
                                         fontSize: 16, fontWeight: FontWeight.w400),
                                   ),
@@ -253,9 +203,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                             ),
                             Column(
                               children: [
-                                if(documentSnapshot['depComment2'] != "")...[
+                                if(documentSnapshot['depComment1'] != "")...[
                                   Text(
-                                    'Department Final Comment: ${documentSnapshot['depComment2']}',
+                                    'Department Comment 1: ${documentSnapshot['depComment1']}',
                                     style: const TextStyle(
                                         fontSize: 16, fontWeight: FontWeight.w400),
                                   ),
@@ -270,6 +220,20 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 if(documentSnapshot['handlerCom2'] != "")...[
                                   Text(
                                     'Handler Final Comment: ${documentSnapshot['handlerCom2']}',
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else ...[
+
+                                ],
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                if(documentSnapshot['depComment2'] != "")...[
+                                  Text(
+                                    'Department Final Comment: ${documentSnapshot['depComment2']}',
                                     style: const TextStyle(
                                         fontSize: 16, fontWeight: FontWeight.w400),
                                   ),
@@ -459,179 +423,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                         ),
                       ),
                     );
-                  } else if((streamSnapshot.data!.docs[index]['faultResolved'] == false && documentSnapshot['faultStage'] != 5 )
-                      || documentSnapshot['faultStage'] == 2 || documentSnapshot['faultStage'] == 4){
-                    return Card(
-                      margin: const EdgeInsets.all(10),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Center(
-                              child: Text(
-                                'Fault Information',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                            const SizedBox(height: 10,),
-                            Text(
-                              'Reporter Account Number: ${documentSnapshot['accountNumber']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Street Address of Fault: ${documentSnapshot['address']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Fault Description: ${documentSnapshot['faultDescription']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Resolve State: ${documentSnapshot['faultResolved'].toString()}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Date of Fault Report: ${documentSnapshot['dateReported']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 20,),
-                            Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        accountNumberRep = documentSnapshot['accountNumber'];
-                                        locationGivenRep = documentSnapshot['address'];
-
-                                        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                        //     content: Text('$accountNumber $locationGiven ')));
-
-                                        Navigator.push(context,
-                                            MaterialPageRoute(
-                                                builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                            ));
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.grey[350],
-                                        fixedSize: const Size(150, 10),),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.map,
-                                            color: Colors.green[700],
-                                          ),
-                                          const SizedBox(width: 2,),
-                                          const Text('Fault Location', style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black,),),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 5,),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        faultStage = documentSnapshot['faultStage'];
-                                        _updateReport(documentSnapshot);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.grey[350],
-                                        fixedSize: const Size(150, 10),),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.edit,
-                                            color: Theme.of(context).primaryColor,
-                                          ),
-                                          const SizedBox(width: 2,),
-                                          const Text('Update Details', style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black,),),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 5,),
-                                  ],
-                                ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    showDialog(
-                                        barrierDismissible: false,
-                                        context: context,
-                                        builder: (context) {
-                                          return
-                                            AlertDialog(
-                                              shape: const RoundedRectangleBorder(
-                                                  borderRadius:
-                                                  BorderRadius.all(Radius.circular(16))),
-                                              title: const Text("Call User!"),
-                                              content: const Text(
-                                                  "Would you like to call the individual who logged the fault?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () {
-                                                    reporterCellGiven = documentSnapshot['reporterContact'];
-
-                                                    final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                                    launchUrl(_tel);
-
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                        });
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.grey[350],
-                                    fixedSize: const Size(115, 10),),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.call,
-                                        color: Colors.orange[700],
-                                      ),
-                                      const SizedBox(width: 2,),
-                                      const Text('Call User', style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black,),),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 5,),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
                   } else {
                     return const Card();
                   }
@@ -653,36 +444,44 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   Future<void> _updateReport([DocumentSnapshot? documentSnapshot]) async {
 
     String dropdownValue = 'Electricity';
-
-    //This checks the current state of the fault stage 5 is resolve stage
     int stageNum = documentSnapshot!['faultStage'];
+
     if (stageNum == 1) {
       visStage1 = true;
       visStage2 = false;
       visStage3 = false;
       visStage4 = false;
+      visStage5 = false;
     } else if (stageNum == 2) {
       visStage1 = false;
       visStage2 = true;
       visStage3 = false;
       visStage4 = false;
+      visStage5 = false;
     } else if (stageNum == 3) {
       visStage1 = false;
       visStage2 = false;
       visStage3 = true;
       visStage4 = false;
+      visStage5 = false;
     } else if (stageNum == 4) {
       visStage1 = false;
       visStage2 = false;
       visStage3 = false;
       visStage4 = true;
+      visStage5 = false;
+    } else if (stageNum == 5) {
+      visStage1 = false;
+      visStage2 = false;
+      visStage3 = false;
+      visStage4 = false;
+      visStage5 = true;
     }
 
     if (documentSnapshot != null) {
       _accountNumberController.text = documentSnapshot['accountNumber'];
       _addressController.text = documentSnapshot['address'];
       _descriptionController.text = documentSnapshot['faultDescription'];
-      _deptHandlerController.text = documentSnapshot['deptHandler'];
       _commentController.text = '';
       _depAllocationController.text = documentSnapshot['depAllocated'];
       _faultResolvedController = documentSnapshot['faultResolved'];
@@ -711,41 +510,13 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Visibility(
-                              visible: visHide,
-                              child: TextField(
-                                controller: _accountNumberController,
-                                decoration: const InputDecoration(
-                                    labelText: 'Account Number'),
-                              ),
-                            ),
-                            Visibility(
-                              visible: visHide,
-                              child: TextField(
-                                controller: _addressController,
-                                decoration: const InputDecoration(
-                                    labelText: 'Street Address'),
-                              ),
-                            ),
-                            Visibility(
-                              visible: visHide,
-                              child: TextField(
-                                keyboardType:
-                                const TextInputType.numberWithOptions(),
-                                controller: _descriptionController,
-                                decoration: const InputDecoration(
-                                  labelText: 'General Fault Description',),
-                              ),
-                            ),
-                            Visibility(
                               visible: visStage1,
                               child: const Text('Department Allocation'),
                             ),
                             Visibility(
                               visible: visStage1,
                               child: DropdownButtonFormField <String>(
-                                // Step 3.
                                 value: dropdownValue,
-                                // Step 4.
                                 items: <String>['Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
                                     .map<DropdownMenuItem<String>>((String value) {
                                   return DropdownMenuItem<String>(
@@ -756,7 +527,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                     ),
                                   );
                                 }).toList(),
-                                // Step 5.
                                 onChanged: (String? newValue) {
                                   setState(() {
                                     dropdownValue = newValue!;
@@ -808,17 +578,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 ),
                               ),
                             ),
-                            Visibility(
-                              visible: visHide,
-                              child: TextField(
-                                controller: _dateReportedController,
-                                decoration: const InputDecoration(
-                                    labelText: 'Date Reported'),
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
+                            const SizedBox(height: 10,),
                             ElevatedButton(
                               child: const Text('Update'),
                               onPressed: () async {
@@ -858,6 +618,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                   visStage2 = false;
                                   visStage3 = false;
                                   visStage4 = false;
+                                  visStage5 = false;
 
                                   Navigator.of(context).pop();
 
@@ -884,6 +645,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                   visStage2 = false;
                                   visStage3 = false;
                                   visStage4 = false;
+                                  visStage5 = false;
 
                                   Navigator.of(context).pop();
 
@@ -911,6 +673,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                   visStage2 = false;
                                   visStage3 = false;
                                   visStage4 = false;
+                                  visStage5 = false;
 
                                   Navigator.of(context).pop();
 
@@ -938,6 +701,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                   visStage2 = false;
                                   visStage3 = false;
                                   visStage4 = false;
+                                  visStage5 = false;
 
                                   Navigator.of(context).pop();
 
@@ -955,7 +719,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     }
 
     _createBottomSheet();
-
   }
 
   @override
@@ -963,17 +726,17 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Fault Reports Listed'),
-        actions: <Widget>[
-          Visibility(
-              visible: adminAcc,
-              child: IconButton(
-                  onPressed: (){
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => const FaultTaskScreenArchive()));
-                  },
-                  icon: const Icon(Icons.history_outlined, color: Colors.white,)),),
-        ],
+        title: const Text('Fault Reports Archive'),
+        // actions: <Widget>[
+        //   Visibility(
+        //       visible: adminAcc,
+        //       child:
+        //       IconButton(
+        //           onPressed: (){
+        //
+        //           },
+        //           icon: const Icon(Icons.hourglass_bottom, color: Colors.white,)),),
+        // ],
         backgroundColor: Colors.green,
       ),
 
@@ -982,7 +745,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           const SizedBox(height: 10,),
           /// Search bar
           Padding(
-            padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
+            padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,0.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
