@@ -449,30 +449,36 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                   children: [
                                     BasicIconButtonGrey(
                                       onPress: () async {
-                                        Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!");
-                                        final FirebaseAuth auth = FirebaseAuth.instance;
-                                        final User? user = auth.currentUser;
-                                        final uid = user?.uid;
-                                        String userID = uid as String;
+                                        Fluttertoast.showToast(
+                                            msg: "Now downloading your statement!\nPlease wait a few seconds!");
 
-                                        ///code for loading the pdf is using dart:io I am setting it to use the userID to separate documents
-                                        ///no pdfs are uploaded by users
-                                        print(FirebaseAuth.instance.currentUser);
                                         String accountNumberPDF = documentSnapshot['account number'];
-                                        String nameOfUserPdf;
+                                        print('The acc number is ::: $accountNumberPDF');
 
-                                        ///todo: make this find the name of documents by the property account number owned by the logged in user for their statement
-                                        if(PDFApi.loadFirebase('pdfs/$phoneNum/').toString().contains(accountNumberPDF)){
-                                          nameOfUserPdf = PDFApi.loadFirebase('pdfs/$phoneNum/').toString();
-                                          final url2 = nameOfUserPdf;//'pdfs/$userID/ds_wirelessp2p.pdf';
+                                        final storageRef = FirebaseStorage.instance.ref().child("pdfs/");
+                                        final listResult = await storageRef.listAll();
+                                        for (var prefix in listResult.prefixes) {
+                                          print('The ref is ::: $prefix');
+                                          // The prefixes under storageRef.
+                                          // You can call listAll() recursively on them.
                                         }
-
-                                        const url = 'pdfs/Invoice_000003728743_040000653226.PDF';
-                                        final file = await PDFApi.loadFirebase(url);
-                                        try{
-                                          openPDF(context, file);
-                                        } catch(e){
-                                          Fluttertoast.showToast(msg: "Unable to download statement.");
+                                        for (var item in listResult.items) {
+                                          print('The item is ::: $item');
+                                          // The items under storageRef.
+                                          if (item.toString().contains(accountNumberPDF)) {
+                                            final url = item.fullPath;
+                                            print('The url is ::: $url');
+                                            final file = await PDFApi.loadFirebase(url);
+                                            try {
+                                              openPDF(context, file);
+                                              Fluttertoast.showToast(
+                                                  msg: "Download Successful!");
+                                            } catch (e) {
+                                              Fluttertoast.showToast(msg: "Unable to download statement.");
+                                            }
+                                          } else {
+                                            Fluttertoast.showToast(msg: "Unable to download statement.");
+                                          }
                                         }
                                       },
                                       labelText: 'Statement',
