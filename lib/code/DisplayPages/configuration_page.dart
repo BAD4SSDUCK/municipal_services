@@ -36,6 +36,12 @@ class FireStorageService extends ChangeNotifier{
 
 class _ConfigPageState extends State<ConfigPage> {
 
+  @override
+  void initState() {
+    // getDBDept(_deptInfo);
+    super.initState();
+  }
+
   //text fields' controllers
   final _deptNameController = TextEditingController();
   final _userRoleController = TextEditingController();
@@ -935,6 +941,38 @@ class _ConfigPageState extends State<ConfigPage> {
   Future<void> _deleteDept(String deptID) async {
     await _deptInfo.doc(deptID).delete();
     Fluttertoast.showToast(msg: "You have successfully deleted a department & role!");
+  }
+
+  void getDBDept(CollectionReference dept) async {
+
+    DocumentSnapshot documentSnapshot;
+
+    final listResult = await dept.get();
+    for (var prefix in listResult.docs) {
+      print('The ref is ::: $prefix');
+      // The prefixes under storageRef.
+      // You can call listAll() recursively on them.
+    }
+    for (var item in listResult.docs) {
+
+      String totalDepts = await FirebaseFirestore.instance.collection('departments').doc(uid).get().then((value) {
+        return value.data()?['deptName'];
+      });
+
+      print('The item is ::: $item');
+      // The items under storageRef.
+      final docID = item.get(FieldPath.documentId).then((value) {
+        return value.data()?['deptName'];}
+      );
+      print('The document ID is ::: $docID');
+      try {
+        documentSnapshot = docID;
+        String deptNm = documentSnapshot['departments'];
+        deptName.add(deptNm);
+      } catch (e) {
+        Fluttertoast.showToast(msg: "Unable to download departments.");
+      }
+    }
   }
 
   @override

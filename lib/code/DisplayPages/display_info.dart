@@ -750,9 +750,6 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       accountNumber = documentSnapshot['account number'];
                                       locationGiven = documentSnapshot['address'];
 
-                                      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                      //     content: Text('$accountNumber $locationGiven ')));
-
                                       Navigator.push(context,
                                           MaterialPageRoute(builder: (context) => MapScreen()
                                             //MapPage()

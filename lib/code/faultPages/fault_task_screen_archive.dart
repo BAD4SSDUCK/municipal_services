@@ -155,12 +155,20 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                               ),
                             ),
                             const SizedBox(height: 10,),
-                            Text(
-                              'Reporter Account Number: ${documentSnapshot['accountNumber']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            Column(
+                              children: [
+                                if(documentSnapshot['accountNumber'] != "")...[
+                                  Text(
+                                    'Reporter Account Number: ${documentSnapshot['accountNumber']}',
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else ...[
+
+                                ],
+                              ],
                             ),
-                            const SizedBox(height: 5,),
                             Text(
                               'Street Address of Fault: ${documentSnapshot['address']}',
                               style: const TextStyle(
@@ -554,7 +562,11 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                             ),
                             const SizedBox(height: 10,),
                             Visibility(
-                              visible: visStage3 || visStage4,
+                              visible: visStage5,
+                              child: const Text('Re-open Fault'),
+                            ),
+                            Visibility(
+                              visible: visStage3 || visStage4 || visStage5,
                               child:
                               Container(
                                 height: 50,
@@ -657,6 +669,34 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                                       "depComment2": userComment,
                                       "faultResolved": faultResolved,
                                       "faultStage": 4,
+                                    });
+                                  }
+                                  _accountNumberController.text = '';
+                                  _addressController.text = '';
+                                  _accountNumberController.text = '';
+                                  _addressController.text = '';
+                                  _commentController.text = '';
+                                  _depAllocationController.text = '';
+                                  dropdownValue = '';
+                                  _faultResolvedController = false;
+                                  _dateReportedController.text = '';
+
+                                  visStage1 = false;
+                                  visStage2 = false;
+                                  visStage3 = false;
+                                  visStage4 = false;
+                                  visStage5 = false;
+
+                                  Navigator.of(context).pop();
+
+                                } else if (faultStage == 5) {
+                                  if (reporterNumber != null) {
+                                    await _faultData
+                                        .doc(documentSnapshot.id)
+                                        .update({
+                                      "depComment1": userComment,
+                                      "faultResolved": faultResolved,
+                                      "faultStage": 1,
                                     });
                                   }
                                   _accountNumberController.text = '';

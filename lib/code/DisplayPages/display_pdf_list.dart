@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 
 import 'package:municipal_track/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
@@ -24,6 +25,8 @@ class UsersPdfListViewPage extends StatefulWidget {
 
 final FirebaseAuth auth = FirebaseAuth.instance;
 final storageRef = FirebaseStorage.instance.ref();
+
+DateTime now = DateTime.now();
 
 final User? user = auth.currentUser;
 final uid = user?.uid;
@@ -121,37 +124,15 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                           children: [
                                             BasicIconButtonGrey(
                                               onPress: () async {
-                                                Fluttertoast.showToast(
-                                                    msg: "Now downloading your statement!\nPlease wait a few seconds!");
 
                                                 String accountNumberPDF = documentSnapshot['account number'];
                                                 print('The acc number is ::: $accountNumberPDF');
 
-                                                final storageRef = FirebaseStorage.instance.ref().child("pdfs/");
-                                                final listResult = await storageRef.listAll();
-                                                for (var prefix in listResult.prefixes) {
-                                                  print('The ref is ::: $prefix');
-                                                  // The prefixes under storageRef.
-                                                  // You can call listAll() recursively on them.
-                                                }
-                                                for (var item in listResult.items) {
-                                                  print('The item is ::: $item');
-                                                  // The items under storageRef.
-                                                  if (item.toString().contains(accountNumberPDF)) {
-                                                    final url = item.fullPath;
-                                                    print('The url is ::: $url');
-                                                    final file = await PDFApi.loadFirebase(url);
-                                                    try {
-                                                      openPDF(context, file);
-                                                      Fluttertoast.showToast(
-                                                          msg: "Download Successful!");
-                                                    } catch (e) {
-                                                      Fluttertoast.showToast(msg: "Unable to download statement.");
-                                                    }
-                                                  } else {
-                                                    Fluttertoast.showToast(msg: "Unable to download statement.");
-                                                  }
-                                                }
+                                                String formattedDate = DateFormat.MMMM().format(now);
+                                                print('The month we are in is::: $formattedDate');
+
+                                                getPDFByAccMon(accountNumberPDF,formattedDate);
+
                                               },
                                               labelText: 'Statement',
                                               fSize: 16,
@@ -188,6 +169,39 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
       ),
     );
   }
+
+  ///This function gets the document on the firestore in the month that we are in as well as if the document name contains the properties account number
+  void getPDFByAccMon(String accNum, String month) async{
+    Fluttertoast.showToast(
+        msg: "Now downloading your statement!\nPlease wait a few seconds!");
+
+    final storageRef = FirebaseStorage.instance.ref().child("pdfs/$month");
+    final listResult = await storageRef.listAll();
+    for (var prefix in listResult.prefixes) {
+      print('The ref is ::: $prefix');
+      // The prefixes under storageRef.
+      // You can call listAll() recursively on them.
+    }
+    for (var item in listResult.items) {
+      print('The item is ::: $item');
+      // The items under storageRef.
+      if (item.toString().contains(accNum)) {
+        final url = item.fullPath;
+        print('The url is ::: $url');
+        final file = await PDFApi.loadFirebase(url);
+        try {
+          openPDF(context, file);
+          Fluttertoast.showToast(
+              msg: "Download Successful!");
+        } catch (e) {
+          Fluttertoast.showToast(msg: "Unable to download statement.");
+        }
+      } else {
+        Fluttertoast.showToast(msg: "Unable to download statement.");
+      }
+    }
+  }
+
   ///pdf view loader getting file name onPress/onTap that passes pdf filename to this class.
   void openPDF(BuildContext context, File file) => Navigator.of(context).push(
     MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),

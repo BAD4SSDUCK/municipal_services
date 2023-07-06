@@ -636,6 +636,12 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                     itemBuilder: (context, index) {
                       final DocumentSnapshot documentSnapshot =
                       streamSnapshot.data!.docs[index];
+                      String status;
+                      if(documentSnapshot['faultResolved'] == false){
+                        status = "Pending";
+                      } else {
+                        status = "Completed";
+                      }
                       if(streamSnapshot.data!.docs[index]['faultResolved'] == false && streamSnapshot.data!.docs[index]['reporterContact'] == phone){
                         return Card(
                           margin: const EdgeInsets.all(10),
@@ -653,12 +659,20 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                   ),
                                 ),
                                 const SizedBox(height: 10,),
-                                Text(
-                                  'Reporter Account Number: ${documentSnapshot['accountNumber']}',
-                                  style: const TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                Column(
+                                  children: [
+                                    if(status != "")...[
+                                      Text(
+                                        'Reporter Account Number: ${documentSnapshot['accountNumber']}',
+                                        style: const TextStyle(
+                                            fontSize: 16, fontWeight: FontWeight.w400),
+                                      ),
+                                      const SizedBox(height: 5,),
+                                    ] else ...[
+
+                                    ],
+                                  ],
                                 ),
-                                const SizedBox(height: 5,),
                                 Text(
                                   'Street Address of Fault: ${documentSnapshot['address']}',
                                   style: const TextStyle(
@@ -687,6 +701,20 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                 ),
                                 Column(
                                   children: [
+                                    if(documentSnapshot['depComment1'] != "")...[
+                                      Text(
+                                        'Department Comment 1: ${documentSnapshot['depComment1']}',
+                                        style: const TextStyle(
+                                            fontSize: 16, fontWeight: FontWeight.w400),
+                                      ),
+                                      const SizedBox(height: 5,),
+                                    ] else ...[
+
+                                    ],
+                                  ],
+                                ),
+                                Column(
+                                  children: [
                                     if(documentSnapshot['handlerCom1'] != "")...[
                                       Text(
                                         'Handler Comment: ${documentSnapshot['handlerCom1']}',
@@ -701,9 +729,9 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                 ),
                                 Column(
                                   children: [
-                                    if(documentSnapshot['depComment1'] != "")...[
+                                    if(documentSnapshot['depComment2'] != "")...[
                                       Text(
-                                        'Department Comment 1: ${documentSnapshot['depComment1']}',
+                                        'Department Comment: ${documentSnapshot['depComment2']}',
                                         style: const TextStyle(
                                             fontSize: 16, fontWeight: FontWeight.w400),
                                       ),
@@ -729,9 +757,9 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                 ),
                                 Column(
                                   children: [
-                                    if(documentSnapshot['depComment2'] != "")...[
+                                    if(documentSnapshot['depComment3'] != "")...[
                                       Text(
-                                        'Department Final Comment: ${documentSnapshot['depComment2']}',
+                                        'Department Final Comment: ${documentSnapshot['depComment3']}',
                                         style: const TextStyle(
                                             fontSize: 16, fontWeight: FontWeight.w400),
                                       ),
@@ -742,7 +770,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                   ],
                                 ),
                                 Text(
-                                  'Resolve State: ${documentSnapshot['faultResolved'].toString()}',
+                                  'Resolve State: $status',
                                   style: const TextStyle(
                                       fontSize: 16, fontWeight: FontWeight.w400),
                                 ),
@@ -1083,6 +1111,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
         "deptHandler": '',
         "depComment1": '',
         "depComment2": '',
+        "depComment3": '',
         "handlerCom1": '',
         "handlerCom2": '',
         "faultDescription": faultDescription,
