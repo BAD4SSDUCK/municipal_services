@@ -591,11 +591,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                           phoneNumPass = documentSnapshot['cell number'];
 
                                           _addNewFaultReport();
-
-                                          Fluttertoast.showToast(
-                                              msg: "Go to current reports to add image to reported fault",
-                                              gravity: ToastGravity.CENTER);
-
                                         } : () {
                                           Fluttertoast.showToast(msg: "Outstanding bill on property, Fault Reporting unavailable!",
                                             gravity: ToastGravity.CENTER,);
@@ -1162,6 +1157,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
         "deptHandler": '',
         "depComment1": '',
         "depComment2": '',
+        "depComment3": '',
         "handlerCom1": '',
         "handlerCom2": '',
         "faultDescription": faultDescription,
@@ -1209,7 +1205,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                         value: value,
                         child: Text(
                           value,
-                          style: TextStyle(fontSize: 16),
+                          style: const TextStyle(fontSize: 16),
                         ),
                       );
                     }).toList(),
@@ -1231,55 +1227,93 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                         ElevatedButton(
                           child: const Text('Report'),
                           onPressed: () async {
-                            DateTime now = DateTime.now();
-                            String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+                            showDialog(
+                                barrierDismissible: false,
+                                context: context,
+                                builder: (context) {
+                                  return
+                                    AlertDialog(
+                                      shape: const RoundedRectangleBorder(
+                                          borderRadius:
+                                          BorderRadius.all(
+                                              Radius.circular(
+                                                  16))),
+                                      title: const Text(
+                                          "Submit Fault"),
+                                      content: const Text(
+                                          "To add a photo to your property fault report go to your Current Reports tab to upload or update your fault image."),
+                                      actions: [
+                                        IconButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          icon: const Icon(
+                                            Icons.cancel,
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed: () async {
+                                            DateTime now = DateTime.now();
+                                            String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
 
-                            final String uid = _currentUser;
-                            String accountNumber = accountPass;
-                            final String addressFault = addressPass;
-                            final String faultDescription = _faultDescriptionController.text;
-                            String faultType = dropdownValue;
+                                            final String uid = _currentUser;
+                                            String accountNumber = accountPass;
+                                            final String addressFault = addressPass;
+                                            final String faultDescription = _faultDescriptionController.text;
+                                            String faultType = dropdownValue;
 
-                            if (faultType != 'Select Fault Type'){
-                              if(faultDescription!=''){
-                                if (uid == _currentUser) {
-                                  await _faultData.add({
-                                    "uid": uid,
-                                    "accountNumber": accountNumber,
-                                    "address": addressFault,
-                                    "reporterContact": userPhone,
-                                    "deptHandler": '',
-                                    "depComment1": '',
-                                    "depComment2": '',
-                                    "handlerCom1": '',
-                                    "handlerCom2": '',
-                                    "faultType": faultType,
-                                    "faultDescription": faultDescription,
-                                    "dateReported": formattedDate,
-                                    "depAllocated": '',
-                                    "faultResolved": false,
-                                    "faultStage": 1,
-                                  });
+                                            if (faultType != 'Select Fault Type') {
+                                              if (faultDescription != '') {
+                                                if (uid == _currentUser) {
+                                                  await _faultData.add({
+                                                    "uid": uid,
+                                                    "accountNumber": accountNumber,
+                                                    "address": addressFault,
+                                                    "reporterContact": userPhone,
+                                                    "deptHandler": '',
+                                                    "depComment1": '',
+                                                    "depComment2": '',
+                                                    "depComment3": '',
+                                                    "handlerCom1": '',
+                                                    "handlerCom2": '',
+                                                    "faultType": faultType,
+                                                    "faultDescription": faultDescription,
+                                                    "dateReported": formattedDate,
+                                                    "depAllocated": '',
+                                                    "faultResolved": false,
+                                                    "faultStage": 1,
+                                                  });
+                                                }
+                                                _addressController.text = '';
+                                                _faultDescriptionController.text = '';
+                                                dropdownValue = 'Select Fault Type';
 
-                                }
+                                                Fluttertoast.showToast(
+                                                  msg: "Fault has been reported successfully!",
+                                                  gravity: ToastGravity.CENTER,);
 
-                                _addressController.text = '';
-                                _faultDescriptionController.text ='';
-                                dropdownValue = 'Select Fault Type';
-
-                                Fluttertoast.showToast(msg: "Fault has been reported successfully!",
-                                  gravity: ToastGravity.CENTER,);
-
-                                //Navigator.of(context).pop();
-                                Get.back();
-                              } else {
-                                Fluttertoast.showToast(msg: "Please Give A Fault Description!",
-                                  gravity: ToastGravity.CENTER,);
-                              }
-                            } else {
-                              Fluttertoast.showToast(msg: "Please Select Fault Type being Reported!!",
-                                gravity: ToastGravity.CENTER,);
-                            }
+                                                Navigator.of(context).pop();
+                                                Get.back();
+                                              } else {
+                                                Fluttertoast.showToast(
+                                                  msg: "Please Give A Fault Description!",
+                                                  gravity: ToastGravity.CENTER,);
+                                              }
+                                            } else {
+                                              Fluttertoast.showToast(
+                                                msg: "Please Select Fault Type being Reported!!",
+                                                gravity: ToastGravity.CENTER,);
+                                            }
+                                          },
+                                          icon: const Icon(
+                                            Icons.done,
+                                            color: Colors.green,
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                });
                           },
                         ),
                       ],

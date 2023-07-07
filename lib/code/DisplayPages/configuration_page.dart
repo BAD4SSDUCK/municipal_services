@@ -945,6 +945,15 @@ class _ConfigPageState extends State<ConfigPage> {
 
   void getDBDept(CollectionReference dept) async {
 
+    String? valueFromFirebase;
+    Future<String?> getData() async{
+      var a = await dept.doc('departments').get();
+      setState(() {
+        valueFromFirebase= a['deptName'];
+      });
+      return valueFromFirebase;
+    }
+
     DocumentSnapshot documentSnapshot;
 
     final listResult = await dept.get();
