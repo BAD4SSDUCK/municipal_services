@@ -445,70 +445,55 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           //   padding: const EdgeInsets.only(left: 10),
                           //   child: Row(
                           //     children: [
+                          ///button for calling municipality report center
+                          //       ElevatedIconButton(
+                          //         onPress: () {
+                          //           showDialog(
+                          //               barrierDismissible: false,
+                          //               context: context,
+                          //               builder: (context) {
+                          //                 return
+                          //                   AlertDialog(
+                          //                     shape: const RoundedRectangleBorder(
+                          //                         borderRadius:
+                          //                         BorderRadius.all(Radius.circular(16))),
+                          //                     title: const Text("Call Report Center!"),
+                          //                     content: const Text(
+                          //                         "Would you like to call the report center directly?"),
+                          //                     actions: [
+                          //                       IconButton(
+                          //                         onPressed: () {
+                          //                           Navigator.of(context).pop();
+                          //                         },
+                          //                         icon: const Icon(
+                          //                           Icons.cancel,
+                          //                           color: Colors.red,
+                          //                         ),
+                          //                       ),
+                          //                       IconButton(
+                          //                         onPressed: () {
+                          //                           final Uri _tel = Uri.parse(
+                          //                               'tel:+27${0800001868}');
+                          //                           launchUrl(_tel);
                           //
-                                ///Old buttion before Current Faults tab
-                                // ElevatedIconButton(
-                                //   onPress: () {
-                                //     Navigator.push(context,
-                                //         MaterialPageRoute(
-                                //             builder: (context) => FaultViewingScreen()));
-                                //   },
-                                //   labelText: 'Current Reports',
-                                //   fSize: 15,
-                                //   faIcon: const FaIcon(Icons.list),
-                                //   fgColor: Colors.green,
-                                //   btSize: const Size(50, 50),
-                                // ),
-
-                                ///button for calling municipality report center
-                                // ElevatedIconButton(
-                                //   onPress: () {
-                                //     showDialog(
-                                //         barrierDismissible: false,
-                                //         context: context,
-                                //         builder: (context) {
-                                //           return
-                                //             AlertDialog(
-                                //               shape: const RoundedRectangleBorder(
-                                //                   borderRadius:
-                                //                   BorderRadius.all(Radius.circular(16))),
-                                //               title: const Text("Call Report Center!"),
-                                //               content: const Text(
-                                //                   "Would you like to call the report center directly?"),
-                                //               actions: [
-                                //                 IconButton(
-                                //                   onPressed: () {
-                                //                     Navigator.of(context).pop();
-                                //                   },
-                                //                   icon: const Icon(
-                                //                     Icons.cancel,
-                                //                     color: Colors.red,
-                                //                   ),
-                                //                 ),
-                                //                 IconButton(
-                                //                   onPressed: () {
-                                //                     final Uri _tel = Uri.parse(
-                                //                         'tel:+27${0800001868}');
-                                //                     launchUrl(_tel);
-                                //
-                                //                     Navigator.of(context).pop();
-                                //                     Get.back();
-                                //                   },
-                                //                   icon: const Icon(
-                                //                     Icons.done,
-                                //                     color: Colors.green,
-                                //                   ),
-                                //                 ),
-                                //               ],
-                                //             );
-                                //         });
-                                //   },
-                                //   labelText: 'Call Center',
-                                //   fSize: 16,
-                                //   faIcon: const FaIcon(Icons.phone),
-                                //   fgColor: Colors.orangeAccent,
-                                //   btSize: const Size(50, 50),
-                                // ),
+                          //                           Navigator.of(context).pop();
+                          //                           Get.back();
+                          //                         },
+                          //                         icon: const Icon(
+                          //                           Icons.done,
+                          //                           color: Colors.green,
+                          //                         ),
+                          //                       ),
+                          //                     ],
+                          //                   );
+                          //               });
+                          //         },
+                          //         labelText: 'Call Center',
+                          //         fSize: 16,
+                          //         faIcon: const FaIcon(Icons.phone),
+                          //         fgColor: Colors.orangeAccent,
+                          //         btSize: const Size(50, 50),
+                          //       ),
                           //
                           //     ],
                           //   ),
@@ -835,38 +820,42 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
-                                      BasicIconButtonGreen(
-                                        onPress: () {
-                                          accountNumberRep = documentSnapshot['accountNumber'];
-                                          locationGivenRep = documentSnapshot['address'];
+                                      Row(
+                                        children: [
+                                          BasicIconButtonGreen(
+                                            onPress: () {
+                                              accountNumberRep = documentSnapshot['accountNumber'];
+                                              locationGivenRep = documentSnapshot['address'];
 
-                                          Navigator.push(context,
-                                              MaterialPageRoute(
-                                                  builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                                //MapPage()
-                                              ));
-                                        },
-                                        labelText: 'Fault Location',
-                                        fSize: 15,
-                                        faIcon: const FaIcon(Icons.map),
-                                        fgColor: Colors.purple,
-                                        btSize: const Size(50, 50),
-                                      ),
-                                      BasicIconButtonGreen(
-                                        onPress: () {
-                                          locationGivenRep = documentSnapshot['address'];
-                                          reporterDateGiven = documentSnapshot['dateReported'];
-                                          Navigator.push(context,
-                                              MaterialPageRoute(
-                                                  builder: (context) => FaultImageUpload(propertyAddress: locationGivenRep, reportedDate: reporterDateGiven)
-                                                //MapPage()
-                                              ));
-                                        },
-                                        labelText: 'Add Image',
-                                        fSize: 15,
-                                        faIcon: const FaIcon(Icons.photo_camera),
-                                        fgColor: Colors.blueGrey,
-                                        btSize: const Size(50, 50),
+                                              Navigator.push(context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
+                                                    //MapPage()
+                                                  ));
+                                            },
+                                            labelText: 'Fault Location',
+                                            fSize: 15,
+                                            faIcon: const FaIcon(Icons.map),
+                                            fgColor: Colors.purple,
+                                            btSize: const Size(50, 50),
+                                          ),
+                                          BasicIconButtonGreen(
+                                            onPress: () {
+                                              locationGivenRep = documentSnapshot['address'];
+                                              reporterDateGiven = documentSnapshot['dateReported'];
+                                              Navigator.push(context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) => FaultImageUpload(propertyAddress: locationGivenRep, reportedDate: reporterDateGiven)
+                                                    //MapPage()
+                                                  ));
+                                            },
+                                            labelText: 'Add Image',
+                                            fSize: 15,
+                                            faIcon: const FaIcon(Icons.photo_camera),
+                                            fgColor: Colors.blueGrey,
+                                            btSize: const Size(50, 50),
+                                          ),
+                                        ],
                                       ),
 
                                       ///Button for staff to use in calling the user that reported this fault, not needed here
