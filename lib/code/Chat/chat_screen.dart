@@ -78,6 +78,15 @@ class _ChatState extends State<Chat> {
   void initState() {
     ///This is the circular loading widget in this future.delayed call
     _isLoading = true;
+    if(user?.phoneNumber == null){
+      useNum = '';
+      useEmail = user?.email!;
+      Constants.myName = useEmail;
+    } else if (user?.email == null){
+      useNum = user?.phoneNumber!;
+      useEmail = '';
+      Constants.myName = useNum;
+    }
     Future.delayed(const Duration(seconds: 3),(){
       setState(() {
         _isLoading = false;
@@ -176,7 +185,7 @@ class MessageTile extends StatelessWidget {
   final String message;
   final bool sendByMe;
 
-  MessageTile({required this.message, required this.sendByMe});
+  const MessageTile({super.key, required this.message, required this.sendByMe});
 
 
   @override
@@ -227,14 +236,14 @@ class MessageTile extends StatelessWidget {
   }
 }
 
-
-final user = FirebaseAuth.instance.currentUser!;
-String useNum = user.phoneNumber!;
-String useEmail = user.email!;
+final FirebaseAuth auth = FirebaseAuth.instance;
+final User? user = auth.currentUser;
+String? useNum ;
+String? useEmail ;
 
 ///Constraints class
 class Constants{
-  static String myName = useNum;
+  static String? myName = useNum;
 }
 
 ///Widget items
