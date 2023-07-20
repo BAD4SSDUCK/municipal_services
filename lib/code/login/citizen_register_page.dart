@@ -1,9 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:municipal_track/code/DisplayPages/dashboard.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RegisterPasswordScreen extends StatefulWidget {
   const RegisterPasswordScreen({Key? key}) : super(key: key);
@@ -38,6 +40,42 @@ class _RegisterPasswordScreenState extends State<RegisterPasswordScreen> {
       },
       verificationFailed: (FirebaseAuthException e) {
         showSnackBarText("Auth Failed!");
+        showDialog(
+            barrierDismissible: false,
+            context: context,
+            builder: (context) {
+              return
+                AlertDialog(
+                  shape: const RoundedRectangleBorder(
+                      borderRadius:
+                      BorderRadius.all(Radius.circular(16))),
+                  title: const Text("Login Error"),
+                  content: const Text(
+                      "Would you like to contact the municipality for assistance on this error?"),
+                  actions: [
+                    IconButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      icon: const Icon(
+                        Icons.cancel,
+                        color: Colors.red,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        final Uri _tel = Uri.parse('tel:+27${0800001868}');
+                        launchUrl(_tel);
+                        Navigator.of(context).pop();
+                      },
+                      icon: const Icon(
+                        Icons.done,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                );
+            });
       },
       codeSent: (String verificationId, int? resendToken) {
         showSnackBarText("OTP Sent!");

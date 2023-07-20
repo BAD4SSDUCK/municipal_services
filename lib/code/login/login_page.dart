@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:municipal_track/code/DisplayPages/dashboard_official.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'forgot_pw_page.dart';
 
 class LoginPage extends StatefulWidget{
@@ -57,6 +59,7 @@ class _LoginPageState extends State<LoginPage>{
         switch(e.message){
           case 'There is no user record corresponding to this identifier. The user may have been deleted.':
             errorType = authProblems.userNotFound;
+            Fluttertoast.showToast(msg: "There is no user record corresponding to this email. The user may have been deleted.",gravity: ToastGravity.CENTER);
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text('There is no user record corresponding to this identifier. The user may have been deleted.'),
               behavior: SnackBarBehavior.floating,
@@ -66,6 +69,7 @@ class _LoginPageState extends State<LoginPage>{
             break;
           case 'The password is invalid or the user does not have a password.':
             errorType = authProblems.passwordNotValid;
+            Fluttertoast.showToast(msg: "The password is invalid or the user does not have a password.",gravity: ToastGravity.CENTER);
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text('The password was incorrect. Enter correct password or reset your password.'),
               behavior: SnackBarBehavior.floating,
@@ -75,6 +79,7 @@ class _LoginPageState extends State<LoginPage>{
             break;
           case 'A network error (such as timeout, interrupted connection or unreachable host) has occurred.':
             errorType = authProblems.networkError;
+            Fluttertoast.showToast(msg: "A network error (such as timeout, interrupted connection or unreachable host) has occurred.",gravity: ToastGravity.CENTER);
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
               content: Text('The internet connection has timed out. Connect to the internet to login'),
               behavior: SnackBarBehavior.floating,
