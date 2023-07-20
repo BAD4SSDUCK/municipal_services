@@ -97,19 +97,19 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                             ),
                             const SizedBox(height: 10,),
                             Text(
-                              'Account Number: ' + documentSnapshot['account number'],
+                              'Account Number: ${documentSnapshot['account number']}',
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
                             Text(
-                              'Street Address: ' + documentSnapshot['address'],
+                              'Street Address: ${documentSnapshot['address']}',
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
                             Text(
-                              'Area Code: ' + documentSnapshot['area code'].toString(),
+                              'Area Code: ${documentSnapshot['area code']}',
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w400),
                             ),
@@ -407,29 +407,29 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
     String month12 = 'December';
 
     if (currentMonth.contains(month1)) {
-      dropdownMonths = ['Select Month', month11,month12,currentMonth,];
+      dropdownMonths = ['Select Month', month10,month11,month12,currentMonth,];
     } else if (currentMonth.contains(month2)) {
-      dropdownMonths = ['Select Month', month12,month1,currentMonth,];
+      dropdownMonths = ['Select Month', month11,month12,month1,currentMonth,];
     } else if (currentMonth.contains(month3)) {
-      dropdownMonths = ['Select Month', month1,month2,currentMonth,];
+      dropdownMonths = ['Select Month', month12,month1,month2,currentMonth,];
     } else if (currentMonth.contains(month4)) {
-      dropdownMonths = ['Select Month', month2,month3,currentMonth,];
+      dropdownMonths = ['Select Month', month1,month2,month3,currentMonth,];
     } else if (currentMonth.contains(month5)) {
-      dropdownMonths = ['Select Month', month3,month4,currentMonth,];
+      dropdownMonths = ['Select Month', month2,month3,month4,currentMonth,];
     } else if (currentMonth.contains(month6)) {
-      dropdownMonths = ['Select Month', month4,month5,currentMonth,];
+      dropdownMonths = ['Select Month', month3,month4,month5,currentMonth,];
     } else if (currentMonth.contains(month7)) {
-      dropdownMonths = ['Select Month', month5,month6,currentMonth,];
+      dropdownMonths = ['Select Month', month4,month5,month6,currentMonth,];
     } else if (currentMonth.contains(month8)) {
-      dropdownMonths = ['Select Month', month6,month7,currentMonth,];
+      dropdownMonths = ['Select Month', month5,month6,month7,currentMonth,];
     } else if (currentMonth.contains(month9)) {
-      dropdownMonths = ['Select Month', month7,month8,currentMonth,];
+      dropdownMonths = ['Select Month', month6,month7,month8,currentMonth,];
     } else if (currentMonth.contains(month10)) {
-      dropdownMonths = ['Select Month', month8,month9,currentMonth,];
+      dropdownMonths = ['Select Month', month7,month8,month9,currentMonth,];
     } else if (currentMonth.contains(month11)) {
-      dropdownMonths = ['Select Month', month9,month10,currentMonth,];
+      dropdownMonths = ['Select Month', month8,month9,month10,currentMonth,];
     } else if (currentMonth.contains(month12)) {
-      dropdownMonths = ['Select Month', month10,month11,currentMonth,];
+      dropdownMonths = ['Select Month', month9,month10,month11,currentMonth,];
     } else {
       dropdownMonths = [
         'Select Month',
