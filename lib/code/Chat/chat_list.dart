@@ -95,7 +95,7 @@ class _ChatListState extends State<ChatList> {
 class ChatButtonWidget extends StatelessWidget {
   final String chatRoomId;
 
-  ChatButtonWidget({super.key, required this.chatRoomId});
+  const ChatButtonWidget({super.key, required this.chatRoomId});
 
   @override
   Widget build(BuildContext context) {

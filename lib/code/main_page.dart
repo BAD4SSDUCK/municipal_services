@@ -27,12 +27,12 @@ class MainPage extends StatelessWidget {
             final uid = user?.uid;
             String userID = uid as String;
             if(user?.email?.isEmpty == false){
-              return HomeManagerScreen();
+              return const HomeManagerScreen();
             } else {
-              return MainMenu();
+              return const MainMenu();
             }
           } else {
-            return AuthPage();
+            return const AuthPage();
           }
         },
       ),

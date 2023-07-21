@@ -632,7 +632,7 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                                   visStage4 = false;
                                   visStage5 = false;
 
-                                  Navigator.of(context).pop();
+                                  if(context.mounted)Navigator.of(context).pop();
 
                                 } else if (faultStage == 2) {
                                   if (reporterNumber != null) {
@@ -687,7 +687,7 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                                   visStage4 = false;
                                   visStage5 = false;
 
-                                  Navigator.of(context).pop();
+                                  if(context.mounted)Navigator.of(context).pop();
 
                                 } else if (faultStage == 5) {
                                   if (reporterNumber != null) {
@@ -715,7 +715,7 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                                   visStage4 = false;
                                   visStage5 = false;
 
-                                  Navigator.of(context).pop();
+                                  if(context.mounted)Navigator.of(context).pop();
 
                                 } else if (faultStage == 4) {
                                   if (reporterNumber != null) {
@@ -743,7 +743,7 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                                   visStage4 = false;
                                   visStage5 = false;
 
-                                  Navigator.of(context).pop();
+                                  if(context.mounted)Navigator.of(context).pop();
 
                                 }
 

@@ -111,7 +111,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => MapScreenMulti()));
+                                        MaterialPageRoute(builder: (context) => const MapScreenMulti()));
                                   },
                                   labelText: 'Map',
                                   fSize: 18,
@@ -123,7 +123,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => FaultTaskScreen()));
+                                        MaterialPageRoute(builder: (context) => const FaultTaskScreen()));
                                   },
                                   labelText: 'Report\nList',
                                   fSize: 18,
@@ -146,7 +146,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => ChatList()));
+                                        MaterialPageRoute(builder: (context) => const ChatList()));
                                   },
                                   labelText: 'Chat\nList',
                                   fSize: 18,
@@ -246,7 +246,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => UsersPropsAll()));
+                                        MaterialPageRoute(builder: (context) => const UsersPropsAll()));
                                   },
                                   labelText: 'Readings\nCapture',
                                   fSize: 16,

@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 
 import 'package:municipal_track/code/ImageUploading/image_upload_meter.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_water.dart';
@@ -30,6 +31,7 @@ final storageRef = FirebaseStorage.instance.ref();
 final User? user = auth.currentUser;
 final uid = user?.uid;
 String userID = uid as String;
+DateTime now = DateTime.now();
 
 String phoneNum = ' ';
 
@@ -95,6 +97,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   String searchText = '';
 
   final _userIDController = userID;
+
+  String formattedDate = DateFormat.MMMM().format(now);
 
   final CollectionReference _propList =
   FirebaseFirestore.instance.collection('properties');
@@ -455,7 +459,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                         String accountNumberPDF = documentSnapshot['account number'];
                                         print('The acc number is ::: $accountNumberPDF');
 
-                                        final storageRef = FirebaseStorage.instance.ref().child("pdfs/");
+                                        final storageRef = FirebaseStorage.instance.ref().child("pdfs/$formattedDate");
                                         final listResult = await storageRef.listAll();
                                         for (var prefix in listResult.prefixes) {
                                           print('The ref is ::: $prefix');
@@ -470,7 +474,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                             print('The url is ::: $url');
                                             final file = await PDFApi.loadFirebase(url);
                                             try {
-                                              openPDF(context, file);
+                                              if(context.mounted)openPDF(context, file);
                                               Fluttertoast.showToast(
                                                   msg: "Download Successful!");
                                             } catch (e) {
@@ -522,7 +526,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                                     onPressed: () async {
                                                       Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
                                                       Navigator.push(context,
-                                                          MaterialPageRoute(builder: (context) => ImageUploadWater()));
+                                                          MaterialPageRoute(builder: (context) => const ImageUploadWater()));
                                                     },
                                                     icon: const Icon(
                                                       Icons.done,
@@ -808,7 +812,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                         _lastNameController.text = '';
                         _idNumberController.text = '';
 
-                        Navigator.of(context).pop();
+                        if(context.mounted)Navigator.of(context).pop();
                       }
                     },
                   )
@@ -981,7 +985,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                         _lastNameController.text = '';
                         _idNumberController.text = '';
 
-                        Navigator.of(context).pop();
+                        if(context.mounted)Navigator.of(context).pop();
                       }
                     },
                   )

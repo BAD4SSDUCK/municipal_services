@@ -50,7 +50,7 @@ class _LoginPageState extends State<LoginPage>{
         );
       });
 
-      Navigator.of(context).pop();
+      if(context.mounted)Navigator.of(context).pop();
 
     } on FirebaseAuthException catch (e) {
 
@@ -108,7 +108,7 @@ class _LoginPageState extends State<LoginPage>{
       }
     }
 
-    Navigator.of(context).pop();
+    if(context.mounted)Navigator.of(context).pop();
   }
 
   @override

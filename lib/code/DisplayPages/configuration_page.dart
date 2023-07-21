@@ -369,7 +369,7 @@ class _ConfigPageState extends State<ConfigPage> {
                           _cellNumberController.text = '';
                           _userEmailController.text = '';
 
-                          Navigator.of(context).pop();
+                          if(context.mounted)Navigator.of(context).pop();
                         }
                       }
                   ),
@@ -625,7 +625,7 @@ class _ConfigPageState extends State<ConfigPage> {
                           _cellNumberController.text = '';
                           _userEmailController.text = '';
 
-                          Navigator.of(context).pop();
+                          if(context.mounted)Navigator.of(context).pop();
                         }
                       }
                   ),
@@ -707,7 +707,7 @@ class _ConfigPageState extends State<ConfigPage> {
                           _deptNameController.text = '';
                           _userRoleController.text = '';
 
-                          Navigator.of(context).pop();
+                          if(context.mounted)Navigator.of(context).pop();
                         }
                       }
                   ),
@@ -788,7 +788,7 @@ class _ConfigPageState extends State<ConfigPage> {
                           _deptNameController.text = '';
                           _userRoleController.text = '';
 
-                          Navigator.of(context).pop();
+                          if(context.mounted)Navigator.of(context).pop();
                         }
                       }
                   ),
@@ -858,7 +858,7 @@ class _ConfigPageState extends State<ConfigPage> {
 
                           _deptNameController.text = '';
 
-                          Navigator.of(context).pop();
+                          if(context.mounted)Navigator.of(context).pop();
                         }
                       }
                   ),
@@ -927,7 +927,7 @@ class _ConfigPageState extends State<ConfigPage> {
 
                           _deptNameController.text = '';
 
-                          Navigator.of(context).pop();
+                          if(context.mounted)Navigator.of(context).pop();
                         }
                       }
                   ),

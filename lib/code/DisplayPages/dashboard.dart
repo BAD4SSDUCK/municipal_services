@@ -1,6 +1,8 @@
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+import 'package:path/path.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,7 +23,6 @@ import 'package:municipal_track/code/Reusable/main_menu_reusable_button.dart';
 import 'package:municipal_track/code/Reusable/nav_drawer.dart';
 import 'package:municipal_track/code/faultPages/fault_report_screen.dart';
 import 'package:municipal_track/main.dart';
-import 'package:http/http.dart' as http;
 
 import 'package:municipal_track/code/Chat/chat_list.dart';
 import 'package:municipal_track/code/MapTools/location_controller.dart';
@@ -29,7 +30,6 @@ import 'package:municipal_track/code/MapTools/map_screen.dart';
 import 'package:municipal_track/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 import 'package:municipal_track/code/Reusable/menu_reusable_elevated_button.dart';
-import 'package:path/path.dart';
 import 'display_info.dart';
 import 'display_info_all_users.dart';
 
@@ -201,7 +201,7 @@ class MainMenu extends StatefulWidget {
 
   addChatCustomId() async{
     String? addChatID = user.phoneNumber;
-    final chatSnapshot = await FirebaseFirestore.instance
+    final chatSnapshot = FirebaseFirestore.instance
         .collection("chatRoom").doc(addChatID);
     if(chatSnapshot.isBlank!){
     } else {
@@ -298,7 +298,7 @@ class MainMenu extends StatefulWidget {
                               ElevatedIconButton(
                                 onPress: () async {
                                   Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) => UsersPdfListViewPage()));
+                                      MaterialPageRoute(builder: (context) => const UsersPdfListViewPage()));
                                 },
                                 labelText: 'View\nStatement',
                                 fSize: 16,
@@ -365,7 +365,7 @@ class MainMenu extends StatefulWidget {
                               ElevatedIconButton(
                                 onPress: (){
                                   Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) => ReportPropertyMenu()));
+                                      MaterialPageRoute(builder: (context) => const ReportPropertyMenu()));
                                 },
                                 labelText: 'Report\nFaults',
                                 fSize: 18,

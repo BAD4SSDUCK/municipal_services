@@ -1282,7 +1282,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                                   msg: "Fault has been reported successfully!",
                                                   gravity: ToastGravity.CENTER,);
 
-                                                Navigator.of(context).pop();
+                                                if(context.mounted)Navigator.of(context).pop();
                                                 Get.back();
                                               } else {
                                                 Fluttertoast.showToast(

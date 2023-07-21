@@ -224,7 +224,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                           value: value,
                           child: Text(
                             value,
-                            style: TextStyle(fontSize: 16),
+                            style: const TextStyle(fontSize: 16),
                           ),
                         );
                       }).toList(),
@@ -330,7 +330,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                         visStage3 = false;
                         visStage4 = false;
 
-                        Navigator.of(context).pop();
+                        if(context.mounted)Navigator.of(context).pop();
 
                       } else if (faultStage == 2) {
                         if (accountNumber != null) {
@@ -365,7 +365,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                         visStage3 = false;
                         visStage4 = false;
 
-                        Navigator.of(context).pop();
+                        if(context.mounted)Navigator.of(context).pop();
 
                       } else if (faultStage == 3) {
                         if (accountNumber != null) {
@@ -400,7 +400,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                         visStage3 = false;
                         visStage4 = false;
 
-                        Navigator.of(context).pop();
+                        if(context.mounted)Navigator.of(context).pop();
 
                       } else if (faultStage == 4) {
                         if (accountNumber != null) {
@@ -435,7 +435,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                         visStage3 = false;
                         visStage4 = false;
 
-                        Navigator.of(context).pop();
+                        if(context.mounted)Navigator.of(context).pop();
 
                       }
 

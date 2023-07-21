@@ -210,7 +210,7 @@ class _AdminDetailsState extends State<AdminDetails> {
                           _cellNumberController.text = '';
                           _userEmailController.text = '';
 
-                          Navigator.of(context).pop();
+                          if(context.mounted)Navigator.of(context).pop();
                         }
                       }
                   ),
@@ -340,7 +340,7 @@ class _AdminDetailsState extends State<AdminDetails> {
                           _cellNumberController.text = '';
                           _userEmailController.text = '';
 
-                          Navigator.of(context).pop();
+                          if(context.mounted)Navigator.of(context).pop();
                         }
                       }
                   ),
@@ -392,17 +392,17 @@ class _AdminDetailsState extends State<AdminDetails> {
                           ),
                           const SizedBox(height: 20,),
                           adminUserField(
-                              "First Name: " + documentSnapshot['userName']),
+                              "First Name: $documentSnapshot['userName']"),
                           adminUserField(
-                              "Roll: " + documentSnapshot['adminRoll']),
+                              "Roll: $documentSnapshot['adminRoll']"),
                           adminUserField(
-                              "First Name: " + documentSnapshot['firstName']),
+                              "First Name: $documentSnapshot['firstName']"),
                           adminUserField(
-                              "Last Name: " + documentSnapshot['lastName']),
+                              "Last Name: $documentSnapshot['lastName']"),
                           adminUserField(
-                              "Email: " + documentSnapshot['email']),
+                              "Email: $documentSnapshot['email']"),
                           adminUserField(
-                              "Phone Number: " + documentSnapshot['cellNumber']),
+                              "Phone Number: $documentSnapshot['cellNumber']"),
                           const SizedBox(height: 20,),
                           Visibility(
                             visible: visShow,

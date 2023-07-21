@@ -37,9 +37,9 @@ class _AuthPageState extends State<AuthPage> {
 
     ///the following is for login using phone number and otp
     if (showLoginPage){
-      return RegisterScreen();
+      return const RegisterScreen();
     } else {
-      return RegisterPasswordScreen();
+      return const RegisterPasswordScreen();
     }
   }
 }
