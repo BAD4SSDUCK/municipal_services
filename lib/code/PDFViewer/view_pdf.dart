@@ -34,14 +34,14 @@ class _PDFViewerPageState extends State<PDFViewerPage>{
             ? [
           Center(child: Text(text)),
           IconButton(
-            icon: Icon(Icons.chevron_left, size: 32),
+            icon: const Icon(Icons.chevron_left, size: 32),
             onPressed: () {
               final page = indexPage == 0 ? pages : indexPage - 1;
               controller.setPage(page);
             },
           ),
           IconButton(
-            icon: Icon(Icons.chevron_right, size: 32),
+            icon: const Icon(Icons.chevron_right, size: 32),
             onPressed: () {
               final page = indexPage == pages - 1 ? 0 : indexPage + 1;
               controller.setPage(page);
