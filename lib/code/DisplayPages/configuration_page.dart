@@ -90,12 +90,12 @@ class _ConfigPageState extends State<ConfigPage> {
         borderRadius: BorderRadius.circular(12),
         color: Colors.white,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8,),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8,),
       child: Row(
         children: [
           Icon(
             iconImg,
-            size: 30,
+            size: 20,
             color: Colors.black,
           ),
           const SizedBox(width: 6,),
@@ -116,12 +116,12 @@ class _ConfigPageState extends State<ConfigPage> {
         borderRadius: BorderRadius.circular(12),
         color: Colors.white,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8,),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8,),
       child: Row(
         children: [
           Icon(
             iconImg,
-            size: 30,
+            size: 20,
             color: Colors.black,
           ),
           const SizedBox(width: 6,),
@@ -452,116 +452,116 @@ class _ConfigPageState extends State<ConfigPage> {
                     ),
                   ),
 
-                  Visibility(
-                    visible: false,
-                    child: Text(
-                        DeptWidget().deptRepository.deptDBRetrieveRef.toString()),
-                  ),
-                  ///Need to work on drop down menu with information
-                  Visibility(
-                      visible: visShow,
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: double.infinity,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(5),
-                              child: StreamBuilder<QuerySnapshot>(
-                                // stream: _deptInfo.getStream(),
-                                stream: docRef,
-                                builder: (context, snapshot) {
-                                  if (!snapshot.hasData) {
-                                    return const Center(
-                                      child: CircularProgressIndicator(),
-                                    );
-                                  }
-
-                                  return Container(
-                                    padding: const EdgeInsets.all(5),
-                                    child: DropdownButton(
-                                      value: _deptListController,
-                                      isDense: true,
-                                      items:
-                                      snapshot.data?.docs.map((DocumentSnapshot doc) {
-                                        return DropdownMenuItem<String>(
-                                            value: doc["deptName"],
-                                            child: Text(doc["deptName"]));
-                                      }).toList(),
-                                      hint: const Text("Choose Department"),
-                                      underline: Container(
-
-                                      ),
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _currentSelectedDept = value as String;
-                                        });
-                                      },
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            // const Text('Department'),
-                            // // const SizedBox(height: 200,),
-                            // Container(
-                            //   width: 130,
-                            //   height: 50,
-                            //   decoration: BoxDecoration(
-                            //     border: Border.all(color: Colors.grey),
-                            //     color: Colors.white,
-                            //     borderRadius: BorderRadius.circular(6),
-                            //   ),
-                            //   child: TextField(
-                            //     controller: controllerDept,
-                            //     decoration: InputDecoration(
-                            //       border: InputBorder.none,
-                            //       suffixIcon: GestureDetector(
-                            //         onTap: (){
-                            //           displayDeptList = !displayDeptList;
-                            //         },
-                            //         child: Icon(Icons.arrow_downward),
-                            //       ),
-                            //     ),
-                            //   ),
-                            // ),
-                            // displayDeptList?
-                            // Container(
-                            //   height: 200,
-                            //   width: 130,
-                            //   decoration: BoxDecoration(
-                            //       borderRadius: BorderRadius.circular(9),
-                            //       color: Colors.white,
-                            //       boxShadow: [
-                            //         BoxShadow(
-                            //           color: Colors.grey.withOpacity(0.3),
-                            //           spreadRadius: 1,
-                            //           blurRadius: 3,
-                            //           offset: const Offset(0,1),
-                            //         )
-                            //       ]),
-                            //   child: ListView.builder(
-                            //       itemCount: deptName.length,
-                            //       itemBuilder: ((context,index){
-                            //         return GestureDetector(
-                            //           onTap: (){
-                            //             setState(() {
-                            //               deptSelection: DeptWidget().deptRepository.deptDBRetrieveRef.toString();
-                            //               controllerDept.text = (index+1).toString();
-                            //               _deptNameController.text = deptSelection[index].toString();
-                            //             });
-                            //           },
-                            //           child: ListTile(
-                            //             title: Text(deptName[index]),
-                            //           ),
-                            //         );
-                            //       })),
-                            // ):const SizedBox(),
-                          ],
-                        ),
-                      )
-                  ),
+                  // Visibility(
+                  //   visible: false,
+                  //   child: Text(
+                  //       DeptWidget().deptRepository.deptDBRetrieveRef.toString()),
+                  // ),
+                  // ///Need to work on drop down menu with information
+                  // Visibility(
+                  //     visible: visShow,
+                  //     child: SizedBox(
+                  //       width: double.infinity,
+                  //       height: double.infinity,
+                  //       child: Column(
+                  //         crossAxisAlignment: CrossAxisAlignment.center,
+                  //         children: [
+                  //           Container(
+                  //             padding: const EdgeInsets.all(5),
+                  //             child: StreamBuilder<QuerySnapshot>(
+                  //               // stream: _deptInfo.getStream(),
+                  //               stream: docRef,
+                  //               builder: (context, snapshot) {
+                  //                 if (!snapshot.hasData) {
+                  //                   return const Center(
+                  //                     child: CircularProgressIndicator(),
+                  //                   );
+                  //                 }
+                  //
+                  //                 return Container(
+                  //                   padding: const EdgeInsets.all(5),
+                  //                   child: DropdownButton(
+                  //                     value: _deptListController,
+                  //                     isDense: true,
+                  //                     items:
+                  //                     snapshot.data?.docs.map((DocumentSnapshot doc) {
+                  //                       return DropdownMenuItem<String>(
+                  //                           value: doc["deptName"],
+                  //                           child: Text(doc["deptName"]));
+                  //                     }).toList(),
+                  //                     hint: const Text("Choose Department"),
+                  //                     underline: Container(
+                  //
+                  //                     ),
+                  //                     onChanged: (value) {
+                  //                       setState(() {
+                  //                         _currentSelectedDept = value as String;
+                  //                       });
+                  //                     },
+                  //                   ),
+                  //                 );
+                  //               },
+                  //             ),
+                  //           ),
+                  //           // const Text('Department'),
+                  //           // // const SizedBox(height: 200,),
+                  //           // Container(
+                  //           //   width: 130,
+                  //           //   height: 50,
+                  //           //   decoration: BoxDecoration(
+                  //           //     border: Border.all(color: Colors.grey),
+                  //           //     color: Colors.white,
+                  //           //     borderRadius: BorderRadius.circular(6),
+                  //           //   ),
+                  //           //   child: TextField(
+                  //           //     controller: controllerDept,
+                  //           //     decoration: InputDecoration(
+                  //           //       border: InputBorder.none,
+                  //           //       suffixIcon: GestureDetector(
+                  //           //         onTap: (){
+                  //           //           displayDeptList = !displayDeptList;
+                  //           //         },
+                  //           //         child: Icon(Icons.arrow_downward),
+                  //           //       ),
+                  //           //     ),
+                  //           //   ),
+                  //           // ),
+                  //           // displayDeptList?
+                  //           // Container(
+                  //           //   height: 200,
+                  //           //   width: 130,
+                  //           //   decoration: BoxDecoration(
+                  //           //       borderRadius: BorderRadius.circular(9),
+                  //           //       color: Colors.white,
+                  //           //       boxShadow: [
+                  //           //         BoxShadow(
+                  //           //           color: Colors.grey.withOpacity(0.3),
+                  //           //           spreadRadius: 1,
+                  //           //           blurRadius: 3,
+                  //           //           offset: const Offset(0,1),
+                  //           //         )
+                  //           //       ]),
+                  //           //   child: ListView.builder(
+                  //           //       itemCount: deptName.length,
+                  //           //       itemBuilder: ((context,index){
+                  //           //         return GestureDetector(
+                  //           //           onTap: (){
+                  //           //             setState(() {
+                  //           //               deptSelection: DeptWidget().deptRepository.deptDBRetrieveRef.toString();
+                  //           //               controllerDept.text = (index+1).toString();
+                  //           //               _deptNameController.text = deptSelection[index].toString();
+                  //           //             });
+                  //           //           },
+                  //           //           child: ListTile(
+                  //           //             title: Text(deptName[index]),
+                  //           //           ),
+                  //           //         );
+                  //           //       })),
+                  //           // ):const SizedBox(),
+                  //         ],
+                  //       ),
+                  //     )
+                  // ),
 
                   Visibility(
                     visible: visShow,
