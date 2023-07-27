@@ -14,6 +14,7 @@ import 'package:http/http.dart' as http;
 import 'package:municipal_track/code/DisplayPages/admin_details.dart';
 import 'package:municipal_track/code/DisplayPages/display_info_all_users.dart';
 import 'package:municipal_track/code/DisplayPages/configuration_page.dart';
+import 'package:municipal_track/code/DisplayPages/notice_config_screen.dart';
 import 'package:municipal_track/code/MapTools/map_screen_multi.dart';
 import 'package:municipal_track/code/MapTools/map_screen.dart';
 import 'package:municipal_track/code/MapTools/location_controller.dart';
@@ -170,18 +171,41 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   ),
                                 ),
 
-                                ///Button without visibility setting
-                                // ElevatedIconButton(
-                                //   onPress: () async {
-                                //     Navigator.push(context,
-                                //         MaterialPageRoute(builder: (context) => const ConfigPage()));
-                                //   },
-                                //   labelText: 'Manage\nAdmin',
-                                //   fSize: 18,
-                                //   faIcon: const FaIcon(Icons.people),
-                                //   fgColor: Colors.blue,
-                                //   btSize: const Size(130, 120),
-                                // ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 5,),
+                        Visibility(
+                          visible: visShow,
+                          child: Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                ElevatedIconButton(
+                                  onPress: () async {
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) => const NoticeConfigScreen()));
+                                  },
+                                  labelText: 'User\nNotifier',
+                                  fSize: 18,
+                                  faIcon: const FaIcon(Icons.notifications_on),
+                                  fgColor: Colors.red,
+                                  btSize: const Size(130, 120),
+                                ),
+                                const SizedBox(width: 20,),
+                                ElevatedIconButton(
+                                  onPress: () async {
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) => const UsersPropsAll()));
+                                  },
+                                  labelText: 'Readings\nCapture',
+                                  fSize: 16,
+                                  faIcon: const FaIcon(Icons.holiday_village),
+                                  fgColor: Colors.black54,
+                                  btSize: const Size(130, 120),
+                                ),
                               ],
                             ),
                           ),
@@ -242,18 +266,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   fgColor: Colors.red,
                                   btSize: const Size(130, 120),
                                 ),
-                                const SizedBox(width: 20,),
-                                ElevatedIconButton(
-                                  onPress: () async {
-                                    Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => const UsersPropsAll()));
-                                  },
-                                  labelText: 'Readings\nCapture',
-                                  fSize: 16,
-                                  faIcon: const FaIcon(Icons.holiday_village),
-                                  fgColor: Colors.black54,
-                                  btSize: const Size(130, 120),
-                                ),
+
                               ],
                             ),
                           ),

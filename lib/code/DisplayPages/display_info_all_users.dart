@@ -77,6 +77,8 @@ Future<Widget> _getImageW(BuildContext context, String imageName2) async{
   return image2;
 }
 
+final CollectionReference _propList =
+FirebaseFirestore.instance.collection('properties');
 
 class _UsersPropsAllState extends State<UsersPropsAll> {
 
@@ -100,12 +102,32 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
   String formattedDate = DateFormat.MMMM().format(now);
 
-  final CollectionReference _propList =
-  FirebaseFirestore.instance.collection('properties');
+  List<Map<String, dynamic>> _allProps =[];
+  // _propList.snapshots() as List<Map<String, dynamic>>;
+  List<Map<String, dynamic>> _foundProps = [];
 
   @override
   void initState() {
+    print("The map string list is :::$_allProps");
+    _foundProps = _allProps;
     super.initState();
+  }
+
+  void _runSearch(String enteredKeyword) {
+
+
+
+    List<Map<String, dynamic>> results = [];
+    if (enteredKeyword.isEmpty) {
+      results = _allProps;
+    } else {
+      results = _allProps.where((element) =>
+          element["address"].toLowerCase().contains(
+              enteredKeyword.toLowerCase())).toList();
+    }
+    setState(() {
+      _foundProps = results;
+    });
   }
 
   @override
@@ -115,10 +137,10 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     super.dispose();
   }
 
-  Widget firebasePropertyCard(CollectionReference<Object?> propertiesDataStream){
+  Widget firebasePropertyCard(CollectionReference<Object?> propertiesDataStream) {
     return Expanded(
         child: StreamBuilder<QuerySnapshot>(
-          stream: _propList.snapshots(),
+          stream: propertiesDataStream.snapshots(),
           builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
             if (streamSnapshot.hasData) {
               return ListView.builder(
@@ -132,6 +154,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   eMeterNumber = documentSnapshot['meter number'];
                   wMeterNumber = documentSnapshot['water meter number'];
                   imgFolder = documentSnapshot['cell number'];
+
+                  // _allProps.add(documentSnapshot['address'].toString() as Map<String,dynamic>);
 
                   String billMessage;///A check for if payment is outstanding or not
                   if(documentSnapshot['eBill'] != ''){
@@ -647,7 +671,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                       ),
                     );
                   }
-
+                  return null;
                 },
               );
             }
@@ -1032,7 +1056,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   controller: _searchBarController,
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.search),
-                    hintText: 'Search by Account Number',
+                    hintText: 'Search by address',
                     focusColor: Colors.white,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
