@@ -14,7 +14,7 @@ import 'package:http/http.dart' as http;
 import 'package:municipal_track/code/DisplayPages/admin_details.dart';
 import 'package:municipal_track/code/DisplayPages/display_info_all_users.dart';
 import 'package:municipal_track/code/DisplayPages/configuration_page.dart';
-import 'package:municipal_track/code/DisplayPages/notice_config_screen.dart';
+import 'package:municipal_track/code/NoticePages/notice_config_screen.dart';
 import 'package:municipal_track/code/MapTools/map_screen_multi.dart';
 import 'package:municipal_track/code/MapTools/map_screen.dart';
 import 'package:municipal_track/code/MapTools/location_controller.dart';

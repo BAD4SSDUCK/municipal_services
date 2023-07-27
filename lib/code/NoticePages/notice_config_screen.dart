@@ -49,9 +49,11 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
   TextEditingController username = TextEditingController();
   TextEditingController title = TextEditingController();
   TextEditingController body = TextEditingController();
+  String? mtoken = " ";
+
+  ///This was made for testing a default message
   String title2 = "Outstanding Utilities Payment";
   String body2 = "Make sure you pay utilities before the end of this month or your services will be disconnected";
-  String? mtoken = " ";
 
   String token = '';
   String notifyToken = '';

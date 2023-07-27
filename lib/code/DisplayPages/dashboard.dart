@@ -297,6 +297,19 @@ class MainMenu extends StatefulWidget {
                             children: [
                               ElevatedIconButton(
                                 onPress: () async {
+                                  ///To add a notifications page for user phone number only
+                                  // Navigator.push(context,
+                                  //     MaterialPageRoute(builder: (context) => const NoticeConfigScreen()));
+                                },
+                                labelText: 'Notices',
+                                fSize: 18,
+                                faIcon: const FaIcon(Icons.notifications_on),
+                                fgColor: Colors.red,
+                                btSize: const Size(130, 120),
+                              ),
+                              const SizedBox(width: 20,),
+                              ElevatedIconButton(
+                                onPress: () async {
                                   Navigator.push(context,
                                       MaterialPageRoute(builder: (context) => const UsersPdfListViewPage()));
                                 },
