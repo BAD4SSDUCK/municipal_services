@@ -120,7 +120,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   fgColor: Colors.purple,
                                   btSize: const Size(130, 120),
                                 ),
-                                const SizedBox(width: 20,),
+                                const SizedBox(width: 40,),
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
@@ -155,7 +155,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   fgColor: Colors.green,
                                   btSize: const Size(130, 120),
                                 ),
-                                const SizedBox(width: 20,),
+                                const SizedBox(width: 40,),
                                 Visibility(
                                   visible: visAdmin,
                                   child: ElevatedIconButton(
@@ -194,7 +194,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   fgColor: Colors.red,
                                   btSize: const Size(130, 120),
                                 ),
-                                const SizedBox(width: 20,),
+                                const SizedBox(width: 40,),
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,

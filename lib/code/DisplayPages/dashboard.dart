@@ -299,7 +299,7 @@ class MainMenu extends StatefulWidget {
                                 onPress: () async {
                                   ///To add a notifications page for user phone number only
                                   // Navigator.push(context,
-                                  //     MaterialPageRoute(builder: (context) => const NoticeConfigScreen()));
+                                  //     MaterialPageRoute(builder: (context) => const NoticeConfigScreen())); ///add page for users to see
                                 },
                                 labelText: 'Notices',
                                 fSize: 18,
@@ -307,14 +307,14 @@ class MainMenu extends StatefulWidget {
                                 fgColor: Colors.red,
                                 btSize: const Size(130, 120),
                               ),
-                              const SizedBox(width: 20,),
+                              const SizedBox(width: 40,),
                               ElevatedIconButton(
                                 onPress: () async {
                                   Navigator.push(context,
                                       MaterialPageRoute(builder: (context) => const UsersPdfListViewPage()));
                                 },
                                 labelText: 'View\nStatement',
-                                fSize: 16,
+                                fSize: 14,
                                 faIcon: const FaIcon(FontAwesomeIcons.solidFilePdf),
                                 fgColor: Colors.redAccent,
                                 btSize: const Size(130, 120),
