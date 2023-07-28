@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+import 'package:municipal_track/code/NoticePages/notice_user_screen.dart';
 import 'package:path/path.dart';
 import 'package:http/http.dart' as http;
 
@@ -297,9 +298,8 @@ class MainMenu extends StatefulWidget {
                             children: [
                               ElevatedIconButton(
                                 onPress: () async {
-                                  ///To add a notifications page for user phone number only
-                                  // Navigator.push(context,
-                                  //     MaterialPageRoute(builder: (context) => const NoticeConfigScreen())); ///add page for users to see
+                                  Navigator.push(context,
+                                      MaterialPageRoute(builder: (context) => const NoticeScreen()));///add page for users to see
                                 },
                                 labelText: 'Notices',
                                 fSize: 18,
