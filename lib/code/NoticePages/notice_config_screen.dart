@@ -67,10 +67,22 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
   bool visHide = false;
   bool adminAcc = false;
 
+  int numTokens=0;
+
   @override
   void initState() {
     checkAdmin();
+    countResult();
     super.initState();
+  }
+
+  void countResult() async{
+    var query = _listUserTokens.where("token");
+    var snapshot = await query.get();
+    var count = snapshot.size;
+    numTokens = snapshot.size;
+    print('Records are ::: $count');
+    print('num tokens are ::: $numTokens');
   }
 
   @override
@@ -98,7 +110,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
   }
 
   //function for messaging
-  void sendPushMessage(String token, String body, String title) async{
+  void sendPushMessage(String token, String title, String body,) async{
     try{
       await http.post(
         Uri.parse('https://fcm.googleapis.com/fcm/send'),
@@ -112,8 +124,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
             'data': <String, dynamic>{
               'click_action':'FLUTTER_NOTIFICATION_CLICK',
               'status': 'done',
-              'body': body,
               'title': title,
+              'body': body,
             },
 
             "notification": <String, dynamic>{
@@ -143,10 +155,12 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8,),
       child: Row(
         children: [
-          Text(
-            tokenData,
-            style: const TextStyle(
-              fontSize: 16,
+          Expanded(
+            child: Text(
+              tokenData,
+              style: const TextStyle(
+                fontSize: 16,
+              ),
             ),
           ),
         ],
@@ -167,11 +181,138 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                 final DocumentSnapshot documentSnapshot =
                 streamSnapshot.data!.docs[index];
 
-                if(documentSnapshot.id.toString().contains('+27')){
+                if(documentSnapshot.id.toString().contains('+27') && usersNumbers.length<numTokens && usersTokens.length<numTokens) {
                   usersNumbers.add(documentSnapshot.id.toString());
                   usersTokens.add(documentSnapshot['token']);
-
                 }
+
+                  if(documentSnapshot.id.contains('+27')){
+                    return Card(
+                      margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,10.0),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Center(
+                              child: Text(
+                                'Users Device Number',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            const SizedBox(height: 10,),
+                            tokenItemField('User Phone Number ${documentSnapshot.id}'),
+                            Visibility(
+                              visible: false,
+                              child: Text(
+                                'User Token: ${documentSnapshot['token']}',
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                            ),
+                            // const SizedBox(height: 10,),
+                            // Column(
+                            //   children: [
+                            //     Row(
+                            //       mainAxisAlignment: MainAxisAlignment.center,
+                            //       crossAxisAlignment: CrossAxisAlignment.center,
+                            //       children: [
+                            //         BasicIconButtonGrey(
+                            //           onPress: () async {
+                            //             showDialog(
+                            //                 barrierDismissible: false,
+                            //                 context: context,
+                            //                 builder: (context) {
+                            //                   return
+                            //                     AlertDialog(
+                            //                       shape: const RoundedRectangleBorder(
+                            //                           borderRadius:
+                            //                           BorderRadius.all(Radius.circular(16))),
+                            //                       title: const Text("Call User!"),
+                            //                       content: const Text(
+                            //                           "Would you like to call the user directly?"),
+                            //                       actions: [
+                            //                         IconButton(
+                            //                           onPressed: () {
+                            //                             Navigator.of(context).pop();
+                            //                           },
+                            //                           icon: const Icon(
+                            //                             Icons.cancel,
+                            //                             color: Colors.red,
+                            //                           ),
+                            //                         ),
+                            //                         IconButton(
+                            //                           onPressed: () {
+                            //                             String cellGiven = documentSnapshot.id;
+                            //
+                            //                             final Uri _tel = Uri.parse('tel:${cellGiven.toString()}');
+                            //                             launchUrl(_tel);
+                            //
+                            //                             Navigator.of(context).pop();
+                            //                           },
+                            //                           icon: const Icon(
+                            //                             Icons.done,
+                            //                             color: Colors.green,
+                            //                           ),
+                            //                         ),
+                            //                       ],
+                            //                     );
+                            //                 });
+                            //           },
+                            //           labelText: 'Call User',
+                            //           fSize: 14,
+                            //           faIcon: const FaIcon(Icons.call,),
+                            //           fgColor: Colors.green,
+                            //           btSize: const Size(50, 38),
+                            //         ),
+                            //         BasicIconButtonGrey(
+                            //           onPress: () async {
+                            //             notifyToken = documentSnapshot['token'];
+                            //             _notifyThisUser(documentSnapshot);
+                            //           },
+                            //           labelText: 'Notify User',
+                            //           fSize: 14,
+                            //           faIcon: const FaIcon(Icons.edit,),
+                            //           fgColor: Theme.of(context).primaryColor,
+                            //           btSize: const Size(50, 38),
+                            //         ),
+                            //       ],
+                            //     ),
+                            //   ],
+                            // ),
+                          ],
+                        ),
+                      ),
+                    );
+                  } else {
+                    return const Card();
+                  }
+              },
+            );
+          }
+          return const Padding(
+            padding: EdgeInsets.all(10.0),
+            child: Center(
+                child: CircularProgressIndicator()),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget userAndTokenCardSearch(CollectionReference<Object?> tokenDataStream){
+    return Expanded(
+      child: StreamBuilder<QuerySnapshot>(
+        stream: tokenDataStream.snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+          if (streamSnapshot.hasData) {
+            return ListView.builder(
+              itemCount: streamSnapshot.data!.docs.length,
+              itemBuilder: (context, index) {
+                final DocumentSnapshot documentSnapshot =
+                streamSnapshot.data!.docs[index];
 
                 if(((documentSnapshot.id.trim()).toLowerCase()).contains((_searchBarController.text.trim()).toLowerCase())){
                   if(documentSnapshot.id.contains('+27')){
@@ -440,6 +581,13 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
   Future<void> _notifyAllUser([DocumentSnapshot? documentSnapshot]) async {
 
+    _searchBarController.text = '';
+
+    for (var i = 0; i < numTokens; i++) {
+      if (documentSnapshot?.id == usersNumbers[i]) {
+        usersNumbers.removeAt(i);
+      }
+    }
     print(usersNumbers);
     print(usersNumbers.length);
     print(usersTokens);
@@ -513,8 +661,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                     if (tokenSelected != null) {
                                       if(title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty){
                                         await _listNotifications
-                                            .doc(documentSnapshot?.id)
-                                            .update({
+                                            .add({
                                           "token": tokenSelected,
                                           "user": userNumber,
                                           "title": notificationTitle,
@@ -539,6 +686,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                       print('The phone number is retrieved as ::: $userNumber');
                                       print('The token is retrieved as ::: $token');
                                       sendPushMessage(token, titleText, bodyText);
+                                      Fluttertoast.showToast(msg: 'All users have been sent the notification!', gravity: ToastGravity.CENTER);
                                     }
                                   }
 
@@ -648,6 +796,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                         print('The phone number is retrieved as ::: $userNumber');
                                         print('The token is retrieved as ::: $token');
                                         sendPushMessage(token, titleText, bodyText);
+                                        Fluttertoast.showToast(msg: 'The user has been sent the notification!', gravity: ToastGravity.CENTER);
                                       }
                                     } else {
                                       Fluttertoast.showToast(msg: 'Please Fill Header and Message of the notification!', gravity: ToastGravity.CENTER);
@@ -679,83 +828,111 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[350],
-      appBar: AppBar(
-        title: const Text('User Notifications'),
-        actions: <Widget>[
-          Visibility(
-              visible: adminAcc,
-              child: IconButton(
-                  onPressed: (){
-                    usersNumbers = [];
-                    usersTokens = [];
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => const NoticeConfigArcScreen()));
-                  },
-                  icon: const Icon(Icons.history_outlined, color: Colors.white,)),),
-        ],
-        backgroundColor: Colors.green,
-      ),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: Colors.grey[350],
+        appBar: AppBar(
+          title: const Text('User Notifications'),
+          actions: <Widget>[
+            Visibility(
+                visible: adminAcc,
+                child: IconButton(
+                    onPressed: (){
+                      usersNumbers = [];
+                      usersTokens = [];
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => const NoticeConfigArcScreen()));
+                    },
+                    icon: const Icon(Icons.history_outlined, color: Colors.white,)),),
+          ],
+          backgroundColor: Colors.green,
+          bottom: const TabBar(
+              tabs: [
+                Tab(text: 'Notify All',),
+                Tab(text: 'Targeted Notice',),
+              ]
+          ),
+        ),
 
-      body: Column(
-        children: [
-          const SizedBox(height: 10,),
-          ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
-          ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
+        body: TabBarView(
+          children: [
+            ///Tab for all
+            Column(
+            children: [
+              const SizedBox(height: 10,),
+              ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
+              ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
 
-          BasicIconButtonGrey(
-            onPress: () async {
-              ///Todo send through the document snapshot for adding all user notification
-              _notifyAllUser();
-            },
-            labelText: 'Send Notice To All',
-            fSize: 16,
-            faIcon: const FaIcon(Icons.notifications,),
-            fgColor: Theme.of(context).primaryColor,
-            btSize: const Size(300, 50),
+              BasicIconButtonGrey(
+                onPress: () async {
+                  _notifyAllUser();
+                },
+                labelText: 'Send Notice To All',
+                fSize: 16,
+                faIcon: const FaIcon(Icons.notifications,),
+                fgColor: Theme.of(context).primaryColor,
+                btSize: const Size(300, 50),
+              ),
+
+              const SizedBox(height: 10,),
+
+              ///made the listview card a reusable widget
+              userAndTokenCard(_listUserTokens),
+
+            ],
           ),
 
-          const SizedBox(height: 10,),
-
-          /// Search bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
+            ///Tab for searching
+            Column(
               children: [
-                TextFormField(
-                  onChanged: (value) async{
-                    usersNumbers = [];
-                    usersTokens = [];
-                    setState(() {
-                      searchText = value;
-                      print('this is the input text ::: $searchText');
-                    });
-                  },
-                  autofocus: false,
-                  controller: _searchBarController,
-                  decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.search),
-                      hintText: 'Search by phone number',
-                      focusColor: Colors.white,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: const BorderSide(color: Colors.black),
+                const SizedBox(height: 10,),
+                ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
+                ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
+
+
+                /// Search bar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        onChanged: (value) async{
+                          setState(() {
+                            usersNumbers = [];
+                            usersTokens = [];
+                            searchText = value;
+                            print('this is the input text ::: $searchText');
+                          });
+                        },
+                        autofocus: false,
+                        controller: _searchBarController,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.search),
+                          hintText: 'Search by phone number',
+                          focusColor: Colors.white,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: Colors.black),
+                          ),
+                        ),
                       ),
+                    ],
                   ),
                 ),
+                /// Search bar end
+
+                ///made the listview card a reusable widget
+                userAndTokenCardSearch(_listUserTokens),
+
               ],
             ),
-          ),
-          /// Search bar end
 
-          ///made the listview card a reusable widget
-          userAndTokenCard(_listUserTokens),
-
-        ],
+      ]
+        ),
       ),
     );
   }

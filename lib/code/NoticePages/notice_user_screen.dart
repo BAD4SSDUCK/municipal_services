@@ -84,10 +84,12 @@ class _NoticeScreenState extends State<NoticeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8,),
       child: Row(
         children: [
-          Text(
-            noticeData,
-            style: const TextStyle(
-              fontSize: 16,
+          Expanded(
+            child: Text(
+              noticeData,
+              style: const TextStyle(
+                fontSize: 16,
+              ),
             ),
           ),
         ],
