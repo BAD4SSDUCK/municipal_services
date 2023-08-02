@@ -549,49 +549,70 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
 
                           const Center(
                             child: Text(
-                              'Electrical Meter Reading Photo',
+                              'Electricity Meter Reading Photo',
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                             ),
                           ),
-
+                          const SizedBox(height: 5,),
+                          Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  BasicIconButtonGrey(
+                                    onPress: () async {
+                                      _update(documentSnapshot);
+                                    },
+                                    labelText: 'Capture',
+                                    fSize: 16,
+                                    faIcon: const FaIcon(Icons.edit,),
+                                    fgColor: Theme.of(context).primaryColor,
+                                    btSize: const Size(100, 38),
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
                           ///Image display item needs to get the reference from the firestore using the users uploaded meter connection
                           InkWell(
                             ///onTap allows to open image upload page if user taps on the image.
                             ///Can be later changed to display the picture zoomed in if user taps on it.
-                            // onTap: () {
-                            //   eMeterNumber = documentSnapshot['meter number'];
-                            //   showDialog(
-                            //       barrierDismissible: false,
-                            //       context: context,
-                            //       builder: (context) {
-                            //         return AlertDialog(
-                            //           title: const Text("Upload Meter Image"),
-                            //           content: const Text("Uploading a new image will replace current image! Are you sure?"),
-                            //           actions: [
-                            //             IconButton(
-                            //               onPressed: () {
-                            //                 Navigator.pop(context);
-                            //               },
-                            //               icon: const Icon(
-                            //                 Icons.cancel,
-                            //                 color: Colors.red,
-                            //               ),
-                            //             ),
-                            //             IconButton(
-                            //               onPressed: () async {
-                            //                 Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                            //                 Navigator.push(context,
-                            //                     MaterialPageRoute(builder: (context) => ImageUploadMeter()));
-                            //               },
-                            //               icon: const Icon(
-                            //                 Icons.done,
-                            //                 color: Colors.green,
-                            //               ),
-                            //             ),
-                            //           ],
-                            //         );
-                            //       });
-                            // },
+                            onTap: () {
+                              eMeterNumber = documentSnapshot['meter number'];
+                              imgFolder = documentSnapshot['cell number'];
+                              showDialog(
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: const Text("Upload Electricity Meter"),
+                                  content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                  actions: [
+                                    IconButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(
+                                        Icons.cancel,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () async {
+                                        Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                                        Navigator.push(context,
+                                            MaterialPageRoute(builder: (context) => ImageUploadMeter()));
+                                      },
+                                      icon: const Icon(
+                                        Icons.done,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              });
+                            },
 
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 5),
@@ -614,7 +635,14 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                         if (snapshot.hasError) {
                                           return const Padding(
                                             padding: EdgeInsets.all(20.0),
-                                            child: Text('Image not yet uploaded.',), //${snapshot.error} if error needs to be displayed instead
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text('Image not yet uploaded.',),
+                                                  SizedBox(height: 10,),
+                                                  FaIcon(Icons.camera_alt,),
+                                                ],
+                                              ),
                                           );
                                         }
                                         if (snapshot.connectionState ==
@@ -635,6 +663,58 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                               ),
                             ),
                           ),
+                          Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  BasicIconButtonGrey(
+                                    onPress: () async {
+                                      eMeterNumber = documentSnapshot['meter number'];
+                                      imgFolder = documentSnapshot['cell number'];
+                                      showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text("Upload Electricity Meter"),
+                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                              actions: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.cancel,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () async {
+                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                                                    Navigator.push(context,
+                                                        MaterialPageRoute(builder: (context) => ImageUploadMeter()));
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.done,
+                                                    color: Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          });
+                                    },
+                                    labelText: 'Electricity Meter',
+                                    fSize: 16,
+                                    faIcon: const FaIcon(Icons.camera_alt,),
+                                    fgColor: Colors.black38,
+                                    btSize: const Size(100, 38),
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
                           const SizedBox(height: 10,),
 
                           const Center(
@@ -643,44 +723,65 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                             ),
                           ),
-
+                          const SizedBox(height: 5,),
+                          Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  BasicIconButtonGrey(
+                                    onPress: () async {
+                                      _update(documentSnapshot);
+                                    },
+                                    labelText: 'Capture',
+                                    fSize: 16,
+                                    faIcon: const FaIcon(Icons.edit,),
+                                    fgColor: Theme.of(context).primaryColor,
+                                    btSize: const Size(100, 38),
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
                           InkWell(
                             ///onTap allows to open image upload page if user taps on the image.
                             ///Can be later changed to display the picture zoomed in if user taps on it.
-                            // onTap: () {
-                            //   wMeterNumber = documentSnapshot['water meter number'];
-                            //   showDialog(
-                            //       barrierDismissible: false,
-                            //       context: context,
-                            //       builder: (context) {
-                            //         return AlertDialog(
-                            //           title: const Text("Upload Water Meter Image"),
-                            //           content: const Text("Uploading a new image will replace current image! Are you sure?"),
-                            //           actions: [
-                            //             IconButton(
-                            //               onPressed: () {
-                            //                 Navigator.pop(context);
-                            //               },
-                            //               icon: const Icon(
-                            //                 Icons.cancel,
-                            //                 color: Colors.red,
-                            //               ),
-                            //             ),
-                            //             IconButton(
-                            //               onPressed: () async {
-                            //                 Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                            //                 Navigator.push(context,
-                            //                     MaterialPageRoute(builder: (context) => ImageUploadWater()));
-                            //               },
-                            //               icon: const Icon(
-                            //                 Icons.done,
-                            //                 color: Colors.green,
-                            //               ),
-                            //             ),
-                            //           ],
-                            //         );
-                            //       });
-                            // },
+                            onTap: () {
+                              wMeterNumber = documentSnapshot['water meter number'];
+                              imgFolder = documentSnapshot['cell number'];
+                              showDialog(
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: const Text("Upload Water Meter Image"),
+                                  content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                  actions: [
+                                    IconButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(
+                                        Icons.cancel,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () async {
+                                        Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                                        Navigator.push(context,
+                                            MaterialPageRoute(builder: (context) => const ImageUploadWater()));
+                                      },
+                                      icon: const Icon(
+                                        Icons.done,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              });
+                            },
 
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 5),
@@ -703,7 +804,14 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                         if (snapshot.hasError) {
                                           return const Padding(
                                             padding: EdgeInsets.all(20.0),
-                                            child: Text('Image not yet uploaded.',), //${snapshot.error} if error needs to be displayed instead
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text('Image not yet uploaded.',),
+                                                SizedBox(height: 10,),
+                                                FaIcon(Icons.camera_alt,),
+                                              ],
+                                            ),
                                           );
                                         }
                                         if (snapshot.connectionState ==
@@ -724,14 +832,6 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                               ),
                             ),
                           ),
-
-                          const SizedBox(height: 10,),
-                          Text(
-                            billMessage,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-
-                          const SizedBox(height: 10,),
                           Column(
                             children: [
                               Row(
@@ -740,36 +840,57 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                 children: [
                                   BasicIconButtonGrey(
                                     onPress: () async {
-                                      _update(documentSnapshot);
+                                      wMeterNumber = documentSnapshot['water meter number'];
+                                      imgFolder = documentSnapshot['cell number'];
+                                      showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text("Upload Water Meter"),
+                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                              actions: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.cancel,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () async {
+                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                                                    Navigator.push(context,
+                                                        MaterialPageRoute(builder: (context) => const ImageUploadWater()));
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.done,
+                                                    color: Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          });
                                     },
-                                    labelText: 'Capture',
+                                    labelText: 'Water Meter',
                                     fSize: 16,
-                                    faIcon: const FaIcon(Icons.edit,),
-                                    fgColor: Theme.of(context).primaryColor,
+                                    faIcon: const FaIcon(Icons.camera_alt,),
+                                    fgColor: Colors.black38,
                                     btSize: const Size(100, 38),
                                   ),
-                                  const SizedBox(width: 0,),
-                                  BasicIconButtonGrey(
-                                    onPress: () async {
-                                      accountNumber = documentSnapshot['account number'];
-                                      locationGiven = documentSnapshot['address'];
-
-                                      Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) => const MapScreen()
-                                            //MapPage()
-                                          ));
-                                    },
-                                    labelText: 'Map',
-                                    fSize: 16,
-                                    faIcon: const FaIcon(Icons.map,),
-                                    fgColor: Colors.green,
-                                    btSize: const Size(100, 38),
-                                  ),
-                                  const SizedBox(width: 5,),
                                 ],
-                              ),
+                              )
                             ],
                           ),
+                          const SizedBox(height: 10,),
+                          Text(
+                            billMessage,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+
+                          const SizedBox(height: 10,),
                           Column(
                             children: [
                               Row(
@@ -816,158 +937,175 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                     fgColor: Colors.orangeAccent,
                                     btSize: const Size(100, 38),
                                   ),
-                                ],
-                              )
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
                                   BasicIconButtonGrey(
                                     onPress: () async {
-                                      wMeterNumber = documentSnapshot['water meter number'];
-                                      imgFolder = documentSnapshot['cell number'];
-                                      showDialog(
-                                          barrierDismissible: false,
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: const Text("Upload Water Meter Image"),
-                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () async {
-                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                                    Navigator.push(context,
-                                                        MaterialPageRoute(builder: (context) => const ImageUploadWater()));
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          });
+                                      accountNumber = documentSnapshot['account number'];
+                                      locationGiven = documentSnapshot['address'];
+
+                                      Navigator.push(context,
+                                          MaterialPageRoute(builder: (context) => const MapScreen()
+                                            //MapPage()
+                                          ));
                                     },
-                                    labelText: 'W-Meter',
+                                    labelText: 'Map',
                                     fSize: 16,
-                                    faIcon: const FaIcon(Icons.camera_alt,),
-                                    fgColor: Colors.black38,
+                                    faIcon: const FaIcon(Icons.map,),
+                                    fgColor: Colors.green,
                                     btSize: const Size(100, 38),
                                   ),
-                                  BasicIconButtonGrey(
-                                    onPress: () async {
-                                      eMeterNumber = documentSnapshot['meter number'];
-                                      imgFolder = documentSnapshot['cell number'];
-                                      showDialog(
-                                          barrierDismissible: false,
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: const Text("Upload Electric Meter Image"),
-                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () async {
-                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                                    Navigator.push(context,
-                                                        MaterialPageRoute(builder: (context) => ImageUploadMeter()));
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          });
-                                    },
-                                    labelText: 'E-Meter',
-                                    fSize: 16,
-                                    faIcon: const FaIcon(Icons.camera_alt,),
-                                    fgColor: Colors.black38,
-                                    btSize: const Size(100, 38),
-                                  ),
-                                  const SizedBox(width: 6,),
-                                  ///No need for a delete button but this is what a delete would look like
-                                  // GestureDetector(
-                                  //   onTap: () {
-                                  //     showDialog(
-                                  //         barrierDismissible: false,
-                                  //         context: context,
-                                  //         builder: (context) {
-                                  //           return AlertDialog(
-                                  //             title: const Text(
-                                  //                 "Deleting Property Information"),
-                                  //             content: const Text(
-                                  //                 "Deleting this property will remove it entirely! Are you sure?"),
-                                  //             actions: [
-                                  //               IconButton(
-                                  //                 onPressed: () {
-                                  //                   Navigator.pop(context);
-                                  //                 },
-                                  //                 icon: const Icon(
-                                  //                   Icons.cancel,
-                                  //                   color: Colors.red,
-                                  //                 ),
-                                  //               ),
-                                  //               IconButton(
-                                  //                 onPressed: () async {
-                                  //                   ScaffoldMessenger.of(
-                                  //                       this.context)
-                                  //                       .showSnackBar(
-                                  //                     const SnackBar(
-                                  //                       content: Text(
-                                  //                           'Property was deleted!'),
-                                  //                     ),
-                                  //                   );
-                                  //                   _delete(documentSnapshot.id);
-                                  //                   Navigator.pop(context);
-                                  //                 },
-                                  //                 icon: const Icon(
-                                  //                   Icons.done,
-                                  //                   color: Colors.green,
-                                  //                 ),
-                                  //               ),
-                                  //             ],
-                                  //           );
-                                  //         });
-                                  //  },
-                                  //   child: Row(
-                                  //     children: [
-                                  //       Icon(
-                                  //         Icons.delete,
-                                  //         color: Colors.red[700],
-                                  //       ),
-                                  //     ],
-                                  //   ),
-                                  // ),
+                                  const SizedBox(width: 5,),
                                 ],
                               ),
                             ],
                           ),
+                          // Column(
+                          //   children: [
+                          //     Row(
+                          //       mainAxisAlignment: MainAxisAlignment.center,
+                          //       crossAxisAlignment: CrossAxisAlignment.center,
+                          //       children: [
+                          //         BasicIconButtonGrey(
+                          //           onPress: () async {
+                          //             wMeterNumber = documentSnapshot['water meter number'];
+                          //             imgFolder = documentSnapshot['cell number'];
+                          //             showDialog(
+                          //                 barrierDismissible: false,
+                          //                 context: context,
+                          //                 builder: (context) {
+                          //                   return AlertDialog(
+                          //                     title: const Text("Upload Water Meter"),
+                          //                     content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                          //                     actions: [
+                          //                       IconButton(
+                          //                         onPressed: () {
+                          //                           Navigator.pop(context);
+                          //                         },
+                          //                         icon: const Icon(
+                          //                           Icons.cancel,
+                          //                           color: Colors.red,
+                          //                         ),
+                          //                       ),
+                          //                       IconButton(
+                          //                         onPressed: () async {
+                          //                           Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                          //                           Navigator.push(context,
+                          //                               MaterialPageRoute(builder: (context) => const ImageUploadWater()));
+                          //                         },
+                          //                         icon: const Icon(
+                          //                           Icons.done,
+                          //                           color: Colors.green,
+                          //                         ),
+                          //                       ),
+                          //                     ],
+                          //                   );
+                          //                 });
+                          //           },
+                          //           labelText: 'W-Meter',
+                          //           fSize: 16,
+                          //           faIcon: const FaIcon(Icons.camera_alt,),
+                          //           fgColor: Colors.black38,
+                          //           btSize: const Size(100, 38),
+                          //         ),
+                          //         BasicIconButtonGrey(
+                          //           onPress: () async {
+                          //             eMeterNumber = documentSnapshot['meter number'];
+                          //             imgFolder = documentSnapshot['cell number'];
+                          //             showDialog(
+                          //                 barrierDismissible: false,
+                          //                 context: context,
+                          //                 builder: (context) {
+                          //                   return AlertDialog(
+                          //                     title: const Text("Upload Electricity Meter"),
+                          //                     content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                          //                     actions: [
+                          //                       IconButton(
+                          //                         onPressed: () {
+                          //                           Navigator.pop(context);
+                          //                         },
+                          //                         icon: const Icon(
+                          //                           Icons.cancel,
+                          //                           color: Colors.red,
+                          //                         ),
+                          //                       ),
+                          //                       IconButton(
+                          //                         onPressed: () async {
+                          //                           Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                          //                           Navigator.push(context,
+                          //                               MaterialPageRoute(builder: (context) => ImageUploadMeter()));
+                          //                         },
+                          //                         icon: const Icon(
+                          //                           Icons.done,
+                          //                           color: Colors.green,
+                          //                         ),
+                          //                       ),
+                          //                     ],
+                          //                   );
+                          //                 });
+                          //           },
+                          //           labelText: 'E-Meter',
+                          //           fSize: 16,
+                          //           faIcon: const FaIcon(Icons.camera_alt,),
+                          //           fgColor: Colors.black38,
+                          //           btSize: const Size(100, 38),
+                          //         ),
+                          //         const SizedBox(width: 6,),
+                          //         ///No need for a delete button but this is what a delete would look like
+                          //         // GestureDetector(
+                          //         //   onTap: () {
+                          //         //     showDialog(
+                          //         //         barrierDismissible: false,
+                          //         //         context: context,
+                          //         //         builder: (context) {
+                          //         //           return AlertDialog(
+                          //         //             title: const Text(
+                          //         //                 "Deleting Property Information"),
+                          //         //             content: const Text(
+                          //         //                 "Deleting this property will remove it entirely! Are you sure?"),
+                          //         //             actions: [
+                          //         //               IconButton(
+                          //         //                 onPressed: () {
+                          //         //                   Navigator.pop(context);
+                          //         //                 },
+                          //         //                 icon: const Icon(
+                          //         //                   Icons.cancel,
+                          //         //                   color: Colors.red,
+                          //         //                 ),
+                          //         //               ),
+                          //         //               IconButton(
+                          //         //                 onPressed: () async {
+                          //         //                   ScaffoldMessenger.of(
+                          //         //                       this.context)
+                          //         //                       .showSnackBar(
+                          //         //                     const SnackBar(
+                          //         //                       content: Text(
+                          //         //                           'Property was deleted!'),
+                          //         //                     ),
+                          //         //                   );
+                          //         //                   _delete(documentSnapshot.id);
+                          //         //                   Navigator.pop(context);
+                          //         //                 },
+                          //         //                 icon: const Icon(
+                          //         //                   Icons.done,
+                          //         //                   color: Colors.green,
+                          //         //                 ),
+                          //         //               ),
+                          //         //             ],
+                          //         //           );
+                          //         //         });
+                          //         //  },
+                          //         //   child: Row(
+                          //         //     children: [
+                          //         //       Icon(
+                          //         //         Icons.delete,
+                          //         //         color: Colors.red[700],
+                          //         //       ),
+                          //         //     ],
+                          //         //   ),
+                          //         // ),
+                          //       ],
+                          //     ),
+                          //   ],
+                          // ),
 
                         ],
                       ),

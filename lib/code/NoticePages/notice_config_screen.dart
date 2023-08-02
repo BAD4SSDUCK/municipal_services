@@ -47,6 +47,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
   List<String> usersNumbers =[];
   List<String> usersTokens =[];
+  List<String> usersRetrieve =[];
 
   ///Methods and implementation for push notifications with firebase and specific device token saving
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -552,7 +553,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                       }
 
                                     } else {
-                                      Fluttertoast.showToast(msg: 'Please Fill Header and Message of the notification!', gravity: ToastGravity.CENTER);
+                                      Fluttertoast.showToast(msg: 'Please fill Header and Message of the Notification!', gravity: ToastGravity.CENTER);
                                     }
                                   }
 
@@ -930,8 +931,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
               ],
             ),
-
-      ]
+          ]
         ),
       ),
     );
