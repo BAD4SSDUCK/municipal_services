@@ -438,6 +438,350 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
         });
   }
 
+  Future<void> _updateE([DocumentSnapshot? documentSnapshot]) async {
+    if (documentSnapshot != null) {
+      _accountNumberController.text = documentSnapshot['account number'];
+      _addressController.text = documentSnapshot['address'];
+      _areaCodeController.text = documentSnapshot['area code'].toString();
+      _meterNumberController.text = documentSnapshot['meter number'];
+      _meterReadingController.text = documentSnapshot['meter reading'];
+      _waterMeterController.text = documentSnapshot['water meter number'];
+      _waterMeterReadingController.text = documentSnapshot['water meter reading'];
+      _cellNumberController.text = documentSnapshot['cell number'];
+      _firstNameController.text = documentSnapshot['first name'];
+      _lastNameController.text = documentSnapshot['last name'];
+      _idNumberController.text = documentSnapshot['id number'];
+      userID = documentSnapshot['user id'];
+    }
+    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
+    await showModalBottomSheet(
+        isScrollControlled: true,
+        context: context,
+        builder: (BuildContext ctx) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: 20,
+                  left: 20,
+                  right: 20,
+                  bottom: MediaQuery
+                      .of(ctx)
+                      .viewInsets
+                      .bottom + 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _accountNumberController,
+                      decoration: const InputDecoration(labelText: 'Account Number'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _addressController,
+                      decoration: const InputDecoration(labelText: 'Street Address'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      keyboardType:
+                      const TextInputType.numberWithOptions(),
+                      controller: _areaCodeController,
+                      decoration: const InputDecoration(labelText: 'Area Code',),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _meterNumberController,
+                      decoration: const InputDecoration(labelText: 'Electricity Meter Number'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
+                      controller: _meterReadingController,
+                      decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _waterMeterController,
+                      decoration: const InputDecoration(labelText: 'Water Meter Number'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _waterMeterReadingController,
+                      decoration: const InputDecoration(labelText: 'Water Meter Reading'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _cellNumberController,
+                      decoration: const InputDecoration(labelText: 'Phone Number'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _firstNameController,
+                      decoration: const InputDecoration(labelText: 'First Name'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _lastNameController,
+                      decoration: const InputDecoration(labelText: 'Last Name'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _idNumberController,
+                      decoration: const InputDecoration(labelText: 'ID Number'),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  ElevatedButton(
+                    child: const Text('Update'),
+                    onPressed: () async {
+                      final String accountNumber = _accountNumberController.text;
+                      final String address = _addressController.text;
+                      final int areaCode = int.parse(_areaCodeController.text);
+                      final String meterNumber = _meterNumberController.text;
+                      final String meterReading = _meterReadingController.text;
+                      final String waterMeterNumber = _waterMeterController.text;
+                      final String waterMeterReading = _waterMeterReadingController.text;
+                      final String cellNumber = _cellNumberController.text;
+                      final String firstName = _firstNameController.text;
+                      final String lastName = _lastNameController.text;
+                      final String idNumber = _idNumberController.text;
+
+                      if (accountNumber != null) {
+                        await _propList
+                            .doc(documentSnapshot!.id)
+                            .update({
+                          "account number": accountNumber,
+                          "address": address,
+                          "area code": areaCode,
+                          "meter number": meterNumber,
+                          "meter reading": meterReading,
+                          "water meter number": waterMeterNumber,
+                          "water meter reading": waterMeterReading,
+                          "cell number": cellNumber,
+                          "first name": firstName,
+                          "last name": lastName,
+                          "id number": idNumber,
+                          "user id" : userID,
+                        });
+
+                        _accountNumberController.text = '';
+                        _addressController.text = '';
+                        _areaCodeController.text = '';
+                        _meterNumberController.text = '';
+                        _meterReadingController.text = '';
+                        _waterMeterController.text = '';
+                        _waterMeterReadingController.text = '';
+                        _cellNumberController.text = '';
+                        _firstNameController.text = '';
+                        _lastNameController.text = '';
+                        _idNumberController.text = '';
+
+                        if(context.mounted)Navigator.of(context).pop();
+                      }
+                    },
+                  )
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
+  Future<void> _updateW([DocumentSnapshot? documentSnapshot]) async {
+    if (documentSnapshot != null) {
+      _accountNumberController.text = documentSnapshot['account number'];
+      _addressController.text = documentSnapshot['address'];
+      _areaCodeController.text = documentSnapshot['area code'].toString();
+      _meterNumberController.text = documentSnapshot['meter number'];
+      _meterReadingController.text = documentSnapshot['meter reading'];
+      _waterMeterController.text = documentSnapshot['water meter number'];
+      _waterMeterReadingController.text = documentSnapshot['water meter reading'];
+      _cellNumberController.text = documentSnapshot['cell number'];
+      _firstNameController.text = documentSnapshot['first name'];
+      _lastNameController.text = documentSnapshot['last name'];
+      _idNumberController.text = documentSnapshot['id number'];
+      userID = documentSnapshot['user id'];
+    }
+    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
+    await showModalBottomSheet(
+        isScrollControlled: true,
+        context: context,
+        builder: (BuildContext ctx) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: 20,
+                  left: 20,
+                  right: 20,
+                  bottom: MediaQuery
+                      .of(ctx)
+                      .viewInsets
+                      .bottom + 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _accountNumberController,
+                      decoration: const InputDecoration(labelText: 'Account Number'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _addressController,
+                      decoration: const InputDecoration(labelText: 'Street Address'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      keyboardType:
+                      const TextInputType.numberWithOptions(),
+                      controller: _areaCodeController,
+                      decoration: const InputDecoration(labelText: 'Area Code',),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _meterNumberController,
+                      decoration: const InputDecoration(labelText: 'Electricity Meter Number'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _meterReadingController,
+                      decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _waterMeterController,
+                      decoration: const InputDecoration(labelText: 'Water Meter Number'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
+                      controller: _waterMeterReadingController,
+                      decoration: const InputDecoration(labelText: 'Water Meter Reading'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _cellNumberController,
+                      decoration: const InputDecoration(labelText: 'Phone Number'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _firstNameController,
+                      decoration: const InputDecoration(labelText: 'First Name'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _lastNameController,
+                      decoration: const InputDecoration(labelText: 'Last Name'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _idNumberController,
+                      decoration: const InputDecoration(labelText: 'ID Number'),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  ElevatedButton(
+                    child: const Text('Update'),
+                    onPressed: () async {
+                      final String accountNumber = _accountNumberController.text;
+                      final String address = _addressController.text;
+                      final int areaCode = int.parse(_areaCodeController.text);
+                      final String meterNumber = _meterNumberController.text;
+                      final String meterReading = _meterReadingController.text;
+                      final String waterMeterNumber = _waterMeterController.text;
+                      final String waterMeterReading = _waterMeterReadingController.text;
+                      final String cellNumber = _cellNumberController.text;
+                      final String firstName = _firstNameController.text;
+                      final String lastName = _lastNameController.text;
+                      final String idNumber = _idNumberController.text;
+
+                      if (accountNumber != null) {
+                        await _propList
+                            .doc(documentSnapshot!.id)
+                            .update({
+                          "account number": accountNumber,
+                          "address": address,
+                          "area code": areaCode,
+                          "meter number": meterNumber,
+                          "meter reading": meterReading,
+                          "water meter number": waterMeterNumber,
+                          "water meter reading": waterMeterReading,
+                          "cell number": cellNumber,
+                          "first name": firstName,
+                          "last name": lastName,
+                          "id number": idNumber,
+                          "user id" : userID,
+                        });
+
+                        _accountNumberController.text = '';
+                        _addressController.text = '';
+                        _areaCodeController.text = '';
+                        _meterNumberController.text = '';
+                        _meterReadingController.text = '';
+                        _waterMeterController.text = '';
+                        _waterMeterReadingController.text = '';
+                        _cellNumberController.text = '';
+                        _firstNameController.text = '';
+                        _lastNameController.text = '';
+                        _idNumberController.text = '';
+
+                        if(context.mounted)Navigator.of(context).pop();
+                      }
+                    },
+                  )
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
   Future<void> _delete(String users) async {
     await _propList.doc(users).delete();
     Fluttertoast.showToast(msg: "You have successfully deleted an account!");
@@ -451,7 +795,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
         title: const Text('Account Management'),
         backgroundColor: Colors.green,
       ),
-      body: StreamBuilder(
+      body: StreamBuilder<QuerySnapshot>(
         stream: _propList.snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
           if (streamSnapshot.hasData) {
@@ -562,7 +906,49 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                 children: [
                                   BasicIconButtonGrey(
                                     onPress: () async {
-                                      _update(documentSnapshot);
+                                      eMeterNumber = documentSnapshot['meter number'];
+                                      imgFolder = documentSnapshot['cell number'];
+                                      showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text("Upload Electricity Meter"),
+                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                              actions: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.cancel,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () async {
+                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                                                    Navigator.push(context,
+                                                        MaterialPageRoute(builder: (context) => ImageUploadMeter()));
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.done,
+                                                    color: Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          });
+                                    },
+                                    labelText: 'Electricity',
+                                    fSize: 16,
+                                    faIcon: const FaIcon(Icons.camera_alt,),
+                                    fgColor: Colors.black38,
+                                    btSize: const Size(100, 38),
+                                  ),
+                                  BasicIconButtonGrey(
+                                    onPress: () async {
+                                      _updateE(documentSnapshot);
                                     },
                                     labelText: 'Capture',
                                     fSize: 16,
@@ -613,7 +999,6 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                 );
                               });
                             },
-
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 5),
                               height: 180,
@@ -663,60 +1048,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                               ),
                             ),
                           ),
-                          Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  BasicIconButtonGrey(
-                                    onPress: () async {
-                                      eMeterNumber = documentSnapshot['meter number'];
-                                      imgFolder = documentSnapshot['cell number'];
-                                      showDialog(
-                                          barrierDismissible: false,
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: const Text("Upload Electricity Meter"),
-                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () async {
-                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                                    Navigator.push(context,
-                                                        MaterialPageRoute(builder: (context) => ImageUploadMeter()));
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          });
-                                    },
-                                    labelText: 'Electricity Meter',
-                                    fSize: 16,
-                                    faIcon: const FaIcon(Icons.camera_alt,),
-                                    fgColor: Colors.black38,
-                                    btSize: const Size(100, 38),
-                                  ),
-                                ],
-                              )
-                            ],
-                          ),
                           const SizedBox(height: 10,),
-
                           const Center(
                             child: Text(
                               'Water Meter Reading Photo',
@@ -732,7 +1064,49 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                 children: [
                                   BasicIconButtonGrey(
                                     onPress: () async {
-                                      _update(documentSnapshot);
+                                      wMeterNumber = documentSnapshot['water meter number'];
+                                      imgFolder = documentSnapshot['cell number'];
+                                      showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text("Upload Water Meter"),
+                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                              actions: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.cancel,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () async {
+                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                                                    Navigator.push(context,
+                                                        MaterialPageRoute(builder: (context) => const ImageUploadWater()));
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.done,
+                                                    color: Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          });
+                                    },
+                                    labelText: 'Water',
+                                    fSize: 16,
+                                    faIcon: const FaIcon(Icons.camera_alt,),
+                                    fgColor: Colors.black38,
+                                    btSize: const Size(100, 38),
+                                  ),
+                                  BasicIconButtonGrey(
+                                    onPress: () async {
+                                      _updateW(documentSnapshot);
                                     },
                                     labelText: 'Capture',
                                     fSize: 16,
@@ -782,7 +1156,6 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                 );
                               });
                             },
-
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 5),
                               height: 180,
@@ -831,58 +1204,6 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                 ),
                               ),
                             ),
-                          ),
-                          Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  BasicIconButtonGrey(
-                                    onPress: () async {
-                                      wMeterNumber = documentSnapshot['water meter number'];
-                                      imgFolder = documentSnapshot['cell number'];
-                                      showDialog(
-                                          barrierDismissible: false,
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: const Text("Upload Water Meter"),
-                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () async {
-                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                                    Navigator.push(context,
-                                                        MaterialPageRoute(builder: (context) => const ImageUploadWater()));
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          });
-                                    },
-                                    labelText: 'Water Meter',
-                                    fSize: 16,
-                                    faIcon: const FaIcon(Icons.camera_alt,),
-                                    fgColor: Colors.black38,
-                                    btSize: const Size(100, 38),
-                                  ),
-                                ],
-                              )
-                            ],
                           ),
                           const SizedBox(height: 10,),
                           Text(
@@ -958,154 +1279,59 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                               ),
                             ],
                           ),
-                          // Column(
-                          //   children: [
-                          //     Row(
-                          //       mainAxisAlignment: MainAxisAlignment.center,
-                          //       crossAxisAlignment: CrossAxisAlignment.center,
-                          //       children: [
-                          //         BasicIconButtonGrey(
-                          //           onPress: () async {
-                          //             wMeterNumber = documentSnapshot['water meter number'];
-                          //             imgFolder = documentSnapshot['cell number'];
-                          //             showDialog(
-                          //                 barrierDismissible: false,
-                          //                 context: context,
-                          //                 builder: (context) {
-                          //                   return AlertDialog(
-                          //                     title: const Text("Upload Water Meter"),
-                          //                     content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                          //                     actions: [
-                          //                       IconButton(
-                          //                         onPressed: () {
-                          //                           Navigator.pop(context);
-                          //                         },
-                          //                         icon: const Icon(
-                          //                           Icons.cancel,
-                          //                           color: Colors.red,
-                          //                         ),
-                          //                       ),
-                          //                       IconButton(
-                          //                         onPressed: () async {
-                          //                           Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                          //                           Navigator.push(context,
-                          //                               MaterialPageRoute(builder: (context) => const ImageUploadWater()));
-                          //                         },
-                          //                         icon: const Icon(
-                          //                           Icons.done,
-                          //                           color: Colors.green,
-                          //                         ),
-                          //                       ),
-                          //                     ],
-                          //                   );
-                          //                 });
-                          //           },
-                          //           labelText: 'W-Meter',
-                          //           fSize: 16,
-                          //           faIcon: const FaIcon(Icons.camera_alt,),
-                          //           fgColor: Colors.black38,
-                          //           btSize: const Size(100, 38),
-                          //         ),
-                          //         BasicIconButtonGrey(
-                          //           onPress: () async {
-                          //             eMeterNumber = documentSnapshot['meter number'];
-                          //             imgFolder = documentSnapshot['cell number'];
-                          //             showDialog(
-                          //                 barrierDismissible: false,
-                          //                 context: context,
-                          //                 builder: (context) {
-                          //                   return AlertDialog(
-                          //                     title: const Text("Upload Electricity Meter"),
-                          //                     content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                          //                     actions: [
-                          //                       IconButton(
-                          //                         onPressed: () {
-                          //                           Navigator.pop(context);
-                          //                         },
-                          //                         icon: const Icon(
-                          //                           Icons.cancel,
-                          //                           color: Colors.red,
-                          //                         ),
-                          //                       ),
-                          //                       IconButton(
-                          //                         onPressed: () async {
-                          //                           Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                          //                           Navigator.push(context,
-                          //                               MaterialPageRoute(builder: (context) => ImageUploadMeter()));
-                          //                         },
-                          //                         icon: const Icon(
-                          //                           Icons.done,
-                          //                           color: Colors.green,
-                          //                         ),
-                          //                       ),
-                          //                     ],
-                          //                   );
-                          //                 });
-                          //           },
-                          //           labelText: 'E-Meter',
-                          //           fSize: 16,
-                          //           faIcon: const FaIcon(Icons.camera_alt,),
-                          //           fgColor: Colors.black38,
-                          //           btSize: const Size(100, 38),
-                          //         ),
-                          //         const SizedBox(width: 6,),
-                          //         ///No need for a delete button but this is what a delete would look like
-                          //         // GestureDetector(
-                          //         //   onTap: () {
-                          //         //     showDialog(
-                          //         //         barrierDismissible: false,
-                          //         //         context: context,
-                          //         //         builder: (context) {
-                          //         //           return AlertDialog(
-                          //         //             title: const Text(
-                          //         //                 "Deleting Property Information"),
-                          //         //             content: const Text(
-                          //         //                 "Deleting this property will remove it entirely! Are you sure?"),
-                          //         //             actions: [
-                          //         //               IconButton(
-                          //         //                 onPressed: () {
-                          //         //                   Navigator.pop(context);
-                          //         //                 },
-                          //         //                 icon: const Icon(
-                          //         //                   Icons.cancel,
-                          //         //                   color: Colors.red,
-                          //         //                 ),
-                          //         //               ),
-                          //         //               IconButton(
-                          //         //                 onPressed: () async {
-                          //         //                   ScaffoldMessenger.of(
-                          //         //                       this.context)
-                          //         //                       .showSnackBar(
-                          //         //                     const SnackBar(
-                          //         //                       content: Text(
-                          //         //                           'Property was deleted!'),
-                          //         //                     ),
-                          //         //                   );
-                          //         //                   _delete(documentSnapshot.id);
-                          //         //                   Navigator.pop(context);
-                          //         //                 },
-                          //         //                 icon: const Icon(
-                          //         //                   Icons.done,
-                          //         //                   color: Colors.green,
-                          //         //                 ),
-                          //         //               ),
-                          //         //             ],
-                          //         //           );
-                          //         //         });
-                          //         //  },
-                          //         //   child: Row(
-                          //         //     children: [
-                          //         //       Icon(
-                          //         //         Icons.delete,
-                          //         //         color: Colors.red[700],
-                          //         //       ),
-                          //         //     ],
-                          //         //   ),
-                          //         // ),
-                          //       ],
-                          //     ),
-                          //   ],
-                          // ),
+                                  ///No need for a delete button but this is what a delete would look like
+                                  // GestureDetector(
+                                  //   onTap: () {
+                                  //     showDialog(
+                                  //         barrierDismissible: false,
+                                  //         context: context,
+                                  //         builder: (context) {
+                                  //           return AlertDialog(
+                                  //             title: const Text(
+                                  //                 "Deleting Property Information"),
+                                  //             content: const Text(
+                                  //                 "Deleting this property will remove it entirely! Are you sure?"),
+                                  //             actions: [
+                                  //               IconButton(
+                                  //                 onPressed: () {
+                                  //                   Navigator.pop(context);
+                                  //                 },
+                                  //                 icon: const Icon(
+                                  //                   Icons.cancel,
+                                  //                   color: Colors.red,
+                                  //                 ),
+                                  //               ),
+                                  //               IconButton(
+                                  //                 onPressed: () async {
+                                  //                   ScaffoldMessenger.of(
+                                  //                       this.context)
+                                  //                       .showSnackBar(
+                                  //                     const SnackBar(
+                                  //                       content: Text(
+                                  //                           'Property was deleted!'),
+                                  //                     ),
+                                  //                   );
+                                  //                   _delete(documentSnapshot.id);
+                                  //                   Navigator.pop(context);
+                                  //                 },
+                                  //                 icon: const Icon(
+                                  //                   Icons.done,
+                                  //                   color: Colors.green,
+                                  //                 ),
+                                  //               ),
+                                  //             ],
+                                  //           );
+                                  //         });
+                                  //  },
+                                  //   child: Row(
+                                  //     children: [
+                                  //       Icon(
+                                  //         Icons.delete,
+                                  //         color: Colors.red[700],
+                                  //       ),
+                                  //     ],
+                                  //   ),
+                                  // ),
 
                         ],
                       ),
