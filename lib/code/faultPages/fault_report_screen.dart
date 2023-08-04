@@ -13,7 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:municipal_track/code/ImageUploading/image_upload_prop_fault.dart';
+import 'package:municipal_track/code/ImageUploading/image_upload_fault.dart';
 import 'package:municipal_track/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_track/code/faultPages/fault_viewing_screen.dart';
 import 'package:path/path.dart' as pathing;
