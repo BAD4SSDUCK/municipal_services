@@ -565,7 +565,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                     'Property Bill: $billMessage',
                                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                   ),
-                                  const SizedBox(height: 20,),
+                                  const SizedBox(height: 10,),
                                   ///Report adding button
                                   Center(
                                       child: BasicIconButtonGreen(
@@ -760,6 +760,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                   style: const TextStyle(
                                       fontSize: 16, fontWeight: FontWeight.w400),
                                 ),
+                                const SizedBox(height: 5,),
                                 Column(
                                   children: [
                                     if(documentSnapshot['faultDescription'] != "")...[
@@ -768,7 +769,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                         child: InkWell(
                                           child: Container(
                                             margin: const EdgeInsets.only(bottom: 5),
-                                            height: 180,
+                                            // height: 180,
                                             child: Center(
                                               child: Card(
                                                 color: Colors.grey,
@@ -792,7 +793,8 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                                       }
                                                       if (snapshot.connectionState ==
                                                           ConnectionState.done) {
-                                                        return Container(
+                                                        return SizedBox(
+                                                          height: 180,
                                                           child: snapshot.data,
                                                         );
                                                       }
@@ -814,7 +816,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                     ],
                                   ],
                                 ),
-                                const SizedBox(height: 10,),
+                                const SizedBox(height: 0,),
                                 Center(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,

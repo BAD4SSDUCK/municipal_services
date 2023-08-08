@@ -310,7 +310,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                             InkWell(
                               child: Container(
                                 margin: const EdgeInsets.only(bottom: 5),
-                                height: 180,
+                                // height: 180,
                                 child: Center(
                                   child: Card(
                                     color: Colors.grey,
@@ -350,7 +350,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 20,),
+                            const SizedBox(height: 0,),
                             Column(
                               children: [
                                 Row(
