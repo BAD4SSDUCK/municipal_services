@@ -38,7 +38,8 @@ class _ConfigPageState extends State<ConfigPage> {
 
   @override
   void initState() {
-    // getDBDept(_deptInfo);
+    countResult();
+    countDeptResult();
     super.initState();
   }
 
@@ -51,22 +52,35 @@ class _ConfigPageState extends State<ConfigPage> {
   final _userEmailController = TextEditingController();
   final _cellNumberController = TextEditingController();
   final _passwordController = TextEditingController();
-  late final String _deptListController = DropdownMenuItem as String;
 
   TextEditingController controllerDept = TextEditingController();
-  List<String> deptName =[""];
   bool displayDeptList = false;
 
+  List<String> usersEmails =[];
+  List<String> deptName =["Select Department..."];
+  String dropdownValue = 'Select Department...';
+  int numUsers = 0;
+  int numDept = 0;
 
-  // Stream<List<dynamic>> returnDept() {
-  //   return _deptRoles
-  //       .snapshots()
-  //       .map((querySnap) => querySnap.docs.map((doc) => doc.id.('deptName')).toList());
-  // }
+  void countResult() async{
+    var query = _usersList.where("email");
+    var snapshot = await query.get();
+    var count = snapshot.size;
+    numUsers = snapshot.size;
 
-  final _formKey = GlobalKey<FormState>();
-  late List<String> deptSelection = [];
-  String _currentSelectedDept = "Select Department...";
+    print('Records are ::: $count');
+    print('num emails are ::: $numUsers');
+  }
+
+  void countDeptResult() async{
+    var query = _deptInfo.where("deptName");
+    var snapshot = await query.get();
+    var count = snapshot.size;
+    numDept = snapshot.size;
+
+    print('Records are ::: $count');
+    print('num depts are ::: $numDept');
+  }
 
   final CollectionReference _usersList =
   FirebaseFirestore.instance.collection('users');
@@ -218,83 +232,32 @@ class _ConfigPageState extends State<ConfigPage> {
 
                   ///Need to work on drop down menu with information
                   // Visibility(
-                  //   visible: true,
-                  //   child: SizedBox(
-                  //     width: 180,
-                  //     height: 100,
-                  //     child: Text(
-                  //         DeptWidget().deptRepository.deptDBRetrieveRef.toString()),
-                  //   ),
-                  // ),
-                  ///Need to work on drop down menu with information
-                  // Visibility(
-                  //   visible: visShow,
-                  //     child: SizedBox(
-                  //       width: 200,//double.infinity,//10
-                  //       height: 180,//double.infinity,//10
-                  //       child: Column(
-                  //         crossAxisAlignment: CrossAxisAlignment.center,
-                  //         children: [
-                  //           const Text('User Department'),
-                  //           // const SizedBox(height: 200,),
-                  //           Container(
-                  //             width: 300,
-                  //             height: 50,
-                  //             decoration: BoxDecoration(
-                  //               border: Border.all(color: Colors.grey),
-                  //               color: Colors.white,
-                  //               borderRadius: BorderRadius.circular(6),
-                  //             ),
-                  //             child: TextField(
-                  //               controller: controllerDept,
-                  //               decoration: InputDecoration(
-                  //                 border: InputBorder.none,
-                  //                 suffixIcon: GestureDetector(
-                  //                     onTap: (){
-                  //                       displayDeptList = !displayDeptList;
-                  //                     },
-                  //                     child: Icon(Icons.arrow_downward),
-                  //                 ),
+                  //   visible: visHide,
+                  //     child: Column(
+                  //       mainAxisSize: MainAxisSize.min,
+                  //       crossAxisAlignment: CrossAxisAlignment.start,
+                  //       children: [
+                  //         DropdownButtonFormField <String>(
+                  //           value: dropdownValue,
+                  //           items: deptName
+                  //               .map<DropdownMenuItem<String>>((String value) {
+                  //             return DropdownMenuItem<String>(
+                  //               value: value,
+                  //               child: Text(
+                  //                 value,
+                  //                 style: const TextStyle(fontSize: 16),
                   //               ),
-                  //             ),
-                  //           ),
-                  //           displayDeptList?
-                  //           Container(
-                  //             height: 200,
-                  //             width: 130,
-                  //             decoration: BoxDecoration(
-                  //               borderRadius: BorderRadius.circular(9),
-                  //               color: Colors.white,
-                  //               boxShadow: [
-                  //                 BoxShadow(
-                  //                   color: Colors.grey.withOpacity(0.3),
-                  //                   spreadRadius: 1,
-                  //                   blurRadius: 3,
-                  //                   offset: Offset(0,1),
-                  //                 )
-                  //               ]),
-                  //             child: ListView.builder(
-                  //               itemCount: deptName.length,
-                  //                 itemBuilder: ((context,index){
-                  //               return GestureDetector(
-                  //                 onTap: (){
-                  //                   setState(() {
-                  //                     deptSelection.add(DeptWidget().deptRepository.deptDBRetrieveRef.get().toString());
-                  //                     controllerDept.text = (index+1).toString();
-                  //                     _deptNameController.text = deptSelection[index].toString();
-                  //                   });
-                  //                 },
-                  //                 child: ListTile(
-                  //                   title: Text(deptName[index]),
-                  //                 ),
-                  //               );
-                  //             })),
-                  //           ):const SizedBox(),
-                  //         ],
-                  //       ),
-                  //     )
+                  //             );
+                  //           }).toList(),
+                  //           onChanged: (String? newValue) {
+                  //             setState(() {
+                  //               dropdownValue = newValue!;
+                  //             });
+                  //           },
+                  //         ),
+                  //       ],
+                  //     ),
                   // ),
-
 
                   Visibility(
                     visible: visShow,
@@ -1013,6 +976,13 @@ class _ConfigPageState extends State<ConfigPage> {
                     itemBuilder: (context, index) {
                       final DocumentSnapshot deptDocumentSnapshot =
                       streamSnapshot.data!.docs[index];
+
+                      if(deptName.length<numDept+1) {
+                        deptName.add(deptDocumentSnapshot['deptName']);
+                      }
+                      print(deptName);
+                      print(deptName.length);
+
                       if (streamSnapshot.data!.docs[index]['official'] == true) {
                         return Card(
                           margin: const EdgeInsets.all(10),
@@ -1313,6 +1283,13 @@ class _ConfigPageState extends State<ConfigPage> {
                     itemCount: streamSnapshot.data!.docs.length,
                     itemBuilder: (context, index) {
                       final DocumentSnapshot userDocumentSnapshot = streamSnapshot.data!.docs[index];
+
+                      if(userDocumentSnapshot['email'].contains('@') && usersEmails.length<numUsers) {
+                        usersEmails.add(userDocumentSnapshot['email']);
+                      }
+                      print(usersEmails);
+                      print(usersEmails.length);
+
                       if (streamSnapshot.data!.docs[index]['official'] == true) {
                         return Card(
                           margin: const EdgeInsets.all(10),
