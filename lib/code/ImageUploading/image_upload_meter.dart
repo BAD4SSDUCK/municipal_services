@@ -7,22 +7,31 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:intl/intl.dart';
 import 'package:path/path.dart';
 
-import '../DisplayPages/display_info.dart';
-
 class ImageUploadMeter extends StatefulWidget {
-  ImageUploadMeter({
-    Key? key,
+  const ImageUploadMeter({
+    Key? key, required this.userNumber, required this.meterNumber,
   }) : super(key: key);
+
+  final String userNumber;
+  final String meterNumber;
 
   @override
   _ImageUploadMeterState createState() => _ImageUploadMeterState();
 }
 
+DateTime now = DateTime.now();
+
 class _ImageUploadMeterState extends State<ImageUploadMeter> {
   firebase_storage.FirebaseStorage storage =
       firebase_storage.FirebaseStorage.instance;
+
+  String formattedDate = DateFormat.MMMM().format(now);
+
+  String dropdownValue = 'Select Month';
+  List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
 
   final GlobalKey<ScaffoldState> _key = GlobalKey();
   File? _photo;
@@ -66,12 +75,12 @@ class _ImageUploadMeterState extends State<ImageUploadMeter> {
     ///'files/$userID/$fileName' is used specifically for adding the user id to a table in order to split the users per account
     if (_photo == null) return;
     final fileName = basename(_photo!.path);
-    final destination = 'files/$imgFolder/electricity/'; // /$fileName  $meterNumber
+    final destination = 'files/meters/$formattedDate/${widget.userNumber}/electricity/'; // /$fileName  $meterNumber
 
     try {
       final ref = firebase_storage.FirebaseStorage.instance
           .ref(destination)
-          .child('$eMeterNumber/');   ///this is the jpg filename which needs to be named something on the db in order to display in the display screen
+          .child('${widget.meterNumber}.jpg/');   ///this is the jpg filename which needs to be named something on the db in order to display in the display screen
       await ref.putFile(_photo!);
       photoName = _photo!.toString();
       print(destination);

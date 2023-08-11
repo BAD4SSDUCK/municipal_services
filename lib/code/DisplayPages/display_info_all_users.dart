@@ -42,7 +42,7 @@ String accountNumberW = ' ';
 String locationGivenW = ' ';
 String wMeterNumber = ' ';
 
-String imgFolder = ' ';
+String propPhoneNum = ' ';
 
 bool visibilityState1 = true;
 bool visibilityState2 = false;
@@ -102,6 +102,9 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
   String formattedDate = DateFormat.MMMM().format(now);
 
+  String dropdownValue = 'Select Month';
+  List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
+
   List<Map<String, dynamic>> _allProps =[];
   // _propList.snapshots() as List<Map<String, dynamic>>;
   List<Map<String, dynamic>> _foundProps = [];
@@ -153,7 +156,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
                   eMeterNumber = documentSnapshot['meter number'];
                   wMeterNumber = documentSnapshot['water meter number'];
-                  imgFolder = documentSnapshot['cell number'];
+                  propPhoneNum = documentSnapshot['cell number'];
 
                   // _allProps.add(documentSnapshot['address'].toString() as Map<String,dynamic>);
 
@@ -252,7 +255,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                     BasicIconButtonGrey(
                                       onPress: () async {
                                         eMeterNumber = documentSnapshot['meter number'];
-                                        imgFolder = documentSnapshot['cell number'];
+                                        propPhoneNum = documentSnapshot['cell number'];
                                         showDialog(
                                             barrierDismissible: false,
                                             context: context,
@@ -274,7 +277,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                                     onPressed: () async {
                                                       Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
                                                       Navigator.push(context,
-                                                          MaterialPageRoute(builder: (context) => ImageUploadMeter()));
+                                                          MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: propPhoneNum, meterNumber: eMeterNumber,)));
                                                     },
                                                     icon: const Icon(
                                                       Icons.done,
@@ -311,7 +314,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                               ///Can be later changed to display the picture zoomed in if user taps on it.
                               onTap: () {
                                 eMeterNumber = documentSnapshot['meter number'];
-                                imgFolder = documentSnapshot['cell number'];
+                                propPhoneNum = documentSnapshot['cell number'];
                                 showDialog(
                                 barrierDismissible: false,
                                 context: context,
@@ -333,7 +336,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                         onPressed: () async {
                                           Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
                                           Navigator.push(context,
-                                              MaterialPageRoute(builder: (context) => ImageUploadMeter()));
+                                              MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: propPhoneNum, meterNumber: eMeterNumber,)));
                                         },
                                         icon: const Icon(
                                           Icons.done,
@@ -361,7 +364,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                     child: FutureBuilder(
                                         future: _getImage(
                                           ///Firebase image location must be changed to display image based on the meter number
-                                            context, 'files/$imgFolder/electricity/$eMeterNumber'),
+                                            context, 'files/meters/$formattedDate/$propPhoneNum/electricity/$eMeterNumber.jpg'),
                                         builder: (context, snapshot) {
                                           if (snapshot.hasError) {
                                             return const Padding(
@@ -412,7 +415,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                     BasicIconButtonGrey(
                                       onPress: () async {
                                         wMeterNumber = documentSnapshot['water meter number'];
-                                        imgFolder = documentSnapshot['cell number'];
+                                        propPhoneNum = documentSnapshot['cell number'];
                                         showDialog(
                                             barrierDismissible: false,
                                             context: context,
@@ -434,7 +437,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                                     onPressed: () async {
                                                       Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
                                                       Navigator.push(context,
-                                                          MaterialPageRoute(builder: (context) => const ImageUploadWater()));
+                                                          MaterialPageRoute(builder: (context) => ImageUploadWater(userNumber: propPhoneNum, meterNumber: wMeterNumber,)));
                                                     },
                                                     icon: const Icon(
                                                       Icons.done,
@@ -470,7 +473,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                               ///Can be later changed to display the picture zoomed in if user taps on it.
                               onTap: () {
                                 wMeterNumber = documentSnapshot['water meter number'];
-                                imgFolder = documentSnapshot['cell number'];
+                                propPhoneNum = documentSnapshot['cell number'];
                                 showDialog(
                                 barrierDismissible: false,
                                 context: context,
@@ -492,7 +495,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                         onPressed: () async {
                                           Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
                                           Navigator.push(context,
-                                              MaterialPageRoute(builder: (context) => const ImageUploadWater()));
+                                              MaterialPageRoute(builder: (context) => ImageUploadWater(userNumber: propPhoneNum, meterNumber: wMeterNumber,)));
                                         },
                                         icon: const Icon(
                                           Icons.done,
@@ -520,7 +523,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                     child: FutureBuilder(
                                         future: _getImageW(
                                           ///Firebase image location must be changed to display image based on the meter number
-                                            context, 'files/$imgFolder/water/$wMeterNumber'),//$meterNumber
+                                            context, 'files/meters/$formattedDate/$propPhoneNum/water/$wMeterNumber.jpg'),//$meterNumber
                                         builder: (context, snapshot) {
                                           if (snapshot.hasError) {
                                             return const Padding(
@@ -1538,6 +1541,64 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
     );
   }
+
+  void setMonthLimits(String currentMonth) {
+    String month1 = 'January';
+    String month2 = 'February';
+    String month3 = 'March';
+    String month4 = 'April';
+    String month5 = 'May';
+    String month6 = 'June';
+    String month7 = 'July';
+    String month8 = 'August';
+    String month9 = 'September';
+    String month10 = 'October';
+    String month11 = 'November';
+    String month12 = 'December';
+
+    if (currentMonth.contains(month1)) {
+      dropdownMonths = ['Select Month', month10,month11,month12,currentMonth,];
+    } else if (currentMonth.contains(month2)) {
+      dropdownMonths = ['Select Month', month11,month12,month1,currentMonth,];
+    } else if (currentMonth.contains(month3)) {
+      dropdownMonths = ['Select Month', month12,month1,month2,currentMonth,];
+    } else if (currentMonth.contains(month4)) {
+      dropdownMonths = ['Select Month', month1,month2,month3,currentMonth,];
+    } else if (currentMonth.contains(month5)) {
+      dropdownMonths = ['Select Month', month2,month3,month4,currentMonth,];
+    } else if (currentMonth.contains(month6)) {
+      dropdownMonths = ['Select Month', month3,month4,month5,currentMonth,];
+    } else if (currentMonth.contains(month7)) {
+      dropdownMonths = ['Select Month', month4,month5,month6,currentMonth,];
+    } else if (currentMonth.contains(month8)) {
+      dropdownMonths = ['Select Month', month5,month6,month7,currentMonth,];
+    } else if (currentMonth.contains(month9)) {
+      dropdownMonths = ['Select Month', month6,month7,month8,currentMonth,];
+    } else if (currentMonth.contains(month10)) {
+      dropdownMonths = ['Select Month', month7,month8,month9,currentMonth,];
+    } else if (currentMonth.contains(month11)) {
+      dropdownMonths = ['Select Month', month8,month9,month10,currentMonth,];
+    } else if (currentMonth.contains(month12)) {
+      dropdownMonths = ['Select Month', month9,month10,month11,currentMonth,];
+    } else {
+      dropdownMonths = [
+        'Select Month',
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
+      ];
+    }
+  }
+
   ///pdf view loader getting file name onPress/onTap that passes pdf filename to this class.
   void openPDF(BuildContext context, File file) => Navigator.of(context).push(
     MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),

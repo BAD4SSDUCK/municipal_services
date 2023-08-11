@@ -3,17 +3,17 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:municipal_track/code/ImageUploading/image_upload_fault.dart';
 import 'package:municipal_track/code/MapTools/map_screen.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'package:municipal_track/code/MapTools/map_screen_prop.dart';
-
 import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
 
 class FaultViewingScreen extends StatefulWidget {
@@ -40,6 +40,8 @@ final uid = user?.uid;
 final phone = user?.phoneNumber;
 String userID = uid as String;
 String userPhone = phone as String;
+
+DateTime now = DateTime.now();
 
 class _FaultViewingScreenState extends State<FaultViewingScreen> {
 
@@ -73,6 +75,11 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
   bool visStage2 = false;
   bool visStage3 = false;
   bool visStage4 = false;
+
+  String formattedDate = DateFormat.MMMM().format(now);
+
+  String dropdownValue = 'Select Month';
+  List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
 
   @override
   void initState() {
@@ -779,4 +786,62 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
       ),
     );
   }
+
+  void setMonthLimits(String currentMonth) {
+    String month1 = 'January';
+    String month2 = 'February';
+    String month3 = 'March';
+    String month4 = 'April';
+    String month5 = 'May';
+    String month6 = 'June';
+    String month7 = 'July';
+    String month8 = 'August';
+    String month9 = 'September';
+    String month10 = 'October';
+    String month11 = 'November';
+    String month12 = 'December';
+
+    if (currentMonth.contains(month1)) {
+      dropdownMonths = ['Select Month', month10,month11,month12,currentMonth,];
+    } else if (currentMonth.contains(month2)) {
+      dropdownMonths = ['Select Month', month11,month12,month1,currentMonth,];
+    } else if (currentMonth.contains(month3)) {
+      dropdownMonths = ['Select Month', month12,month1,month2,currentMonth,];
+    } else if (currentMonth.contains(month4)) {
+      dropdownMonths = ['Select Month', month1,month2,month3,currentMonth,];
+    } else if (currentMonth.contains(month5)) {
+      dropdownMonths = ['Select Month', month2,month3,month4,currentMonth,];
+    } else if (currentMonth.contains(month6)) {
+      dropdownMonths = ['Select Month', month3,month4,month5,currentMonth,];
+    } else if (currentMonth.contains(month7)) {
+      dropdownMonths = ['Select Month', month4,month5,month6,currentMonth,];
+    } else if (currentMonth.contains(month8)) {
+      dropdownMonths = ['Select Month', month5,month6,month7,currentMonth,];
+    } else if (currentMonth.contains(month9)) {
+      dropdownMonths = ['Select Month', month6,month7,month8,currentMonth,];
+    } else if (currentMonth.contains(month10)) {
+      dropdownMonths = ['Select Month', month7,month8,month9,currentMonth,];
+    } else if (currentMonth.contains(month11)) {
+      dropdownMonths = ['Select Month', month8,month9,month10,currentMonth,];
+    } else if (currentMonth.contains(month12)) {
+      dropdownMonths = ['Select Month', month9,month10,month11,currentMonth,];
+    } else {
+      dropdownMonths = [
+        'Select Month',
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
+      ];
+    }
+  }
+
 }

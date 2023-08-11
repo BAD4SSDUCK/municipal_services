@@ -37,6 +37,8 @@ final phone = user?.phoneNumber;
 String userID = uid as String;
 String userPhone = phone as String;
 
+DateTime now = DateTime.now();
+
 class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
   final _faultDescriptionController = TextEditingController();

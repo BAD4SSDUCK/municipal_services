@@ -7,25 +7,32 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:intl/intl.dart';
 import 'package:path/path.dart';
 
-import '../DisplayPages/display_info.dart';
-
 class ImageUploadWater extends StatefulWidget {
-
-  //final String meterNumber;
-
   const ImageUploadWater({
-    Key? key, //required this.meterNumber,
-
+    Key? key, required this.userNumber, required this.meterNumber,
   }) : super(key: key,);
+
+  final String userNumber;
+  final String meterNumber;
+
   @override
   _ImageUploadWaterState createState() => _ImageUploadWaterState();
 }
 
+DateTime now = DateTime.now();
+
 class _ImageUploadWaterState extends State<ImageUploadWater> {
   firebase_storage.FirebaseStorage storage =
       firebase_storage.FirebaseStorage.instance;
+
+  String formattedDate = DateFormat.MMMM().format(now);
+
+  String dropdownValue = 'Select Month';
+  List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
+
 
   final GlobalKey<ScaffoldState> _key = GlobalKey();
   File? _photo;
@@ -38,7 +45,6 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
       if (pickedFile != null) {
         _photo = File(pickedFile.path);
         uploadFile();
-        print('Meternumber for gallery '+wMeterNumber);
       } else {
         print('No image selected.');
       }
@@ -52,7 +58,6 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
       if (pickedFile != null) {
         _photo = File(pickedFile.path);
 
-        print('Meternumber for camera '+wMeterNumber);
         uploadFile();
       } else {
         print('No image selected.');
@@ -69,18 +74,15 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
     String userID = uid as String;
     final String photoName;
 
-    print('Meternumber for up '+wMeterNumber);
-
     ///'files/$userID/$fileName' is used specifically for adding the user id to a table in order to split the users per account
-    ///$fileName creates a folder with random numbers .jpg, the actual jpg gets named 'file' for some reason
     if (_photo == null) return;
     final fileName = basename(_photo!.path);
-    final destination = 'files/$imgFolder/water/'; // /$fileName
+    final destination = 'files/meters/$formattedDate/${widget.userNumber}/water/'; // /$fileName
 
     try {
       final ref = firebase_storage.FirebaseStorage.instance
           .ref(destination)
-          .child('$wMeterNumber/');  ///$fileName this is the jpg filename which needs to be named something on the db in order to display in the display screen
+          .child('${widget.meterNumber}.jpg/');  ///$fileName this is the jpg filename which needs to be named something on the db in order to display in the display screen
       await ref.putFile(_photo!);
       photoName = _photo!.toString();
       print('destination is '+destination);
@@ -91,7 +93,6 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
 
   @override
   Widget build(BuildContext context) {
-    print('the meter number ----- '+wMeterNumber);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Water Meter Reading Upload'),
