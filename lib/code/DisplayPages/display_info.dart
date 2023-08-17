@@ -94,13 +94,19 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
 
   final _userIDController = userID;
 
-  String formattedDate = DateFormat.MMMM().format(now);
+  String formattedMonth = DateFormat.MMMM().format(now);//format for full Month by name
+  String formattedDateMonth = DateFormat.MMMMd().format(now);//format for Day Month only
 
   String dropdownValue = 'Select Month';
   List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
 
   final CollectionReference _propList =
   FirebaseFirestore.instance.collection('properties');
+
+  ///For getting sub collections within a collection
+  // final CollectionReference _propListMonthBill = FirebaseFirestore.instance
+  //     .collection('properties').doc('documentID')
+  //     .collection('month').doc('monthID') as CollectionReference<Object?>;
 
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
     _accountNumberController.text = '';
@@ -1018,7 +1024,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                   child: FutureBuilder(
                                       future: _getImage(
                                         ///Firebase image location must be changed to display image based on the meter number
-                                          context, 'files/meters/$formattedDate/$propPhoneNum/electricity/$eMeterNumber.jpg'),
+                                          context, 'files/meters/$formattedMonth/$propPhoneNum/electricity/$eMeterNumber.jpg'),
                                       builder: (context, snapshot) {
                                         if (snapshot.hasError) {
                                           return const Padding(
@@ -1176,7 +1182,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                   child: FutureBuilder(
                                       future: _getImageW(
                                         ///Firebase image location must be changed to display image based on the meter number
-                                          context, 'files/meters/$formattedDate/$propPhoneNum/water/$wMeterNumber.jpg'),//$meterNumber
+                                          context, 'files/meters/$formattedMonth/$propPhoneNum/water/$wMeterNumber.jpg'),//$meterNumber
                                       builder: (context, snapshot) {
                                         if (snapshot.hasError) {
                                           return const Padding(
@@ -1230,7 +1236,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       String accountNumberPDF = documentSnapshot['account number'];
                                       print('The acc number is ::: $accountNumberPDF');
 
-                                      final storageRef = FirebaseStorage.instance.ref().child("pdfs/$formattedDate");
+                                      final storageRef = FirebaseStorage.instance.ref().child("pdfs/$formattedMonth");
                                       final listResult = await storageRef.listAll();
                                       for (var prefix in listResult.prefixes) {
                                         print('The ref is ::: $prefix');
