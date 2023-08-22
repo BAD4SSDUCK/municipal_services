@@ -16,13 +16,13 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:municipal_track/code/NoticePages/notice_config_arc_screen.dart';
+import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_config_arc_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:municipal_track/code/faultPages/fault_task_screen_archive.dart';
-import 'package:municipal_track/code/MapTools/map_screen.dart';
-import 'package:municipal_track/code/MapTools/map_screen_prop.dart';
-import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_tracker_msunduzi/code/faultPages/fault_task_screen_archive.dart';
+import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
+import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
+import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 
 class NoticeConfigScreen extends StatefulWidget {
   const NoticeConfigScreen({Key? key}) : super(key: key);

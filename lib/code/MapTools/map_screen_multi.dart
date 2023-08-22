@@ -6,9 +6,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:municipal_track/code/MapTools/location_controller.dart';
+import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
 
-import 'package:municipal_track/code/SQLApp/propertiesData/properties_data.dart';
+import 'package:municipal_tracker_msunduzi/code/SQLApp/propertiesData/properties_data.dart';
 import 'location_search_dialogue.dart';
 import 'map_user_badge.dart';
 

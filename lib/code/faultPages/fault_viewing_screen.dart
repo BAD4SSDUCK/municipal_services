@@ -10,11 +10,11 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:municipal_track/code/ImageUploading/image_upload_fault.dart';
-import 'package:municipal_track/code/MapTools/map_screen.dart';
+import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_fault.dart';
+import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
 
-import 'package:municipal_track/code/MapTools/map_screen_prop.dart';
-import 'package:municipal_track/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
+import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 
 class FaultViewingScreen extends StatefulWidget {
   const FaultViewingScreen({Key? key}) : super(key: key);

@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:municipal_track/code/AuthGoogle/auth_page_google.dart';
+import 'package:municipal_tracker_msunduzi/code/AuthGoogle/auth_page_google.dart';
 
 import 'forgot_pw_page.dart';
 

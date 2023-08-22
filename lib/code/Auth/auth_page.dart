@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:municipal_track/code/Auth/auth_page.dart';
-import 'package:municipal_track/code/login/login_page.dart';
-import 'package:municipal_track/code/Login/register_page.dart';
+import 'package:municipal_tracker_msunduzi/code/Auth/auth_page.dart';
+import 'package:municipal_tracker_msunduzi/code/login/login_page.dart';
+import 'package:municipal_tracker_msunduzi/code/Login/register_page.dart';
 
 import '../login/citizen_otp_page.dart';
 import '../login/citizen_register_page.dart';

@@ -4,9 +4,9 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as html;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:municipal_track/code/SQLApp/adminData/admin_users.dart';
-import 'package:municipal_track/code/SQLApp/fragments/user_add_screen.dart';
-import 'package:municipal_track/code/ApiConnection/api_connection.dart';
+import 'package:municipal_tracker_msunduzi/code/SQLApp/adminData/admin_users.dart';
+import 'package:municipal_tracker_msunduzi/code/SQLApp/fragments/user_add_screen.dart';
+import 'package:municipal_tracker_msunduzi/code/ApiConnection/api_connection.dart';
 
 class AdminManagementScreen extends StatelessWidget{
 

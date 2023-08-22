@@ -1,10 +1,10 @@
 // import 'package:flutter/material.dart';
 // import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:municipal_track/code/Auth/auth_page.dart';
-// import 'package:municipal_track/code/AuthGoogle/auth_page_google.dart';
-// import 'package:municipal_track/code/Chat/chat_screen.dart';
-// import 'package:municipal_track/code/login/login_page.dart';
-// import 'package:municipal_track/code/DisplayPages/dashboard.dart';
+// import 'package:municipal_tracker_msunduzi/code/Auth/auth_page.dart';
+// import 'package:municipal_tracker_msunduzi/code/AuthGoogle/auth_page_google.dart';
+// import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen.dart';
+// import 'package:municipal_tracker_msunduzi/code/login/login_page.dart';
+// import 'package:municipal_tracker_msunduzi/code/DisplayPages/dashboard.dart';
 //
 // import 'fb_auth_page.dart';
 //

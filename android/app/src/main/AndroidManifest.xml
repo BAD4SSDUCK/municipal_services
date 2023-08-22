@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.municipal_track">
+    package="com.example.municipal_tracker_msunduzi">
 
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 

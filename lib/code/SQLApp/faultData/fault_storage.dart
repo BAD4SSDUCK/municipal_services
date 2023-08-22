@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:municipal_track/code/SQLApp/model/fault_report.dart';
+import 'package:municipal_tracker_msunduzi/code/SQLApp/model/fault_report.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 ///This is the class that saves the property information to local storage

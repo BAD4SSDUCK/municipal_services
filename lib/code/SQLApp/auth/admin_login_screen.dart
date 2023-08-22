@@ -3,16 +3,16 @@
 // import 'package:flutter/material.dart';
 // import 'package:fluttertoast/fluttertoast.dart';
 // import 'package:get/get.dart';
-// import 'package:municipal_track/code/SQLApp/Auth/login_screen.dart';
-// import 'package:municipal_track/code/SQLApp/Auth/signup_screen.dart';
+// import 'package:municipal_tracker_msunduzi/code/SQLApp/Auth/login_screen.dart';
+// import 'package:municipal_tracker_msunduzi/code/SQLApp/Auth/signup_screen.dart';
 // import 'package:http/http.dart' as http;
 //
-// import 'package:municipal_track/code/ApiConnection/api_connection.dart';
-// import 'package:municipal_track/code/SQLApp/fragments/home_frag_manager_screen.dart';
-// import 'package:municipal_track/code/SQLApp/model/user.dart';
-// import 'package:municipal_track/code/SQLApp/userPreferences/user_preferences.dart';
+// import 'package:municipal_tracker_msunduzi/code/ApiConnection/api_connection.dart';
+// import 'package:municipal_tracker_msunduzi/code/SQLApp/fragments/home_frag_manager_screen.dart';
+// import 'package:municipal_tracker_msunduzi/code/SQLApp/model/user.dart';
+// import 'package:municipal_tracker_msunduzi/code/SQLApp/userPreferences/user_preferences.dart';
 //
-// import 'package:municipal_track/code/SQLApp/fragments/dashboard_of_fragments_sql.dart';
+// import 'package:municipal_tracker_msunduzi/code/SQLApp/fragments/dashboard_of_fragments_sql.dart';
 // import 'package:url_launcher/url_launcher.dart';
 // //
 // class AdminLoginScreen extends StatefulWidget {

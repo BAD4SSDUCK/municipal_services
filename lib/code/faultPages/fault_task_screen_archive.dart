@@ -11,10 +11,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:municipal_track/code/MapTools/map_screen.dart';
+import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:municipal_track/code/MapTools/map_screen_prop.dart';
+import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
 
 class FaultTaskScreenArchive extends StatefulWidget {
   const FaultTaskScreenArchive({Key? key}) : super(key: key);

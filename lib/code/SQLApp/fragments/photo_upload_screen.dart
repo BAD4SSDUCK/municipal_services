@@ -7,16 +7,16 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:municipal_track/code/SQLApp/propertiesData/property_storage.dart';
+import 'package:municipal_tracker_msunduzi/code/SQLApp/propertiesData/property_storage.dart';
 import 'package:path/path.dart';
 import 'package:http/http.dart' as http;
 import 'package:geocoding/geocoding.dart';
 //import 'package:location/location.dart';
 //import 'package:location/location.dart' as loc;
 
-import 'package:municipal_track/code/ApiConnection/api_connection.dart';
-import 'package:municipal_track/code/SQLApp/propertiesData/image_preferences.dart';
-import 'package:municipal_track/code/SQLapp/propertiesData/properties_data.dart';
+import 'package:municipal_tracker_msunduzi/code/ApiConnection/api_connection.dart';
+import 'package:municipal_tracker_msunduzi/code/SQLApp/propertiesData/image_preferences.dart';
+import 'package:municipal_tracker_msunduzi/code/SQLapp/propertiesData/properties_data.dart';
 
 
 class PhotoUploadState extends StatefulWidget {

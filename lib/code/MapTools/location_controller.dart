@@ -8,7 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_webservice/src/places.dart';
-import 'package:municipal_track/code/MapTools/location_service.dart';
+import 'package:municipal_tracker_msunduzi/code/MapTools/location_service.dart';
 
 class LocationController extends GetxController{
   final Placemark _pickPlaceMark = Placemark();

@@ -5,7 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
-import 'package:municipal_track/code/AuthGoogle/auth_page_google.dart';
+import 'package:municipal_tracker_msunduzi/code/AuthGoogle/auth_page_google.dart';
 
 class AdminDetails extends StatefulWidget{
   const AdminDetails({super.key});

@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:municipal_track/code/SQLApp/model/meter_image.dart';
+import 'package:municipal_tracker_msunduzi/code/SQLApp/model/meter_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:municipal_track/code/SQLApp/propertiesData/image_preferences.dart';
+import 'package:municipal_tracker_msunduzi/code/SQLApp/propertiesData/image_preferences.dart';
 
 ///This is the class that saves the property information to local storage
 

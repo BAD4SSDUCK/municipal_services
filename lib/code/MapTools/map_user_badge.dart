@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:municipal_track/code/DisplayPages/display_info.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
 
 class MapUserBadge extends StatelessWidget {
   const MapUserBadge({

@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:municipal_track/code/DisplayPages/dashboard_official.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/dashboard_official.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'forgot_pw_page.dart';
 

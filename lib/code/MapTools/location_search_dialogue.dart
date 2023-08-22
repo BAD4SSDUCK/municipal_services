@@ -7,7 +7,7 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_webservice/places.dart';
 
-import 'package:municipal_track/code/MapTools/location_controller.dart';
+import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
 
 class LocationSearchDialogue extends StatelessWidget {
   final GoogleMapController? mapController;
