@@ -1,50 +1,33 @@
 {
   "project_info": {
-    "project_number": "983443189535",
-    "firebase_url": "https://municipal-tracking-default-rtdb.europe-west1.firebasedatabase.app",
-    "project_id": "municipal-tracking",
-    "storage_bucket": "municipal-tracking.appspot.com"
+    "project_number": "183405317738",
+    "project_id": "municipal-tracker-msunduzi",
+    "storage_bucket": "municipal-tracker-msunduzi.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:983443189535:android:c7c89d8151b39ad6218a2a",
+        "mobilesdk_app_id": "1:183405317738:android:b5c51367f54dfd08790413",
         "android_client_info": {
           "package_name": "com.example.municipal_tracker_msunduzi"
         }
       },
       "oauth_client": [
         {
-          "client_id": "983443189535-omqsvrjbrk27qmli6i2reetp4nu7pjiu.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.municipal_tracker_msunduzi",
-            "certificate_hash": "b788b35e809060e85a72bbdaf9fab8accdc1d4e4"
-          }
-        },
-        {
-          "client_id": "983443189535-sg43m47vivvcgmnicg0ebs0ctviaploo.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.municipal_tracker_msunduzi",
-            "certificate_hash": "e227175bb49227092093b1ea78d2e9373cb1e78c"
-          }
-        },
-        {
-          "client_id": "983443189535-ob6m2bo6d9vb1m41jv2rib5lcclk777q.apps.googleusercontent.com",
+          "client_id": "183405317738-98urlkb3pab86laj6pnm7kcivcnuin05.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyALEpsAu0hiAJHrTHOXO7IxTbpPjNdhWx4"
+          "current_key": "AIzaSyC_zBh4dUxdlf1BOjA2IRGVGhjxO-StchU"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "983443189535-ob6m2bo6d9vb1m41jv2rib5lcclk777q.apps.googleusercontent.com",
+              "client_id": "183405317738-98urlkb3pab86laj6pnm7kcivcnuin05.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

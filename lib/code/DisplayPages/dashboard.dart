@@ -16,6 +16,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
+import 'package:municipal_tracker_msunduzi/main.dart';
 import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_pdf_list.dart';
 import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_fault.dart';
@@ -23,16 +24,14 @@ import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/main_menu_reusable_button.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/nav_drawer.dart';
 import 'package:municipal_tracker_msunduzi/code/faultPages/fault_report_screen.dart';
-import 'package:municipal_tracker_msunduzi/main.dart';
-
 import 'package:municipal_tracker_msunduzi/code/Chat/chat_list.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/menu_reusable_elevated_button.dart';
-import 'display_info.dart';
-import 'display_info_all_users.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info_all_users.dart';
 
 
 class MainMenu extends StatefulWidget {
