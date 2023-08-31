@@ -828,7 +828,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                 }
 
                 ///Check for only user information, this displays only for the users details and not all users in the database.
-                if(streamSnapshot.data!.docs[index]['user id'] == userID){
+                if(streamSnapshot.data!.docs[index]['cell number'] == phoneNum){
                   return Card(
                     margin: const EdgeInsets.all(10),
                     child: Padding(
