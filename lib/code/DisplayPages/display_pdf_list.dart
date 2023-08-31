@@ -352,7 +352,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                 });
           }
         }
-      } else {
+      } else if(item.toString().contains(accNum)!=true) {
         Fluttertoast.showToast(msg: "Unable to download statement.");
         if(context.mounted) {
           showDialog(
