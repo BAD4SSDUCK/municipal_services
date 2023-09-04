@@ -825,6 +825,8 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
                                       Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        crossAxisAlignment: CrossAxisAlignment.center,
                                         children: [
                                           BasicIconButtonGreen(
                                             onPress: () {
