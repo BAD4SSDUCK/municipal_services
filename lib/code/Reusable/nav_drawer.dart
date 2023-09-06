@@ -43,13 +43,13 @@ Widget buildHeader(BuildContext context) => Container(
   // padding: EdgeInsets.only(
   //   top: MediaQuery.of(context).padding.top,
   // ),
-  child: Image.asset('assets/images/logo.png', height: 200,),
+  child: Image.asset('assets/images/municipal_services.png', height: 150, width: 290,),
 );
 
 
 Widget buildMenuItems(BuildContext context) => Wrap(
-
   runSpacing: 10,
+  runAlignment: WrapAlignment.end,
   children:  <Widget>[
     const SizedBox(height: 120,),
     // ListTile(
@@ -194,8 +194,8 @@ Widget buildMenuItems(BuildContext context) => Wrap(
             alignment: Alignment.bottomCenter,
             child: Image.asset(
               'assets/images/cyberfox_logo_small.png',
-              height: 50,
-              //width: 100,
+              height: 80,
+              width: 120,
               fit: BoxFit.fitWidth,
             )
         )

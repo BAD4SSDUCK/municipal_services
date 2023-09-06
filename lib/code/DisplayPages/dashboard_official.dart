@@ -98,6 +98,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                   children: <Widget>[
                     const SizedBox(height: 20),
                     Image.asset('assets/images/logo.png', height: 180, width: 180,),
+                    // Image.asset('assets/images/municipal_services.png', height: 150, width: 300,),
                     const SizedBox(height: 20),
                     Column(
                       children: [
