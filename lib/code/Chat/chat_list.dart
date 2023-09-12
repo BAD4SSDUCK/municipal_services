@@ -39,8 +39,9 @@ class _ChatListState extends State<ChatList> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Chat Rooms List'),
+        title: const Text('Chat Rooms List',style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: StreamBuilder(
         stream: _chatsList.snapshots(),

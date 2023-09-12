@@ -228,8 +228,9 @@ class MainMenu extends StatefulWidget {
         backgroundColor: Colors.transparent,//grey[350],
         appBar: AppBar(
           title:
-          Text('Signed in from: ${user.phoneNumber!}'),///${user.email!}
+          Text('Signed in from: ${user.phoneNumber!}',style: const TextStyle(color: Colors.white),),///${user.email!}
           backgroundColor: Colors.black87,
+          iconTheme: const IconThemeData(color: Colors.white),
         ),
         drawer: const NavDrawer(),
         body: SingleChildScrollView(

@@ -288,7 +288,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                               );
                                             });
                                       },
-                                      labelText: 'Electricity',
+                                      labelText: 'Photo',
                                       fSize: 16,
                                       faIcon: const FaIcon(Icons.camera_alt,),
                                       fgColor: Colors.black38,
@@ -448,7 +448,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                               );
                                             });
                                       },
-                                      labelText: 'Water',
+                                      labelText: 'Photo',
                                       fSize: 16,
                                       faIcon: const FaIcon(Icons.camera_alt,),
                                       fgColor: Colors.black38,
@@ -603,7 +603,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                           }
                                         }
                                       },
-                                      labelText: 'Statement',
+                                      labelText: 'Invoice',
                                       fSize: 16,
                                       faIcon: const FaIcon(Icons.picture_as_pdf,),
                                       fgColor: Colors.orangeAccent,
@@ -1490,7 +1490,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('All Registered Accounts'),
+        title: const Text('All Registered Accounts',style: TextStyle(color: Colors.white),),
+        iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: Colors.green,
       ),
       body: Column(

@@ -28,11 +28,12 @@ class _PDFViewerPageState extends State<PDFViewerPage>{
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(name),
+        title: Text(name,style: const TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: pages >= 2
             ? [
-          Center(child: Text(text)),
+          Center(child: Text(text,style: const TextStyle(color: Colors.white),)),
           IconButton(
             icon: const Icon(Icons.chevron_left, size: 32),
             onPressed: () {

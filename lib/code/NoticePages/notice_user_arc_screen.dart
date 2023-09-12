@@ -227,8 +227,9 @@ class _NoticeArchiveScreenState extends State<NoticeArchiveScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Previous Notifications'),
+        title: const Text('Previous Notifications',style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
 
       body: Column(

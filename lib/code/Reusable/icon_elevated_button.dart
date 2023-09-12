@@ -100,7 +100,7 @@ class BasicIconButtonGrey extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB( 8.0,2.0,8.0,1.0),
+      padding: const EdgeInsets.fromLTRB( 5.0,2.0,5.0,1.0),
       child: ElevatedButton.icon(
         onPressed: (){
           onPress();

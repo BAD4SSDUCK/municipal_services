@@ -954,8 +954,9 @@ class _ConfigPageState extends State<ConfigPage> {
       child: Scaffold(
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
-          title: const Text('Department and Officials'),
+          title: const Text('Department and Officials',style: TextStyle(color: Colors.white),),
           backgroundColor: Colors.green,
+          iconTheme: const IconThemeData(color: Colors.white),
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Departments'),

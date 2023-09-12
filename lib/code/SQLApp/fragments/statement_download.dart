@@ -68,11 +68,11 @@ class _pdfSelectionPageState extends State<pdfSelectionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Select Statement"),
+      appBar: AppBar(title: const Text("Select Statement",style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,),
       backgroundColor: Colors.grey[350],
       body: loading
-          ? Center(child: CircularProgressIndicator(),)
+          ? const Center(child: CircularProgressIndicator(),)
           : ListView.builder(
           itemCount: pdfList.length,
           itemBuilder: (context, index) {

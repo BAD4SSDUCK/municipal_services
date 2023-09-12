@@ -367,7 +367,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                                 builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
                                             ));
                                       },
-                                      labelText: 'Fault Location',
+                                      labelText: 'Location',
                                       fSize: 14,
                                       faIcon: const FaIcon(Icons.map,),
                                       fgColor: Colors.green,
@@ -977,7 +977,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Fault Reports Listed'),
+        title: const Text('Fault Reports Listed',style: TextStyle(color: Colors.white),),
+        backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: <Widget>[
           Visibility(
               visible: adminAcc,
@@ -988,7 +990,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                   },
                   icon: const Icon(Icons.history_outlined, color: Colors.white,)),),
         ],
-        backgroundColor: Colors.green,
       ),
 
       body: Column(

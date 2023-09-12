@@ -541,8 +541,9 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Notification Archive'),
+        title: const Text('Notification Archive',style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
 
       body: Column(

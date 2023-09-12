@@ -144,7 +144,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                                 }
 
                                               },
-                                              labelText: 'Statement',
+                                              labelText: 'Invoice',
                                               fSize: 16,
                                               faIcon: const FaIcon(Icons.download),
                                               fgColor: Colors.green,
@@ -185,8 +185,9 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Account Details'),
+        title: const Text('Account Details',style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body:
       Column(

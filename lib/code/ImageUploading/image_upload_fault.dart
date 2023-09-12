@@ -89,8 +89,9 @@ class _FaultImageUploadState extends State<FaultImageUpload> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Fault Photo Upload'),
+        title: const Text('Fault Photo Upload',style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         child: Column(

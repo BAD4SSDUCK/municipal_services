@@ -461,8 +461,9 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Fault Reports Listed'),
+        title: const Text('Fault Reports Listed',style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
 
       body: StreamBuilder(

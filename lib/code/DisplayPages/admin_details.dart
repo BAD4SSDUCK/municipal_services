@@ -361,8 +361,9 @@ class _AdminDetailsState extends State<AdminDetails> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Official User List'),
+        title: const Text('Official User List',style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: StreamBuilder(
         stream: _usersList.snapshots(),

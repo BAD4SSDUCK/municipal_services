@@ -93,8 +93,9 @@ class _ImageUploadMeterState extends State<ImageUploadMeter> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Electricity Meter Reading Upload'),
+        title: const Text('Electricity Meter Reading Upload',style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         child: Column(

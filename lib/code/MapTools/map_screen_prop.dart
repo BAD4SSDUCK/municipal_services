@@ -174,7 +174,8 @@ class _MapScreenPropState extends State<MapScreenProp> {
         builder: (locationController) {
           return Scaffold(
               appBar: AppBar(
-                title: const Text('Map View'),
+                title: const Text('Map View',style: TextStyle(color: Colors.white),),
+                iconTheme: const IconThemeData(color: Colors.white),
                 backgroundColor: Colors.green[700],
               ),
               body: Stack(

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +23,21 @@ void main() async{
 
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MyHttpOverrides();
-  await Firebase.initializeApp();
+
+  ///Check what the app is running on
+  if(defaultTargetPlatform == TargetPlatform.android){
+    await Firebase.initializeApp();
+  }else{
+    await Firebase.initializeApp(
+        options: const FirebaseOptions(
+          apiKey: 'AIzaSyAnXRiLEqpGafzxRYp2xO8bMUjIuyqhlAk',
+          appId: '1:183405317738:android:b5c51367f54dfd08790413',
+          messagingSenderId: '183405317738',
+          projectId: 'municipal-tracker-msunduzi',
+        )
+    );
+  }
+
   await FirebaseMessaging.instance.getInitialMessage();
 
   ///notification section

@@ -84,6 +84,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
         appBar: AppBar(
           title: const Text(''),
           backgroundColor: Colors.black87,
+          iconTheme: const IconThemeData(color: Colors.white),
         ),
         drawer: const NavDrawer(),
         body: SingleChildScrollView(
@@ -194,7 +195,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   fgColor: Colors.red,
                                   btSize: const Size(130, 120),
                                 ),
-                                const SizedBox(width: 40,),
+                                const SizedBox(width: 30,),
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,

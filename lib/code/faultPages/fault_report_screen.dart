@@ -144,8 +144,9 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
       child: Scaffold(
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
-          title: const Text('Report Fault'),
+          title: const Text('Report Fault',style: TextStyle(color: Colors.white),),
           backgroundColor: Colors.green,
+          iconTheme: const IconThemeData(color: Colors.white),
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Public Fault'),
@@ -952,7 +953,8 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           ),                      ),
                       ),
                     ),
-                  ),);
+                  ),
+                );
               },
             ),
           ],

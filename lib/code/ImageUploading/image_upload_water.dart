@@ -95,8 +95,9 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Water Meter Reading Upload'),
+        title: const Text('Water Meter Reading Upload',style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         child: Column(

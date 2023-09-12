@@ -223,7 +223,9 @@ class _NoticeScreenState extends State<NoticeScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Latest Notifications'),
+        title: const Text('Latest Notifications',style: TextStyle(color: Colors.white),),
+        backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: <Widget>[
           Visibility(
               visible: true,
@@ -234,7 +236,6 @@ class _NoticeScreenState extends State<NoticeScreen> {
                   },
                   icon: const Icon(Icons.history_outlined, color: Colors.white,)),),
         ],
-        backgroundColor: Colors.green,
       ),
 
       body: Column(

@@ -104,8 +104,9 @@ class _AddAdminUserScreenState extends State<AddAdminUserScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add New Official User'),
+        title: const Text('Add New Official User',style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       backgroundColor: Colors.grey,
       body: LayoutBuilder(

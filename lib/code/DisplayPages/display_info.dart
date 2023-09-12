@@ -801,8 +801,9 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Account Management'),
+        title: const Text('Account Management',style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _propList.snapshots(),
@@ -1262,7 +1263,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                         }
                                       }
                                     },
-                                    labelText: 'Statement',
+                                    labelText: 'Invoice',
                                     fSize: 16,
                                     faIcon: const FaIcon(Icons.picture_as_pdf,),
                                     fgColor: Colors.orangeAccent,
@@ -1350,7 +1351,22 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                 }///end of single user information display.
                 else {
                   ///a card to display ALL details for users when role is set to admin is in "display_info_all_users.dart"
-                  return Card();
+                  return const Padding(
+                    padding: EdgeInsets.all(10.0),
+                    child: Center(
+                      child: Card(
+                        margin: EdgeInsets.all(10),
+                        child: Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text(
+                              'No properties registered on this number yet.',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                            ),                      ),
+                        ),
+                      ),
+                    ),
+                  );
                 }
               },
             );
@@ -1358,8 +1374,24 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
           return const Padding(
             padding: EdgeInsets.all(10.0),
             child: Center(
-                child: CircularProgressIndicator()),
+              child: Card(
+                margin: EdgeInsets.all(10),
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text(
+                      'No properties registered on this number yet.',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                    ),                      ),
+                ),
+              ),
+            ),
           );
+          // return const Padding(
+          //   padding: EdgeInsets.all(10.0),
+          //   child: Center(
+          //       child: CircularProgressIndicator()),
+          // );
         },
       ),
 

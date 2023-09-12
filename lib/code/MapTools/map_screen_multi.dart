@@ -253,7 +253,8 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
         builder: (locationController) {
           return Scaffold(
               appBar: AppBar(
-                title: const Text('Outstanding Captures'),
+                title: const Text('Outstanding Captures',style: TextStyle(color: Colors.white),),
+                iconTheme: const IconThemeData(color: Colors.white),
                 backgroundColor: Colors.green[700],
               ),
               body: Stack(

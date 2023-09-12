@@ -335,7 +335,7 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                                             color: Colors.green[700],
                                           ),
                                           const SizedBox(width: 2,),
-                                          const Text('Fault Location', style: TextStyle(
+                                          const Text('Location', style: TextStyle(
                                             fontWeight: FontWeight.w600,
                                             color: Colors.black,),),
                                         ],
@@ -766,7 +766,9 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Fault Reports Archive'),
+        title: const Text('Fault Reports Archive',style: TextStyle(color: Colors.white),),
+        backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
         // actions: <Widget>[
         //   Visibility(
         //       visible: adminAcc,
@@ -777,7 +779,6 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
         //           },
         //           icon: const Icon(Icons.hourglass_bottom, color: Colors.white,)),),
         // ],
-        backgroundColor: Colors.green,
       ),
 
       body: Column(

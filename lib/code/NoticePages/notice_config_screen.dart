@@ -834,7 +834,9 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
       child: Scaffold(
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
-          title: const Text('User Notifications'),
+          title: const Text('User Notifications',style: TextStyle(color: Colors.white),),
+          backgroundColor: Colors.green,
+          iconTheme: const IconThemeData(color: Colors.white),
           actions: <Widget>[
             Visibility(
                 visible: adminAcc,
@@ -847,7 +849,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                     },
                     icon: const Icon(Icons.history_outlined, color: Colors.white,)),),
           ],
-          backgroundColor: Colors.green,
           bottom: const TabBar(
               tabs: [
                 Tab(text: 'Notify All',),
