@@ -24,16 +24,25 @@ void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = MyHttpOverrides();
 
+  MaterialApp(
+    theme: ThemeData(
+        primarySwatch: Colors.grey
+    ),
+  );
+
   ///Check what the app is running on
   if(defaultTargetPlatform == TargetPlatform.android){
     await Firebase.initializeApp();
   }else{
     await Firebase.initializeApp(
         options: const FirebaseOptions(
-          apiKey: 'AIzaSyAnXRiLEqpGafzxRYp2xO8bMUjIuyqhlAk',
-          appId: '1:183405317738:android:b5c51367f54dfd08790413',
-          messagingSenderId: '183405317738',
-          projectId: 'municipal-tracker-msunduzi',
+          apiKey: "AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY",
+          projectId: "municipal-tracker-msunduzi",
+          storageBucket: "municipal-tracker-msunduzi.appspot.com",
+          messagingSenderId: "183405317738",
+          // appId: '1:183405317738:android:b5c51367f54dfd08790413',
+          appId: "1:183405317738:web:05f6729dc81be7d4790413",
+          measurementId: "G-3X7HM5HRHJ"
         )
     );
   }

@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "183405317738-prm2lrdungpl7h5vdvgjsk2hle5d3qpl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.municipal_tracker_msunduzi",
+            "certificate_hash": "b67ba52d462b0f486c08670163e7b66992e83db7"
+          }
+        },
+        {
           "client_id": "183405317738-98urlkb3pab86laj6pnm7kcivcnuin05.apps.googleusercontent.com",
           "client_type": 3
         }

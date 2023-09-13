@@ -201,7 +201,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => const UsersPropsAll()));
                                   },
-                                  labelText: 'Readings\nCapture',
+                                  labelText: 'Reading\nCapture',
                                   fSize: 16,
                                   faIcon: const FaIcon(Icons.holiday_village),
                                   fgColor: Colors.black54,

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,6 +17,7 @@ import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
+import 'package:path_provider/path_provider.dart';
 
 
 class UsersPropsAll extends StatefulWidget {
@@ -60,19 +62,47 @@ class FireStorageService extends ChangeNotifier{
 Future<Widget> _getImage(BuildContext context, String imageName) async{
   Image image;
   final value = await FireStorageService.loadImage(context, imageName);
-  image =Image.network(
-    value.toString(),
-    fit: BoxFit.fill,
-  );
+
+  final imageUrl = await storageRef.child(imageName).getDownloadURL();
+  ///Check what the app is running on
+  if(defaultTargetPlatform == TargetPlatform.android){
+    image =Image.network(
+      value.toString(),
+      fit: BoxFit.fill,
+      width: double.infinity,
+      height: double.infinity,
+    );
+    print('hitting platform android');
+  }else{
+    image =Image.network(
+      imageUrl,
+      fit: BoxFit.fill,
+      width: double.infinity,
+      height: double.infinity,
+    );
+    print('hitting platform web');
+  }
+  ///android version display image from firebase
+  // image =Image.network(
+  //   value.toString(),
+  //   fit: BoxFit.fill,
+  //   width: double.infinity,
+  //   height: double.infinity,
+  // );
   return image;
 }
 
 Future<Widget> _getImageW(BuildContext context, String imageName2) async{
   Image image2;
   final value = await FireStorageService.loadImage(context, imageName2);
+
+  final imageUrl = await storageRef.child(imageName2).getDownloadURL();
+
   image2 =Image.network(
     value.toString(),
     fit: BoxFit.fill,
+    width: double.infinity,
+    height: double.infinity,
   );
   return image2;
 }
@@ -350,7 +380,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
                               child: Container(
                                 margin: const EdgeInsets.only(bottom: 5),
-                                // height: 180,
+                                height: 180,
                                 child: Center(
                                   child: Card(
                                     color: Colors.grey,
@@ -509,7 +539,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
                               child: Container(
                                 margin: const EdgeInsets.only(bottom: 5),
-                                // height: 180,
+                                height: 180,
                                 child: Center(
                                   child: Card(
                                     color: Colors.grey,

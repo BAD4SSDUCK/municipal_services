@@ -61,6 +61,7 @@ dependencies:
   firebase_auth_web: ^5.2.3
   firebase_database: ^10.0.5
   cloud_firestore: ^4.0.5
+  cloud_firestore_web: ^3.7.0
 
   firebase_messaging: ^14.1.3
   flutter_local_notifications: ^9.2.0

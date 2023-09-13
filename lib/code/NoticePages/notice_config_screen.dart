@@ -402,7 +402,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                         notifyToken = documentSnapshot['token'];
                                         _notifyThisUser(documentSnapshot);
                                       },
-                                      labelText: 'Notify User',
+                                      labelText: 'Notify',
                                       fSize: 14,
                                       faIcon: const FaIcon(Icons.edit,),
                                       fgColor: Theme.of(context).primaryColor,

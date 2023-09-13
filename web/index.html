@@ -29,8 +29,32 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>municipal_tracker_msunduzi</title>
+  <title>Municipal Tracker Msunduzi</title>
   <link rel="manifest" href="manifest.json">
+
+  <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY",
+    authDomain: "municipal-tracker-msunduzi.firebaseapp.com",
+    projectId: "municipal-tracker-msunduzi",
+    storageBucket: "municipal-tracker-msunduzi.appspot.com",
+    messagingSenderId: "183405317738",
+    appId: "1:183405317738:web:05f6729dc81be7d4790413",
+    measurementId: "G-3X7HM5HRHJ"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
 
   <script>
     // The value below is injected by flutter build, do not touch.
