@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
@@ -114,10 +115,17 @@ class _MapScreenPropState extends State<MapScreenProp> {
   ///End of current user location check
 
   void setSourceAndDestinationMarkerIcons() async{
+    if(defaultTargetPlatform == TargetPlatform.android){
     sourceIcon = await BitmapDescriptor.fromAssetImage(
-        ImageConfiguration(devicePixelRatio: 2.0),
+        const ImageConfiguration(devicePixelRatio: 2.0),
         'assets/images/location/source_pin_android.png'
     );
+    } else {
+      sourceIcon = await BitmapDescriptor.fromAssetImage(
+          const ImageConfiguration(devicePixelRatio: 0.5,size: Size(35, 50)),
+          'assets/images/location/source_pin_android.png'
+      );
+    }
   }
 
   void addressConvert() async {

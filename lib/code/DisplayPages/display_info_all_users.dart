@@ -378,50 +378,53 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                 });
                               },
 
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 5),
-                                height: 180,
-                                child: Center(
-                                  child: Card(
-                                    color: Colors.grey,
-                                    semanticContainer: true,
-                                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                    ),
-                                    elevation: 0,
-                                    margin: const EdgeInsets.all(10.0),
-                                    child: FutureBuilder(
-                                        future: _getImage(
-                                          ///Firebase image location must be changed to display image based on the meter number
-                                            context, 'files/meters/$formattedDate/$propPhoneNum/electricity/$eMeterNumber.jpg'),
-                                        builder: (context, snapshot) {
-                                          if (snapshot.hasError) {
-                                            return const Padding(
-                                              padding: EdgeInsets.all(20.0),
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Text('Image not yet uploaded.',),
-                                                  SizedBox(height: 10,),
-                                                  FaIcon(Icons.camera_alt,),
-                                                ],
-                                              ),
-                                            );
+                              child: Center(
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 5),
+                                  height: 300,
+                                  width: 300,
+                                  child: Center(
+                                    child: Card(
+                                      color: Colors.grey,
+                                      semanticContainer: true,
+                                      clipBehavior: Clip.antiAliasWithSaveLayer,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10.0),
+                                      ),
+                                      elevation: 0,
+                                      margin: const EdgeInsets.all(10.0),
+                                      child: FutureBuilder(
+                                          future: _getImage(
+                                            ///Firebase image location must be changed to display image based on the meter number
+                                              context, 'files/meters/$formattedDate/$propPhoneNum/electricity/$eMeterNumber.jpg'),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.hasError) {
+                                              return const Padding(
+                                                padding: EdgeInsets.all(20.0),
+                                                child: Column(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Text('Image not yet uploaded.',),
+                                                    SizedBox(height: 10,),
+                                                    FaIcon(Icons.camera_alt,),
+                                                  ],
+                                                ),
+                                              );
+                                            }
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.done) {
+                                              return Container(
+                                                child: snapshot.data,
+                                              );
+                                            }
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return Container(
+                                                child: const CircularProgressIndicator(),);
+                                            }
+                                            return Container();
                                           }
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.done) {
-                                            return Container(
-                                              child: snapshot.data,
-                                            );
-                                          }
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.waiting) {
-                                            return Container(
-                                              child: const CircularProgressIndicator(),);
-                                          }
-                                          return Container();
-                                        }
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -537,50 +540,53 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                 });
                               },
 
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 5),
-                                height: 180,
-                                child: Center(
-                                  child: Card(
-                                    color: Colors.grey,
-                                    semanticContainer: true,
-                                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                    ),
-                                    elevation: 0,
-                                    margin: const EdgeInsets.all(10.0),
-                                    child: FutureBuilder(
-                                        future: _getImageW(
-                                          ///Firebase image location must be changed to display image based on the meter number
-                                            context, 'files/meters/$formattedDate/$propPhoneNum/water/$wMeterNumber.jpg'),//$meterNumber
-                                        builder: (context, snapshot) {
-                                          if (snapshot.hasError) {
-                                            return const Padding(
-                                              padding: EdgeInsets.all(20.0),
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Text('Image not yet uploaded.',),
-                                                  SizedBox(height: 10,),
-                                                  FaIcon(Icons.camera_alt,),
-                                                ],
-                                              ),
-                                            );
+                              child: Center(
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 5),
+                                  height: 300,
+                                  width: 300,
+                                  child: Center(
+                                    child: Card(
+                                      color: Colors.grey,
+                                      semanticContainer: true,
+                                      clipBehavior: Clip.antiAliasWithSaveLayer,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10.0),
+                                      ),
+                                      elevation: 0,
+                                      margin: const EdgeInsets.all(10.0),
+                                      child: FutureBuilder(
+                                          future: _getImageW(
+                                            ///Firebase image location must be changed to display image based on the meter number
+                                              context, 'files/meters/$formattedDate/$propPhoneNum/water/$wMeterNumber.jpg'),//$meterNumber
+                                          builder: (context, snapshot) {
+                                            if (snapshot.hasError) {
+                                              return const Padding(
+                                                padding: EdgeInsets.all(20.0),
+                                                child: Column(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Text('Image not yet uploaded.',),
+                                                    SizedBox(height: 10,),
+                                                    FaIcon(Icons.camera_alt,),
+                                                  ],
+                                                ),
+                                              );
+                                            }
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.done) {
+                                              return Container(
+                                                child: snapshot.data,
+                                              );
+                                            }
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return Container(
+                                                child: const CircularProgressIndicator(),);
+                                            }
+                                            return Container();
                                           }
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.done) {
-                                            return Container(
-                                              child: snapshot.data,
-                                            );
-                                          }
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.waiting) {
-                                            return Container(
-                                              child: const CircularProgressIndicator(),);
-                                          }
-                                          return Container();
-                                        }
+                                      ),
                                     ),
                                   ),
                                 ),

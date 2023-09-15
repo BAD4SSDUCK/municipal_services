@@ -128,7 +128,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                         MaterialPageRoute(builder: (context) => const FaultTaskScreen()));
                                   },
                                   labelText: 'Report\nList',
-                                  fSize: 18,
+                                  fSize: 16,
                                   faIcon: const FaIcon(Icons.report_problem),
                                   fgColor: Colors.orange,
                                   btSize: const Size(130, 120),
@@ -165,7 +165,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                           MaterialPageRoute(builder: (context) => const ConfigPage()));
                                     },
                                     labelText: 'Admin\nConfig',
-                                    fSize: 18,
+                                    fSize: 16,
                                     faIcon: const FaIcon(Icons.people),
                                     fgColor: Colors.blue,
                                     btSize: const Size(130, 120),
@@ -189,8 +189,8 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => const NoticeConfigScreen()));
                                   },
-                                  labelText: 'User\nNotifier',
-                                  fSize: 18,
+                                  labelText: 'User\nNotify',
+                                  fSize: 16,
                                   faIcon: const FaIcon(Icons.notifications_on),
                                   fgColor: Colors.red,
                                   btSize: const Size(130, 120),
@@ -202,7 +202,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                         MaterialPageRoute(builder: (context) => const UsersPropsAll()));
                                   },
                                   labelText: 'Reading\nCapture',
-                                  fSize: 16,
+                                  fSize: 14,
                                   faIcon: const FaIcon(Icons.holiday_village),
                                   fgColor: Colors.black54,
                                   btSize: const Size(130, 120),

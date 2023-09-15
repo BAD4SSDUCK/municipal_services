@@ -80,6 +80,7 @@ dependencies:
   google_sign_in: ^5.4.2
   google_fonts: ^4.0.4
   google_maps_flutter: ^2.5.0
+  google_maps_flutter_web: ^0.5.4+2
   flutter_google_places: ^0.3.0
   geolocator: ^9.0.2
   geocoding: ^2.0.0

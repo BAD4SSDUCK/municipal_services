@@ -314,8 +314,8 @@ class MainMenu extends StatefulWidget {
                                   Navigator.push(context,
                                       MaterialPageRoute(builder: (context) => const UsersPdfListViewPage()));
                                 },
-                                labelText: 'View\nStatement',
-                                fSize: 14,
+                                labelText: 'View\nInvoice',
+                                fSize: 18,
                                 faIcon: const FaIcon(FontAwesomeIcons.solidFilePdf),
                                 fgColor: Colors.redAccent,
                                 btSize: const Size(130, 120),

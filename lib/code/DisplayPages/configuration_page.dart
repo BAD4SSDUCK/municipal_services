@@ -34,12 +34,15 @@ class FireStorageService extends ChangeNotifier{
   }
 }
 
-class _ConfigPageState extends State<ConfigPage> {
+class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
 
+  late final _tabController = TabController(length: 3, vsync: this);
   @override
   void initState() {
     countResult();
     countDeptResult();
+    countRoleResult();
+
     super.initState();
   }
 
@@ -53,14 +56,26 @@ class _ConfigPageState extends State<ConfigPage> {
   final _cellNumberController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  int _tabIndex = 0;
+  final int _tabLength = 3;
+
+  void _toggleTab(){
+    _tabIndex = _tabController!.index+1 ;
+    _tabController?.animateTo(_tabIndex);
+  }
+
+
   TextEditingController controllerDept = TextEditingController();
   bool displayDeptList = false;
 
   List<String> usersEmails =[];
+  int numUsers = 0;
   List<String> deptName =["Select Department..."];
   String dropdownValue = 'Select Department...';
-  int numUsers = 0;
   int numDept = 0;
+  List<String> deptRole =["Select Role..."];
+  String dropdownValue2 = 'Select Role...';
+  int numRoles = 0;
 
   void countResult() async{
     var query = _usersList.where("email");
@@ -73,13 +88,17 @@ class _ConfigPageState extends State<ConfigPage> {
   }
 
   void countDeptResult() async{
-    var query = _deptInfo.where("deptName");
-    var snapshot = await query.get();
-    var count = snapshot.size;
-    numDept = snapshot.size;
+    var query1 = _deptInfo.where("deptName");
+    var snapshot1 = await query1.get();
+    var count1 = snapshot1.size;
+    numDept = snapshot1.size;
+  }
 
-    print('Records are ::: $count');
-    print('num depts are ::: $numDept');
+  void countRoleResult() async{
+    var query2 = _deptRoles.where("userRole");
+    var snapshot2 = await query2.get();
+    var count2 = snapshot2.size;
+    numDept = snapshot2.size;
   }
 
   final CollectionReference _usersList =
@@ -96,6 +115,9 @@ class _ConfigPageState extends State<ConfigPage> {
 
   bool visShow = true;
   bool visHide = false;
+  bool vis1 = false;
+  bool vis2 = false;
+  bool vis3 = false;
 
   //this widget is for displaying a user information with an icon next to it, NB. the icon is to make it look good
   Widget adminUserField(IconData iconImg, String dbData) {
@@ -161,7 +183,12 @@ class _ConfigPageState extends State<ConfigPage> {
     return Future.sync(() => userCredential);
   }
 
+
+
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
+    ///To set clips out all duplicates and leaves only unique items in the array
+    deptRole = deptRole.toSet().toList();
+
     _userNameController.text = '';
     _deptNameController.text = '';
     _userRoleController.text = '';
@@ -222,7 +249,7 @@ class _ConfigPageState extends State<ConfigPage> {
                     ),
                   ),
                   Visibility(
-                    visible: visShow,
+                    visible: visHide,
                     child: TextField(
                       controller: _deptNameController,
                       decoration: const InputDecoration(
@@ -230,37 +257,32 @@ class _ConfigPageState extends State<ConfigPage> {
                     ),
                   ),
 
-                  ///Need to work on drop down menu with information
-                  // Visibility(
-                  //   visible: visHide,
-                  //     child: Column(
-                  //       mainAxisSize: MainAxisSize.min,
-                  //       crossAxisAlignment: CrossAxisAlignment.start,
-                  //       children: [
-                  //         DropdownButtonFormField <String>(
-                  //           value: dropdownValue,
-                  //           items: deptName
-                  //               .map<DropdownMenuItem<String>>((String value) {
-                  //             return DropdownMenuItem<String>(
-                  //               value: value,
-                  //               child: Text(
-                  //                 value,
-                  //                 style: const TextStyle(fontSize: 16),
-                  //               ),
-                  //             );
-                  //           }).toList(),
-                  //           onChanged: (String? newValue) {
-                  //             setState(() {
-                  //               dropdownValue = newValue!;
-                  //             });
-                  //           },
-                  //         ),
-                  //       ],
-                  //     ),
-                  // ),
 
                   Visibility(
                     visible: visShow,
+                    child: DropdownButtonFormField <String>(
+                      value: dropdownValue,
+                      items: deptName
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          dropdownValue = newValue!;
+                        });
+                      },
+                    ),
+                  ),
+
+
+                  Visibility(
+                    visible: visHide,
                     child: TextField(
                       controller: _userRoleController,
                       decoration: const InputDecoration(
@@ -268,7 +290,27 @@ class _ConfigPageState extends State<ConfigPage> {
                     ),
                   ),
 
-
+                  Visibility(
+                    visible: visShow,
+                    child: DropdownButtonFormField <String>(
+                      value: dropdownValue2,
+                      items: deptRole
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          dropdownValue2 = newValue!;
+                        });
+                      },
+                    ),
+                  ),
 
                   Visibility(
                     visible: visShow,
@@ -301,8 +343,8 @@ class _ConfigPageState extends State<ConfigPage> {
                       child: const Text('Create'),
                       onPressed: () async {
                         final String userName = _userNameController.text;
-                        final String deptName = _deptNameController.text;
-                        final String userRole = _userRoleController.text;
+                        final String deptName = dropdownValue;
+                        final String userRole = dropdownValue2;
                         final String firstName = _firstNameController.text;
                         final String lastName = _lastNameController.text;
                         final String email = _userEmailController.text;
@@ -348,8 +390,8 @@ class _ConfigPageState extends State<ConfigPage> {
 
     if (documentSnapshot != null) {
       _userNameController.text = documentSnapshot['userName'];
-      _deptNameController.text = documentSnapshot['deptName'];
-      _userRoleController.text = documentSnapshot['userRole'];
+      dropdownValue = documentSnapshot['deptName'];
+      dropdownValue2 = documentSnapshot['userRole'];
       _firstNameController.text = documentSnapshot['firstName'];
       _lastNameController.text = documentSnapshot['lastName'];
       _userEmailController.text = documentSnapshot['email'];
@@ -407,7 +449,7 @@ class _ConfigPageState extends State<ConfigPage> {
                     ),
                   ),
                   Visibility(
-                    visible: visShow,
+                    visible: visHide,
                     child: TextField(
                       controller: _deptNameController,
                       decoration: const InputDecoration(
@@ -415,119 +457,31 @@ class _ConfigPageState extends State<ConfigPage> {
                     ),
                   ),
 
-                  // Visibility(
-                  //   visible: false,
-                  //   child: Text(
-                  //       DeptWidget().deptRepository.deptDBRetrieveRef.toString()),
-                  // ),
-                  // ///Need to work on drop down menu with information
-                  // Visibility(
-                  //     visible: visShow,
-                  //     child: SizedBox(
-                  //       width: double.infinity,
-                  //       height: double.infinity,
-                  //       child: Column(
-                  //         crossAxisAlignment: CrossAxisAlignment.center,
-                  //         children: [
-                  //           Container(
-                  //             padding: const EdgeInsets.all(5),
-                  //             child: StreamBuilder<QuerySnapshot>(
-                  //               // stream: _deptInfo.getStream(),
-                  //               stream: docRef,
-                  //               builder: (context, snapshot) {
-                  //                 if (!snapshot.hasData) {
-                  //                   return const Center(
-                  //                     child: CircularProgressIndicator(),
-                  //                   );
-                  //                 }
-                  //
-                  //                 return Container(
-                  //                   padding: const EdgeInsets.all(5),
-                  //                   child: DropdownButton(
-                  //                     value: _deptListController,
-                  //                     isDense: true,
-                  //                     items:
-                  //                     snapshot.data?.docs.map((DocumentSnapshot doc) {
-                  //                       return DropdownMenuItem<String>(
-                  //                           value: doc["deptName"],
-                  //                           child: Text(doc["deptName"]));
-                  //                     }).toList(),
-                  //                     hint: const Text("Choose Department"),
-                  //                     underline: Container(
-                  //
-                  //                     ),
-                  //                     onChanged: (value) {
-                  //                       setState(() {
-                  //                         _currentSelectedDept = value as String;
-                  //                       });
-                  //                     },
-                  //                   ),
-                  //                 );
-                  //               },
-                  //             ),
-                  //           ),
-                  //           // const Text('Department'),
-                  //           // // const SizedBox(height: 200,),
-                  //           // Container(
-                  //           //   width: 130,
-                  //           //   height: 50,
-                  //           //   decoration: BoxDecoration(
-                  //           //     border: Border.all(color: Colors.grey),
-                  //           //     color: Colors.white,
-                  //           //     borderRadius: BorderRadius.circular(6),
-                  //           //   ),
-                  //           //   child: TextField(
-                  //           //     controller: controllerDept,
-                  //           //     decoration: InputDecoration(
-                  //           //       border: InputBorder.none,
-                  //           //       suffixIcon: GestureDetector(
-                  //           //         onTap: (){
-                  //           //           displayDeptList = !displayDeptList;
-                  //           //         },
-                  //           //         child: Icon(Icons.arrow_downward),
-                  //           //       ),
-                  //           //     ),
-                  //           //   ),
-                  //           // ),
-                  //           // displayDeptList?
-                  //           // Container(
-                  //           //   height: 200,
-                  //           //   width: 130,
-                  //           //   decoration: BoxDecoration(
-                  //           //       borderRadius: BorderRadius.circular(9),
-                  //           //       color: Colors.white,
-                  //           //       boxShadow: [
-                  //           //         BoxShadow(
-                  //           //           color: Colors.grey.withOpacity(0.3),
-                  //           //           spreadRadius: 1,
-                  //           //           blurRadius: 3,
-                  //           //           offset: const Offset(0,1),
-                  //           //         )
-                  //           //       ]),
-                  //           //   child: ListView.builder(
-                  //           //       itemCount: deptName.length,
-                  //           //       itemBuilder: ((context,index){
-                  //           //         return GestureDetector(
-                  //           //           onTap: (){
-                  //           //             setState(() {
-                  //           //               deptSelection: DeptWidget().deptRepository.deptDBRetrieveRef.toString();
-                  //           //               controllerDept.text = (index+1).toString();
-                  //           //               _deptNameController.text = deptSelection[index].toString();
-                  //           //             });
-                  //           //           },
-                  //           //           child: ListTile(
-                  //           //             title: Text(deptName[index]),
-                  //           //           ),
-                  //           //         );
-                  //           //       })),
-                  //           // ):const SizedBox(),
-                  //         ],
-                  //       ),
-                  //     )
-                  // ),
-
                   Visibility(
                     visible: visShow,
+                    child: DropdownButtonFormField <String>(
+                      value: dropdownValue,
+                      items: deptName
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          dropdownValue = newValue!;
+                        });
+                      },
+                    ),
+                  ),
+
+
+                  Visibility(
+                    visible: visHide,
                     child: TextField(
                       controller: _userRoleController,
                       decoration: const InputDecoration(
@@ -535,6 +489,27 @@ class _ConfigPageState extends State<ConfigPage> {
                     ),
                   ),
 
+                  Visibility(
+                    visible: visShow,
+                    child: DropdownButtonFormField <String>(
+                      value: dropdownValue2,
+                      items: deptRole
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          dropdownValue2 = newValue!;
+                        });
+                      },
+                    ),
+                  ),
 
                   Visibility(
                     visible: visShow,
@@ -559,7 +534,7 @@ class _ConfigPageState extends State<ConfigPage> {
                       child: const Text('Update'),
                       onPressed: () async {
                         final String userName = _userNameController.text;
-                        final String deptName = _deptNameController.text;
+                        final String deptName = dropdownValue;
                         final String userRole = _userRoleController.text;
                         final String firstName = _firstNameController.text;
                         final String lastName = _lastNameController.text;
@@ -635,13 +610,37 @@ class _ConfigPageState extends State<ConfigPage> {
                     ),
                   ),
                   Visibility(
-                    visible: visShow,
+                    visible: visHide,
                     child: TextField(
                       controller: _deptNameController,
                       decoration: const InputDecoration(
                           labelText: 'Department'),
                     ),
                   ),
+
+                  Visibility(
+                    visible: visShow,
+                    child: DropdownButtonFormField <String>(
+                      value: dropdownValue,
+                      items: deptName
+                      // <String>['Select Department...', 'Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          dropdownValue = newValue!;
+                        });
+                      },
+                    ),
+                  ),
+
                   Visibility(
                     visible: visShow,
                     child: TextField(
@@ -685,6 +684,8 @@ class _ConfigPageState extends State<ConfigPage> {
     if (documentSnapshot != null) {
       _deptNameController.text = documentSnapshot['deptName'];
       _userRoleController.text = documentSnapshot['userRole'];
+
+      dropdownValue = documentSnapshot['deptName'];
     }
 
     await showModalBottomSheet(
@@ -714,13 +715,37 @@ class _ConfigPageState extends State<ConfigPage> {
                     ),
                   ),
                   Visibility(
-                    visible: visShow,
+                    visible: visHide,
                     child: TextField(
                       controller: _deptNameController,
                       decoration: const InputDecoration(
                           labelText: 'Department Name'),
                     ),
                   ),
+
+                  Visibility(
+                    visible: visShow,
+                    child: DropdownButtonFormField <String>(
+                      value: dropdownValue,
+                      items: deptName
+                      // <String>['Select Department...', 'Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          dropdownValue = newValue!;
+                        });
+                      },
+                    ),
+                  ),
+
                   Visibility(
                     visible: visShow,
                     child: TextField(
@@ -810,16 +835,17 @@ class _ConfigPageState extends State<ConfigPage> {
                   ElevatedButton(
                       child: const Text('Create'),
                       onPressed: () async {
-                        final String deptName = _deptNameController.text;
+                        final String deptartName = _deptNameController.text;
                         const bool official = true;
 
                         if (deptName != null) {
                           await _deptInfo.add({
-                            "deptName": deptName,
+                            "deptName": deptartName,
                             "official": official,
                           });
 
                           _deptNameController.text = '';
+                          deptName =["Select Department..."];
 
                           if(context.mounted)Navigator.of(context).pop();
                         }
@@ -950,6 +976,7 @@ class _ConfigPageState extends State<ConfigPage> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
+      initialIndex: 0,
       length: 3,
       child: Scaffold(
         backgroundColor: Colors.grey[350],
@@ -957,8 +984,9 @@ class _ConfigPageState extends State<ConfigPage> {
           title: const Text('Department and Officials',style: TextStyle(color: Colors.white),),
           backgroundColor: Colors.green,
           iconTheme: const IconThemeData(color: Colors.white),
-          bottom: const TabBar(
-            tabs: [
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: const [
               Tab(text: 'Departments'),
               Tab(text: 'Roles List'),
               Tab(text: 'Official User List'),
@@ -966,10 +994,11 @@ class _ConfigPageState extends State<ConfigPage> {
           ),
         ),
         body: TabBarView(
-          children: [
+          controller: _tabController,
+          children: <Widget>[
             ///Tab for department list view
             StreamBuilder(
-              stream: _deptRoles.snapshots(),
+              stream: _deptInfo.snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
                 if (streamSnapshot.hasData) {
                   return ListView.builder(
@@ -978,7 +1007,7 @@ class _ConfigPageState extends State<ConfigPage> {
                       final DocumentSnapshot deptDocumentSnapshot =
                       streamSnapshot.data!.docs[index];
 
-                      if(deptName.length<numDept+1) {
+                      if(deptName.length-1<streamSnapshot.data!.docs.length) {
                         deptName.add(deptDocumentSnapshot['deptName']);
                       }
                       print(deptName);
@@ -1041,8 +1070,10 @@ class _ConfigPageState extends State<ConfigPage> {
                                                               IconButton(
                                                                 onPressed: () {
                                                                   String deleteDept = deptDocumentSnapshot.reference.id;
+                                                                  deptName.remove(deptDocumentSnapshot['deptName']);
                                                                   _deleteDept(deleteDept);
 
+                                                                  Navigator.of(context).pop();
                                                                   Navigator.of(context).pop();
                                                                 },
                                                                 icon: const Icon(
@@ -1132,7 +1163,14 @@ class _ConfigPageState extends State<ConfigPage> {
                   return ListView.builder(
                     itemCount: streamSnapshot.data!.docs.length,
                     itemBuilder: (context, index) {
-                      final DocumentSnapshot deptDocumentSnapshot = streamSnapshot.data!.docs[index];
+                      final DocumentSnapshot deptRoleDocumentSnapshot = streamSnapshot.data!.docs[index];
+
+                      if(deptRole.length-1<streamSnapshot.data!.docs.length) {
+                        deptRole.add(deptRoleDocumentSnapshot['userRole']);
+                      }
+                      print(deptRole);
+                      print(deptRole.length);
+
                       if (streamSnapshot.data!.docs[index]['official'] == true) {
                         return Card(
                           margin: const EdgeInsets.all(10),
@@ -1152,10 +1190,10 @@ class _ConfigPageState extends State<ConfigPage> {
                                 const SizedBox(height: 20,),
                                 departmentField(
                                   Icons.business,
-                                  "Department: ${deptDocumentSnapshot['deptName']}",),
+                                  "Department: ${deptRoleDocumentSnapshot['deptName']}",),
                                 departmentField(
                                   Icons.account_circle_outlined,
-                                  "Role: ${deptDocumentSnapshot['userRole']}",),
+                                  "Role: ${deptRoleDocumentSnapshot['userRole']}",),
                                 const SizedBox(height: 20,),
                                 Visibility(
                                   visible: visShow,
@@ -1192,8 +1230,10 @@ class _ConfigPageState extends State<ConfigPage> {
                                                               ),
                                                               IconButton(
                                                                 onPressed: () {
-                                                                  String deleteDept = deptDocumentSnapshot.reference.id;
+                                                                  String deleteDept = deptRoleDocumentSnapshot.reference.id;
+                                                                  deptRole.remove(deptRoleDocumentSnapshot['userRole']);
                                                                   _deleteDeptRole(deleteDept);
+                                                                  Navigator.of(context).pop();
                                                                   Navigator.of(context).pop();
                                                                 },
                                                                 icon: const Icon(
@@ -1230,7 +1270,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                               borderRadius: BorderRadius.circular(8),
                                               child: InkWell(
                                                 onTap: () {
-                                                  _updateDeptRoles(deptDocumentSnapshot);
+                                                  _updateDeptRoles(deptRoleDocumentSnapshot);
                                                 },
                                                 borderRadius: BorderRadius.circular(
                                                     32),
@@ -1368,6 +1408,7 @@ class _ConfigPageState extends State<ConfigPage> {
                                                                   String deleteUser = userDocumentSnapshot.reference.id;
                                                                   _delete(deleteUser);
                                                                   Navigator.of(context).pop();
+                                                                  Navigator.of(context).pop();
                                                                 },
                                                                 icon: const Icon(
                                                                   Icons.done,
@@ -1473,94 +1514,24 @@ class _ConfigPageState extends State<ConfigPage> {
             ),
           ],
         ),
+        // floatingActionButton: _tabController.index == 0
+        //     ? FloatingActionButton(
+        //   onPressed: () => _createDept(),
+        //   backgroundColor: Colors.green,
+        //   child: const Icon(Icons.business),
+        // ) : _tabController.index == 1
+        //   ?  FloatingActionButton(
+        //         onPressed: () => _createDeptRoles(),
+        //         backgroundColor: Colors.green,
+        //         child: const Icon(Icons.add_business),
+        // ) : FloatingActionButton(
+        //   onPressed: () => _create(),
+        //   backgroundColor: Colors.green,
+        //   child: const Icon(Icons.add_reaction),
+        // ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       ),
     );
   }
 
-}
-
-class DeptDBRetrieve{
-  String id;
-  String deptName;
-  bool official;
-
-  DeptDBRetrieve({
-    required this.id,
-    required this.deptName,
-    required this.official,
-  });
-}
-
-class DeptRoleDBRetrieve{
-  String id;
-  String deptName;
-  String userRole;
-  bool official;
-
-  DeptRoleDBRetrieve({
-    required this.id,
-    required this.deptName,
-    required this.userRole,
-    required this.official,
-  });
-}
-
-class DeptRepository {
-  final DatabaseReference deptDBRetrieveRef =
-  FirebaseDatabase.instance.ref().child('departments');
-
-  Future<List<DeptDBRetrieve>> fetchDept() async {
-    final DatabaseEvent event = await deptDBRetrieveRef.once();
-    final DataSnapshot deptSnapshot = event.snapshot;
-    final dynamic data = deptSnapshot.value;
-    final List<DeptDBRetrieve> deptList = [];
-
-    if (data != null) {
-      data.forEach((key, value) {
-        deptList.add(
-          DeptDBRetrieve(
-            id: key,
-            deptName: value['deptName'],
-            official: value['official'],
-          ),
-        );
-      });
-    }
-    return deptList;
-  }
-}
-
-class DeptWidget extends StatelessWidget {
-  final DeptRepository deptRepository = DeptRepository();
-
-  DeptWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: FutureBuilder<List<DeptDBRetrieve>>(
-        future: deptRepository.fetchDept(),
-        builder: (BuildContext context, AsyncSnapshot<List<DeptDBRetrieve>> snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CircularProgressIndicator();
-          } else if (snapshot.hasError) {
-            return Text('Error: ${snapshot.error}');
-          } else {
-            final List<DeptDBRetrieve> dept = snapshot.data!;
-            // Use the todos list to build your UI
-            return ListView.builder(
-              itemCount: dept.length,
-              itemBuilder: (BuildContext context, int index) {
-                return ListTile(
-                  title: Text(dept[index].deptName),
-                  // subtitle: Text(dept[index].official ? 'official' : 'Pending'),
-                );
-              },
-            );
-          }
-        },
-      ),
-    );
-  }
 }

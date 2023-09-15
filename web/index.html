@@ -32,6 +32,25 @@
   <title>Municipal Tracker Msunduzi</title>
   <link rel="manifest" href="manifest.json">
 
+  <script>
+    // The value below is injected by flutter build, do not touch.
+    var serviceWorkerVersion = null;
+  </script>
+  <!-- This script adds the flutter initialization JS code -->
+  <script src="flutter.js" defer></script>
+<!--  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY"></script>-->
+<!--  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY=drawing"></script>-->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY&libraries=drawing,visualization,places,callback=initMap"></script>
+
+</head>
+<body>
+
+  <script>
+    window.flutterWebRenderer = "html"
+  </script>
+
+
+
   <script type="module">
   // Import the functions you need from the SDKs you need
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-app.js";
@@ -54,16 +73,8 @@
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const analytics = getAnalytics(app);
-</script>
-
-  <script>
-    // The value below is injected by flutter build, do not touch.
-    var serviceWorkerVersion = null;
   </script>
-  <!-- This script adds the flutter initialization JS code -->
-  <script src="flutter.js" defer></script>
-</head>
-<body>
+
   <script>
     window.addEventListener('load', function(ev) {
       // Download main.dart.js

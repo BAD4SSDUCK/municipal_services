@@ -1351,22 +1351,24 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                 }///end of single user information display.
                 else {
                   ///a card to display ALL details for users when role is set to admin is in "display_info_all_users.dart"
-                  return const Padding(
-                    padding: EdgeInsets.all(10.0),
-                    child: Center(
-                      child: Card(
-                        margin: EdgeInsets.all(10),
-                        child: Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Text(
-                              'No properties registered on this number yet.',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                            ),                      ),
-                        ),
-                      ),
-                    ),
-                  );
+                  return const Card();
+
+                  // Padding(
+                  //   padding: EdgeInsets.all(10.0),
+                  //   child: Center(
+                  //     child: Card(
+                  //       margin: EdgeInsets.all(10),
+                  //       child: Center(
+                  //         child: Padding(
+                  //           padding: EdgeInsets.all(8.0),
+                  //           child: Text(
+                  //             'No properties registered on this number yet.',
+                  //             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  //           ),                      ),
+                  //       ),
+                  //     ),
+                  //   ),
+                  // );
                 }
               },
             );
