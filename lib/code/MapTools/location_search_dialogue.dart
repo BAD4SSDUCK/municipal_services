@@ -11,7 +11,7 @@ import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dar
 
 class LocationSearchDialogue extends StatelessWidget {
   final GoogleMapController? mapController;
-  const LocationSearchDialogue({required this.mapController});
+  const LocationSearchDialogue({super.key, required this.mapController});
 
   @override
   Widget build(BuildContext context) {

@@ -148,10 +148,12 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
           backgroundColor: Colors.green,
           iconTheme: const IconThemeData(color: Colors.white),
           bottom: const TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
             tabs: [
-              Tab(text: 'Public Fault'),
-              Tab(text: 'Property Fault'),
-              Tab(text: 'Current Faults'),
+              Tab(text: 'Public Fault', icon: FaIcon(Icons.location_city_rounded),),
+              Tab(text: 'Property Fault', icon: FaIcon(Icons.house_rounded),),
+              Tab(text: 'Current Faults', icon: FaIcon(Icons.bar_chart),),
             ],
           ),
         ),
@@ -533,7 +535,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           buttonEnabled = true;
                         }
                         ///Check for only user information, this displays only for the users details and not all users in the database.
-                        if (streamSnapshot.data!.docs[index]['user id'] == userID) {
+                        if (streamSnapshot.data!.docs[index]['cell number'] == userPhone) {
                           return Card(
                             margin: const EdgeInsets.all(10),
                             child: Padding(
@@ -625,7 +627,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                       } else {
                         status = "Completed";
                       }
-                      if(streamSnapshot.data!.docs[index]['faultResolved'] == false && streamSnapshot.data!.docs[index]['reporterContact'] == phone){
+                      if(streamSnapshot.data!.docs[index]['faultResolved'] == false && streamSnapshot.data!.docs[index]['reporterContact'] == userPhone){
                         return Card(
                           margin: const EdgeInsets.all(10),
                           child: Padding(

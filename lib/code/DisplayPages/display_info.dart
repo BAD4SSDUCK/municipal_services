@@ -514,6 +514,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
+                      keyboardType: TextInputType.number,
                       controller: _meterReadingController,
                       decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
                     ),
@@ -528,6 +529,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
+                      keyboardType: TextInputType.number,
                       controller: _waterMeterReadingController,
                       decoration: const InputDecoration(labelText: 'Water Meter Reading'),
                     ),
@@ -609,6 +611,40 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                         _idNumberController.text = '';
 
                         if(context.mounted)Navigator.of(context).pop();
+                        ///Added open the image upload straight after inputting the meter reading
+                        if(context.mounted) {
+                          showDialog(
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: const Text("Upload Electricity Meter"),
+                                  content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                  actions: [
+                                    IconButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(
+                                        Icons.cancel,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () async {
+                                        Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                                        Navigator.push(context,
+                                            MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: cellNumber, meterNumber: meterNumber,)));
+                                      },
+                                      icon: const Icon(
+                                        Icons.done,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              });
+                        }
                       }
                     },
                   )
@@ -686,6 +722,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
+                      keyboardType: TextInputType.number,
                       controller: _meterReadingController,
                       decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
                     ),
@@ -700,6 +737,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
+                      keyboardType: TextInputType.number,
                       controller: _waterMeterReadingController,
                       decoration: const InputDecoration(labelText: 'Water Meter Reading'),
                     ),
@@ -781,6 +819,39 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                         _idNumberController.text = '';
 
                         if(context.mounted)Navigator.of(context).pop();
+                        ///Added open the image upload straight after inputting the meter reading
+                        if(context.mounted) {
+                          showDialog(
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: const Text("Upload Water Meter"),
+                                  content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                  actions: [
+                                    IconButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      icon: const Icon(
+                                        Icons.cancel,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () async {
+                                        Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                                        Navigator.push(context,
+                                            MaterialPageRoute(builder: (context) => ImageUploadWater(userNumber: cellNumber, meterNumber: waterMeterNumber,)));
+                                      },
+                                      icon: const Icon(
+                                        Icons.done,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              });}
                       }
                     },
                   )

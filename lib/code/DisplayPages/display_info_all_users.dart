@@ -381,8 +381,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                               child: Center(
                                 child: Container(
                                   margin: const EdgeInsets.only(bottom: 5),
-                                  height: 300,
-                                  width: 300,
+                                  // height: 300,
+                                  // width: 300,
                                   child: Center(
                                     child: Card(
                                       color: Colors.grey,
@@ -413,8 +413,15 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                             }
                                             if (snapshot.connectionState ==
                                                 ConnectionState.done) {
-                                              return Container(
-                                                child: snapshot.data,
+                                              return Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  SizedBox(
+                                                    height: 300,
+                                                    width: 300,
+                                                    child: snapshot.data,
+                                                  ),
+                                                ],
                                               );
                                             }
                                             if (snapshot.connectionState ==
@@ -543,8 +550,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                               child: Center(
                                 child: Container(
                                   margin: const EdgeInsets.only(bottom: 5),
-                                  height: 300,
-                                  width: 300,
+                                  // height: 300,
+                                  // width: 300,
                                   child: Center(
                                     child: Card(
                                       color: Colors.grey,
@@ -576,6 +583,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                             if (snapshot.connectionState ==
                                                 ConnectionState.done) {
                                               return Container(
+                                                height: 300,
+                                                width: 300,
                                                 child: snapshot.data,
                                               );
                                             }
@@ -1160,6 +1169,12 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                         _idNumberController.text = '';
 
                         if(context.mounted)Navigator.of(context).pop();
+                        ///Added open the image upload straight after inputting the meter reading
+                        // if(context.mounted) {
+                        //   Navigator.push(context,
+                        //       MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: cellNumber, meterNumber: meterNumber,)));
+                        // }
+
                       }
                     },
                   )
@@ -1237,6 +1252,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
+                      keyboardType: TextInputType.number,
                       controller: _meterReadingController,
                       decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
                     ),
@@ -1251,6 +1267,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
+                      keyboardType: TextInputType.number,
                       controller: _waterMeterReadingController,
                       decoration: const InputDecoration(labelText: 'Water Meter Reading'),
                     ),
@@ -1332,6 +1349,12 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                         _idNumberController.text = '';
 
                         if(context.mounted)Navigator.of(context).pop();
+                        ///Added open the image upload straight after inputting the meter reading
+                        // if(context.mounted) {
+                        //   Navigator.push(context,
+                        //       MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: cellNumber, meterNumber: meterNumber,)));
+                        // }
+
                       }
                     },
                   )
@@ -1409,6 +1432,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
+                      keyboardType: TextInputType.number,
                       controller: _meterReadingController,
                       decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
                     ),
@@ -1423,6 +1447,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
+                      keyboardType: TextInputType.number,
                       controller: _waterMeterReadingController,
                       decoration: const InputDecoration(labelText: 'Water Meter Reading'),
                     ),
@@ -1504,6 +1529,11 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                         _idNumberController.text = '';
 
                         if(context.mounted)Navigator.of(context).pop();
+                        ///Added open the image upload straight after inputting the meter reading
+                        // if(context.mounted) {
+                        //   Navigator.push(context,
+                        //       MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: cellNumber, meterNumber: waterMeterNumber,)));
+                        // }
                       }
                     },
                   )

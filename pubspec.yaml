@@ -36,6 +36,7 @@ dependencies:
   external_app_launcher: ^3.1.0
   device_apps: ^2.2.0
   android_intent_plus: ^4.0.1
+  js: ^0.6.7
 
   rflutter_alert: ^2.0.4
   http: ^0.13.5
@@ -74,7 +75,6 @@ dependencies:
   flutter_pdfview: ^1.2.5
 #  path_provider: ^2.0.8
   path_provider: ^2.0.15
-#  file_picker: ^4.3.3
   file_picker: ^5.3.1
 
   google_sign_in: ^5.4.2
@@ -82,9 +82,9 @@ dependencies:
   google_maps_flutter: ^2.5.0
   google_maps_flutter_web: ^0.5.4+2
   flutter_google_places: ^0.3.0
-  geolocator: ^9.0.2
-  geocoding: ^2.0.0
-  location: ^4.4.0
+  geolocator: ^10.0.1
+  geocoding: ^2.1.0
+  location: ^5.0.3
 
   #flutter_google_places_hoc081098: ^1.1.0
   #rxdart: ^0.27.7

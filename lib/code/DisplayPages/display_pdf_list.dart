@@ -79,7 +79,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                 streamSnapshot.data!.docs[index];
 
                 ///Check for only user information, this displays only for the users details and not all users in the database.
-                if(streamSnapshot.data!.docs[index]['user id'] == userID) {
+                if(streamSnapshot.data!.docs[index]['cell number'] == userPhone) {
                   return Card(
                     margin: const EdgeInsets.all(10),
                     child: Padding(

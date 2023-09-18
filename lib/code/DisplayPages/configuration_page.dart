@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:municipal_tracker_msunduzi/code/AuthGoogle/auth_page_google.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
@@ -985,11 +986,13 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
           backgroundColor: Colors.green,
           iconTheme: const IconThemeData(color: Colors.white),
           bottom: TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
             controller: _tabController,
             tabs: const [
-              Tab(text: 'Departments'),
-              Tab(text: 'Roles List'),
-              Tab(text: 'Official User List'),
+              Tab(text: 'Departments', icon: FaIcon(Icons.corporate_fare),),
+              Tab(text: 'Roles List', icon: FaIcon(Icons.work_history),),
+              Tab(text: 'Official User List', icon: FaIcon(Icons.person_2_outlined),),
             ],
           ),
         ),

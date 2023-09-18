@@ -308,43 +308,46 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                   fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             InkWell(
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 5),
-                                // height: 180,
-                                child: Center(
-                                  child: Card(
-                                    color: Colors.grey,
-                                    semanticContainer: true,
-                                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                    ),
-                                    elevation: 0,
-                                    margin: const EdgeInsets.all(10.0),
-                                    child: FutureBuilder(
-                                        future: _getImage(
-                                          ///Firebase image location must be changed to display image based on the address
-                                            context, 'files/faultImages/${documentSnapshot['dateReported']}/${documentSnapshot['address']}'),
-                                        builder: (context, snapshot) {
-                                          if (snapshot.hasError) {
-                                            return const Padding(
-                                              padding: EdgeInsets.all(20.0),
-                                              child: Text('Image not uploaded for Fault.',),
-                                            ); //${snapshot.error} if error needs to be displayed instead
+                              child: Center(
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 5),
+                                  child: Center(
+                                    child: Card(
+                                      color: Colors.grey,
+                                      semanticContainer: true,
+                                      clipBehavior: Clip.antiAliasWithSaveLayer,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10.0),
+                                      ),
+                                      elevation: 0,
+                                      margin: const EdgeInsets.all(10.0),
+                                      child: FutureBuilder(
+                                          future: _getImage(
+                                            ///Firebase image location must be changed to display image based on the address
+                                              context, 'files/faultImages/${documentSnapshot['dateReported']}/${documentSnapshot['address']}'),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.hasError) {
+                                              return const Padding(
+                                                padding: EdgeInsets.all(20.0),
+                                                child: Text('Image not uploaded for Fault.',),
+                                              ); //${snapshot.error} if error needs to be displayed instead
+                                            }
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.done) {
+                                              return Container(
+                                                height: 300,
+                                                width: 300,
+                                                child: snapshot.data,
+                                              );
+                                            }
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return Container(
+                                                child: const CircularProgressIndicator(),);
+                                            }
+                                            return Container();
                                           }
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.done) {
-                                            return Container(
-                                              child: snapshot.data,
-                                            );
-                                          }
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.waiting) {
-                                            return Container(
-                                              child: const CircularProgressIndicator(),);
-                                          }
-                                          return Container();
-                                        }
+                                      ),
                                     ),
                                   ),
                                 ),

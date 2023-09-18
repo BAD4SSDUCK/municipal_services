@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -5,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:http/http.dart' as http;
 import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
 
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
@@ -50,11 +53,13 @@ class _MapScreenPropState extends State<MapScreenProp> {
     super.initState();
 
     //Set camera position based on db address given
-    this.addressConvert();
+    addressConvert();
     //Set up initial locations
-    this.setInitialLocation();
+    setInitialLocation();
+
+    setAddressLocation();
     //Set up the marker icons
-    this.setSourceAndDestinationMarkerIcons();
+    setSourceAndDestinationMarkerIcons();
 
     // city all position for camera default (target: LatLng(-29.601505328570788, 30.379442518631805), zoom: 16);
     //_cameraPosition = CameraPosition(target: currentLocation, zoom: 16);
@@ -131,35 +136,68 @@ class _MapScreenPropState extends State<MapScreenProp> {
   void addressConvert() async {
     ///Location change here for address conversion into lat long
     String address = widget.propAddress;
-    //List<Location> locations = await Geocoding.google(apiKey: "AIzaSyB3p4M0JwkbBauV_5_dIHxWNpk8PSqmmU0").searchByAddress(address);
+    if(defaultTargetPlatform == TargetPlatform.android){
+      try {
+        List<Location> locations = await locationFromAddress(address);
 
-    try {
-      List<Location> locations = await locationFromAddress(address);
+        if (locations.isNotEmpty) {
+          Location location = locations.first;
 
-      if (locations.isNotEmpty) {
-        Location location = locations.first;
+          double latitude = location.latitude;
+          double longitude = location.longitude;
 
-        double latitude = location.latitude;
-        double longitude = location.longitude;
+          addressLocation = LatLng(latitude, longitude);
 
-        addressLocation = LatLng(latitude, longitude);
+          showPinOnMap();
+        }
 
-        showPinOnMap();
+        _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
+      } catch (e) {
+        addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
+
+        _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
+
+        print('This is the error:::$e');
+
+        // showPinOnMap();
+
+        Fluttertoast.showToast(
+            msg: "Address not found! Default map location City Hall!",
+            gravity: ToastGravity.CENTER);
       }
+    }else{
+      ///for web version
+      final apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
+      final encodedAddress = Uri.encodeComponent(address);
+      final url = 'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey';
 
-      _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
-    } catch (e) {
-      addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
+      final response = await http.get(Uri.parse(url));
 
-      _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
+      if(response.statusCode == 200){
+        final data = json.decode(response.body);
+        if (data['results'] != null && data['results'].isNotEmpty){
+          final location = data['results'][0]['geometry']['location'];
 
-      showPinOnMap();
+          double latitude = location['lat'];
+          double longitude = location['lng'];
 
-      Fluttertoast.showToast(
-          msg: "Address not found! Default map location City Hall!",
-          gravity: ToastGravity.CENTER);
+          addressLocation = LatLng(latitude, longitude);
+
+          showPinOnMap();
+        }
+        _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
+      }else{
+        addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
+
+        _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
+
+        Fluttertoast.showToast(
+            msg: "Address not found! Default map location City Hall!",
+            gravity: ToastGravity.CENTER);
+      }
     }
-    print('$addressLocation this is the change');
+
+    print('$addressLocation this is the location');
   }
 
   void setAddressLocation() async {

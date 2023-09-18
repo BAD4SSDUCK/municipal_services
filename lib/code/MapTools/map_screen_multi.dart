@@ -1,10 +1,12 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'package:geocoding/geocoding.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
 
@@ -71,10 +73,17 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
 
 
   void setSourceAndDestinationMarkerIcons() async{
-    sourceIcon = await BitmapDescriptor.fromAssetImage(
-        ImageConfiguration(devicePixelRatio: 2.0),
-        'assets/images/location/destination_pin_android.png'
-    );
+    if(defaultTargetPlatform == TargetPlatform.android){
+      sourceIcon = await BitmapDescriptor.fromAssetImage(
+          const ImageConfiguration(devicePixelRatio: 2.0),
+          'assets/images/location/source_pin_android.png'
+      );
+    } else {
+      sourceIcon = await BitmapDescriptor.fromAssetImage(
+          const ImageConfiguration(devicePixelRatio: 0.5,size: Size(35, 50)),
+          'assets/images/location/source_pin_android.png'
+      );
+    }
   }
 
   Future<void> locationAllow() async {
@@ -127,31 +136,62 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
   void addressConvert(String address) async {
     ///Location change here for address conversion into lat long
     //String address = _propertiesData.properties.address[0];
-    try {
-      List<Location> locations = await locationFromAddress(address);
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        List<Location> locations = await locationFromAddress(address);
 
-      if (locations.isNotEmpty) {
-        Location location = locations.first;
+        if (locations.isNotEmpty) {
+          Location location = locations.first;
 
-        double latitude = location.latitude;
-        double longitude = location.longitude;
+          double latitude = location.latitude;
+          double longitude = location.longitude;
 
-        addressLocation = LatLng(latitude, longitude);
+          addressLocation = LatLng(latitude, longitude);
+        }
+
+        _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
+        showPinOnMap();
+      } catch (e) {
+        currentLocation = LatLng(-29.601505328570788, 30.379442518631805);
+
+        _cameraPosition = CameraPosition(target: currentLocation, zoom: 16);
+
+        Fluttertoast.showToast(msg: "Default map location City Hall!",
+            gravity: ToastGravity.CENTER);
       }
+    } else {
+      ///for web version
+      final apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
+      final encodedAddress = Uri.encodeComponent(address);
+      final url = 'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey';
 
-      _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
-      showPinOnMap();
+      final response = await http.get(Uri.parse(url));
 
-    } catch(e) {
-      currentLocation = LatLng(-29.601505328570788, 30.379442518631805);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['results'] != null && data['results'].isNotEmpty) {
+          final location = data['results'][0]['geometry']['location'];
 
-      _cameraPosition = CameraPosition(target: currentLocation, zoom: 16);
+          double latitude = location['lat'];
+          double longitude = location['lng'];
 
-      Fluttertoast.showToast(msg: "Default map location City Hall!", gravity: ToastGravity.CENTER);
+          addressLocation = LatLng(latitude, longitude);
+          _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
+          showPinOnMap();
+        }
 
+      } else {
+        addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
+
+        _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
+
+        Fluttertoast.showToast(
+            msg: "Address not found! Default map location City Hall!",
+            gravity: ToastGravity.CENTER);
+      }
     }
-    print('$addressLocation this is the change');
 
+    print('$addressLocation this is the change');
   }
 
   void multiMarkerInit() async {
