@@ -115,7 +115,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => const MapScreenMulti()));
                                   },
-                                  labelText: 'Map',
+                                  labelText: ' Map ',
                                   fSize: 18,
                                   faIcon: const FaIcon(FontAwesomeIcons.map),
                                   fgColor: Colors.purple,
@@ -128,7 +128,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                         MaterialPageRoute(builder: (context) => const FaultTaskScreen()));
                                   },
                                   labelText: 'Report\nList',
-                                  fSize: 16,
+                                  fSize: 15,
                                   faIcon: const FaIcon(Icons.report_problem),
                                   fgColor: Colors.orange,
                                   btSize: const Size(130, 120),
@@ -150,13 +150,15 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => const ChatList()));
                                   },
-                                  labelText: 'Chat\nList',
+                                  labelText: 'Chat \nList',
                                   fSize: 18,
                                   faIcon: const FaIcon(Icons.mark_chat_unread),
                                   fgColor: Colors.green,
                                   btSize: const Size(130, 120),
                                 ),
-                                const SizedBox(width: 40,),
+                                Visibility(
+                                    visible: visAdmin,
+                                    child: const SizedBox(width: 40,)),
                                 Visibility(
                                   visible: visAdmin,
                                   child: ElevatedIconButton(
@@ -189,7 +191,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => const NoticeConfigScreen()));
                                   },
-                                  labelText: 'User\nNotify',
+                                  labelText: 'User \nNotify',
                                   fSize: 16,
                                   faIcon: const FaIcon(Icons.notifications_on),
                                   fgColor: Colors.red,

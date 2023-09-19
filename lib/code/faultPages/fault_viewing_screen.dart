@@ -478,7 +478,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
 
                 if(streamSnapshot.data!.docs[index]['faultResolved'] == false && streamSnapshot.data!.docs[index]['reporterContact'] == phone){
                   return Card(
-                    margin: const EdgeInsets.all(10),
+                    margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Column(

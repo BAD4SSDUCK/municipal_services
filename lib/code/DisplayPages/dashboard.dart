@@ -268,7 +268,7 @@ class MainMenu extends StatefulWidget {
                                       MaterialPageRoute(builder: (context) =>
                                           Chat(chatRoomId: id,)));
                                   },
-                                labelText: 'Admin\nChat',
+                                labelText: 'Admin \nChat',
                                 fSize: 18,
                                 faIcon: const FaIcon(FontAwesomeIcons.message),
                                 fgColor: Colors.blue,
@@ -280,7 +280,7 @@ class MainMenu extends StatefulWidget {
                                   Navigator.push(context,
                                       MaterialPageRoute(builder: (context) => const UsersTableViewPage()));
                                   },
-                                labelText: 'View\nDetails',
+                                labelText: 'View \nDetails',
                                 fSize: 18,
                                 faIcon: const FaIcon(FontAwesomeIcons.houseCircleExclamation),
                                 fgColor: Colors.green,
@@ -303,7 +303,7 @@ class MainMenu extends StatefulWidget {
                                       MaterialPageRoute(builder: (context) => const NoticeScreen()));///add page for users to see
                                 },
                                 labelText: 'Notices',
-                                fSize: 18,
+                                fSize: 17,
                                 faIcon: const FaIcon(Icons.notifications_on),
                                 fgColor: Colors.red,
                                 btSize: const Size(130, 120),
@@ -381,7 +381,7 @@ class MainMenu extends StatefulWidget {
                                   Navigator.push(context,
                                       MaterialPageRoute(builder: (context) => const ReportPropertyMenu()));
                                 },
-                                labelText: 'Report\nFaults',
+                                labelText: 'Report \nFaults',
                                 fSize: 18,
                                 faIcon: const FaIcon(Icons.report_problem),
                                 fgColor: Colors.orangeAccent,

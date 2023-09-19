@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:syncfusion_flutter_xlsio/xlsio.dart' as excel;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
@@ -17,7 +20,6 @@ import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
-import 'package:path_provider/path_provider.dart';
 
 
 class UsersPropsAll extends StatefulWidget {
@@ -48,6 +50,7 @@ String propPhoneNum = ' ';
 
 bool visibilityState1 = true;
 bool visibilityState2 = false;
+bool adminAcc = false;
 
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
@@ -136,32 +139,22 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
 
   List<Map<String, dynamic>> _allProps =[];
-  // _propList.snapshots() as List<Map<String, dynamic>>;
-  List<Map<String, dynamic>> _foundProps = [];
+
+  void checkAdmin() {
+    String? emailLogged = user?.email.toString();
+    if(emailLogged?.contains("admin") == true){
+      adminAcc = true;
+    } else {
+      adminAcc = false;
+    }
+  }
 
   @override
   void initState() {
-    print("The map string list is :::$_allProps");
-    _foundProps = _allProps;
+    checkAdmin();
     super.initState();
   }
 
-  void _runSearch(String enteredKeyword) {
-
-
-
-    List<Map<String, dynamic>> results = [];
-    if (enteredKeyword.isEmpty) {
-      results = _allProps;
-    } else {
-      results = _allProps.where((element) =>
-          element["address"].toLowerCase().contains(
-              enteredKeyword.toLowerCase())).toList();
-    }
-    setState(() {
-      _foundProps = results;
-    });
-  }
 
   @override
   void dispose() {
@@ -199,7 +192,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
                   if(((documentSnapshot['address'].trim()).toLowerCase()).contains((_searchBarController.text.trim()).toLowerCase())){
                     return Card(
-                      margin: const EdgeInsets.all(10),
+                      margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Column(
@@ -1559,6 +1552,16 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
         title: const Text('All Registered Accounts',style: TextStyle(color: Colors.white),),
         iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: Colors.green,
+        actions: <Widget>[
+          Visibility(
+            visible: adminAcc,
+            child: IconButton(
+                onPressed: (){
+                  ///Generate Report here
+                  reportGeneration(_propList);
+                },
+                icon: const Icon(Icons.file_copy_outlined, color: Colors.white,)),),
+        ],
       ),
       body: Column(
         children: [
@@ -1607,6 +1610,17 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
       //   floatingActionButtonLocation: FloatingActionButtonLocation.endFloat
 
     );
+  }
+
+  void reportGeneration(CollectionReference<Object?> propertiesDataStream){
+    final excel.Workbook workbook = excel.Workbook();
+    workbook.worksheets[0];
+
+    final List<int> bytes = workbook.saveAsStream();
+    File('Msunduzi Property Reports.xlsx').writeAsBytes(bytes);
+
+    workbook.dispose();
+
   }
 
   void setMonthLimits(String currentMonth) {

@@ -54,7 +54,7 @@ class _ChatListState extends State<ChatList> {
                 final DocumentSnapshot documentSnapshot = streamSnapshot.data!.docs[index];
                 String chatRoomID = documentSnapshot.id;
                 return Card(
-                  margin: const EdgeInsets.all(10),
+                  margin: const EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 5),
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
                     child: Column(

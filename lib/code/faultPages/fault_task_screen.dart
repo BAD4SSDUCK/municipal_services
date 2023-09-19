@@ -446,7 +446,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                   } else if((streamSnapshot.data!.docs[index]['faultResolved'] == false && documentSnapshot['faultStage'] != 5 )
                       || documentSnapshot['faultStage'] == 2 || documentSnapshot['faultStage'] == 4){
                     return Card(
-                      margin: const EdgeInsets.all(10),
+                      margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Column(

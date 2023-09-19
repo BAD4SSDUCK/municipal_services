@@ -71,9 +71,9 @@ dependencies:
   #pdf_viewer_plugin: ^2.0.1
 
   win32: ^4.1.4
-
+  syncfusion_flutter_xlsio: ^23.1.36
+  share_plus: ^7.1.0
   flutter_pdfview: ^1.2.5
-#  path_provider: ^2.0.8
   path_provider: ^2.0.15
   file_picker: ^5.3.1
 

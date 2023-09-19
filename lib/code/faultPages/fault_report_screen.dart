@@ -537,7 +537,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                         ///Check for only user information, this displays only for the users details and not all users in the database.
                         if (streamSnapshot.data!.docs[index]['cell number'] == userPhone) {
                           return Card(
-                            margin: const EdgeInsets.all(10),
+                            margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
                             child: Padding(
                               padding: const EdgeInsets.all(20.0),
                               child: Column(
@@ -629,7 +629,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                       }
                       if(streamSnapshot.data!.docs[index]['faultResolved'] == false && streamSnapshot.data!.docs[index]['reporterContact'] == userPhone){
                         return Card(
-                          margin: const EdgeInsets.all(10),
+                          margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
                           child: Padding(
                             padding: const EdgeInsets.all(20.0),
                             child: Column(

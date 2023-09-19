@@ -850,6 +850,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                     icon: const Icon(Icons.history_outlined, color: Colors.white,)),),
           ],
           bottom: const TabBar(
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
               tabs: [
                 Tab(text: 'Notify All',),
                 Tab(text: 'Targeted Notice',),
