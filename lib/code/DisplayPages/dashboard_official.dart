@@ -121,16 +121,16 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   fgColor: Colors.purple,
                                   btSize: const Size(130, 120),
                                 ),
-                                const SizedBox(width: 40,),
+                                const SizedBox(width: 30,),
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => const FaultTaskScreen()));
+                                        MaterialPageRoute(builder: (context) => const UsersPropsAll()));
                                   },
-                                  labelText: 'Report\nList',
-                                  fSize: 15,
-                                  faIcon: const FaIcon(Icons.report_problem),
-                                  fgColor: Colors.orange,
+                                  labelText: 'Reading\nCapture',
+                                  fSize: 14,
+                                  faIcon: const FaIcon(Icons.holiday_village),
+                                  fgColor: Colors.black54,
                                   btSize: const Size(130, 120),
                                 ),
                               ],
@@ -197,16 +197,16 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   fgColor: Colors.red,
                                   btSize: const Size(130, 120),
                                 ),
-                                const SizedBox(width: 30,),
+                                const SizedBox(width: 40,),
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => const UsersPropsAll()));
+                                        MaterialPageRoute(builder: (context) => const FaultTaskScreen()));
                                   },
-                                  labelText: 'Reading\nCapture',
-                                  fSize: 14,
-                                  faIcon: const FaIcon(Icons.holiday_village),
-                                  fgColor: Colors.black54,
+                                  labelText: 'Report\nList',
+                                  fSize: 15,
+                                  faIcon: const FaIcon(Icons.report_problem),
+                                  fgColor: Colors.orange,
                                   btSize: const Size(130, 120),
                                 ),
                               ],

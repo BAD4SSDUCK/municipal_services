@@ -75,15 +75,13 @@ Future<Widget> _getImage(BuildContext context, String imageName) async{
       width: double.infinity,
       height: double.infinity,
     );
-    print('hitting platform android');
   }else{
     image =Image.network(
       imageUrl,
-      fit: BoxFit.fill,
+      fit: BoxFit.fitHeight,
       width: double.infinity,
       height: double.infinity,
     );
-    print('hitting platform web');
   }
   ///android version display image from firebase
   // image =Image.network(
@@ -101,12 +99,22 @@ Future<Widget> _getImageW(BuildContext context, String imageName2) async{
 
   final imageUrl = await storageRef.child(imageName2).getDownloadURL();
 
-  image2 =Image.network(
-    value.toString(),
-    fit: BoxFit.fill,
-    width: double.infinity,
-    height: double.infinity,
-  );
+  ///Check what the app is running on
+  if(defaultTargetPlatform == TargetPlatform.android){
+    image2 =Image.network(
+      value.toString(),
+      fit: BoxFit.fill,
+      width: double.infinity,
+      height: double.infinity,
+    );
+  }else{
+    image2 =Image.network(
+      value.toString(),
+      fit: BoxFit.fitHeight,
+      width: double.infinity,
+      height: double.infinity,
+    );
+  }
   return image2;
 }
 
