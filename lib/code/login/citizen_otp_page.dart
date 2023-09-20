@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
@@ -22,6 +23,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   double screenHeight = 0;
   double screenWidth = 0;
   double bottom = 0;
+  double change = 2;
+  double topText = 12;
+  double botText = 23;
 
   String otpPin = " ";
   String countryDial = "+27";
@@ -30,6 +34,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
   int screenState = 0;
 
   Color blue = const Color(0xff8cccff);
+
+  @override
+  initState(){
+    super.initState();
+    if(defaultTargetPlatform == TargetPlatform.android){
+      double topText = 12;
+      double botText = 23;
+    }else{
+      double topText = 6;
+      double botText = 12;
+    }
+  }
 
   Future<void> verifyPhone(String number) async {
     await FirebaseAuth.instance.verifyPhoneNumber(
@@ -122,6 +138,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       },
       child: Scaffold(
         backgroundColor: blue,
+        resizeToAvoidBottomInset: false,
         body: SizedBox(
           height: screenHeight,
           width: screenWidth,
@@ -140,7 +157,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           style: GoogleFonts.montserrat(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: screenWidth / 12,
+                            fontSize: screenWidth / topText,
                           ),
                         ),
                         Text(
@@ -148,7 +165,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           style: GoogleFonts.montserrat(
                             color: Colors.white,
                             fontWeight: FontWeight.w500 ,
-                            fontSize: screenWidth / 23,
+                            fontSize: screenWidth / botText,
                           ),
                         ),
                       ],
@@ -156,24 +173,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
               ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: circle(5),
-              ),
-              Transform.translate(
-                offset: const Offset(30, -30),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: circle(4.5),
-                ),
-              ),
-              Center(
-                child: circle(3),
-              ),
+              cloudDesign(),
+              // Align(
+              //   alignment: Alignment.centerLeft,
+              //   child: circle(5),
+              // ),
+              // Transform.translate(
+              //   offset: const Offset(30, -30),
+              //   child: Align(
+              //     alignment: Alignment.centerRight,
+              //     child: circle(4.5),
+              //   ),
+              // ),
+              // Center(
+              //   child: circle(3),
+              // ),
               Align(
                 alignment: Alignment.bottomCenter,
                 child: AnimatedContainer(
-                  height: bottom > 0 ? screenHeight : screenHeight / 2,
+                  height: bottom > 0 ? screenHeight : screenHeight / change,
                   width: screenWidth,
                   color: Colors.white,
                   duration: const Duration(milliseconds: 800),
@@ -311,6 +329,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
         IntlPhoneField(
+          autofocus: false,
           textAlign: TextAlign.start,
           style: const TextStyle(fontSize: 14,),
           controller: phoneController,
@@ -429,4 +448,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
+
+  Widget cloudDesign(){
+    if(defaultTargetPlatform == TargetPlatform.android){
+      return Column(
+        children: [
+          Transform.translate(
+            offset: const Offset(0, 390),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: circle(5),
+            ),
+          ),
+          Transform.translate(
+            offset: const Offset(30, 190),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: circle(4.5),
+            ),
+          ),
+          Transform.translate(
+            offset: const Offset(10,20),
+            child: Center(
+              child: circle(3),
+            ),
+          ),
+        ],
+      );
+    }else{
+      return Column();
+    }
+  }
+
 }

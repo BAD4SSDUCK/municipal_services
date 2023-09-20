@@ -1018,7 +1018,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
 
                       if (streamSnapshot.data!.docs[index]['official'] == true) {
                         return Card(
-                          margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
+                          margin: const EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 5),
                           child: Padding(
                             padding: const EdgeInsets.all(20.0),
                             child: Column(
@@ -1176,7 +1176,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
 
                       if (streamSnapshot.data!.docs[index]['official'] == true) {
                         return Card(
-                          margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
+                          margin: const EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 5),
                           child: Padding(
                             padding: const EdgeInsets.all(20.0),
                             child: Column(
@@ -1336,7 +1336,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
 
                       if (streamSnapshot.data!.docs[index]['official'] == true) {
                         return Card(
-                          margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
+                          margin: const EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 5),
                           child: Padding(
                             padding: const EdgeInsets.all(20.0),
                             child: Column(
