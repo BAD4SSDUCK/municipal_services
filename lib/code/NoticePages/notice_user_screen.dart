@@ -110,7 +110,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                 streamSnapshot.data!.docs[index];
 
                 if(documentSnapshot['user'] == user?.phoneNumber.toString()){
-                  if(documentSnapshot['user'].contains('+27') && documentSnapshot['read'] != true ){
+                  if(documentSnapshot['user'].contains('+27') && documentSnapshot['read'] != true && documentSnapshot['level'] == 'general' ){
                     return Card(
                       margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,10.0),
                       child: Padding(
@@ -186,6 +186,107 @@ class _NoticeScreenState extends State<NoticeScreen> {
     );
   }
 
+  Widget userWarningCard(CollectionReference<Object?> noticeDataStream){
+    return Expanded(
+      child: StreamBuilder<QuerySnapshot>(
+        stream: noticeDataStream.orderBy('date', descending: true).snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+          if (streamSnapshot.hasData) {
+            return ListView.builder(
+              itemCount: streamSnapshot.data!.docs.length,
+              itemBuilder: (context, index) {
+                final DocumentSnapshot documentSnapshot =
+                streamSnapshot.data!.docs[index];
+
+                if(documentSnapshot['user'] == user?.phoneNumber.toString()){
+                  if(documentSnapshot['user'].contains('+27') && documentSnapshot['read'] != true && documentSnapshot['level'] == 'severe' ){
+                    return Card(
+                      margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,10.0),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Center(
+                              child: Text(
+                                'Unread Notification',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            const SizedBox(height: 10,),
+                            const Text(
+                              'Notice Header:',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                            noticeItemField(documentSnapshot['title'],),
+                            const Text(
+                              'Notice Details:',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                            noticeItemField(documentSnapshot['body']),
+                            const Text(
+                              'Notice Received Date:',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                            noticeItemField(documentSnapshot['date']),
+                            const SizedBox(height: 5,),
+                            Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        final Uri _tel = Uri.parse('tel:+27${0333923000}');
+                                        launchUrl(_tel);
+                                      },
+                                      labelText: 'Support',
+                                      fSize: 14,
+                                      faIcon: const FaIcon(Icons.add_call,),
+                                      fgColor: Colors.amber,
+                                      btSize: const Size(50, 38),
+                                    ),
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        notifyToken = documentSnapshot['token'];
+                                        if((documentSnapshot['user'].toString()).contains('+27')){
+                                          _notifyUpdate(documentSnapshot);
+                                        }
+                                      },
+                                      labelText: 'Mark Read',
+                                      fSize: 14,
+                                      faIcon: const FaIcon(Icons.check_circle,),
+                                      fgColor: Colors.green,
+                                      btSize: const Size(50, 38),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  } else {
+                    return const Card();
+                  }
+                }
+              },
+            );
+          }
+          return const Padding(
+            padding: EdgeInsets.all(10.0),
+            child: Center(
+                child: CircularProgressIndicator()),
+          );
+        },
+      ),
+    );
+  }
+
   //This class is for updating the notification
   Future<void> _notifyUpdate([DocumentSnapshot? documentSnapshot]) async {
 
@@ -220,30 +321,56 @@ class _NoticeScreenState extends State<NoticeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[350],
-      appBar: AppBar(
-        title: const Text('Latest Notifications',style: TextStyle(color: Colors.white),),
-        backgroundColor: Colors.green,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: <Widget>[
-          Visibility(
-              visible: true,
-              child: IconButton(
-                  onPressed: (){
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => const NoticeArchiveScreen()));
-                  },
-                  icon: const Icon(Icons.history_outlined, color: Colors.white,)),),
-        ],
-      ),
+    return DefaultTabController(
+      initialIndex: 0,
+      length: 3,
+      child: Scaffold(
+        backgroundColor: Colors.grey[350],
+        appBar: AppBar(
+          title: const Text('Latest Notifications',style: TextStyle(color: Colors.white),),
+          backgroundColor: Colors.green,
+          iconTheme: const IconThemeData(color: Colors.white),
+          actions: <Widget>[
+            Visibility(
+                visible: true,
+                child: IconButton(
+                    onPressed: (){
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => const NoticeArchiveScreen()));
+                    },
+                    icon: const Icon(Icons.history_outlined, color: Colors.white,)),),
+          ],
+          bottom: const TabBar(
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+              tabs: [
+                Tab(text: 'General Notices',),
+                Tab(text: 'Warning Notices',),
+              ]
+          ),
+        ),
 
-      body: Column(
-        children: [
-          const SizedBox(height: 10,),
-          ///made the listview card a reusable widget
-          userNotificationCard(_listNotifications),
-        ],
+        body: TabBarView(
+          children:[
+            ///General notices
+            Column(
+              children: [
+                const SizedBox(height: 0,),
+                ///made the listview card a reusable widget
+                userNotificationCard(_listNotifications),
+              ],
+            ),
+            ///Warning notices
+            Column(
+              children: [
+                const SizedBox(height: 0,),
+                ///made the listview card a reusable widget
+                userWarningCard(_listNotifications),
+              ],
+            ),
+
+          ]
+        ),
       ),
     );
   }

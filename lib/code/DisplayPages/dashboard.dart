@@ -228,7 +228,7 @@ class MainMenu extends StatefulWidget {
         backgroundColor: Colors.transparent,//grey[350],
         appBar: AppBar(
           title:
-          Text('Signed in from: ${user.phoneNumber!}',style: const TextStyle(color: Colors.white),),///${user.email!}
+          Text('Signed in from: ${user.phoneNumber!}',style: const TextStyle(color: Colors.white,fontSize: 18 ),),///${user.email!}
           backgroundColor: Colors.black87,
           iconTheme: const IconThemeData(color: Colors.white),
         ),
@@ -375,6 +375,17 @@ class MainMenu extends StatefulWidget {
                                 fgColor: Colors.red,
                                 btSize: const Size(130, 120),
                               ),
+                              // ElevatedIconButton(
+                              //   onPress: () async {
+                              //     Navigator.push(context,
+                              //         MaterialPageRoute(builder: (context) => const NoticeScreen()));///add page for users to see
+                              //   },
+                              //   labelText: 'Dispute\nDisconnect',
+                              //   fSize: 14,
+                              //   faIcon: const FaIcon(Icons.cable_outlined),
+                              //   fgColor: Colors.red,
+                              //   btSize: const Size(130, 120),
+                              // ),
                               const SizedBox(width: 40),
                               ElevatedIconButton(
                                 onPress: (){
@@ -389,6 +400,53 @@ class MainMenu extends StatefulWidget {
                               ),
                             ],
                           ),
+                        ),
+                      ),
+                      Visibility(
+                        visible: visHide,
+                        child: ElevatedIconButton(
+                          onPress: (){
+                            showDialog(
+                                barrierDismissible: false,
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    shape: const RoundedRectangleBorder(borderRadius:
+                                    BorderRadius.all(Radius.circular(18))),
+                                    title: const Text("Logout"),
+                                    content: const Text("Are you sure you want to logout?"),
+                                    actions: [
+                                      IconButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        icon: const Icon(
+                                          Icons.cancel,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () async {
+                                          FirebaseAuth.instance.signOut();
+                                          Navigator.pop(context);
+
+                                          ///SystemNavigator.pop() closes the entire app
+                                          // SystemNavigator.pop();
+                                        },
+                                        icon: const Icon(
+                                          Icons.done,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                });
+                          },
+                          labelText: 'Logout',
+                          fSize: 18,
+                          faIcon: const FaIcon(Icons.logout),
+                          fgColor: Colors.red,
+                          btSize: const Size(130, 120),
                         ),
                       ),
                     ],

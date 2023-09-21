@@ -389,6 +389,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                     ),
                                   ],
                                 ),
+                                const SizedBox(height: 5,),
                                 BasicIconButtonGrey(
                                   onPress: () async {
                                     showDialog(

@@ -6,6 +6,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:external_app_launcher/external_app_launcher.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/menu_reusable_elevated_button.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/counsellor_screen.dart';
 
 class NavDrawer extends StatelessWidget {
   const NavDrawer({Key? key}) : super(key: key);
@@ -23,7 +24,7 @@ class NavDrawer extends StatelessWidget {
               const SizedBox(height: 100,),
               Center(child: buildHeader(context)),
 
-              const SizedBox(height: 150,),
+              const SizedBox(height: 50,),
               buildMenuItems(context),
 
             ],
@@ -51,17 +52,19 @@ Widget buildMenuItems(BuildContext context) => Wrap(
   runSpacing: 10,
   runAlignment: WrapAlignment.end,
   children:  <Widget>[
-    const SizedBox(height: 120,),
-    // ListTile(
-    //   leading: const Icon(Icons.label_important, size: 50,),
-    //   title: const Text('Cyberfox IT',
-    //     style: TextStyle(
-    //       fontWeight: FontWeight.bold,
-    //       fontSize: 20,),),
-    //   onTap: (){
-    //     Navigator.of(context).popUntil((route) => route.isFirst);
-    //   },
-    // ),
+    const SizedBox(height: 20,),
+    ListTile(
+      leading: const Icon(Icons.supervised_user_circle_outlined, size: 50,),
+      title: const Text('Contact councillors',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 20,),),
+      onTap: () {
+        Navigator.push(context,
+          MaterialPageRoute(builder: (context) => const CouncillorScreen()),
+        );
+      },
+    ),
     // ListTile(
     //   leading:  Image.asset('images/MainMenu/road_signs_icon.png'),
     //   title: const Text('User details'),
@@ -72,7 +75,7 @@ Widget buildMenuItems(BuildContext context) => Wrap(
     //     // );
     //   },
     // ),
-    const SizedBox(height: 20,),
+    const SizedBox(height: 200,),
     Wrap(
         runSpacing: 0,
         runAlignment: WrapAlignment.spaceEvenly,
@@ -81,9 +84,9 @@ Widget buildMenuItems(BuildContext context) => Wrap(
             height: 40,
             child: ListTile(
                 leading: const Icon(Icons.add_call, size: 20,),
-                title: const Text('Contact Cyberfox'),
+                title: const Text('Contact Support'),
                 onTap: (){
-                  final Uri _tel = Uri.parse('tel:+27${0333871974}');
+                  final Uri _tel = Uri.parse('tel:+27${0333923000}');
                   launchUrl(_tel);
                 }
             ),
@@ -91,71 +94,82 @@ Widget buildMenuItems(BuildContext context) => Wrap(
           SizedBox(
             height: 40,
             child: ListTile(
-              leading: const Icon(Icons.facebook_rounded, size: 20,),
-              title: const Text('Cyberfox Facebook'),
-              onTap: () async {
-
-                ///could work but opens to facebook google play app install and not the app directly
-                // await LaunchApp.openApp(
-                //   // androidPackageName: 'com.android.chrome',
-                //   androidPackageName: 'com.facebook.katana',
-                //   appStoreLink: 'com.facebook.katana',
-                //   openStore: false,
-                // );
-
-                ///trying new method
-                _launchSocial(Uri.parse('fb://page/122574191145679'), Uri.parse('https://www.facebook.com/cyberfoxit'));
-
-                ///works but breaks once web view completes loading and user is not logged into facebook
-                // final Uri _url1 = Uri.parse("fb://facewebmodal/f?href=https://www.facebook.com/cyberfoxit");
-                ///new url launcher
-                // launchFacebook(_url1);
-                ///old url Launcher
-                // _launchURL(_url1);
-              },
-            ),
-          ),
-          SizedBox(
-            height: 50,
-            child: ListTile(
-              leading: const Icon(Icons.video_collection_rounded, size: 20,),
-              title: const Text('Subscribe on YouTube'),
-              onTap: () async {
-
-                ///could work but opens to youtube app installed and not the channel directly
-                // await LaunchApp.openApp(
-                //   // androidPackageName: 'com.android.chrome',
-                //   androidPackageName: 'com.google.android.youtube',
-                //   appStoreLink: 'com.google.android.youtube',
-                //   openStore: false,
-                // );
-
-                ///canLaunch claims depreciated but still works
-                const url = 'https://www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ';
-                if (await canLaunch(url)) {
-                  await launch(url);
-                } else {
-                  _launchSocial(Uri.parse('youtube:www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ'), Uri.parse('https://www.youtube.com/user/axed25'));
-                  throw 'Could not launch $url';
+                leading: const Icon(Icons.error, size: 20,),
+                title: const Text('Report a bug'),
+                onTap: (){
+                  final Uri _tel = Uri.parse('tel:+27${0333871974}');
+                  launchUrl(_tel);
                 }
-
-                // final Uri ytUrl = Uri.parse('https://www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ');
-                // if (await canLaunchUrl(ytUrl)) {
-                //   await launchUrl(ytUrl);
-                // } else {
-                //   _launchSocial(Uri.parse('youtube:www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ'), Uri.parse('https://www.youtube.com/user/axed25'));
-                //   throw 'Could not launch youtube app $ytUrl';
-                // }
-
-                //youtube:https://www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ < Cyberfox yt
-                // _launchSocial(Uri.parse('youtube:www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ'), Uri.parse('https://www.youtube.com/user/axed25'));
-
-                ///old method
-                // final Uri _url2 = Uri.parse('https://www.youtube.com/user/axed25');
-                // _launchURL(_url2);
-              },
             ),
           ),
+          // SizedBox(
+          //   height: 40,
+          //   child: ListTile(
+          //     leading: const Icon(Icons.facebook_rounded, size: 20,),
+          //     title: const Text('Cyberfox Facebook'),
+          //     onTap: () async {
+          //
+          //       ///could work but opens to facebook google play app install and not the app directly
+          //       // await LaunchApp.openApp(
+          //       //   // androidPackageName: 'com.android.chrome',
+          //       //   androidPackageName: 'com.facebook.katana',
+          //       //   appStoreLink: 'com.facebook.katana',
+          //       //   openStore: false,
+          //       // );
+          //
+          //       ///trying new method
+          //       _launchSocial(Uri.parse('fb://page/122574191145679'), Uri.parse('https://www.facebook.com/cyberfoxit'));
+          //
+          //       ///works but breaks once web view completes loading and user is not logged into facebook
+          //       // final Uri _url1 = Uri.parse("fb://facewebmodal/f?href=https://www.facebook.com/cyberfoxit");
+          //       ///new url launcher
+          //       // launchFacebook(_url1);
+          //       ///old url Launcher
+          //       // _launchURL(_url1);
+          //     },
+          //   ),
+          // ),
+          // SizedBox(
+          //   height: 50,
+          //   child: ListTile(
+          //     leading: const Icon(Icons.video_collection_rounded, size: 20,),
+          //     title: const Text('Subscribe on YouTube'),
+          //     onTap: () async {
+          //
+          //       ///could work but opens to youtube app installed and not the channel directly
+          //       // await LaunchApp.openApp(
+          //       //   // androidPackageName: 'com.android.chrome',
+          //       //   androidPackageName: 'com.google.android.youtube',
+          //       //   appStoreLink: 'com.google.android.youtube',
+          //       //   openStore: false,
+          //       // );
+          //
+          //       ///canLaunch claims depreciated but still works
+          //       const url = 'https://www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ';
+          //       if (await canLaunch(url)) {
+          //         await launch(url);
+          //       } else {
+          //         _launchSocial(Uri.parse('youtube:www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ'), Uri.parse('https://www.youtube.com/user/axed25'));
+          //         throw 'Could not launch $url';
+          //       }
+          //
+          //       // final Uri ytUrl = Uri.parse('https://www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ');
+          //       // if (await canLaunchUrl(ytUrl)) {
+          //       //   await launchUrl(ytUrl);
+          //       // } else {
+          //       //   _launchSocial(Uri.parse('youtube:www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ'), Uri.parse('https://www.youtube.com/user/axed25'));
+          //       //   throw 'Could not launch youtube app $ytUrl';
+          //       // }
+          //
+          //       //youtube:https://www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ < Cyberfox yt
+          //       // _launchSocial(Uri.parse('youtube:www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ'), Uri.parse('https://www.youtube.com/user/axed25'));
+          //
+          //       ///old method
+          //       // final Uri _url2 = Uri.parse('https://www.youtube.com/user/axed25');
+          //       // _launchURL(_url2);
+          //     },
+          //   ),
+          // ),
 
           // ListTile(
           //     leading: const Icon(Icons.logout, size: 20,),

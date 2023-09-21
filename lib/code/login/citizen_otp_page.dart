@@ -38,12 +38,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   initState(){
     super.initState();
+    checkText();
+  }
+
+  void checkText() {
     if(defaultTargetPlatform == TargetPlatform.android){
-      double topText = 12;
-      double botText = 23;
+      topText = 12;
+      botText = 23;
     }else{
-      double topText = 6;
-      double botText = 12;
+      topText = 20;
+      botText = 40;
     }
   }
 

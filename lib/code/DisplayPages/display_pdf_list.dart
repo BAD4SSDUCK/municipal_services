@@ -130,6 +130,29 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                             BasicIconButtonGrey(
                                               onPress: () async {
 
+                                                // String accountNumberPDF = documentSnapshot['account number'];
+                                                // print('The acc number is ::: $accountNumberPDF');
+                                                // print('The month we are in is::: $formattedDate');
+                                                //
+                                                // // getPDFByAccMon(accountNumberPDF,formattedDate);
+                                                // if(dropdownValue=='Select Month'){
+                                                //   getPDFByAccMon(accountNumberPDF,formattedDate);
+                                                //   print('The month selected is::: $dropdownValue');
+                                                // } else {
+                                                //   getPDFByAccMon(accountNumberPDF,dropdownValue);
+                                                //   print('The month selected is::: $dropdownValue');
+                                                // }
+
+                                              },
+                                              labelText: 'Disupute',
+                                              fSize: 16,
+                                              faIcon: const FaIcon(Icons.error_outline),
+                                              fgColor: Colors.red,
+                                              btSize: const Size(50, 50),
+                                            ),
+                                            BasicIconButtonGrey(
+                                              onPress: () async {
+
                                                 String accountNumberPDF = documentSnapshot['account number'];
                                                 print('The acc number is ::: $accountNumberPDF');
                                                 print('The month we are in is::: $formattedDate');

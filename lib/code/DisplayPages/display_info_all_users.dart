@@ -1,15 +1,18 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_xlsio/xlsio.dart' as excel;
+import 'package:http/http.dart' as http;
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -143,6 +146,41 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
   String formattedDate = DateFormat.MMMM().format(now);
 
+  final CollectionReference _listUserTokens =
+  FirebaseFirestore.instance.collection('UserToken');
+
+  final CollectionReference _listNotifications =
+  FirebaseFirestore.instance.collection('Notifications');
+
+  final _headerController = TextEditingController();
+  final _messageController = TextEditingController();
+  late bool _noticeReadController;
+
+  List<String> usersNumbers =[];
+  List<String> usersTokens =[];
+  List<String> usersRetrieve =[];
+
+  ///Methods and implementation for push notifications with firebase and specific device token saving
+  late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  TextEditingController username = TextEditingController();
+  TextEditingController title = TextEditingController();
+  TextEditingController body = TextEditingController();
+  String? mtoken = " ";
+
+  ///This was made for testing a default message
+  String title2 = "Outstanding Utilities Payment";
+  String body2 = "Make sure you pay utilities before the end of this month or your services will be disconnected";
+
+  String token = '';
+  String notifyToken = '';
+
+  bool visShow = true;
+  bool visHide = false;
+  bool adminAcc = false;
+
+  int numTokens=0;
+
+
   String dropdownValue = 'Select Month';
   List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -163,13 +201,161 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     super.initState();
   }
 
-
   @override
   void dispose() {
     _searchBarController;
     searchText;
     super.dispose();
   }
+
+  void sendPushMessage(String token, String title, String body,) async{
+    try{
+      await http.post(
+        Uri.parse('https://fcm.googleapis.com/fcm/send'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'key=AAAA5PnILx8:APA91bFrXK321LraFWsbh6er8bWta0ggbvb0pxUhVnzYfjYbP6rDMecElIu0pAYnKOWthddgsZUxXMEPPXxT1EguNdkGYZsrm3fjjlGeY2EP4bxjgvn9IZQvgxKzv6w8ES2f_g9Idlv5',
+        },
+        body: jsonEncode(
+          <String, dynamic>{
+            'priority': 'high',
+            'data': <String, dynamic>{
+              'click_action':'FLUTTER_NOTIFICATION_CLICK',
+              'status': 'done',
+              'title': title,
+              'body': body,
+            },
+
+            "notification": <String, dynamic>{
+              "title": title,
+              "body": body,
+              "android_channel_id": "User"
+            },
+            "to": token,
+          },
+        ),
+      );
+    } catch(e) {
+      if(kDebugMode){
+        print("error push notification");
+      }
+    }
+  }
+
+  Future<void> _notifyThisUser([DocumentSnapshot? documentSnapshot]) async {
+
+    if (documentSnapshot != null) {
+      username.text = documentSnapshot.id;
+    }
+
+    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
+    void _createBottomSheet() async{
+      Future<void> future = showModalBottomSheet(
+          context: context,
+          builder: await showModalBottomSheet(
+              isScrollControlled: true,
+              context: context,
+              builder: (BuildContext ctx) {
+                return StatefulBuilder(
+                  builder: (BuildContext context, StateSetter setState) {
+                    return SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                            top: 20,
+                            left: 20,
+                            right: 20,
+                            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Visibility(
+                              visible: visShow,
+                              child: TextField(
+                                controller: title,
+                                decoration: const InputDecoration(
+                                    labelText: 'Message Header'),
+                              ),
+                            ),
+                            Visibility(
+                              visible: visShow,
+                              child: TextField(
+                                controller: body,
+                                decoration: const InputDecoration(
+                                    labelText: 'Message'),
+                              ),
+                            ),
+
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            ElevatedButton(
+                                child: const Text('Send Notification'),
+                                onPressed: () async {
+
+                                  DateTime now = DateTime.now();
+                                  String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+
+                                  final String tokenSelected = notifyToken;
+                                  final String? userNumber = documentSnapshot?.id;
+                                  final String notificationTitle = title.text;
+                                  final String notificationBody = body.text;
+                                  final String notificationDate = formattedDate;
+                                  const bool readStatus = false;
+
+                                  if (tokenSelected != null) {
+                                    if(title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty) {
+                                      await _listNotifications.add({
+                                        "token": tokenSelected,
+                                        "user": userNumber,
+                                        "title": notificationTitle,
+                                        "body": notificationBody,
+                                        "read": readStatus,
+                                        "date": notificationDate,
+                                        "level": 'severe',
+                                      });
+
+                                      ///It can be changed to the firebase notification
+                                      String titleText = title.text;
+                                      String bodyText = body.text;
+
+                                      ///gets users phone token to send notification to this phone
+                                      if (userNumber != "") {
+                                        DocumentSnapshot snap = await FirebaseFirestore.instance.collection("UserToken").doc(userNumber).get();
+                                        String token = snap['token'];
+                                        print('The phone number is retrieved as ::: $userNumber');
+                                        print('The token is retrieved as ::: $token');
+                                        sendPushMessage(token, titleText, bodyText);
+                                        Fluttertoast.showToast(msg: 'The user has been sent the notification!', gravity: ToastGravity.CENTER);
+                                      }
+                                    } else {
+                                      Fluttertoast.showToast(msg: 'Please Fill Header and Message of the notification!', gravity: ToastGravity.CENTER);
+                                    }
+                                  }
+
+                                  username.text =  '';
+                                  title.text =  '';
+                                  body.text =  '';
+                                  _headerController.text =  '';
+                                  _messageController.text =  '';
+
+                                  if(context.mounted)Navigator.of(context).pop();
+
+                                }
+                            )
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }));
+    }
+
+    _createBottomSheet();
+
+  }
+
 
   Widget firebasePropertyCard(CollectionReference<Object?> propertiesDataStream) {
     return Expanded(
@@ -675,6 +861,62 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                       btSize: const Size(100, 38),
                                     ),
                                     const SizedBox(width: 5,),
+                                  ],
+                                ),
+                                const SizedBox(height: 5,),
+                                Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        BasicIconButtonGrey(
+                                          onPress: () async {
+
+                                            showDialog(
+                                                barrierDismissible: false,
+                                                context: context,
+                                                builder: (context) {
+                                                  return AlertDialog(
+                                                    title: const Text("Notify Utilities Disconnection"),
+                                                    content: const Text("This will notify the owner of the property of their water or electricity being disconnection in 14 days!\n\nAre you sure?"),
+                                                    actions: [
+                                                      IconButton(
+                                                        onPressed: () {
+                                                          Navigator.pop(context);
+                                                        },
+                                                        icon: const Icon(
+                                                          Icons.cancel,
+                                                          color: Colors.red,
+                                                        ),
+                                                      ),
+                                                      IconButton(
+                                                        onPressed: () async {
+
+
+
+                                                          Fluttertoast.showToast(msg: "The owner has been notified!!",);
+                                                          Navigator.pop(context);
+                                                          // Navigator.push(context,
+                                                          //     MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: propPhoneNum, meterNumber: eMeterNumber,)));
+                                                        },
+                                                        icon: const Icon(
+                                                          Icons.done,
+                                                          color: Colors.green,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  );
+                                                });
+                                          },
+                                          labelText: 'Disconnection',
+                                          fSize: 16,
+                                          faIcon: const FaIcon(Icons.warning_amber,),
+                                          fgColor: Colors.amber,
+                                          btSize: const Size(100, 38),
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ],

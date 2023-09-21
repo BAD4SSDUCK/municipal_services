@@ -669,6 +669,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                           "body": notificationBody,
                                           "read": readStatus,
                                           "date": notificationDate,
+                                          "level": 'general',
                                         });
 
                                       } else {
