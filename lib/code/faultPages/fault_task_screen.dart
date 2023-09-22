@@ -165,6 +165,14 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                               ),
                             ),
                             const SizedBox(height: 10,),
+
+                            Text(
+                              'Reference Number: ${documentSnapshot['ref']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+
                             Column(
                               children: [
                                 if(documentSnapshot['accountNumber'] != "")...[

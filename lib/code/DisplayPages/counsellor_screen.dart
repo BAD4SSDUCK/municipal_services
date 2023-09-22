@@ -113,7 +113,7 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                 final DocumentSnapshot documentSnapshot =
                 streamSnapshot.data!.docs[index];
 
-                if(((documentSnapshot['wardNum'].trim()).toLowerCase()).contains((dropdownValue.trim()).toLowerCase()) || dropdownValue == 'Select Ward' || dropdownValue == 'All Wards') {
+                if((documentSnapshot['wardNum'].trim()==(dropdownValue.trim())) || dropdownValue == 'Select Ward' || dropdownValue == 'All Wards') {
                   if (wardCounsellorStream != null) {
                     return Card(
                       margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
@@ -306,7 +306,7 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                 ]
             ),
           ),
-          const SizedBox(height: 10,),
+          // const SizedBox(height: 10,),
           ///made the listview card a reusable widget
           wardCounsellorCard(_listCounsellors),
         ],

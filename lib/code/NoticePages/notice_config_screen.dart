@@ -25,7 +25,9 @@ import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 
 class NoticeConfigScreen extends StatefulWidget {
-  const NoticeConfigScreen({Key? key}) : super(key: key);
+  const NoticeConfigScreen({Key? key, required this.userNumber}) : super(key: key);
+
+  final String userNumber;
 
   @override
   State<NoticeConfigScreen> createState() => _NoticeConfigScreenState();
@@ -42,7 +44,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
   final _headerController = TextEditingController();
   final _messageController = TextEditingController();
-  final _searchBarController = TextEditingController();
+  late TextEditingController _searchBarController = TextEditingController();
   late bool _noticeReadController;
 
   List<String> usersNumbers =[];
@@ -72,12 +74,16 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
   @override
   void initState() {
+
     checkAdmin();
     countResult();
     super.initState();
   }
 
   void countResult() async{
+    _searchBarController.text = widget.userNumber;
+    searchText = widget.userNumber;
+
     var query = _listUserTokens.where("token");
     var snapshot = await query.get();
     var count = snapshot.size;
@@ -315,8 +321,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                 final DocumentSnapshot documentSnapshot =
                 streamSnapshot.data!.docs[index];
 
-                if(((documentSnapshot.id.trim()).toLowerCase()).contains((_searchBarController.text.trim()).toLowerCase())){
-                  if(documentSnapshot.id.contains('+27')){
+                if( (((documentSnapshot.id.trim()).toLowerCase()).contains((_searchBarController.text.trim()).toLowerCase())) || documentSnapshot.id == searchText ){
                     return Card(
                       margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,10.0),
                       child: Padding(
@@ -410,15 +415,25 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                     ),
                                   ],
                                 ),
+                                const SizedBox(height: 5,),
+                                BasicIconButtonGrey(
+                                  onPress: () async {
+                                    notifyToken = documentSnapshot['token'];
+                                    _disconnectThisUser(documentSnapshot);
+                                  },
+                                  labelText: 'Disconnect',
+                                  fSize: 14,
+                                  faIcon: const FaIcon(Icons.warning_amber,),
+                                  fgColor: Colors.amber,
+                                  btSize: const Size(50, 38),
+                                ),
                               ],
                             ),
                           ],
                         ),
                       ),
                     );
-                  } else {
-                    return const Card();
-                  }
+
                 }
               },
             );
@@ -719,6 +734,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
     if (documentSnapshot != null) {
       username.text = documentSnapshot.id;
+      title.text = '';
+      body.text = '';
     }
 
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
@@ -785,6 +802,123 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                         "body": notificationBody,
                                         "read": readStatus,
                                         "date": notificationDate,
+                                        "level": 'general',
+                                      });
+
+                                      ///It can be changed to the firebase notification
+                                      String titleText = title.text;
+                                      String bodyText = body.text;
+
+                                      ///gets users phone token to send notification to this phone
+                                      if (userNumber != "") {
+                                        DocumentSnapshot snap = await FirebaseFirestore.instance.collection("UserToken").doc(userNumber).get();
+                                        String token = snap['token'];
+                                        print('The phone number is retrieved as ::: $userNumber');
+                                        print('The token is retrieved as ::: $token');
+                                        sendPushMessage(token, titleText, bodyText);
+                                        Fluttertoast.showToast(msg: 'The user has been sent the notification!', gravity: ToastGravity.CENTER);
+                                      }
+                                    } else {
+                                      Fluttertoast.showToast(msg: 'Please Fill Header and Message of the notification!', gravity: ToastGravity.CENTER);
+                                    }
+                                  }
+
+                                  username.text =  '';
+                                  title.text =  '';
+                                  body.text =  '';
+                                  _headerController.text =  '';
+                                  _messageController.text =  '';
+
+                                  if(context.mounted)Navigator.of(context).pop();
+
+                                }
+                            )
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }));
+    }
+
+    _createBottomSheet();
+
+  }
+
+  Future<void> _disconnectThisUser([DocumentSnapshot? documentSnapshot]) async {
+
+    if (documentSnapshot != null) {
+      username.text = widget.userNumber;
+      title.text = 'Utilities Disconnection Warning';
+      body.text = 'Please complete payment of your utilities. Failing to do so will result in utilities on your property being cut off in 14 days!';
+    }
+
+    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
+    void _createBottomSheet() async{
+      Future<void> future = showModalBottomSheet(
+          context: context,
+          builder: await showModalBottomSheet(
+              isScrollControlled: true,
+              context: context,
+              builder: (BuildContext ctx) {
+                return StatefulBuilder(
+                  builder: (BuildContext context, StateSetter setState) {
+                    return SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                            top: 20,
+                            left: 20,
+                            right: 20,
+                            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Visibility(
+                              visible: visShow,
+                              child: TextField(
+                                controller: title,
+                                decoration: const InputDecoration(
+                                    labelText: 'Message Header'),
+                              ),
+                            ),
+                            Visibility(
+                              visible: visShow,
+                              child: TextField(
+                                controller: body,
+                                decoration: const InputDecoration(
+                                    labelText: 'Message'),
+                              ),
+                            ),
+
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            ElevatedButton(
+                              child: const Text('Send Notification'),
+                              onPressed: () async {
+
+                                DateTime now = DateTime.now();
+                                String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+
+                                final String tokenSelected = notifyToken;
+                                final String? userNumber = documentSnapshot?.id;
+                                final String notificationTitle = title.text;
+                                final String notificationBody = body.text;
+                                final String notificationDate = formattedDate;
+                                const bool readStatus = false;
+
+                                  if (tokenSelected != null) {
+                                    if(title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty) {
+                                      await _listNotifications.add({
+                                        "token": tokenSelected,
+                                        "user": userNumber,
+                                        "title": notificationTitle,
+                                        "body": notificationBody,
+                                        "read": readStatus,
+                                        "date": notificationDate,
+                                        "level": 'severe',
                                       });
 
                                       ///It can be changed to the firebase notification
@@ -906,13 +1040,14 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                       TextFormField(
                         onChanged: (value) async{
                           setState(() {
+                            print(_searchBarController.text);
                             usersNumbers = [];
                             usersTokens = [];
                             searchText = value;
                             print('this is the input text ::: $searchText');
                           });
                         },
-                        autofocus: false,
+                        autofocus: true,
                         controller: _searchBarController,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.search),

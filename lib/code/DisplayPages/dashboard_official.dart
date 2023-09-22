@@ -189,7 +189,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => const NoticeConfigScreen()));
+                                        MaterialPageRoute(builder: (context) => const NoticeConfigScreen(userNumber: '+27',)));
                                   },
                                   labelText: 'User \nNotify',
                                   fSize: 16,

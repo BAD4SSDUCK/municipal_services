@@ -645,6 +645,14 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                     ),
                                   ),
                                   const SizedBox(height: 10,),
+
+                                  Text(
+                                    'Reference Number: ${documentSnapshot['ref']}',
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5,),
+
                                   Column(
                                     children: [
                                       if(status != "")...[
@@ -1077,16 +1085,12 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
     if (_photo == null) return;
 
     final fileName = pathing.basename(_photo!.path);
-
     File? imageFile = _photo;
     List<int> imageBytes = imageFile!.readAsBytesSync();
     String imageData = base64Encode(imageBytes);
-
     final String photoName;
-
     DateTime now = DateTime.now();
     String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-
     final destination = 'files/faultImages/$formattedDate';
 
     String addressFault = _addressController.text;
@@ -1096,6 +1100,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
     }
 
     final String faultDescription = _faultDescriptionController.text;
+    final String refNum = UniqueKey().toString();
 
     if (_currentUser != null) {
       await _faultData.add({
@@ -1115,6 +1120,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
         "faultResolved": false,
         "dateReported": formattedDate,
         "faultStage": 1,
+        "ref": refNum,
       });
 
       try {
@@ -1147,6 +1153,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
     final String addressFault = Address;
     final String faultDescription = _faultDescriptionController.text;
+    final String refNum = UniqueKey().toString();
 
     if (_currentUser != null) {
       await _faultData.add({
@@ -1166,6 +1173,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
         "faultResolved": false,
         "dateReported": formattedDate,
         "faultStage": 1,
+        "ref": refNum,
       });
 
       _addressController.text = '';
