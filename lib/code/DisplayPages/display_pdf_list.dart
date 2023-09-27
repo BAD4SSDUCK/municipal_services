@@ -150,7 +150,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                               fSize: 16,
                                               faIcon: const FaIcon(Icons.error_outline),
                                               fgColor: Colors.red,
-                                              btSize: const Size(50, 50),
+                                              btSize: const Size(100, 38),
                                             ),
                                             BasicIconButtonGrey(
                                               onPress: () async {
@@ -173,7 +173,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                               fSize: 16,
                                               faIcon: const FaIcon(Icons.download),
                                               fgColor: Colors.green,
-                                              btSize: const Size(50, 50),
+                                              btSize: const Size(100, 38),
                                             ),
 
                                             const SizedBox(width: 5,),

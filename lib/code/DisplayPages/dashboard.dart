@@ -228,7 +228,7 @@ class MainMenu extends StatefulWidget {
         backgroundColor: Colors.transparent,//grey[350],
         appBar: AppBar(
           title:
-          Text('Signed in from: ${user.phoneNumber!}',style: const TextStyle(color: Colors.white,fontSize: 18 ),),///${user.email!}
+          Text('Signed in from: ${user.phoneNumber!}',style: const TextStyle(color: Colors.white,fontSize: 19 ),),///${user.email!}
           backgroundColor: Colors.black87,
           iconTheme: const IconThemeData(color: Colors.white),
         ),

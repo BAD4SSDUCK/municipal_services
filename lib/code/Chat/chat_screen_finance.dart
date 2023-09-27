@@ -27,16 +27,7 @@ class _ChatFinanceState extends State<ChatFinance> {
   void initState() {
     ///This is the circular loading widget in this future.delayed call
     _isLoading = true;
-    if(user?.phoneNumber == null){
-      useNum = '';
-      useEmail = user?.email!;
-      Constants.myName = useEmail;
-    } else if (user?.email == null){
-      useNum = user?.phoneNumber!;
-      useEmail = '';
-      Constants.myName = useNum;
-    }
-    print(Constants.myName);
+    checkUser();
     Future.delayed(const Duration(seconds: 3),(){
       setState(() {
         _isLoading = false;
@@ -49,6 +40,24 @@ class _ChatFinanceState extends State<ChatFinance> {
       });
     });
     super.initState();
+  }
+
+  Future<void> checkUser() async{
+    print('username must be :::${user?.phoneNumber}');
+    if(user?.phoneNumber == null ||
+    user?.phoneNumber == ''){
+      useNum = '';
+      useEmail = user?.email!;
+      Constants.myName = useEmail;
+    } else if (user?.email == null ||
+        user?.email == ''){
+      useNum = user?.phoneNumber!;
+      useEmail = '';
+      Constants.myName = useNum;
+    }
+
+    print('chatroom name is ${widget.chatRoomId}');
+    print('username is :::${Constants.myName}');
   }
 
   Widget chatMessages(){
@@ -277,26 +286,26 @@ Widget contactPopUp(BuildContext context) {
             context: context,
             builder: (context) {
               return AlertDialog(
-                shape: const RoundedRectangleBorder(borderRadius:
+                shape: RoundedRectangleBorder(borderRadius:
                 BorderRadius.all(Radius.circular(18))),
-                title: const Text("Contact Municipal Finance?"),
-                content: const Text("Do you want to contact the Municipal Finance department directly for your statement charge error via Email or Phone call?"),
+                title: Text("Contact Municipal Finance?"),
+                content: Text("Do you want to contact the Municipal Finance department directly for your statement charge error via Email or Phone call?"),
                 actions: [
                   IconButton(
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.pop(context);
                     },
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.cancel,
                       color: Colors.red,
                     ),
                   ),
                   IconButton(
-                    onPressed: () {
+                    onPressed: () async {
                       emailAddressRedirect();
                       Navigator.pop(context);
                     },
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.mail,
                       color: Colors.purple,
                     ),

@@ -121,7 +121,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   fgColor: Colors.purple,
                                   btSize: const Size(130, 120),
                                 ),
-                                const SizedBox(width: 30,),
+                                const SizedBox(width: 33,),
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,

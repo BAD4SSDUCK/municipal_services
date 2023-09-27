@@ -33,6 +33,10 @@ void main() async{
   ///Check what the app is running on
   if(defaultTargetPlatform == TargetPlatform.android){
     await Firebase.initializeApp();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]).then((value) => runApp(MyApp()));
   }else{
     await Firebase.initializeApp(
         options: const FirebaseOptions(
@@ -45,6 +49,10 @@ void main() async{
           measurementId: "G-3X7HM5HRHJ"
         )
     );
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]).then((value) => runApp(MyApp()));
   }
 
   await FirebaseMessaging.instance.getInitialMessage();
@@ -64,10 +72,11 @@ void main() async{
 
   Get.put(LocationController());
 
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]).then((value) => runApp(MyApp()));
+  ///This sets the app orientation by default.
+  // SystemChrome.setPreferredOrientations([
+  //   DeviceOrientation.portraitUp,
+  //   DeviceOrientation.portraitDown,
+  // ]).then((value) => runApp(MyApp()));
 
   runApp(const MyApp());
 

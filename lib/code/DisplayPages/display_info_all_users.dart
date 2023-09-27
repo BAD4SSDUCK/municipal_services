@@ -381,7 +381,12 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   // _allProps.add(documentSnapshot['address'].toString() as Map<String,dynamic>);
 
                   String billMessage;///A check for if payment is outstanding or not
-                  if(documentSnapshot['eBill'] != ''){
+                  if(documentSnapshot['eBill'] != '' ||
+                      documentSnapshot['eBill'] != 'R0,000.00' ||
+                      documentSnapshot['eBill'] != 'R0.00' ||
+                      documentSnapshot['eBill'] != 'R0' ||
+                      documentSnapshot['eBill'] != '0'
+                  ){
                     billMessage = 'Utilities bill outstanding: ${documentSnapshot['eBill']}';
                   } else {
                     billMessage = 'No outstanding payments';

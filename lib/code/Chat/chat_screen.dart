@@ -23,15 +23,7 @@ class _ChatState extends State<Chat> {
   void initState() {
     ///This is the circular loading widget in this future.delayed call
     _isLoading = true;
-    if(user?.phoneNumber == null){
-      useNum = '';
-      useEmail = user?.email!;
-      Constants.myName = useEmail;
-    } else if (user?.email == null){
-      useNum = user?.phoneNumber!;
-      useEmail = '';
-      Constants.myName = useNum;
-    }
+    checkUser();
     print(Constants.myName);
     Future.delayed(const Duration(seconds: 3),(){
       setState(() {
@@ -45,6 +37,24 @@ class _ChatState extends State<Chat> {
       });
     });
     super.initState();
+  }
+
+  Future<void> checkUser() async{
+    print('username must be :::${user?.phoneNumber}');
+    if(user?.phoneNumber == null ||
+        user?.phoneNumber == ''){
+      useNum = '';
+      useEmail = user?.email!;
+      Constants.myName = useEmail;
+    } else if (user?.email == null ||
+        user?.email == ''){
+      useNum = user?.phoneNumber!;
+      useEmail = '';
+      Constants.myName = useNum;
+    }
+
+    print('chatroom name is ${widget.chatRoomId}');
+    print('username is :::${Constants.myName}');
   }
 
   Widget chatMessages(){

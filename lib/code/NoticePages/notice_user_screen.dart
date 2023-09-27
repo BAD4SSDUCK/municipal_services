@@ -111,7 +111,9 @@ class _NoticeScreenState extends State<NoticeScreen> {
             child: Text(
               noticeData,
               style: const TextStyle(
+                color: Colors.red,
                 fontSize: 16,
+                fontWeight: FontWeight.w600
               ),
             ),
           ),
@@ -135,7 +137,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                 if(documentSnapshot['user'] == user?.phoneNumber.toString()){
                   if(documentSnapshot['user'].contains('+27') && documentSnapshot['read'] != true && documentSnapshot['level'] == 'general' ){
                     return Card(
-                      margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,10.0),
+                      margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Column(
@@ -196,6 +198,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                     return const Card();
                   }
                 }
+                return const Card();
               },
             );
           }
@@ -224,7 +227,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                 if(documentSnapshot['user'] == user?.phoneNumber.toString()){
                   if(documentSnapshot['user'].contains('+27') && documentSnapshot['read'] != true && documentSnapshot['level'] == 'severe' ){
                     return Card(
-                      margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,10.0),
+                      margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Column(
@@ -266,10 +269,10 @@ class _NoticeScreenState extends State<NoticeScreen> {
                                         final Uri _tel = Uri.parse('tel:+27${0333923000}');
                                         launchUrl(_tel);
                                       },
-                                      labelText: 'Support',
+                                      labelText: 'Appeal',
                                       fSize: 14,
                                       faIcon: const FaIcon(Icons.add_call,),
-                                      fgColor: Colors.amber,
+                                      fgColor: Colors.orangeAccent,
                                       btSize: const Size(50, 38),
                                     ),
                                     BasicIconButtonGrey(

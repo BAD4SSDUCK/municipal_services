@@ -177,18 +177,18 @@ class _ImageUploadMeterState extends State<ImageUploadMeter> {
         builder: (BuildContext bc) {
           return SafeArea(
             child: Container(
-              child: new Wrap(
+              child: Wrap(
                 children: <Widget>[
-                  new ListTile(
-                      leading: new Icon(Icons.photo_library),
-                      title: new Text('Gallery'),
+                  ListTile(
+                      leading: Icon(Icons.photo_library),
+                      title: Text('Gallery'),
                       onTap: () {
                         imgFromGallery();
                         Navigator.of(context).pop();
                       }),
-                  new ListTile(
-                    leading: new Icon(Icons.photo_camera),
-                    title: new Text('Camera'),
+                  ListTile(
+                    leading: Icon(Icons.photo_camera),
+                    title: Text('Camera'),
                     onTap: () {
                       imgFromCamera();
                       Navigator.of(context).pop();

@@ -893,7 +893,12 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                 propPhoneNum = documentSnapshot['cell number'];
 
                 String billMessage;///A check for if payment is outstanding or not
-                if(documentSnapshot['eBill'] != ''){
+                if(documentSnapshot['eBill'] != '' ||
+                    documentSnapshot['eBill'] != 'R0,000.00' ||
+                    documentSnapshot['eBill'] != 'R0.00' ||
+                    documentSnapshot['eBill'] != 'R0' ||
+                    documentSnapshot['eBill'] != '0'
+                ){
                   billMessage = 'Utilities bill outstanding: ${documentSnapshot['eBill']}';
                 } else {
                   billMessage = 'No outstanding payments';
