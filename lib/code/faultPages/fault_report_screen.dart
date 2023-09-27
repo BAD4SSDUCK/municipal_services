@@ -653,6 +653,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                   ),
                                   const SizedBox(height: 5,),
 
+
                                   Column(
                                     children: [
                                       if(status != "")...[
@@ -959,8 +960,9 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           child: Padding(
                             padding: EdgeInsets.all(8.0),
                             child: Text(
-                              'No Faults Reported',
+                              'No Faults Reported Yet',
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                              textAlign: TextAlign.center,
                             ),                      ),
                         ),
                       ),

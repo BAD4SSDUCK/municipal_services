@@ -97,6 +97,29 @@ class _NoticeScreenState extends State<NoticeScreen> {
     );
   }
 
+  //it is called within a listview page widget
+  Widget noticeItemWarningField(String noticeData) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.amberAccent,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8,),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              noticeData,
+              style: const TextStyle(
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget userNotificationCard(CollectionReference<Object?> noticeDataStream){
     return Expanded(
       child: StreamBuilder<QuerySnapshot>(
@@ -220,7 +243,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                               'Notice Header:',
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                             ),
-                            noticeItemField(documentSnapshot['title'],),
+                            noticeItemWarningField(documentSnapshot['title'],),
                             const Text(
                               'Notice Details:',
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),

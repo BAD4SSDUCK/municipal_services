@@ -1454,8 +1454,10 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                     padding: EdgeInsets.all(8.0),
                     child: Text(
                       'No properties registered on this number yet.',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                    ),                      ),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700,),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ),
               ),
             ),

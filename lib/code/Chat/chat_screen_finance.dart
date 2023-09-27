@@ -3,16 +3,20 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class Chat extends StatefulWidget {
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+class ChatFinance extends StatefulWidget {
   String chatRoomId;
 
-  Chat({required this.chatRoomId});
+  ChatFinance({required this.chatRoomId});
 
   @override
-  _ChatState createState() => _ChatState();
+  _ChatFinanceState createState() => _ChatFinanceState();
 }
 
-class _ChatState extends State<Chat> {
+class _ChatFinanceState extends State<ChatFinance> {
 
   late bool _isLoading;
   late Stream<QuerySnapshot> chats;
@@ -117,9 +121,13 @@ class _ChatState extends State<Chat> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Administrator Chat',style: TextStyle(color: Colors.white),),
+        title: const Text('Finance Chat',style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: <Widget>[
+          contactPopUp(context)
+        ],
+
       ),
       body: Container(
         child: Stack(
@@ -241,8 +249,8 @@ class MessageTile extends StatelessWidget {
 
 final FirebaseAuth auth = FirebaseAuth.instance;
 final User? user = auth.currentUser;
-String? useNum ;
-String? useEmail ;
+String? useNum;
+String? useEmail;
 
 ///Constraints class
 class Constants{
@@ -259,6 +267,79 @@ Widget appBarMain(BuildContext context) {
     elevation: 0.0,
     centerTitle: false,
   );
+}
+
+Widget contactPopUp(BuildContext context) {
+  return IconButton(
+      onPressed: () {
+        showDialog(
+            barrierDismissible: false,
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                shape: const RoundedRectangleBorder(borderRadius:
+                BorderRadius.all(Radius.circular(18))),
+                title: const Text("Contact Municipal Finance?"),
+                content: const Text("Do you want to contact the Municipal Finance department directly for your statement charge error via Email or Phone call?"),
+                actions: [
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(
+                      Icons.cancel,
+                      color: Colors.red,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      emailAddressRedirect();
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(
+                      Icons.mail,
+                      color: Colors.purple,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () async {
+                      phoneCallRedirect();
+                      Navigator.pop(context);
+
+                      ///SystemNavigator.pop() closes the entire app
+                      // SystemNavigator.pop();
+                    },
+                    icon: const Icon(
+                      Icons.add_call,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              );
+            });
+      }, icon: const FaIcon(Icons.contact_mail_outlined)
+  );
+}
+
+Future<void> emailAddressRedirect() async {
+
+
+  String email = Uri.encodeComponent("finance@msunduzi.gov.za");
+  String subject = Uri.encodeComponent("Municipal Finance Enquiry");
+  String body = Uri.encodeComponent("Dear Sire/Madam,\n\nI am contacting you to dispute an issue with the bill on my property not matching the trend of my readings.");
+  print(subject);
+  Uri mail = Uri.parse("mailto:$email?subject=$subject&body=$body");
+  if (await canLaunchUrl(mail)) {
+    await launchUrl(mail);
+  }else{
+    Fluttertoast.showToast(msg: "Could not launch email service.",);
+  //email app is not opened
+  }
+}
+
+Future<void> phoneCallRedirect() async {
+  final Uri _tel = Uri.parse('tel:+27${0333923000}');
+  launchUrl(_tel);
 }
 
 InputDecoration textFieldInputDecoration(String hintText) {
@@ -307,7 +388,7 @@ class DatabaseMethods {
   Future<bool> addChatRoom(Map<String, dynamic> chatRoom, String chatRoomId) async {
     try {
       await FirebaseFirestore.instance
-          .collection("chatRoom")
+          .collection("chatRoomFinance")
           .doc(chatRoomId)
           .set(chatRoom);
       return true;
@@ -319,7 +400,7 @@ class DatabaseMethods {
 
   getChats(String chatRoomId) async{
     return FirebaseFirestore.instance
-        .collection("chatRoom")
+        .collection("chatRoomFinance")
         .doc(chatRoomId)
         .collection("chats")
         .orderBy('time')
@@ -327,7 +408,7 @@ class DatabaseMethods {
   }
 
   Future<void> addMessage(String chatRoomId, chatMessageData) async {
-    FirebaseFirestore.instance.collection("chatRoom")
+    FirebaseFirestore.instance.collection("chatRoomFinance")
         .doc(chatRoomId)
         .collection("chats")
         .add(chatMessageData).catchError((e){
@@ -337,18 +418,18 @@ class DatabaseMethods {
 
   getUserChats(String itIsMyName) async {
     return await FirebaseFirestore.instance
-        .collection("chatRoom")
+        .collection("chatRoomFinance")
         .where('users', arrayContains: itIsMyName)
         .snapshots();
   }
 
   Future<void> addChatDocName(DocumentSnapshot? documentSnapshot, String chatRoomId) async{
     final CollectionReference namedChatAdd =
-    FirebaseFirestore.instance.collection("chatRoom");
+    FirebaseFirestore.instance.collection("chatRoomFinance");
 
     if (documentSnapshot != null) {
       await namedChatAdd.add({
-        "chatRoom": chatRoomId,
+        "chatRoomFinance": chatRoomId,
       });
     }
   }

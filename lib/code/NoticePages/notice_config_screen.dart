@@ -44,12 +44,12 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
   final _headerController = TextEditingController();
   final _messageController = TextEditingController();
-  late TextEditingController _searchBarController = TextEditingController();
+  late final TextEditingController _searchBarController = TextEditingController();
   late bool _noticeReadController;
 
-  List<String> usersNumbers =[];
-  List<String> usersTokens =[];
-  List<String> usersRetrieve =[];
+  List<String> usersNumbers = [];
+  List<String> usersTokens = [];
+  List<String> usersRetrieve = [];
 
   ///Methods and implementation for push notifications with firebase and specific device token saving
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -70,17 +70,16 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
   bool visHide = false;
   bool adminAcc = false;
 
-  int numTokens=0;
+  int numTokens = 0;
 
   @override
   void initState() {
-
     checkAdmin();
     countResult();
     super.initState();
   }
 
-  void countResult() async{
+  void countResult() async {
     _searchBarController.text = widget.userNumber;
     searchText = widget.userNumber;
 
@@ -109,7 +108,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
   void checkAdmin() {
     String? emailLogged = user?.email.toString();
-    if(emailLogged?.contains("admin") == true){
+    if (emailLogged?.contains("admin") == true) {
       adminAcc = true;
     } else {
       adminAcc = false;
@@ -117,8 +116,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
   }
 
   //function for messaging
-  void sendPushMessage(String token, String title, String body,) async{
-    try{
+  void sendPushMessage(String token, String title, String body,) async {
+    try {
       await http.post(
         Uri.parse('https://fcm.googleapis.com/fcm/send'),
         headers: <String, String>{
@@ -129,7 +128,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
           <String, dynamic>{
             'priority': 'high',
             'data': <String, dynamic>{
-              'click_action':'FLUTTER_NOTIFICATION_CLICK',
+              'click_action': 'FLUTTER_NOTIFICATION_CLICK',
               'status': 'done',
               'title': title,
               'body': body,
@@ -144,8 +143,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
           },
         ),
       );
-    } catch(e) {
-      if(kDebugMode){
+    } catch (e) {
+      if (kDebugMode) {
         print("error push notification");
       }
     }
@@ -176,7 +175,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
   }
 
   //this widget is for displaying users phone numbers with the hidden stored device token
-  Widget userAndTokenCard(CollectionReference<Object?> tokenDataStream){
+  Widget userAndTokenCard(CollectionReference<Object?> tokenDataStream) {
     return Expanded(
       child: StreamBuilder<QuerySnapshot>(
         stream: tokenDataStream.snapshots(),
@@ -188,114 +187,117 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                 final DocumentSnapshot documentSnapshot =
                 streamSnapshot.data!.docs[index];
 
-                if(documentSnapshot.id.toString().contains('+27') && usersNumbers.length<numTokens && usersTokens.length<numTokens) {
+                if (documentSnapshot.id.toString().contains('+27') &&
+                    usersNumbers.length < numTokens &&
+                    usersTokens.length < numTokens) {
                   usersNumbers.add(documentSnapshot.id.toString());
                   usersTokens.add(documentSnapshot['token']);
                 }
 
-                  if(documentSnapshot.id.contains('+27')){
-                    return Card(
-                      margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,10.0),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Center(
-                              child: Text(
-                                'Users Device Number',
-                                style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.w700),
-                              ),
+                if (documentSnapshot.id.contains('+27')) {
+                  return Card(
+                    margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Center(
+                            child: Text(
+                              'Users Device Number',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w700),
                             ),
-                            const SizedBox(height: 10,),
-                            tokenItemField('User Phone Number ${documentSnapshot.id}'),
-                            Visibility(
-                              visible: false,
-                              child: Text(
-                                'User Token: ${documentSnapshot['token']}',
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w400),
-                              ),
+                          ),
+                          const SizedBox(height: 10,),
+                          tokenItemField(
+                              'User Phone Number ${documentSnapshot.id}'),
+                          Visibility(
+                            visible: false,
+                            child: Text(
+                              'User Token: ${documentSnapshot['token']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
                             ),
-                            // const SizedBox(height: 10,),
-                            // Column(
-                            //   children: [
-                            //     Row(
-                            //       mainAxisAlignment: MainAxisAlignment.center,
-                            //       crossAxisAlignment: CrossAxisAlignment.center,
-                            //       children: [
-                            //         BasicIconButtonGrey(
-                            //           onPress: () async {
-                            //             showDialog(
-                            //                 barrierDismissible: false,
-                            //                 context: context,
-                            //                 builder: (context) {
-                            //                   return
-                            //                     AlertDialog(
-                            //                       shape: const RoundedRectangleBorder(
-                            //                           borderRadius:
-                            //                           BorderRadius.all(Radius.circular(16))),
-                            //                       title: const Text("Call User!"),
-                            //                       content: const Text(
-                            //                           "Would you like to call the user directly?"),
-                            //                       actions: [
-                            //                         IconButton(
-                            //                           onPressed: () {
-                            //                             Navigator.of(context).pop();
-                            //                           },
-                            //                           icon: const Icon(
-                            //                             Icons.cancel,
-                            //                             color: Colors.red,
-                            //                           ),
-                            //                         ),
-                            //                         IconButton(
-                            //                           onPressed: () {
-                            //                             String cellGiven = documentSnapshot.id;
-                            //
-                            //                             final Uri _tel = Uri.parse('tel:${cellGiven.toString()}');
-                            //                             launchUrl(_tel);
-                            //
-                            //                             Navigator.of(context).pop();
-                            //                           },
-                            //                           icon: const Icon(
-                            //                             Icons.done,
-                            //                             color: Colors.green,
-                            //                           ),
-                            //                         ),
-                            //                       ],
-                            //                     );
-                            //                 });
-                            //           },
-                            //           labelText: 'Call User',
-                            //           fSize: 14,
-                            //           faIcon: const FaIcon(Icons.call,),
-                            //           fgColor: Colors.green,
-                            //           btSize: const Size(50, 38),
-                            //         ),
-                            //         BasicIconButtonGrey(
-                            //           onPress: () async {
-                            //             notifyToken = documentSnapshot['token'];
-                            //             _notifyThisUser(documentSnapshot);
-                            //           },
-                            //           labelText: 'Notify User',
-                            //           fSize: 14,
-                            //           faIcon: const FaIcon(Icons.edit,),
-                            //           fgColor: Theme.of(context).primaryColor,
-                            //           btSize: const Size(50, 38),
-                            //         ),
-                            //       ],
-                            //     ),
-                            //   ],
-                            // ),
-                          ],
-                        ),
+                          ),
+                          // const SizedBox(height: 10,),
+                          // Column(
+                          //   children: [
+                          //     Row(
+                          //       mainAxisAlignment: MainAxisAlignment.center,
+                          //       crossAxisAlignment: CrossAxisAlignment.center,
+                          //       children: [
+                          //         BasicIconButtonGrey(
+                          //           onPress: () async {
+                          //             showDialog(
+                          //                 barrierDismissible: false,
+                          //                 context: context,
+                          //                 builder: (context) {
+                          //                   return
+                          //                     AlertDialog(
+                          //                       shape: const RoundedRectangleBorder(
+                          //                           borderRadius:
+                          //                           BorderRadius.all(Radius.circular(16))),
+                          //                       title: const Text("Call User!"),
+                          //                       content: const Text(
+                          //                           "Would you like to call the user directly?"),
+                          //                       actions: [
+                          //                         IconButton(
+                          //                           onPressed: () {
+                          //                             Navigator.of(context).pop();
+                          //                           },
+                          //                           icon: const Icon(
+                          //                             Icons.cancel,
+                          //                             color: Colors.red,
+                          //                           ),
+                          //                         ),
+                          //                         IconButton(
+                          //                           onPressed: () {
+                          //                             String cellGiven = documentSnapshot.id;
+                          //
+                          //                             final Uri _tel = Uri.parse('tel:${cellGiven.toString()}');
+                          //                             launchUrl(_tel);
+                          //
+                          //                             Navigator.of(context).pop();
+                          //                           },
+                          //                           icon: const Icon(
+                          //                             Icons.done,
+                          //                             color: Colors.green,
+                          //                           ),
+                          //                         ),
+                          //                       ],
+                          //                     );
+                          //                 });
+                          //           },
+                          //           labelText: 'Call User',
+                          //           fSize: 14,
+                          //           faIcon: const FaIcon(Icons.call,),
+                          //           fgColor: Colors.green,
+                          //           btSize: const Size(50, 38),
+                          //         ),
+                          //         BasicIconButtonGrey(
+                          //           onPress: () async {
+                          //             notifyToken = documentSnapshot['token'];
+                          //             _notifyThisUser(documentSnapshot);
+                          //           },
+                          //           labelText: 'Notify User',
+                          //           fSize: 14,
+                          //           faIcon: const FaIcon(Icons.edit,),
+                          //           fgColor: Theme.of(context).primaryColor,
+                          //           btSize: const Size(50, 38),
+                          //         ),
+                          //       ],
+                          //     ),
+                          //   ],
+                          // ),
+                        ],
                       ),
-                    );
-                  } else {
-                    return const Card();
-                  }
+                    ),
+                  );
+                } else {
+                  return const Card();
+                }
               },
             );
           }
@@ -309,7 +311,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     );
   }
 
-  Widget userAndTokenCardSearch(CollectionReference<Object?> tokenDataStream){
+  Widget userAndTokenCardSearch(CollectionReference<Object?> tokenDataStream) {
     return Expanded(
       child: StreamBuilder<QuerySnapshot>(
         stream: tokenDataStream.snapshots(),
@@ -321,119 +323,130 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                 final DocumentSnapshot documentSnapshot =
                 streamSnapshot.data!.docs[index];
 
-                if( (((documentSnapshot.id.trim()).toLowerCase()).contains((_searchBarController.text.trim()).toLowerCase())) || documentSnapshot.id == searchText ){
-                    return Card(
-                      margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,10.0),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Center(
-                              child: Text(
-                                'Users Device Number',
-                                style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.w700),
-                              ),
+                if ((((documentSnapshot.id.trim()).toLowerCase()).contains(
+                    (_searchBarController.text.trim()).toLowerCase())) ||
+                    documentSnapshot.id == searchText) {
+                  return Card(
+                    margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Center(
+                            child: Text(
+                              'Users Device Number',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w700),
                             ),
-                            const SizedBox(height: 10,),
-                            tokenItemField('User Phone Number ${documentSnapshot.id}'),
-                            Visibility(
-                              visible: false,
-                              child: Text(
-                                'User Token: ${documentSnapshot['token']}',
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w400),
-                              ),
+                          ),
+                          const SizedBox(height: 10,),
+                          tokenItemField(
+                              'User Phone Number ${documentSnapshot.id}'),
+                          Visibility(
+                            visible: false,
+                            child: Text(
+                              'User Token: ${documentSnapshot['token']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
                             ),
-                            const SizedBox(height: 10,),
-                            Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    BasicIconButtonGrey(
-                                      onPress: () async {
-                                        showDialog(
-                                            barrierDismissible: false,
-                                            context: context,
-                                            builder: (context) {
-                                              return
-                                                AlertDialog(
-                                                  shape: const RoundedRectangleBorder(
-                                                      borderRadius:
-                                                      BorderRadius.all(Radius.circular(16))),
-                                                  title: const Text("Call User!"),
-                                                  content: const Text(
-                                                      "Would you like to call the user directly?"),
-                                                  actions: [
-                                                    IconButton(
-                                                      onPressed: () {
-                                                        Navigator.of(context).pop();
-                                                      },
-                                                      icon: const Icon(
-                                                        Icons.cancel,
-                                                        color: Colors.red,
-                                                      ),
+                          ),
+                          const SizedBox(height: 10,),
+                          Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  BasicIconButtonGrey(
+                                    onPress: () async {
+                                      showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return
+                                              AlertDialog(
+                                                shape: const RoundedRectangleBorder(
+                                                    borderRadius:
+                                                    BorderRadius.all(
+                                                        Radius.circular(16))),
+                                                title: const Text("Call User!"),
+                                                content: const Text(
+                                                    "Would you like to call the user directly?"),
+                                                actions: [
+                                                  IconButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                    icon: const Icon(
+                                                      Icons.cancel,
+                                                      color: Colors.red,
                                                     ),
-                                                    IconButton(
-                                                      onPressed: () {
-                                                        String cellGiven = documentSnapshot.id;
+                                                  ),
+                                                  IconButton(
+                                                    onPressed: () {
+                                                      String cellGiven = documentSnapshot
+                                                          .id;
 
-                                                        final Uri _tel = Uri.parse('tel:${cellGiven.toString()}');
-                                                        launchUrl(_tel);
+                                                      final Uri _tel = Uri
+                                                          .parse(
+                                                          'tel:${cellGiven
+                                                              .toString()}');
+                                                      launchUrl(_tel);
 
-                                                        Navigator.of(context).pop();
-                                                      },
-                                                      icon: const Icon(
-                                                        Icons.done,
-                                                        color: Colors.green,
-                                                      ),
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                    icon: const Icon(
+                                                      Icons.done,
+                                                      color: Colors.green,
                                                     ),
-                                                  ],
-                                                );
-                                            });
-                                      },
-                                      labelText: 'Call User',
-                                      fSize: 14,
-                                      faIcon: const FaIcon(Icons.call,),
-                                      fgColor: Colors.green,
-                                      btSize: const Size(50, 38),
-                                    ),
-                                    BasicIconButtonGrey(
-                                      onPress: () async {
-                                        notifyToken = documentSnapshot['token'];
-                                        _notifyThisUser(documentSnapshot);
-                                      },
-                                      labelText: 'Notify',
-                                      fSize: 14,
-                                      faIcon: const FaIcon(Icons.edit,),
-                                      fgColor: Theme.of(context).primaryColor,
-                                      btSize: const Size(50, 38),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 5,),
-                                BasicIconButtonGrey(
-                                  onPress: () async {
-                                    notifyToken = documentSnapshot['token'];
-                                    _disconnectThisUser(documentSnapshot);
-                                  },
-                                  labelText: 'Disconnect',
-                                  fSize: 14,
-                                  faIcon: const FaIcon(Icons.warning_amber,),
-                                  fgColor: Colors.amber,
-                                  btSize: const Size(50, 38),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                                                  ),
+                                                ],
+                                              );
+                                          });
+                                    },
+                                    labelText: 'Call User',
+                                    fSize: 14,
+                                    faIcon: const FaIcon(Icons.call,),
+                                    fgColor: Colors.green,
+                                    btSize: const Size(50, 38),
+                                  ),
+                                  BasicIconButtonGrey(
+                                    onPress: () async {
+                                      notifyToken = documentSnapshot['token'];
+                                      _notifyThisUser(documentSnapshot);
+                                    },
+                                    labelText: 'Notify',
+                                    fSize: 14,
+                                    faIcon: const FaIcon(Icons.edit,),
+                                    fgColor: Theme
+                                        .of(context)
+                                        .primaryColor,
+                                    btSize: const Size(50, 38),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 5,),
+                              BasicIconButtonGrey(
+                                onPress: () async {
+                                  notifyToken = documentSnapshot['token'];
+                                  _disconnectThisUser(documentSnapshot);
+                                },
+                                labelText: 'Disconnect',
+                                fSize: 14,
+                                faIcon: const FaIcon(Icons.warning_amber,),
+                                fgColor: Colors.amber,
+                                btSize: const Size(50, 38),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    );
-
+                    ),
+                  );
                 }
               },
             );
@@ -450,7 +463,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
   //This class is for updating the notification
   Future<void> _notifyUpdateUser([DocumentSnapshot? documentSnapshot]) async {
-
     if (documentSnapshot != null) {
       username.text = documentSnapshot.id;
       title.text = documentSnapshot['title'];
@@ -462,7 +474,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     }
 
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
-    void _createBottomSheet() async{
+    void _createBottomSheet() async {
       Future<void> future = showModalBottomSheet(
           context: context,
           builder: await showModalBottomSheet(
@@ -506,11 +518,12 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                 padding: const EdgeInsets.only(left: 0.0, right: 25.0),
                                 child: Row(
                                   children: <Widget>[
-                                    const Text('Notice Has Been Read', style: TextStyle(fontSize: 16, fontWeight:FontWeight.w400 ),),
+                                    const Text('Notice Has Been Read', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),),
                                     const SizedBox(width: 5,),
                                     Checkbox(
                                       checkColor: Colors.white,
-                                      fillColor: MaterialStateProperty.all<Color>(
+                                      fillColor: MaterialStateProperty.all<
+                                          Color>(
                                           Colors.green),
                                       value: _noticeReadController,
                                       onChanged: (bool? value) async {
@@ -529,7 +542,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                             ElevatedButton(
                                 child: const Text('Send Notification'),
                                 onPressed: () async {
-
                                   DateTime now = DateTime.now();
                                   String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
 
@@ -541,7 +553,10 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                   final bool readStatus = _noticeReadController;
 
                                   if (tokenSelected != null) {
-                                    if(title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty){
+                                    if (title.text != '' ||
+                                        title.text.isNotEmpty ||
+                                        body.text != '' ||
+                                        body.text.isNotEmpty) {
                                       await _listNotifications
                                           .doc(documentSnapshot?.id)
                                           .update({
@@ -558,28 +573,29 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                       String bodyText = body.text;
 
                                       ///gets users phone token to send notification to this phone
-                                      if(userNumber != ""){
+                                      if (userNumber != "") {
                                         DocumentSnapshot snap =
-                                        await FirebaseFirestore.instance.collection("UserToken").doc(userNumber).get();
+                                        await FirebaseFirestore.instance
+                                            .collection("UserToken").doc(userNumber).get();
 
                                         String token = snap['token'];
 
                                         sendPushMessage(token, titleText, bodyText);
                                       }
-
                                     } else {
-                                      Fluttertoast.showToast(msg: 'Please fill Header and Message of the Notification!', gravity: ToastGravity.CENTER);
+                                      Fluttertoast.showToast(
+                                          msg: 'Please fill Header and Message of the Notification!',
+                                          gravity: ToastGravity.CENTER);
                                     }
                                   }
 
-                                  username.text =  '';
-                                  title.text =  '';
-                                  body.text =  '';
-                                  _headerController.text =  '';
-                                  _messageController.text =  '';
-                                  _noticeReadController =  false;
-                                  if(context.mounted)Navigator.of(context).pop();
-
+                                  username.text = '';
+                                  title.text = '';
+                                  body.text = '';
+                                  _headerController.text = '';
+                                  _messageController.text = '';
+                                  _noticeReadController = false;
+                                  if (context.mounted) Navigator.of(context).pop();
                                 }
                             )
                           ],
@@ -592,11 +608,9 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     }
 
     _createBottomSheet();
-
   }
 
   Future<void> _notifyAllUser([DocumentSnapshot? documentSnapshot]) async {
-
     _searchBarController.text = '';
 
     for (var i = 0; i < numTokens; i++) {
@@ -618,7 +632,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     }
 
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
-    void _createBottomSheet() async{
+    void _createBottomSheet() async {
+
       Future<void> future = showModalBottomSheet(
           context: context,
           builder: await showModalBottomSheet(
@@ -633,7 +648,10 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                             top: 20,
                             left: 20,
                             right: 20,
-                            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+                            bottom: MediaQuery
+                                .of(ctx)
+                                .viewInsets
+                                .bottom + 20),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -661,12 +679,11 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                             ElevatedButton(
                                 child: const Text('Send Notification'),
                                 onPressed: () async {
-
                                   DateTime now = DateTime.now();
-                                  String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+                                  String formattedDate = DateFormat(
+                                      'yyyy-MM-dd – kk:mm').format(now);
 
-                                  for(int i = 0;i<usersTokens.length;i++){
-
+                                  for (int i = 0; i < usersTokens.length; i++) {
                                     final String tokenSelected = usersTokens[i];
                                     final String userNumber = usersNumbers[i];
                                     final String notificationTitle = title.text;
@@ -675,7 +692,10 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                     const bool readStatus = false;
 
                                     if (tokenSelected != null) {
-                                      if(title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty){
+                                      if (title.text != '' ||
+                                          title.text.isNotEmpty ||
+                                          body.text != '' ||
+                                          body.text.isNotEmpty) {
                                         await _listNotifications
                                             .add({
                                           "token": tokenSelected,
@@ -686,9 +706,10 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                           "date": notificationDate,
                                           "level": 'general',
                                         });
-
                                       } else {
-                                        Fluttertoast.showToast(msg: 'Please Fill Header and Message of the notification!', gravity: ToastGravity.CENTER);
+                                        Fluttertoast.showToast(
+                                            msg: 'Please Fill Header and Message of the notification!',
+                                            gravity: ToastGravity.CENTER);
                                       }
                                     }
 
@@ -698,23 +719,30 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
                                     ///gets users phone token to send notification to this phone
                                     if (userNumber != "") {
-                                      DocumentSnapshot snap = await FirebaseFirestore.instance.collection("UserToken").doc(userNumber).get();
+                                      DocumentSnapshot snap = await FirebaseFirestore
+                                          .instance.collection("UserToken").doc(
+                                          userNumber).get();
                                       String token = snap['token'];
-                                      print('The phone number is retrieved as ::: $userNumber');
-                                      print('The token is retrieved as ::: $token');
-                                      sendPushMessage(token, titleText, bodyText);
-                                      Fluttertoast.showToast(msg: 'All users have been sent the notification!', gravity: ToastGravity.CENTER);
+                                      print(
+                                          'The phone number is retrieved as ::: $userNumber');
+                                      print(
+                                          'The token is retrieved as ::: $token');
+                                      sendPushMessage(
+                                          token, titleText, bodyText);
+                                      Fluttertoast.showToast(
+                                          msg: 'All users have been sent the notification!',
+                                          gravity: ToastGravity.CENTER);
                                     }
                                   }
 
-                                  username.text =  '';
-                                  title.text =  '';
-                                  body.text =  '';
-                                  _headerController.text =  '';
-                                  _messageController.text =  '';
+                                  username.text = '';
+                                  title.text = '';
+                                  body.text = '';
+                                  _headerController.text = '';
+                                  _messageController.text = '';
 
-                                  if(context.mounted)Navigator.of(context).pop();
-
+                                  if (context.mounted) Navigator.of(context)
+                                      .pop();
                                 }
                             )
                           ],
@@ -727,11 +755,9 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     }
 
     _createBottomSheet();
-
   }
 
   Future<void> _notifyThisUser([DocumentSnapshot? documentSnapshot]) async {
-
     if (documentSnapshot != null) {
       username.text = documentSnapshot.id;
       title.text = '';
@@ -739,7 +765,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     }
 
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
-    void _createBottomSheet() async{
+    void _createBottomSheet() async {
       Future<void> future = showModalBottomSheet(
           context: context,
           builder: await showModalBottomSheet(
@@ -754,7 +780,10 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                             top: 20,
                             left: 20,
                             right: 20,
-                            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+                            bottom: MediaQuery
+                                .of(ctx)
+                                .viewInsets
+                                .bottom + 20),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -780,21 +809,25 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                               height: 10,
                             ),
                             ElevatedButton(
-                              child: const Text('Send Notification'),
-                              onPressed: () async {
+                                child: const Text('Send Notification'),
+                                onPressed: () async {
+                                  DateTime now = DateTime.now();
+                                  String formattedDate = DateFormat(
+                                      'yyyy-MM-dd – kk:mm').format(now);
 
-                                DateTime now = DateTime.now();
-                                String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-
-                                final String tokenSelected = notifyToken;
-                                final String? userNumber = documentSnapshot?.id;
-                                final String notificationTitle = title.text;
-                                final String notificationBody = body.text;
-                                final String notificationDate = formattedDate;
-                                const bool readStatus = false;
+                                  final String tokenSelected = notifyToken;
+                                  final String? userNumber = documentSnapshot
+                                      ?.id;
+                                  final String notificationTitle = title.text;
+                                  final String notificationBody = body.text;
+                                  final String notificationDate = formattedDate;
+                                  const bool readStatus = false;
 
                                   if (tokenSelected != null) {
-                                    if(title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty) {
+                                    if (title.text != '' ||
+                                        title.text.isNotEmpty ||
+                                        body.text != '' ||
+                                        body.text.isNotEmpty) {
                                       await _listNotifications.add({
                                         "token": tokenSelected,
                                         "user": userNumber,
@@ -811,26 +844,35 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
                                       ///gets users phone token to send notification to this phone
                                       if (userNumber != "") {
-                                        DocumentSnapshot snap = await FirebaseFirestore.instance.collection("UserToken").doc(userNumber).get();
+                                        DocumentSnapshot snap = await FirebaseFirestore
+                                            .instance.collection("UserToken")
+                                            .doc(userNumber)
+                                            .get();
                                         String token = snap['token'];
-                                        print('The phone number is retrieved as ::: $userNumber');
-                                        print('The token is retrieved as ::: $token');
-                                        sendPushMessage(token, titleText, bodyText);
-                                        Fluttertoast.showToast(msg: 'The user has been sent the notification!', gravity: ToastGravity.CENTER);
+                                        print(
+                                            'The phone number is retrieved as ::: $userNumber');
+                                        print(
+                                            'The token is retrieved as ::: $token');
+                                        sendPushMessage(
+                                            token, titleText, bodyText);
+                                        Fluttertoast.showToast(
+                                            msg: 'The user has been sent the notification!',
+                                            gravity: ToastGravity.CENTER);
                                       }
                                     } else {
-                                      Fluttertoast.showToast(msg: 'Please Fill Header and Message of the notification!', gravity: ToastGravity.CENTER);
+                                      Fluttertoast.showToast(
+                                          msg: 'Please Fill Header and Message of the notification!',
+                                          gravity: ToastGravity.CENTER);
                                     }
                                   }
 
-                                  username.text =  '';
-                                  title.text =  '';
-                                  body.text =  '';
-                                  _headerController.text =  '';
-                                  _messageController.text =  '';
+                                  username.text = '';
+                                  title.text = '';
+                                  body.text = '';
+                                  _headerController.text = '';
+                                  _messageController.text = '';
 
-                                  if(context.mounted)Navigator.of(context).pop();
-
+                                  if (context.mounted) Navigator.of(context).pop();
                                 }
                             )
                           ],
@@ -843,11 +885,9 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     }
 
     _createBottomSheet();
-
   }
 
   Future<void> _disconnectThisUser([DocumentSnapshot? documentSnapshot]) async {
-
     if (documentSnapshot != null) {
       username.text = widget.userNumber;
       title.text = 'Utilities Disconnection Warning';
@@ -855,7 +895,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     }
 
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
-    void _createBottomSheet() async{
+    void _createBottomSheet() async {
       Future<void> future = showModalBottomSheet(
           context: context,
           builder: await showModalBottomSheet(
@@ -879,38 +919,37 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                               visible: visShow,
                               child: TextField(
                                 controller: title,
-                                decoration: const InputDecoration(
-                                    labelText: 'Message Header'),
+                                decoration: const InputDecoration(labelText: 'Message Header'),
                               ),
                             ),
                             Visibility(
                               visible: visShow,
                               child: TextField(
                                 controller: body,
-                                decoration: const InputDecoration(
-                                    labelText: 'Message'),
+                                decoration: const InputDecoration(labelText: 'Message'),
                               ),
                             ),
 
-                            const SizedBox(
-                              height: 10,
-                            ),
+                            const SizedBox(height: 10,),
                             ElevatedButton(
-                              child: const Text('Send Notification'),
-                              onPressed: () async {
+                                child: const Text('Send Notification'),
+                                onPressed: () async {
+                                  DateTime now = DateTime.now();
+                                  String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
 
-                                DateTime now = DateTime.now();
-                                String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-
-                                final String tokenSelected = notifyToken;
-                                final String? userNumber = documentSnapshot?.id;
-                                final String notificationTitle = title.text;
-                                final String notificationBody = body.text;
-                                final String notificationDate = formattedDate;
-                                const bool readStatus = false;
+                                  final String tokenSelected = notifyToken;
+                                  final String? userNumber = documentSnapshot
+                                      ?.id;
+                                  final String notificationTitle = title.text;
+                                  final String notificationBody = body.text;
+                                  final String notificationDate = formattedDate;
+                                  const bool readStatus = false;
 
                                   if (tokenSelected != null) {
-                                    if(title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty) {
+                                    if (title.text != '' ||
+                                        title.text.isNotEmpty ||
+                                        body.text != '' ||
+                                        body.text.isNotEmpty) {
                                       await _listNotifications.add({
                                         "token": tokenSelected,
                                         "user": userNumber,
@@ -927,7 +966,10 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
                                       ///gets users phone token to send notification to this phone
                                       if (userNumber != "") {
-                                        DocumentSnapshot snap = await FirebaseFirestore.instance.collection("UserToken").doc(userNumber).get();
+                                        DocumentSnapshot snap = await FirebaseFirestore
+                                            .instance.collection("UserToken")
+                                            .doc(userNumber)
+                                            .get();
                                         String token = snap['token'];
                                         print('The phone number is retrieved as ::: $userNumber');
                                         print('The token is retrieved as ::: $token');
@@ -939,14 +981,13 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                     }
                                   }
 
-                                  username.text =  '';
-                                  title.text =  '';
-                                  body.text =  '';
-                                  _headerController.text =  '';
-                                  _messageController.text =  '';
+                                  username.text = '';
+                                  title.text = '';
+                                  body.text = '';
+                                  _headerController.text = '';
+                                  _messageController.text = '';
 
-                                  if(context.mounted)Navigator.of(context).pop();
-
+                                  if (context.mounted) Navigator.of(context).pop();
                                 }
                             )
                           ],
@@ -959,7 +1000,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     }
 
     _createBottomSheet();
-
   }
 
   @override
@@ -969,20 +1009,21 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
       child: Scaffold(
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
-          title: const Text('User Notifications',style: TextStyle(color: Colors.white),),
+          title: const Text('User Notifications', style: TextStyle(color: Colors.white),),
           backgroundColor: Colors.green,
           iconTheme: const IconThemeData(color: Colors.white),
           actions: <Widget>[
             Visibility(
-                visible: adminAcc,
-                child: IconButton(
-                    onPressed: (){
-                      usersNumbers = [];
-                      usersTokens = [];
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) => const NoticeConfigArcScreen()));
-                    },
-                    icon: const Icon(Icons.history_outlined, color: Colors.white,)),),
+              visible: adminAcc,
+              child: IconButton(
+                  onPressed: () {
+                    usersNumbers = [];
+                    usersTokens = [];
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => const NoticeConfigArcScreen()));
+                  },
+                  icon: const Icon(
+                    Icons.history_outlined, color: Colors.white,)),),
           ],
           bottom: const TabBar(
               labelColor: Colors.white,
@@ -995,82 +1036,86 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
         ),
 
         body: TabBarView(
-          children: [
-            ///Tab for all
-            Column(
             children: [
-              const SizedBox(height: 10,),
-              ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
-              ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
 
-              BasicIconButtonGrey(
-                onPress: () async {
-                  _notifyAllUser();
-                },
-                labelText: 'Send Notice To All',
-                fSize: 16,
-                faIcon: const FaIcon(Icons.notifications,),
-                fgColor: Theme.of(context).primaryColor,
-                btSize: const Size(300, 50),
+              ///Tab for all
+              Column(
+                children: [
+                  const SizedBox(height: 10,),
+
+                  ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
+                  ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
+
+                  BasicIconButtonGrey(
+                    onPress: () async {
+                      _notifyAllUser();
+                    },
+                    labelText: 'Send Notice To All',
+                    fSize: 16,
+                    faIcon: const FaIcon(Icons.notifications,),
+                    fgColor: Theme.of(context).primaryColor,
+                    btSize: const Size(300, 50),
+                  ),
+
+                  const SizedBox(height: 10,),
+
+                  ///made the listview card a reusable widget
+                  userAndTokenCard(_listUserTokens),
+
+                ],
               ),
 
-              const SizedBox(height: 10,),
+              ///Tab for searching
+              Column(
+                children: [
+                  const SizedBox(height: 10,),
 
-              ///made the listview card a reusable widget
-              userAndTokenCard(_listUserTokens),
-
-            ],
-          ),
-
-            ///Tab for searching
-            Column(
-              children: [
-                const SizedBox(height: 10,),
-                ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
-                ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
+                  ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
+                  ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
 
 
-                /// Search bar
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextFormField(
-                        onChanged: (value) async{
-                          setState(() {
-                            print(_searchBarController.text);
-                            usersNumbers = [];
-                            usersTokens = [];
-                            searchText = value;
-                            print('this is the input text ::: $searchText');
-                          });
-                        },
-                        autofocus: true,
-                        controller: _searchBarController,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.search),
-                          hintText: 'Search by phone number',
-                          focusColor: Colors.white,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: const BorderSide(color: Colors.black),
+                  /// Search bar
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextFormField(
+                          onChanged: (value) async {
+                            setState(() {
+                              print(_searchBarController.text);
+                              usersNumbers = [];
+                              usersTokens = [];
+                              searchText = value;
+                              print('this is the input text ::: $searchText');
+                            });
+                          },
+                          autofocus: true,
+                          controller: _searchBarController,
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(Icons.search),
+                            hintText: 'Search by phone number',
+                            focusColor: Colors.white,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: const BorderSide(color: Colors.black),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                /// Search bar end
 
-                ///made the listview card a reusable widget
-                userAndTokenCardSearch(_listUserTokens),
+                  /// Search bar end
 
-              ],
-            ),
-          ]
+                  ///made the listview card a reusable widget
+                  userAndTokenCardSearch(_listUserTokens),
+
+                ],
+              ),
+            ]
         ),
       ),
     );

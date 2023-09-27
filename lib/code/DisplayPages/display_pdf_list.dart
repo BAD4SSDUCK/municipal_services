@@ -9,6 +9,7 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen_finance.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
@@ -31,8 +32,10 @@ DateTime now = DateTime.now();
 final User? user = auth.currentUser;
 final uid = user?.uid;
 final phone = user?.phoneNumber;
+final email = user?.email;
 String userID = uid as String;
 String userPhone = phone as String;
+String userEmail = email as String;
 
 String locationGiven = ' ';
 
@@ -49,6 +52,8 @@ class FireStorageService extends ChangeNotifier{
 }
 
 class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
+
+  final user = FirebaseAuth.instance.currentUser!;
 
   final CollectionReference _propList =
   FirebaseFirestore.instance.collection('properties');
@@ -130,21 +135,18 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                             BasicIconButtonGrey(
                                               onPress: () async {
 
-                                                // String accountNumberPDF = documentSnapshot['account number'];
-                                                // print('The acc number is ::: $accountNumberPDF');
-                                                // print('The month we are in is::: $formattedDate');
-                                                //
-                                                // // getPDFByAccMon(accountNumberPDF,formattedDate);
-                                                // if(dropdownValue=='Select Month'){
-                                                //   getPDFByAccMon(accountNumberPDF,formattedDate);
-                                                //   print('The month selected is::: $dropdownValue');
-                                                // } else {
-                                                //   getPDFByAccMon(accountNumberPDF,dropdownValue);
-                                                //   print('The month selected is::: $dropdownValue');
-                                                // }
+                                                String financeID = 'finance@msunduzi.gov.za';
+
+                                                String passedID = user.phoneNumber!;
+                                                String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
+                                                print('The user name of the logged in person is $userName}');
+                                                String id = passedID;
+
+                                                Navigator.push(context,
+                                                    MaterialPageRoute(builder: (context) => ChatFinance(chatRoomId: id,)));
 
                                               },
-                                              labelText: 'Disupute',
+                                              labelText: 'Dispute',
                                               fSize: 16,
                                               faIcon: const FaIcon(Icons.error_outline),
                                               fgColor: Colors.red,

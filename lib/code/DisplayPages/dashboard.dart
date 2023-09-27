@@ -265,8 +265,7 @@ class MainMenu extends StatefulWidget {
                                   ///Directly to the chatapp page that creates a chat id that will be saved on the DB. for an admin to access the chat I will have to
                                   ///make a new page that lists all DB chats for the admin to select and connect to for responding to users
                                   Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) =>
-                                          Chat(chatRoomId: id,)));
+                                      MaterialPageRoute(builder: (context) => Chat(chatRoomId: id,)));
                                   },
                                 labelText: 'Admin \nChat',
                                 fSize: 18,
