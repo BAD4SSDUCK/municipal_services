@@ -432,7 +432,9 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
 
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
     void _createBottomSheet() async{
-      Future<void> future = showModalBottomSheet(
+      // Future<void> future =
+      if (!context.mounted) {
+        showModalBottomSheet(
           context: context,
           builder: await showModalBottomSheet(
               isScrollControlled: true,
@@ -530,6 +532,7 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
                   },
                 );
               }));
+      }
     }
 
     _createBottomSheet();

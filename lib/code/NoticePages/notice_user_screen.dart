@@ -266,8 +266,10 @@ class _NoticeScreenState extends State<NoticeScreen> {
                                   children: [
                                     BasicIconButtonGrey(
                                       onPress: () async {
+
                                         final Uri _tel = Uri.parse('tel:+27${0333923000}');
                                         launchUrl(_tel);
+
                                       },
                                       labelText: 'Appeal',
                                       fSize: 14,

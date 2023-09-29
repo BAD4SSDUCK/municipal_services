@@ -16,6 +16,7 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen_councillors.dart';
 import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_user_arc_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -32,7 +33,9 @@ class CouncillorScreen extends StatefulWidget {
 }
 
 
+
 class _CouncillorScreenState extends State<CouncillorScreen> {
+  final user = FirebaseAuth.instance.currentUser!;
 
   final CollectionReference _listCounsellors =
   FirebaseFirestore.instance.collection('councillors');
@@ -75,7 +78,6 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
     super.dispose();
   }
 
-  User? user = FirebaseAuth.instance.currentUser;
 
   //it is called within a listview page widget
   Widget noticeItemField(String noticeData) {
@@ -114,73 +116,90 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
 
 
                 if((documentSnapshot['wardNum'].trim()==(dropdownValue.trim())) || dropdownValue == 'Select Ward' || dropdownValue == 'All Wards') {
-                  if (wardCounsellorStream != null) {
-                    return Card(
-                      margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Center(
-                              child: Text(
-                                'Ward Councillor',
-                                style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.w700),
+                  return Card(
+                    margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Center(
+                            child: Text(
+                              'Ward Councillor',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          const SizedBox(height: 10,),
+                          const Text(
+                            'Ward:',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w500),
+                          ),
+                          noticeItemField(documentSnapshot['wardNum']),
+                          const Text(
+                            'Name:',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w500),
+                          ),
+                          noticeItemField(documentSnapshot['councillorName']),
+                          const Text(
+                            'Contact Number:',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w500),
+                          ),
+                          noticeItemField(
+                              documentSnapshot['councillorPhone']),
+                          const SizedBox(height: 10,),
+                          Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    children: [
+                                      BasicIconButtonGrey(
+                                        onPress: () async {
+                                          String phoneNum = documentSnapshot['councillorPhone'];
+                                          String passedID = user.phoneNumber!;
+                                          String councillorName = documentSnapshot['councillorName'];
+                                          Navigator.push(context,
+                                              MaterialPageRoute(builder: (context) => ChatCouncillor(chatRoomId: phoneNum, councillorName: councillorName)));
+
+                                        },
+                                        labelText: 'Chat',
+                                        fSize: 14,
+                                        faIcon: const FaIcon(Icons.message,),
+                                        fgColor: Colors.blue,
+                                        btSize: const Size(50, 38),
+                                      ),
+                                      // BasicIconButtonGrey(
+                                      //   onPress: () async {
+                                      //     String phoneNum = documentSnapshot['councillorPhone'];
+                                      //     final Uri _tel = Uri.parse(
+                                      //         'tel:$phoneNum');
+                                      //     launchUrl(_tel);
+                                      //   },
+                                      //   labelText: 'Contact by Phone',
+                                      //   fSize: 14,
+                                      //   faIcon: const FaIcon(Icons.add_call,),
+                                      //   fgColor: Colors.green,
+                                      //   btSize: const Size(50, 38),
+                                      // ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                            ),
-                            const SizedBox(height: 10,),
-                            const Text(
-                              'Ward:',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w500),
-                            ),
-                            noticeItemField(documentSnapshot['wardNum']),
-                            const Text(
-                              'Name:',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w500),
-                            ),
-                            noticeItemField(documentSnapshot['councillorName']),
-                            const Text(
-                              'Contact Number:',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w500),
-                            ),
-                            noticeItemField(
-                                documentSnapshot['councillorPhone']),
-                            const SizedBox(height: 10,),
-                            Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    BasicIconButtonGrey(
-                                      onPress: () async {
-                                        String phoneNum = documentSnapshot['councillorPhone'];
-                                        final Uri _tel = Uri.parse(
-                                            'tel:$phoneNum');
-                                        launchUrl(_tel);
-                                      },
-                                      labelText: 'Contact by Phone',
-                                      fSize: 14,
-                                      faIcon: const FaIcon(Icons.add_call,),
-                                      fgColor: Colors.green,
-                                      btSize: const Size(50, 38),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                        ],
                       ),
-                    );
-                  }
+                    ),
+                  );
                 }
-                return const Card();
+                return Card();
               },
             );
           }

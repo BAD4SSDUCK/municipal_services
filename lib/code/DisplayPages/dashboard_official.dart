@@ -190,7 +190,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   onPress: () async {
 
                                     Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => const NoticeConfigScreen(userNumber: '+27',)));
+                                        MaterialPageRoute(builder: (context) => const NoticeConfigScreen(userNumber: '',)));
                                   },
                                   labelText: 'User \nNotify',
                                   fSize: 16,
@@ -216,12 +216,22 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                         ),
                         const SizedBox(height: 5,),
                         Visibility(
-                          visible: visShow,
+                          visible: visAdmin,
                           child: Center(
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
+                                ElevatedIconButton(
+                                  onPress: (){
+
+                                  },
+                                  labelText: 'Disconnect',
+                                  fSize: 14,
+                                  faIcon: const FaIcon(Icons.house_outlined),
+                                  fgColor: Colors.orangeAccent,
+                                  btSize: const Size(130, 120),
+                                ),
                                 ElevatedIconButton(
                                   onPress: (){
                                     showDialog(
@@ -265,7 +275,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                     // ProfileFragmentScreen().signOutUser();
                                   },
                                   labelText: 'Logout',
-                                  fSize: 18,
+                                  fSize: 15,
                                   faIcon: const FaIcon(Icons.logout),
                                   fgColor: Colors.red,
                                   btSize: const Size(130, 120),
