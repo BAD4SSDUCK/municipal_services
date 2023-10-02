@@ -7,6 +7,10 @@ import 'package:external_app_launcher/external_app_launcher.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/menu_reusable_elevated_button.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/counsellor_screen.dart';
+import 'dart:io';
+
+import '../PDFViewer/pdf_api.dart';
+import '../PDFViewer/view_pdf.dart';
 
 class NavDrawer extends StatelessWidget {
   const NavDrawer({Key? key}) : super(key: key);
@@ -54,15 +58,48 @@ Widget buildMenuItems(BuildContext context) => Wrap(
   children:  <Widget>[
     const SizedBox(height: 20,),
     ListTile(
-      leading: const Icon(Icons.supervised_user_circle_outlined, size: 50,),
-      title: const Text('Contact councillors',
+      leading: const Icon(Icons.supervised_user_circle_outlined, size: 40,),
+      title: const Text('Contact Councillors',
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 20,),),
+          fontSize: 18,),),
       onTap: () {
         Navigator.push(context,
           MaterialPageRoute(builder: (context) => const CouncillorScreen()),
         );
+      },
+    ),
+    ListTile(
+      leading: const Icon(Icons.lightbulb, size: 40,),
+      title: const Text('Load Shedding Schedule',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 18,),),
+      onTap: () async {
+        final Uri _url = Uri.parse('http://www.msunduzi.gov.za/site/search/downloadencode/LOAD%20SHEDDING%20SCHEDULE%20WORD%20STAGE%201%20-%204%20%205%20-%208%20update.pdf');
+        // _launchURL(_url);
+        _launchURLExternal(_url);
+
+        //
+        // final file = await PDFApi.loadAsset('http://www.msunduzi.gov.za/site/search/downloadencode/LOAD%20SHEDDING%20SCHEDULE%20WORD%20STAGE%201%20-%204%20%205%20-%208%20update.pdf');
+        // try {
+        //   if(context.mounted)openPDF(context, file);
+        //   Fluttertoast.showToast(
+        //       msg: "Download Successful!");
+        // } catch (e) {
+        //   Fluttertoast.showToast(msg: "Unable to download statement.");
+        // }
+
+      },
+    ),
+    ListTile(
+      leading: const Icon(Icons.event_available, size: 40,),
+      title: const Text('Events',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 18,),),
+      onTap: () {
+
       },
     ),
     // ListTile(
@@ -75,7 +112,7 @@ Widget buildMenuItems(BuildContext context) => Wrap(
     //     // );
     //   },
     // ),
-    const SizedBox(height: 200,),
+    const SizedBox(height: 80,),
     Wrap(
         runSpacing: 0,
         runAlignment: WrapAlignment.spaceEvenly,
@@ -84,7 +121,7 @@ Widget buildMenuItems(BuildContext context) => Wrap(
             height: 40,
             child: ListTile(
                 leading: const Icon(Icons.add_call, size: 20,),
-                title: const Text('Contact Support'),
+                title: const Text('Contact Municipality'),
                 onTap: (){
                   final Uri _tel = Uri.parse('tel:+27${0333923000}');
                   launchUrl(_tel);
@@ -270,10 +307,31 @@ void _launchSocial(Uri url, Uri fallbackUrl) async {
   }
 }
 
+void openPDF(BuildContext context, File file) => Navigator.of(context).push(
+  MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
+);
+
 _launchURL(url) async {
   if (await canLaunchUrl(url)) {
     await launchUrl(url);
   } else {
     throw 'Could not launch $url';
   }
+}
+
+_launchURLExternal(url) async {
+  if (await canLaunchUrl(url)) {
+    await launchUrl(url,
+    mode: LaunchMode.externalNonBrowserApplication);
+  } else {
+    throw 'Could not launch $url';
+  }
+}
+
+void openPdfFromUrl(String url) {
+  debugPrint('opening PDF url = $url');
+  var googleDocsUrl = 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeQueryComponent(url)}';
+  debugPrint('opening Google docs with PDF url = $googleDocsUrl');
+  final Uri uri = Uri.parse(googleDocsUrl);
+  launchUrl(uri);
 }

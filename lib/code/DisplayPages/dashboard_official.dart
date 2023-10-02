@@ -11,6 +11,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/admin_details.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_all_meters.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_connections_all_users.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info_all_users.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/configuration_page.dart';
 import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_config_screen.dart';
@@ -75,6 +77,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
       ///When a background image is created this section will display it on the dashboard instead of just a grey colour with no background
       decoration: const BoxDecoration(
         image: DecorationImage(
+            // image: AssetImage("assets/images/hall1.png"),
             image: AssetImage("assets/images/greyscale.jpg"),
             fit: BoxFit.cover),
       ),
@@ -97,8 +100,23 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                   // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   //  crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
-                    const SizedBox(height: 20),
-                    Image.asset('assets/images/logo.png', height: 180, width: 180,),
+                    // const SizedBox(height: 20),
+                    Stack(
+                      alignment:Alignment.topCenter,
+                      children:[
+                        // Container(
+                        //     child: Image.asset('assets/images/hall2.png', width: double.infinity, height: 180,  fit: BoxFit.cover,  )
+                        // ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(40.0),
+                              child: Image.asset('assets/images/logo.png', width: 160, height: 160,)
+                          ),
+                        ),
+                      ]
+                    ),
+
                     // Image.asset('assets/images/municipal_services.png', height: 150, width: 300,),
                     const SizedBox(height: 20),
                     Column(
@@ -192,7 +210,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => const NoticeConfigScreen(userNumber: '',)));
                                   },
-                                  labelText: 'User \nNotify',
+                                  labelText: 'Broad\n-cast',
                                   fSize: 16,
                                   faIcon: const FaIcon(Icons.notifications_on),
                                   fgColor: Colors.red,
@@ -224,60 +242,25 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               children: [
                                 ElevatedIconButton(
                                   onPress: (){
-
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) => const UsersConnectionsAll()));
                                   },
-                                  labelText: 'Disconnect',
+                                  labelText: 'Connect',
                                   fSize: 14,
-                                  faIcon: const FaIcon(Icons.house_outlined),
+                                  faIcon: const FaIcon(Icons.power_settings_new),
                                   fgColor: Colors.orangeAccent,
                                   btSize: const Size(130, 120),
                                 ),
+                                const SizedBox(width: 30,),
                                 ElevatedIconButton(
                                   onPress: (){
-                                    showDialog(
-                                        barrierDismissible: false,
-                                        context: context,
-                                        builder: (context) {
-                                          return AlertDialog(
-                                            shape: const RoundedRectangleBorder(borderRadius:
-                                            BorderRadius.all(Radius.circular(18))),
-                                            title: const Text("Logout"),
-                                            content: const Text("Are you sure you want to logout?"),
-                                            actions: [
-                                              IconButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                },
-                                                icon: const Icon(
-                                                  Icons.cancel,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                              IconButton(
-                                                onPressed: () async {
-                                                  FirebaseAuth.instance.signOut();
-                                                  Navigator.pop(context);
-
-                                                  // Navigator.popAndPushNamed(context, const MainPage() as String);
-                                                  ///SystemNavigator.pop() closes the entire app
-                                                  // SystemNavigator.pop();
-                                                },
-                                                icon: const Icon(
-                                                  Icons.done,
-                                                  color: Colors.green,
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        });
-
-                                    ///commented out old sql sign out method
-                                    // ProfileFragmentScreen().signOutUser();
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) => const PropertyMetersAll()));
                                   },
-                                  labelText: 'Logout',
-                                  fSize: 15,
-                                  faIcon: const FaIcon(Icons.logout),
-                                  fgColor: Colors.red,
+                                  labelText: 'Meter\nUpdate',
+                                  fSize: 14,
+                                  faIcon: const FaIcon(Icons.build),
+                                  fgColor: Colors.brown,
                                   btSize: const Size(130, 120),
                                 ),
 
@@ -285,6 +268,56 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                             ),
                           ),
                         ),
+
+                        ElevatedIconButton(
+                          onPress: (){
+                            showDialog(
+                                barrierDismissible: false,
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    shape: const RoundedRectangleBorder(borderRadius:
+                                    BorderRadius.all(Radius.circular(18))),
+                                    title: const Text("Logout"),
+                                    content: const Text("Are you sure you want to logout?"),
+                                    actions: [
+                                      IconButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        icon: const Icon(
+                                          Icons.cancel,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () async {
+                                          FirebaseAuth.instance.signOut();
+                                          Navigator.pop(context);
+
+                                          // Navigator.popAndPushNamed(context, const MainPage() as String);
+                                          ///SystemNavigator.pop() closes the entire app
+                                          // SystemNavigator.pop();
+                                        },
+                                        icon: const Icon(
+                                          Icons.done,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                });
+
+                            ///commented out old sql sign out method
+                            // ProfileFragmentScreen().signOutUser();
+                          },
+                          labelText: 'Logout',
+                          fSize: 15,
+                          faIcon: const FaIcon(Icons.logout),
+                          fgColor: Colors.red,
+                          btSize: const Size(130, 120),
+                        ),
+
                       ],
                     ),
                     const SizedBox(height: 20),

@@ -1273,6 +1273,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                             final String addressFault = addressPass;
                                             final String faultDescription = _faultDescriptionController.text;
                                             String faultType = dropdownValue;
+                                            final String refNum = UniqueKey().toString();
 
                                             if (faultType != 'Select Fault Type') {
                                               if (faultDescription != '') {
@@ -1294,6 +1295,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                                     "depAllocated": '',
                                                     "faultResolved": false,
                                                     "faultStage": 1,
+                                                    "ref": refNum,
                                                   });
                                                 }
                                                 _addressController.text = '';

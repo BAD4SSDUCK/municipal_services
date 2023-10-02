@@ -243,6 +243,19 @@ class MainMenu extends StatefulWidget {
                 children: <Widget>[
                   const SizedBox(height: 30),
                   Image.asset('assets/images/logo.png', height: 180, width: 180,),
+                  // Stack(
+                  //     alignment:Alignment.topCenter,
+                  //     children:[
+                  //       // Image.asset('assets/images/hall2.png', width: double.infinity, height: 180,  fit: BoxFit.cover,  ),
+                  //       Padding(
+                  //         padding: const EdgeInsets.all(8.0),
+                  //         child: ClipRRect(
+                  //             borderRadius: BorderRadius.circular(40.0),
+                  //             child: Image.asset('assets/images/logo.png', width: 160, height: 160,)
+                  //         ),
+                  //       ),
+                  //     ]
+                  // ),
                   // Image.asset('assets/images/municipal_services.png', height: 150, width: 300,),
                   const SizedBox(height: 20),
                   ///For Icon buttons

@@ -41,7 +41,7 @@ class _ChatCouncillorState extends State<ChatCouncillor> {
       });
     });
 
-    DatabaseMethods().getChats(widget.chatRoomId).then((val) {
+    DatabaseMethods().getChats(phoneCall).then((val) {
       setState(() {
         chats = val;
       });
@@ -98,7 +98,7 @@ class _ChatCouncillorState extends State<ChatCouncillor> {
               .millisecondsSinceEpoch,
         };
 
-        DatabaseMethods().addMessage(widget.chatRoomId, chatMessageMap);
+        DatabaseMethods().addMessage(phoneCall, chatMessageMap);
 
         setState(() {
           messageEditingController.text = "";
@@ -112,7 +112,7 @@ class _ChatCouncillorState extends State<ChatCouncillor> {
               .millisecondsSinceEpoch,
         };
 
-        DatabaseMethods().addMessage(widget.chatRoomId, chatMessageMap);
+        DatabaseMethods().addMessage(phoneCall, chatMessageMap);
 
         setState(() {
           messageEditingController.text = "";
@@ -125,7 +125,7 @@ class _ChatCouncillorState extends State<ChatCouncillor> {
   ///need to fix auto generate to custom named generate
   Future<void> setIDName() async {
 
-    String thisNewChat = widget.chatRoomId;
+    String thisNewChat = phoneCall;
     DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
         .collection(thisNewChat).doc(thisNewChat).get();
 

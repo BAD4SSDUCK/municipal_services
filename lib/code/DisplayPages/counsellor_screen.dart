@@ -115,7 +115,7 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                 streamSnapshot.data!.docs[index];
 
 
-                if((documentSnapshot['wardNum'].trim()==(dropdownValue.trim())) || dropdownValue == 'Select Ward' || dropdownValue == 'All Wards') {
+                if(documentSnapshot['wardNum'].trim()==dropdownValue.trim()|| dropdownValue == 'Select Ward' || dropdownValue == 'All Wards') {
                   return Card(
                     margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
                     child: Padding(
@@ -165,6 +165,7 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                                           String phoneNum = documentSnapshot['councillorPhone'];
                                           String passedID = user.phoneNumber!;
                                           String councillorName = documentSnapshot['councillorName'];
+                                          print(councillorName);
                                           Navigator.push(context,
                                               MaterialPageRoute(builder: (context) => ChatCouncillor(chatRoomId: phoneNum, councillorName: councillorName)));
 

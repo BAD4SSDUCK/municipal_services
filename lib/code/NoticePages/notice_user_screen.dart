@@ -16,6 +16,7 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen_finance.dart';
 import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_user_arc_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -33,6 +34,8 @@ class NoticeScreen extends StatefulWidget {
 
 
 class _NoticeScreenState extends State<NoticeScreen> {
+
+  final user = FirebaseAuth.instance.currentUser!;
 
   final CollectionReference _listNotifications =
   FirebaseFirestore.instance.collection('Notifications');
@@ -72,7 +75,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
     super.dispose();
   }
 
-  User? user = FirebaseAuth.instance.currentUser;
+  // User? user = FirebaseAuth.instance.currentUser;
 
   //it is called within a listview page widget
   Widget noticeItemField(String noticeData) {
@@ -267,8 +270,17 @@ class _NoticeScreenState extends State<NoticeScreen> {
                                     BasicIconButtonGrey(
                                       onPress: () async {
 
-                                        final Uri _tel = Uri.parse('tel:+27${0333923000}');
-                                        launchUrl(_tel);
+                                        String financeID = 'finance@msunduzi.gov.za';
+
+                                        String passedID = user.phoneNumber!;
+                                        String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
+                                        print('The user name of the logged in person is $userName}');
+                                        String id = passedID;
+
+                                        Navigator.push(context,
+                                            MaterialPageRoute(builder: (context) => ChatFinance(chatRoomId: id,)));
+                                        // final Uri _tel = Uri.parse('tel:+27${0333923000}');
+                                        // launchUrl(_tel);
 
                                       },
                                       labelText: 'Appeal',

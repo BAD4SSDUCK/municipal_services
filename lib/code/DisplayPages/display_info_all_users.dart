@@ -872,68 +872,68 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                   ],
                                 ),
                                 const SizedBox(height: 5,),
-                                Column(
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        BasicIconButtonGrey(
-                                          onPress: () async {
-                                            String cell = documentSnapshot['cell number'];
-
-                                            Fluttertoast.showToast(msg: "The owner must be given a notification",);
-
-                                            Navigator.push(context,
-                                                MaterialPageRoute(builder: (context) => NoticeConfigScreen(userNumber: cell,)));
-
-                                            // showDialog(
-                                            //     barrierDismissible: false,
-                                            //     context: context,
-                                            //     builder: (context) {
-                                            //       return AlertDialog(
-                                            //         title: const Text("Notify Utilities Disconnection"),
-                                            //         content: const Text("This will notify the owner of the property of their water or electricity being disconnection in 14 days!\n\nAre you sure?"),
-                                            //         actions: [
-                                            //           IconButton(
-                                            //             onPressed: () {
-                                            //               Navigator.pop(context);
-                                            //             },
-                                            //             icon: const Icon(
-                                            //               Icons.cancel,
-                                            //               color: Colors.red,
-                                            //             ),
-                                            //           ),
-                                            //           IconButton(
-                                            //             onPressed: () async {
-                                            //               String cell = documentSnapshot['cell number'];
-                                            //
-                                            //               Fluttertoast.showToast(msg: "The owner has been notified!!",);
-                                            //
-                                            //               Navigator.push(context,
-                                            //                   MaterialPageRoute(builder: (context) => NoticeConfigScreen(userNumber: cell,)));
-                                            //
-                                            //               Navigator.pop(context);
-                                            //               },
-                                            //             icon: const Icon(
-                                            //               Icons.done,
-                                            //               color: Colors.green,
-                                            //             ),
-                                            //           ),
-                                            //         ],
-                                            //       );
-                                            //     });
-                                          },
-                                          labelText: 'Disconnection',
-                                          fSize: 16,
-                                          faIcon: const FaIcon(Icons.warning_amber,),
-                                          fgColor: Colors.amber,
-                                          btSize: const Size(100, 38),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                                // Column(
+                                //   children: [
+                                //     Row(
+                                //       mainAxisAlignment: MainAxisAlignment.center,
+                                //       crossAxisAlignment: CrossAxisAlignment.center,
+                                //       children: [
+                                //         BasicIconButtonGrey(
+                                //           onPress: () async {
+                                //             String cell = documentSnapshot['cell number'];
+                                //
+                                //             Fluttertoast.showToast(msg: "The owner must be given a notification",);
+                                //
+                                //             Navigator.push(context,
+                                //                 MaterialPageRoute(builder: (context) => NoticeConfigScreen(userNumber: cell,)));
+                                //
+                                //             // showDialog(
+                                //             //     barrierDismissible: false,
+                                //             //     context: context,
+                                //             //     builder: (context) {
+                                //             //       return AlertDialog(
+                                //             //         title: const Text("Notify Utilities Disconnection"),
+                                //             //         content: const Text("This will notify the owner of the property of their water or electricity being disconnection in 14 days!\n\nAre you sure?"),
+                                //             //         actions: [
+                                //             //           IconButton(
+                                //             //             onPressed: () {
+                                //             //               Navigator.pop(context);
+                                //             //             },
+                                //             //             icon: const Icon(
+                                //             //               Icons.cancel,
+                                //             //               color: Colors.red,
+                                //             //             ),
+                                //             //           ),
+                                //             //           IconButton(
+                                //             //             onPressed: () async {
+                                //             //               String cell = documentSnapshot['cell number'];
+                                //             //
+                                //             //               Fluttertoast.showToast(msg: "The owner has been notified!!",);
+                                //             //
+                                //             //               Navigator.push(context,
+                                //             //                   MaterialPageRoute(builder: (context) => NoticeConfigScreen(userNumber: cell,)));
+                                //             //
+                                //             //               Navigator.pop(context);
+                                //             //               },
+                                //             //             icon: const Icon(
+                                //             //               Icons.done,
+                                //             //               color: Colors.green,
+                                //             //             ),
+                                //             //           ),
+                                //             //         ],
+                                //             //       );
+                                //             //     });
+                                //           },
+                                //           labelText: 'Disconnection',
+                                //           fSize: 16,
+                                //           faIcon: const FaIcon(Icons.warning_amber,),
+                                //           fgColor: Colors.amber,
+                                //           btSize: const Size(100, 38),
+                                //         ),
+                                //       ],
+                                //     ),
+                                //   ],
+                                // ),
                               ],
                             ),
                             // Column(
