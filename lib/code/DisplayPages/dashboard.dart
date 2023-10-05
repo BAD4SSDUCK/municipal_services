@@ -44,6 +44,12 @@ class MainMenu extends StatefulWidget {
   class _MainMenuState extends State<MainMenu>{
   final user = FirebaseAuth.instance.currentUser!;
 
+  final CollectionReference _propList =
+  FirebaseFirestore.instance.collection('properties');
+
+  final CollectionReference _tokenList =
+  FirebaseFirestore.instance.collection('UserToken');
+
   ///Methods and implementation for push notifications with firebase and specific device token saving
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   TextEditingController username = TextEditingController();
@@ -138,9 +144,24 @@ class MainMenu extends StatefulWidget {
     );
   }
 
-  void saveToken(String token) async{
+  void saveToken(String token) async {
     await FirebaseFirestore.instance.collection("UserToken").doc(user.phoneNumber).set({
       'token': token,
+    });
+
+    ///This must loop through the properties and add the users phone token to the property information so that token can be used for notifications
+    _propList.get().then((querySnapshot) async {
+      for (var result in querySnapshot.docs) {
+
+        print('The phone number from property is::: ${result['cell number']}');
+
+        if (_tokenList.where(_tokenList.id).toString() == user.phoneNumber || result['cell number'] == user.phoneNumber) {
+          await _propList.doc(result.id)
+              .update({
+            'token': token,
+          });
+        }
+      }
     });
   }
 

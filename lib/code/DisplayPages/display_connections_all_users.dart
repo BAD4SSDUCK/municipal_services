@@ -251,7 +251,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
 
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
     void _createBottomSheet() async{
-      Future<void> future = showModalBottomSheet(
+      Future<void> future = Future(() async => showModalBottomSheet(
           context: context,
           builder: await showModalBottomSheet(
               isScrollControlled: true,
@@ -296,8 +296,6 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
 
                                   DateTime now = DateTime.now();
                                   String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-
-
 
                                   final String tokenSelected = notifyToken;
                                   final String? userNumber = documentSnapshot?.id;
@@ -352,13 +350,116 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                     );
                   },
                 );
-              }));
+              })));
     }
 
     _createBottomSheet();
 
   }
 
+  Future<void> _disconnectThisUser([DocumentSnapshot? documentSnapshot]) async {
+    if (documentSnapshot != null) {
+      username.text = documentSnapshot['cell number'];
+      title.text = 'Utilities Disconnection Warning';
+      body.text = 'Please complete payment of your utilities on ${documentSnapshot['address']}. Failing to do so will result in utilities on your property being cut off in 14 days!';
+    }
+
+    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
+    void _createBottomSheet() async {
+      Future<void> future = Future(() async => showModalBottomSheet(
+          context: context,
+          builder: await showModalBottomSheet(
+              isScrollControlled: true,
+              context: context,
+              builder: (BuildContext ctx) {
+                return StatefulBuilder(
+                  builder: (BuildContext context, StateSetter setState) {
+                    return SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                            top: 20,
+                            left: 20,
+                            right: 20,
+                            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Visibility(
+                              visible: visShow,
+                              child: TextField(
+                                controller: title,
+                                decoration: const InputDecoration(labelText: 'Message Header'),
+                              ),
+                            ),
+                            Visibility(
+                              visible: visShow,
+                              child: TextField(
+                                controller: body,
+                                decoration: const InputDecoration(labelText: 'Message'),
+                              ),
+                            ),
+
+                            const SizedBox(height: 10,),
+                            ElevatedButton(
+                                child: const Text('Send Notification'),
+                                onPressed: () async {
+                                  DateTime now = DateTime.now();
+                                  String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+
+                                  final String tokenSelected = documentSnapshot?['token'];
+                                  final String? userNumber = documentSnapshot?['cell number'];
+                                  final String notificationTitle = title.text;
+                                  final String notificationBody = body.text;
+                                  final String notificationDate = formattedDate;
+                                  const bool readStatus = false;
+
+                                  if (title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty) {
+                                    await _listNotifications.add({
+                                      "token": tokenSelected,
+                                      "user": userNumber,
+                                      "title": notificationTitle,
+                                      "body": notificationBody,
+                                      "read": readStatus,
+                                      "date": notificationDate,
+                                      "level": 'severe',
+                                    });
+
+                                    ///It can be changed to the firebase notification
+                                    String titleText = title.text;
+                                    String bodyText = body.text;
+
+                                    ///gets users phone token to send notification to this phone
+                                    if (userNumber != "") {
+                                      String token = documentSnapshot?['token'];
+                                      sendPushMessage(token, titleText, bodyText);
+                                      Fluttertoast.showToast(msg: 'The user has been sent the notification!', gravity: ToastGravity.CENTER);
+                                    }
+                                  } else {
+                                    Fluttertoast.showToast(msg: 'Please Fill Header and Message of the notification!', gravity: ToastGravity.CENTER);
+                                  }
+
+                                  username.text = '';
+                                  title.text = '';
+                                  body.text = '';
+                                  _headerController.text = '';
+                                  _messageController.text = '';
+
+                                  if (context.mounted) Navigator.of(context).pop();
+                                }
+                            )
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              })));
+
+    }
+
+    _createBottomSheet();
+  }
 
   Widget firebasePropertyCard(CollectionReference<Object?> propertiesDataStream) {
     return Expanded(
@@ -884,45 +985,44 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
 
                                             Fluttertoast.showToast(msg: "The owner must be given a notification",);
 
-                                            Navigator.push(context,
-                                                MaterialPageRoute(builder: (context) => NoticeConfigScreen(userNumber: cell,)));
+                                            showDialog(
+                                                barrierDismissible: false,
+                                                context: context,
+                                                builder: (context) {
+                                                  return AlertDialog(
+                                                    title: const Text("Notify Utilities Disconnection"),
+                                                    content: const Text("This will notify the owner of the property of their water or electricity being disconnection in 14 days!\n\nAre you sure?"),
+                                                    actions: [
+                                                      IconButton(
+                                                        onPressed: () {
+                                                          Navigator.pop(context);
+                                                        },
+                                                        icon: const Icon(
+                                                          Icons.cancel,
+                                                          color: Colors.red,
+                                                        ),
+                                                      ),
+                                                      IconButton(
+                                                        onPressed: () async {
+                                                          String cell = documentSnapshot['cell number'];
 
-                                            // showDialog(
-                                            //     barrierDismissible: false,
-                                            //     context: context,
-                                            //     builder: (context) {
-                                            //       return AlertDialog(
-                                            //         title: const Text("Notify Utilities Disconnection"),
-                                            //         content: const Text("This will notify the owner of the property of their water or electricity being disconnection in 14 days!\n\nAre you sure?"),
-                                            //         actions: [
-                                            //           IconButton(
-                                            //             onPressed: () {
-                                            //               Navigator.pop(context);
-                                            //             },
-                                            //             icon: const Icon(
-                                            //               Icons.cancel,
-                                            //               color: Colors.red,
-                                            //             ),
-                                            //           ),
-                                            //           IconButton(
-                                            //             onPressed: () async {
-                                            //               String cell = documentSnapshot['cell number'];
-                                            //
-                                            //               Fluttertoast.showToast(msg: "The owner has been notified!!",);
-                                            //
-                                            //               Navigator.push(context,
-                                            //                   MaterialPageRoute(builder: (context) => NoticeConfigScreen(userNumber: cell,)));
-                                            //
-                                            //               Navigator.pop(context);
-                                            //               },
-                                            //             icon: const Icon(
-                                            //               Icons.done,
-                                            //               color: Colors.green,
-                                            //             ),
-                                            //           ),
-                                            //         ],
-                                            //       );
-                                            //     });
+                                                          Fluttertoast.showToast(msg: "The owner has been notified!!",);
+
+                                                          _disconnectThisUser(documentSnapshot);
+
+                                                          // Navigator.push(context,
+                                                          //     MaterialPageRoute(builder: (context) => NoticeConfigScreen(userNumber: cell,)));
+
+                                                          Navigator.pop(context);
+                                                          },
+                                                        icon: const Icon(
+                                                          Icons.done,
+                                                          color: Colors.green,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  );
+                                                });
                                           },
                                           labelText: 'Disconnection',
                                           fSize: 16,

@@ -329,8 +329,9 @@ class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
                 streamSnapshot.data!.docs[index];
 
                 if (documentSnapshot.id.contains('+27') ||
-                    documentSnapshot.id.contains(_searchBarController.text) ||
-                    _searchBarController.text == '' ) {
+                    (documentSnapshot.id).contains(_searchBarController.text)
+                    // || _searchBarController.text == ''
+                ) {
                   return Card(
                     margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
                     child: Padding(
@@ -448,7 +449,11 @@ class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
                     ),
                   );
                 } else {
-
+                  return const Padding(
+                    padding: EdgeInsets.all(10.0),
+                    child: Center(
+                        child: CircularProgressIndicator()),
+                  );
                 }
               },
             );

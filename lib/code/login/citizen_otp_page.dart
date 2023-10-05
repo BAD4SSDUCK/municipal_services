@@ -72,7 +72,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       BorderRadius.all(Radius.circular(16))),
                   title: const Text("Login Error"),
                   content: const Text(
-                      "Would you like to contact the municipality for assistance with this error?\n\nAlternatively make sure you have internet access on your phone!"),
+                      "You have reached your OTP request limit of 5. Beyond 5 requests is seen as a security threat to the system. Wait 4 hours until it is reset!\n\nAlternatively make sure you have internet access on your phone!\n\nWould you like to contact the municipality for assistance with this error?"),
                   actions: [
                     IconButton(
                       onPressed: () {

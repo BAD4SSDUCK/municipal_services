@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -26,6 +27,9 @@ class MapScreenMulti extends StatefulWidget {
 }
 
 class _MapScreenMultiState extends State<MapScreenMulti> {
+
+  final CollectionReference _propList =
+  FirebaseFirestore.instance.collection('properties');
 
   final PropertiesData _propertiesData = Get.put(PropertiesData());
 
@@ -135,7 +139,6 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
 
   void addressConvert(String address) async {
     ///Location change here for address conversion into lat long
-    //String address = _propertiesData.properties.address[0];
     if (defaultTargetPlatform == TargetPlatform.android) {
       try {
         List<Location> locations = await locationFromAddress(address);
@@ -195,19 +198,19 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
   }
 
   void multiMarkerInit() async {
+    _propList.get().then((querySnapshot) async {
+      for (var result in querySnapshot.docs) {
+        print('The address from property is::: ${result['address']}');
 
-    final len = _markers.length;
-    int i = 0;
+        String address = result['address'];
 
-// this is the last item
-    for(final item in _markers){
-      if(i == len){
-        if (_propertiesData.isBlank == false) {
+        if (result.isBlank == false) {
           ///A check for if payment is outstanding or not and add the address of the outstanding payments to the map marker
-          if (_propertiesData.properties.eBill.toString() != '' ||
-              _propertiesData.properties.eBill.toString() != '0' ||
-              _propertiesData.properties.eBill.isBlank == false) {
-            String address = _propertiesData.properties.address[i];
+          if (result['eBill'] != 'R0.00' ||
+              result['eBill'] != 'R0' ||
+              result['eBill'] != '0' ||
+              result['eBill'] != '' ||
+              result['eBill'] == false) {
 
             try {
               List<Location> locations = await locationFromAddress(address);
@@ -225,51 +228,15 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
             } catch (e) {
               addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
             }
-            print('$addressLocation this is the change');
-
-            i++;
-          } else {
 
           }
-        }
-        // go on
-      } else {
-        while (len == i) {
-          if (_propertiesData.isBlank == false) {
-            ///A check for if payment is outstanding or not and add the address of the outstanding payments to the map marker
-            if (_propertiesData.properties.eBill.toString() != '' ||
-                _propertiesData.properties.eBill.toString() != '0' ||
-                _propertiesData.properties.eBill.isBlank == false) {
+          print('$addressLocation this is the change');
 
-              String address = _propertiesData.properties.address[i];
+        } else {
 
-              try {
-                List<Location> locations = await locationFromAddress(address);
-
-                if (locations.isNotEmpty) {
-                  Location location = locations.first;
-
-                  double latitude = location.latitude;
-                  double longitude = location.longitude;
-
-                  addressLocation = LatLng(latitude, longitude);
-
-                  showPinOnMap();
-
-                }
-              } catch (e) {
-                addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
-              }
-              print('$addressLocation this is the change');
-
-              i++;
-            } else {
-
-            }
-          }
         }
       }
-    }
+    });
   }
 
   void setAddressLocation() async {
