@@ -564,10 +564,10 @@ packages:
     dependency: "direct main"
     description:
       name: geocoding
-      sha256: b34c0501bbbaf3190b85bef3078b27cf66c28a8915c6d3af50d67f356aa7da31
+      sha256: e1dc0ac56666d9ed1d5a9ae5543ce9eb5986db6209cc7600103487d09192059c
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "2.1.1"
   geocoding_android:
     dependency: transitive
     description:
@@ -936,6 +936,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.2.0"
+  map_box_geocoder:
+    dependency: "direct main"
+    description:
+      name: map_box_geocoder
+      sha256: afc452939f0eee8b741c36a72e1e4f38676b7e0973f3d6b71ada69d84cbbcf8a
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.12"
   matcher:
     dependency: transitive
     description:

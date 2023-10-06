@@ -9,6 +9,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:geocoding/geocoding.dart';
+import 'package:map_box_geocoder/map_box_geocoder.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
 
 import 'package:municipal_tracker_msunduzi/code/SQLApp/propertiesData/properties_data.dart';
@@ -131,10 +132,20 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
   }
 
   Future<void> GetAddressFromLatLong(Position position)async {
-    List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-    print(placemarks);
-    Placemark place = placemarks[0];
-    Address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+    if(defaultTargetPlatform == TargetPlatform.android){
+      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+      print(placemarks);
+      Placemark place = placemarks[0];
+      Address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+    } else {
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+      print(placemarks);
+      Placemark place = placemarks[0];
+      Address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+
+    }
+
   }
 
   void addressConvert(String address) async {
@@ -205,32 +216,71 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
         String address = result['address'];
 
         if (result.isBlank == false) {
-          ///A check for if payment is outstanding or not and add the address of the outstanding payments to the map marker
-          if (result['eBill'] != 'R0.00' ||
-              result['eBill'] != 'R0' ||
-              result['eBill'] != '0' ||
-              result['eBill'] != '' ||
-              result['eBill'] == false) {
 
-            try {
-              List<Location> locations = await locationFromAddress(address);
+          ///A check for if meter image is outstanding or not and add the address of the outstanding images to the map marker
 
-              if (locations.isNotEmpty) {
-                Location location = locations.first;
+          if(defaultTargetPlatform == TargetPlatform.android){
+            if (result['imgStateE'] == false || result['imgStateW'] == false){
+              try {
+                List<Location> locations = await locationFromAddress(address);
 
-                double latitude = location.latitude;
-                double longitude = location.longitude;
+                if (locations.isNotEmpty) {
+                  Location location = locations.first;
 
-                addressLocation = LatLng(latitude, longitude);
+                  double latitude = location.latitude;
+                  double longitude = location.longitude;
 
-                showPinOnMap();
+                  addressLocation = LatLng(latitude, longitude);
+
+                  showPinOnMap();
+                }
+              } catch (e) {
+                addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
               }
-            } catch (e) {
-              addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
             }
+          }else{
+            if (result['imgStateE'] == false || result['imgStateW'] == false){
+              try {
+                List<Location> locations = await locationFromAddress(address);
 
+                if (locations.isNotEmpty) {
+                  Location location = locations.first;
+
+                  double latitude = location.latitude;
+                  double longitude = location.longitude;
+
+                  addressLocation = LatLng(latitude, longitude);
+
+                  showPinOnMap();
+                }
+              } catch (e) {
+                addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
+              }
+            }
           }
-          print('$addressLocation this is the change');
+
+          ///A check for if payment is outstanding or not and add the address of the outstanding payments to the map marker
+          // if (result['eBill'] != 'R0.00' || result['eBill'] != 'R0' || result['eBill'] != '0' || result['eBill'] != '' || result['eBill'] == false) {
+          //
+          //   try {
+          //     List<Location> locations = await locationFromAddress(address);
+          //
+          //     if (locations.isNotEmpty) {
+          //       Location location = locations.first;
+          //
+          //       double latitude = location.latitude;
+          //       double longitude = location.longitude;
+          //
+          //       addressLocation = LatLng(latitude, longitude);
+          //
+          //       showPinOnMap();
+          //     }
+          //   } catch (e) {
+          //     addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
+          //   }
+          //
+          // }
+          print('Property listed::: $addressLocation');
 
         } else {
 
@@ -263,6 +313,16 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                 title: const Text('Outstanding Captures',style: TextStyle(color: Colors.white),),
                 iconTheme: const IconThemeData(color: Colors.white),
                 backgroundColor: Colors.green[700],
+                actions: <Widget>[
+                  Visibility(
+                    visible: true,
+                    child: IconButton(
+                        onPressed: (){
+                          // Navigator.push(context,
+                          //     MaterialPageRoute(builder: (context) => const NoticeArchiveScreen()));
+                        },
+                        icon: const Icon(Icons.check_circle, color: Colors.white,)),),
+                ],
               ),
               body: Stack(
                 children: <Widget>[

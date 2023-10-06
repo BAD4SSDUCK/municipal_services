@@ -56,7 +56,7 @@ String propPhoneNum = ' ';
 bool visibilityState1 = true;
 bool visibilityState2 = false;
 bool adminAcc = false;
-
+bool imgUploadCheck = false;
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
 
@@ -72,6 +72,13 @@ Future<Widget> _getImage(BuildContext context, String imageName) async{
   final value = await FireStorageService.loadImage(context, imageName);
 
   final imageUrl = await storageRef.child(imageName).getDownloadURL();
+
+  if (imageUrl.contains('.jpg')||imageUrl.contains('.JPG')){
+    imgUploadCheck = true;
+  } else {
+    imgUploadCheck = false;
+  }
+
   ///Check what the app is running on
   if(defaultTargetPlatform == TargetPlatform.android){
     image =Image.network(
@@ -81,6 +88,7 @@ Future<Widget> _getImage(BuildContext context, String imageName) async{
       height: double.infinity,
     );
   }else{
+    print('The url is::: $imageUrl');
     image =Image.network(
       imageUrl,
       fit: BoxFit.fitHeight,
@@ -104,6 +112,12 @@ Future<Widget> _getImageW(BuildContext context, String imageName2) async{
 
   final imageUrl = await storageRef.child(imageName2).getDownloadURL();
 
+  if (imageUrl.contains('.jpg')||imageUrl.contains('.JPG')){
+    imgUploadCheck = true;
+  } else {
+    imgUploadCheck = false;
+  }
+
   ///Check what the app is running on
   if(defaultTargetPlatform == TargetPlatform.android){
     image2 =Image.network(
@@ -113,6 +127,7 @@ Future<Widget> _getImageW(BuildContext context, String imageName2) async{
       height: double.infinity,
     );
   }else{
+    print('The url is::: $imageUrl');
     image2 =Image.network(
       value.toString(),
       fit: BoxFit.fitHeight,
@@ -207,6 +222,28 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     _searchBarController;
     searchText;
     super.dispose();
+  }
+
+  Future<void> updateImgCheckE(bool imgCheck, [DocumentSnapshot? documentSnapshot]) async{
+    if (documentSnapshot != null) {
+      await _propList
+          .doc(documentSnapshot.id)
+          .update({
+        "imgStateE": imgCheck,
+      });
+    }
+    imgCheck = false;
+  }
+
+  Future<void> updateImgCheckW(bool imgCheck, [DocumentSnapshot? documentSnapshot]) async{
+    if (documentSnapshot != null) {
+      await _propList
+          .doc(documentSnapshot.id)
+          .update({
+        "imgStateW": imgCheck,
+      });
+    }
+    imgCheck = false;
   }
 
   void sendPushMessage(String token, String title, String body,) async{
@@ -594,6 +631,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                               context, 'files/meters/$formattedDate/$propPhoneNum/electricity/$eMeterNumber.jpg'),
                                           builder: (context, snapshot) {
                                             if (snapshot.hasError) {
+                                              imgUploadCheck = false;
+                                              updateImgCheckE(imgUploadCheck,documentSnapshot);
                                               return const Padding(
                                                 padding: EdgeInsets.all(20.0),
                                                 child: Column(
@@ -608,6 +647,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                             }
                                             if (snapshot.connectionState ==
                                                 ConnectionState.done) {
+                                              // imgUploadCheck = true;
+                                              updateImgCheckE(imgUploadCheck,documentSnapshot);
                                               return Column(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
@@ -763,6 +804,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                               context, 'files/meters/$formattedDate/$propPhoneNum/water/$wMeterNumber.jpg'),//$meterNumber
                                           builder: (context, snapshot) {
                                             if (snapshot.hasError) {
+                                              imgUploadCheck = false;
+                                              updateImgCheckW(imgUploadCheck,documentSnapshot);
                                               return const Padding(
                                                 padding: EdgeInsets.all(20.0),
                                                 child: Column(
@@ -777,6 +820,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                             }
                                             if (snapshot.connectionState ==
                                                 ConnectionState.done) {
+                                              // imgUploadCheck = true;
+                                              updateImgCheckW(imgUploadCheck,documentSnapshot);
                                               return Container(
                                                 height: 300,
                                                 width: 300,

@@ -20,7 +20,6 @@ class ConfigPage extends StatefulWidget{
 
 final FirebaseAuth auth = FirebaseAuth.instance;
 final storageRef = FirebaseStorage.instance.ref();
-
 final User? user = auth.currentUser;
 final uid = user?.uid;
 final uEmail = user?.email;
@@ -37,13 +36,14 @@ class FireStorageService extends ChangeNotifier{
 
 class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
 
-  late final _tabController = TabController(length: 3, vsync: this);
   @override
   void initState() {
-    countResult();
+    countUsersResult();
     countDeptResult();
     countRoleResult();
-
+    getDBUsers(_usersList);
+    getDBDept(_deptInfo);
+    getDBDeptRoles(_deptRoles);
     super.initState();
   }
 
@@ -57,14 +57,13 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
   final _cellNumberController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  late final _tabController = TabController(length: 3, vsync: this);
   int _tabIndex = 0;
   final int _tabLength = 3;
-
   void _toggleTab(){
     _tabIndex = _tabController!.index+1 ;
     _tabController?.animateTo(_tabIndex);
   }
-
 
   TextEditingController controllerDept = TextEditingController();
   bool displayDeptList = false;
@@ -77,30 +76,6 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
   List<String> deptRole =["Select Role..."];
   String dropdownValue2 = 'Select Role...';
   int numRoles = 0;
-
-  void countResult() async{
-    var query = _usersList.where("email");
-    var snapshot = await query.get();
-    var count = snapshot.size;
-    numUsers = snapshot.size;
-
-    print('Records are ::: $count');
-    print('num emails are ::: $numUsers');
-  }
-
-  void countDeptResult() async{
-    var query1 = _deptInfo.where("deptName");
-    var snapshot1 = await query1.get();
-    var count1 = snapshot1.size;
-    numDept = snapshot1.size;
-  }
-
-  void countRoleResult() async{
-    var query2 = _deptRoles.where("userRole");
-    var snapshot2 = await query2.get();
-    var count2 = snapshot2.size;
-    numDept = snapshot2.size;
-  }
 
   final CollectionReference _usersList =
   FirebaseFirestore.instance.collection('users');
@@ -182,13 +157,12 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
 
     await app.delete();
     return Future.sync(() => userCredential);
-  }
-
+  }///Firebase auth user creation for officials login details
 
 
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
-    ///To set clips out all duplicates and leaves only unique items in the array
-    deptRole = deptRole.toSet().toList();
+
+    deptRole = deptRole.toSet().toList();///To set clips out all duplicates and leaves only unique items in the array
 
     _userNameController.text = '';
     _deptNameController.text = '';
@@ -384,7 +358,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
             ),
           );
         });
-  }
+  }///Creation method for details on an official user
 
   Future<void> _update([DocumentSnapshot? documentSnapshot]) async {
     final docRef = _deptInfo.snapshots();
@@ -679,7 +653,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
             ),
           );
         });
-  }
+  }///Creation method for department roles
 
   Future<void> _updateDeptRoles([DocumentSnapshot? documentSnapshot]) async {
     if (documentSnapshot != null) {
@@ -857,7 +831,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
             ),
           );
         });
-  }
+  }///Creation method for departments
 
   Future<void> _updateDept([DocumentSnapshot? documentSnapshot]) async {
     if (documentSnapshot != null) {
@@ -933,46 +907,66 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
     Fluttertoast.showToast(msg: "You have successfully deleted a department & role!");
   }
 
+  void countUsersResult() async{
+    var query = _usersList.where("email");
+    var snapshot = await query.get();
+    var count = snapshot.size;
+    numUsers = snapshot.size;
+
+    print('Records are ::: $count');
+    print('num emails are ::: $numUsers');
+  }///counting db results to get length of all columns in the table (needed for loop)
+
+  void countDeptResult() async{
+    var query1 = _deptInfo.where("deptName");
+    var snapshot1 = await query1.get();
+    var count1 = snapshot1.size;
+    numDept = snapshot1.size;
+  }///counting db results to get length of all columns in the table (needed for loop)
+
+  void countRoleResult() async{
+    var query2 = _deptRoles.where("userRole");
+    var snapshot2 = await query2.get();
+    var count2 = snapshot2.size;
+    numDept = snapshot2.size;
+  }///counting db results to get length of all columns in the table (needed for loop)
+
   void getDBDept(CollectionReference dept) async {
-
-    String? valueFromFirebase;
-    Future<String?> getData() async{
-      var a = await dept.doc('departments').get();
-      setState(() {
-        valueFromFirebase= a['deptName'];
-      });
-      return valueFromFirebase;
-    }
-
-    DocumentSnapshot documentSnapshot;
-
-    final listResult = await dept.get();
-    for (var prefix in listResult.docs) {
-      print('The ref is ::: $prefix');
-      // The prefixes under storageRef.
-      // You can call listAll() recursively on them.
-    }
-    for (var item in listResult.docs) {
-
-      String totalDepts = await FirebaseFirestore.instance.collection('departments').doc(uid).get().then((value) {
-        return value.data()?['deptName'];
-      });
-
-      print('The item is ::: $item');
-      // The items under storageRef.
-      final docID = item.get(FieldPath.documentId).then((value) {
-        return value.data()?['deptName'];}
-      );
-      print('The document ID is ::: $docID');
-      try {
-        documentSnapshot = docID;
-        String deptNm = documentSnapshot['departments'];
-        deptName.add(deptNm);
-      } catch (e) {
-        Fluttertoast.showToast(msg: "Unable to download departments.");
+    dept.get().then((querySnapshot) async {
+      for (var result in querySnapshot.docs) {
+        print('The department is::: ${result['deptName']}');
+        if(deptName.length-1<querySnapshot.docs.length) {
+          deptName.add(result['deptName']);
+        }
+        print(deptName);
+        print(deptName.length);
       }
-    }
-  }
+    });
+  }///Looping department collection
+
+  void getDBDeptRoles(CollectionReference deptRoles) async {
+    deptRoles.get().then((querySnapshot) async {
+      for (var result in querySnapshot.docs) {
+        print('The role is::: ${result['userRole']}');
+        if(deptRole.length-1<querySnapshot.docs.length) {
+          deptRole.add(result['userRole']);
+        }
+      }
+    });
+  }///Looping department roles collection
+
+  void getDBUsers(CollectionReference users) async {
+    users.get().then((querySnapshot) async {
+      for (var result in querySnapshot.docs) {
+        print('The user email is::: ${result['email']}');
+        if(result['email'].contains('@') && usersEmails.length-1<querySnapshot.docs.length) {
+          usersEmails.add(result['email']);
+        }
+        print(usersEmails);
+        print(usersEmails.length);
+      }
+    });
+  }///Looping users collection
 
   @override
   Widget build(BuildContext context) {
@@ -999,7 +993,6 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
         body: TabBarView(
           controller: _tabController,
           children: <Widget>[
-            ///Tab for department list view
             StreamBuilder(
               stream: _deptInfo.snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
@@ -1010,11 +1003,11 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                       final DocumentSnapshot deptDocumentSnapshot =
                       streamSnapshot.data!.docs[index];
 
-                      if(deptName.length-1<streamSnapshot.data!.docs.length) {
-                        deptName.add(deptDocumentSnapshot['deptName']);
-                      }
-                      print(deptName);
-                      print(deptName.length);
+                      // if(deptName.length-1<streamSnapshot.data!.docs.length) {
+                      //   deptName.add(deptDocumentSnapshot['deptName']);
+                      // }
+                      // print(deptName);
+                      // print(deptName.length);
 
                       if (streamSnapshot.data!.docs[index]['official'] == true) {
                         return Card(
@@ -1156,9 +1149,8 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                   );
                 }
               },
-            ),
+            ),///Tab for department list view
 
-            ///Tab for department roles
             StreamBuilder(
               stream: _deptRoles.snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
@@ -1168,11 +1160,11 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                     itemBuilder: (context, index) {
                       final DocumentSnapshot deptRoleDocumentSnapshot = streamSnapshot.data!.docs[index];
 
-                      if(deptRole.length-1<streamSnapshot.data!.docs.length) {
-                        deptRole.add(deptRoleDocumentSnapshot['userRole']);
-                      }
-                      print(deptRole);
-                      print(deptRole.length);
+                      // if(deptRole.length-1<streamSnapshot.data!.docs.length) {
+                      //   deptRole.add(deptRoleDocumentSnapshot['userRole']);
+                      // }
+                      // print(deptRole);
+                      // print(deptRole.length);
 
                       if (streamSnapshot.data!.docs[index]['official'] == true) {
                         return Card(
@@ -1316,9 +1308,8 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                   );
                 }
               },
-            ),
+            ),///Tab for department roles
 
-            ///Tab for users list view
             StreamBuilder(
               stream: _usersList.snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
@@ -1328,11 +1319,11 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                     itemBuilder: (context, index) {
                       final DocumentSnapshot userDocumentSnapshot = streamSnapshot.data!.docs[index];
 
-                      if(userDocumentSnapshot['email'].contains('@') && usersEmails.length<numUsers) {
-                        usersEmails.add(userDocumentSnapshot['email']);
-                      }
-                      print(usersEmails);
-                      print(usersEmails.length);
+                      // if(userDocumentSnapshot['email'].contains('@') && usersEmails.length<numUsers) {
+                      //   usersEmails.add(userDocumentSnapshot['email']);
+                      // }
+                      // print(usersEmails);
+                      // print(usersEmails.length);
 
                       if (streamSnapshot.data!.docs[index]['official'] == true) {
                         return Card(
@@ -1491,7 +1482,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                   );
                 }
               },
-            ),
+            ),///Tab for users list view
           ],
         ),
 
@@ -1517,24 +1508,8 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
             ),
           ],
         ),
-        // floatingActionButton: _tabController.index == 0
-        //     ? FloatingActionButton(
-        //   onPressed: () => _createDept(),
-        //   backgroundColor: Colors.green,
-        //   child: const Icon(Icons.business),
-        // ) : _tabController.index == 1
-        //   ?  FloatingActionButton(
-        //         onPressed: () => _createDeptRoles(),
-        //         backgroundColor: Colors.green,
-        //         child: const Icon(Icons.add_business),
-        // ) : FloatingActionButton(
-        //   onPressed: () => _create(),
-        //   backgroundColor: Colors.green,
-        //   child: const Icon(Icons.add_reaction),
-        // ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       ),
     );
   }
-
 }

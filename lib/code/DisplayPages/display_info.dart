@@ -46,6 +46,8 @@ String propPhoneNum = ' ';
 bool visibilityState1 = true;
 bool visibilityState2 = false;
 
+bool imgUploadCheck = false;
+
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
 
@@ -107,6 +109,26 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   // final CollectionReference _propListMonthBill = FirebaseFirestore.instance
   //     .collection('properties').doc('documentID')
   //     .collection('month').doc('monthID') as CollectionReference<Object?>;
+
+  Future<void> updateImgCheckE(bool imgCheck, [DocumentSnapshot? documentSnapshot]) async{
+    if (documentSnapshot != null) {
+      await _propList
+          .doc(documentSnapshot.id)
+          .update({
+        "imgStateE": imgCheck,
+      });
+    }
+  }
+
+  Future<void> updateImgCheckW(bool imgCheck, [DocumentSnapshot? documentSnapshot]) async{
+    if (documentSnapshot != null) {
+      await _propList
+          .doc(documentSnapshot.id)
+          .update({
+        "imgStateW": imgCheck,
+      });
+    }
+  }
 
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
     _accountNumberController.text = '';
@@ -1104,6 +1126,10 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           context, 'files/meters/$formattedMonth/$propPhoneNum/electricity/$eMeterNumber.jpg'),
                                       builder: (context, snapshot) {
                                         if (snapshot.hasError) {
+
+                                          // imgUploadCheck = false;
+                                          // updateImgCheckE(imgUploadCheck,documentSnapshot);
+
                                           return const Padding(
                                             padding: EdgeInsets.all(20.0),
                                               child: Column(
@@ -1116,14 +1142,16 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                               ),
                                           );
                                         }
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.done) {
+                                        if (snapshot.connectionState == ConnectionState.done) {
+
+                                          // imgUploadCheck = true;
+                                          // updateImgCheckE(imgUploadCheck,documentSnapshot);
+
                                           return Container(
                                             child: snapshot.data,
                                           );
                                         }
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.waiting) {
+                                        if (snapshot.connectionState == ConnectionState.waiting) {
                                           return Container(
                                             child: const CircularProgressIndicator(),);
                                         }
@@ -1262,6 +1290,8 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           context, 'files/meters/$formattedMonth/$propPhoneNum/water/$wMeterNumber.jpg'),//$meterNumber
                                       builder: (context, snapshot) {
                                         if (snapshot.hasError) {
+                                          // imgUploadCheck = false;
+                                          // updateImgCheckW(imgUploadCheck,documentSnapshot);
                                           return const Padding(
                                             padding: EdgeInsets.all(20.0),
                                             child: Column(
@@ -1274,8 +1304,10 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                             ),
                                           );
                                         }
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.done) {
+                                        if (snapshot.connectionState == ConnectionState.done) {
+
+                                          // imgUploadCheck = true;
+                                          // updateImgCheckW(imgUploadCheck,documentSnapshot);
                                           return Container(
                                             child: snapshot.data,
                                           );
