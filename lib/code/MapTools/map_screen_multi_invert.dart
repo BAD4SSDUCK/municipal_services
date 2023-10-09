@@ -11,7 +11,6 @@ import 'package:http/http.dart' as http;
 import 'package:geocoding/geocoding.dart';
 import 'package:map_box_geocoder/map_box_geocoder.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_multi_invert.dart';
 
 import 'package:municipal_tracker_msunduzi/code/SQLApp/propertiesData/properties_data.dart';
 import 'location_search_dialogue.dart';
@@ -21,14 +20,14 @@ import 'map_user_badge.dart';
 const LatLng SOURCE_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);
 
 
-class MapScreenMulti extends StatefulWidget {
-  const MapScreenMulti({Key? key}) : super(key: key);
+class MapScreenMultiInvert extends StatefulWidget {
+  const MapScreenMultiInvert({Key? key}) : super(key: key);
 
   @override
-  State<MapScreenMulti> createState() => _MapScreenMultiState();
+  State<MapScreenMultiInvert> createState() => _MapScreenMultiInvertState();
 }
 
-class _MapScreenMultiState extends State<MapScreenMulti> {
+class _MapScreenMultiInvertState extends State<MapScreenMultiInvert> {
 
   final CollectionReference _propList =
   FirebaseFirestore.instance.collection('properties');
@@ -221,10 +220,7 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
           ///A check for if meter image is outstanding or not and add the address of the outstanding images to the map marker
 
           if(defaultTargetPlatform == TargetPlatform.android){
-            if (result['imgStateE'] == false || result['imgStateW'] == false){
-
-              // addressConvert(address);
-
+            if (result['imgStateE'] == true || result['imgStateW'] == true){
               try {
                 List<Location> locations = await locationFromAddress(address);
 
@@ -241,10 +237,9 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
               } catch (e) {
                 addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
               }
-
             }
           }else{
-            if (result['imgStateE'] == false || result['imgStateW'] == false){
+            if (result['imgStateE'] == true || result['imgStateW'] == true){
               try {
                 List<Location> locations = await locationFromAddress(address);
 
@@ -315,7 +310,7 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
         builder: (locationController) {
           return Scaffold(
               appBar: AppBar(
-                title: const Text('Outstanding Captures',style: TextStyle(color: Colors.white),),
+                title: const Text('Completed Captures',style: TextStyle(color: Colors.white),),
                 iconTheme: const IconThemeData(color: Colors.white),
                 backgroundColor: Colors.green[700],
                 actions: <Widget>[
@@ -323,10 +318,10 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                     visible: true,
                     child: IconButton(
                         onPressed: (){
-                          Navigator.push(context,
-                              MaterialPageRoute(builder: (context) => const MapScreenMultiInvert()));
+                          // Navigator.push(context,
+                          //     MaterialPageRoute(builder: (context) => const NoticeArchiveScreen()));
                         },
-                        icon: const Icon(Icons.add_photo_alternate_outlined, color: Colors.white,)),),
+                        icon: const Icon(Icons.check_circle, color: Colors.white,)),),
                 ],
               ),
               body: Stack(
