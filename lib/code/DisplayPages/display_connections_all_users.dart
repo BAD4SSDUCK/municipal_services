@@ -399,7 +399,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                                     if (userNumber != "") {
                                       String token = documentSnapshot?['token'];
                                       sendPushMessage(token, titleText, bodyText);
-                                      Fluttertoast.showToast(msg: 'The user has been sent the notification!', gravity: ToastGravity.CENTER);
+                                      Fluttertoast.showToast(msg: 'The user has been sent a notification!', gravity: ToastGravity.CENTER);
                                     }
                                   } else {
                                     Fluttertoast.showToast(msg: 'Please Fill Header and Message of the notification!', gravity: ToastGravity.CENTER);
@@ -971,8 +971,6 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                                                       IconButton(
                                                         onPressed: () async {
                                                           String cell = documentSnapshot['cell number'];
-
-                                                          Fluttertoast.showToast(msg: "The owner has been notified!!",);
 
                                                           _disconnectThisUser(documentSnapshot);
 

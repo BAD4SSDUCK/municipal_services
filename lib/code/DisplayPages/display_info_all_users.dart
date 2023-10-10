@@ -199,11 +199,11 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   String dropdownValue = 'Select Month';
   List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  // TextEditingController _searchController = TextEditingController();
-  //
-  // late Future resultsLoaded;
-  // List _allResults = [];
-  // List _resultsList = [];
+  TextEditingController _searchController = TextEditingController();
+
+  late Future resultsLoaded;
+  List _allResults = [];
+  List _resultsList = [];
 
   void checkAdmin() {
     String? emailLogged = user?.email.toString();
@@ -217,16 +217,63 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   @override
   void initState() {
     checkAdmin();
-
+    // _searchController.addListener(_onSearchChanged);
     super.initState();
   }
 
   @override
   void dispose() {
+    // _searchController.removeListener(_onSearchChanged);
+    // _searchController.dispose();
     _searchBarController;
     searchText;
     super.dispose();
   }
+  //
+  // @override
+  // void didChangeDependencies() {
+  //   super.didChangeDependencies();
+  //   resultsLoaded = getPropertiesStreamSnapshots();
+  // }
+  //
+  // _onSearchChanged() {
+  //   searchResultsList();
+  // }
+  //
+  // searchResultsList() {
+  //   var showResults = [];
+  //
+  //   if(_searchController.text != "") {
+  //     for(var propSnapshot in _allResults){
+  //       ///Need to build a property model that retrieves property data entirely from the db
+  //       var title = Property.fromSnapshot(propSnapshot).title.toLowerCase();
+  //
+  //       if(title.contains(_searchController.text.toLowerCase())) {
+  //         showResults.add(propSnapshot);
+  //       }
+  //     }
+  //
+  //   } else {
+  //     showResults = List.from(_allResults);
+  //   }
+  //   setState(() {
+  //     _resultsList = showResults;
+  //   });
+  // }
+  //
+  // getPropertiesStreamSnapshots() async {
+  //   final uid = userID;
+  //   var data = await FirebaseFirestore.instance
+  //       .collection('properties')
+  //       .doc(uid)
+  //       .collection('trips')
+  //       .get();
+  //   setState(() {
+  //     _allResults = data.docs;
+  //   });
+  //   searchResultsList();
+  //   return "complete";
+  // }
 
   @override
   Widget build(BuildContext context) {
