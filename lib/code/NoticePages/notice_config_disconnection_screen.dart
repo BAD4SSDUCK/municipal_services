@@ -23,6 +23,7 @@ import 'package:municipal_tracker_msunduzi/code/faultPages/fault_task_screen_arc
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_tracker_msunduzi/code/Reusable/push_notification_message.dart';
 
 class NoticeConfigDisconScreen extends StatefulWidget {
   const NoticeConfigDisconScreen({Key? key, required this.userNumber}) : super(key: key);
@@ -124,43 +125,6 @@ class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
     }
   }
 
-  //function for messaging
-  void sendPushMessage(String token, String title, String body,) async {
-    try {
-      await http.post(
-        Uri.parse('https://fcm.googleapis.com/fcm/send'),
-        headers: <String, String>{
-          'Content-Type': 'application/json',
-          'Authorization': 'key=AAAA5PnILx8:APA91bFrXK321LraFWsbh6er8bWta0ggbvb0pxUhVnzYfjYbP6rDMecElIu0pAYnKOWthddgsZUxXMEPPXxT1EguNdkGYZsrm3fjjlGeY2EP4bxjgvn9IZQvgxKzv6w8ES2f_g9Idlv5',
-        },
-        body: jsonEncode(
-          <String, dynamic>{
-            'priority': 'high',
-            'data': <String, dynamic>{
-              'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-              'status': 'done',
-              'title': title,
-              'body': body,
-            },
-
-            "notification": <String, dynamic>{
-              "title": title,
-              "body": body,
-              "android_channel_id": "User"
-            },
-            "to": token,
-          },
-        ),
-      );
-    } catch (e) {
-      if (kDebugMode) {
-        print("error push notification");
-      }
-    }
-  }
-
-  //this widget is for displaying a property field of information with an icon next to it, NB. the icon is to make it look good
-  //it is called within a listview page widget
   Widget tokenItemField(String tokenData) {
     return Container(
       decoration: BoxDecoration(

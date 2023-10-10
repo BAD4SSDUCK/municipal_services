@@ -25,6 +25,7 @@ import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 
 import '../NoticePages/notice_config_screen.dart';
+import '../Reusable/push_notification_message.dart';
 
 
 class UsersPropsAll extends StatefulWidget {
@@ -244,40 +245,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
       });
     }
     imgCheck = false;
-  }
-
-  void sendPushMessage(String token, String title, String body,) async{
-    try{
-      await http.post(
-        Uri.parse('https://fcm.googleapis.com/fcm/send'),
-        headers: <String, String>{
-          'Content-Type': 'application/json',
-          'Authorization': 'key=AAAA5PnILx8:APA91bFrXK321LraFWsbh6er8bWta0ggbvb0pxUhVnzYfjYbP6rDMecElIu0pAYnKOWthddgsZUxXMEPPXxT1EguNdkGYZsrm3fjjlGeY2EP4bxjgvn9IZQvgxKzv6w8ES2f_g9Idlv5',
-        },
-        body: jsonEncode(
-          <String, dynamic>{
-            'priority': 'high',
-            'data': <String, dynamic>{
-              'click_action':'FLUTTER_NOTIFICATION_CLICK',
-              'status': 'done',
-              'title': title,
-              'body': body,
-            },
-
-            "notification": <String, dynamic>{
-              "title": title,
-              "body": body,
-              "android_channel_id": "User"
-            },
-            "to": token,
-          },
-        ),
-      );
-    } catch(e) {
-      if(kDebugMode){
-        print("error push notification");
-      }
-    }
   }
 
   Future<void> _notifyThisUser([DocumentSnapshot? documentSnapshot]) async {

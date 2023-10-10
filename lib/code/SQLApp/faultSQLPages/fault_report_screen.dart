@@ -89,7 +89,7 @@ class ReportPropertyMenu extends StatelessWidget {
         }
       }
     } catch (e) {
-      print("Error :: " + e.toString());
+      print("Error :: $e");
       Fluttertoast.showToast(msg: e.toString());
     }
   }
@@ -207,7 +207,7 @@ class ReportPropertyMenu extends StatelessWidget {
                   onPress: () async {
                     Navigator.push(context,
                         MaterialPageRoute(
-                            builder: (context) => GeneralFaultReporting()));
+                            builder: (context) => const GeneralFaultReporting()));
                   },
                   labelText: 'General Fault',
                   fSize: 20,
