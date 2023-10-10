@@ -159,7 +159,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   final _searchBarController = TextEditingController();
 
   String searchText = '';
-  final _userIDController = userID;
 
   String formattedDate = DateFormat.MMMM().format(now);
 
@@ -171,7 +170,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
   final _headerController = TextEditingController();
   final _messageController = TextEditingController();
-  late bool _noticeReadController;
 
   List<String> usersNumbers =[];
   List<String> usersTokens =[];
@@ -201,7 +199,11 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   String dropdownValue = 'Select Month';
   List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  List<Map<String, dynamic>> _allProps =[];
+  // TextEditingController _searchController = TextEditingController();
+  //
+  // late Future resultsLoaded;
+  // List _allResults = [];
+  // List _resultsList = [];
 
   void checkAdmin() {
     String? emailLogged = user?.email.toString();
@@ -215,6 +217,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   @override
   void initState() {
     checkAdmin();
+
     super.initState();
   }
 
@@ -223,6 +226,74 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     _searchBarController;
     searchText;
     super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[350],
+      appBar: AppBar(
+        title: const Text('All Registered Accounts',style: TextStyle(color: Colors.white),),
+        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Colors.green,
+        actions: <Widget>[
+          Visibility(
+            visible: adminAcc,
+            child: IconButton(
+                onPressed: (){
+                  ///Generate Report here
+                  reportGeneration(_propList);
+                },
+                icon: const Icon(Icons.file_copy_outlined, color: Colors.white,)),),
+        ],
+      ),
+      body: Column(
+        children: [
+          const SizedBox(height: 10,),
+          /// Search bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  onChanged: (value) async{
+                    setState(() {
+                      searchText = value;
+                      print('this is the input text ::: $searchText');
+                    });
+                  },
+                  autofocus: false,
+                  controller: _searchBarController,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search),
+                    hintText: 'Search by address',
+                    focusColor: Colors.white,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: const BorderSide(color: Colors.black),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          /// Search bar end
+
+          firebasePropertyCard(_propList),
+        ],
+      ),
+      /// Add new account, removed because it was not necessary for non-staff users.
+      //   floatingActionButton: FloatingActionButton(
+      //     onPressed: () => _create(),
+      //     child: const Icon(Icons.add_home),
+      //     backgroundColor: Colors.green,
+      //   ),
+      //   floatingActionButtonLocation: FloatingActionButtonLocation.endFloat
+
+    );
   }
 
   Future<void> updateImgCheckE(bool imgCheck, [DocumentSnapshot? documentSnapshot]) async{
@@ -381,8 +452,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   eMeterNumber = documentSnapshot['meter number'];
                   wMeterNumber = documentSnapshot['water meter number'];
                   propPhoneNum = documentSnapshot['cell number'];
-
-                  // _allProps.add(documentSnapshot['address'].toString() as Map<String,dynamic>);
 
                   String billMessage;///A check for if payment is outstanding or not
                   if(documentSnapshot['eBill'] != '' ||
@@ -1821,73 +1890,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
         content: Text('You have successfully deleted an account')));
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[350],
-      appBar: AppBar(
-        title: const Text('All Registered Accounts',style: TextStyle(color: Colors.white),),
-        iconTheme: const IconThemeData(color: Colors.white),
-        backgroundColor: Colors.green,
-        actions: <Widget>[
-          Visibility(
-            visible: adminAcc,
-            child: IconButton(
-                onPressed: (){
-                  ///Generate Report here
-                  reportGeneration(_propList);
-                },
-                icon: const Icon(Icons.file_copy_outlined, color: Colors.white,)),),
-        ],
-      ),
-      body: Column(
-        children: [
-          const SizedBox(height: 10,),
-          /// Search bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  onChanged: (value) async{
-                    setState(() {
-                      searchText = value;
-                      print('this is the input text ::: $searchText');
-                    });
-                  },
-                  autofocus: false,
-                  controller: _searchBarController,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search),
-                    hintText: 'Search by address',
-                    focusColor: Colors.white,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: const BorderSide(color: Colors.black),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          /// Search bar end
-
-          firebasePropertyCard(_propList),
-        ],
-      ),
-      /// Add new account, removed because it was not necessary for non-staff users.
-      //   floatingActionButton: FloatingActionButton(
-      //     onPressed: () => _create(),
-      //     child: const Icon(Icons.add_home),
-      //     backgroundColor: Colors.green,
-      //   ),
-      //   floatingActionButtonLocation: FloatingActionButtonLocation.endFloat
-
-    );
-  }
 
   void reportGeneration(CollectionReference<Object?> propertiesDataStream){
     final excel.Workbook workbook = excel.Workbook();
