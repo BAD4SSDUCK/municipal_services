@@ -1810,35 +1810,22 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
       ),
       body: Column(
         children: [
-          const SizedBox(height: 10,),
+          const SizedBox(height: 5,),
           /// Search bar
           Padding(
-            padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  onChanged: (value) async{
-                    setState(() {
-                      searchText = value;
-                      print('this is the input text ::: $searchText');
-                    });
-                  },
-                  autofocus: false,
-                  controller: _searchBarController,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search),
-                    hintText: 'Search by address',
-                    focusColor: Colors.white,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: const BorderSide(color: Colors.black),
-                    ),
-                  ),
-                ),
-              ],
+            padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
+            child: SearchBar(
+              controller: _searchBarController,
+              padding: const MaterialStatePropertyAll<EdgeInsets>(
+                  EdgeInsets.symmetric(horizontal: 16.0)),
+              leading: const Icon(Icons.search),
+              hintText: "Search by Address...",
+              onChanged: (value) async{
+                setState(() {
+                  searchText = value;
+                  print('this is the input text ::: $searchText');
+                });
+              },
             ),
           ),
           /// Search bar end

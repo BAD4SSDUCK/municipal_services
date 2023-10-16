@@ -551,31 +551,18 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
           /// Search bar
           Padding(
             padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  onChanged: (value) async{
-                    setState(() {
-                      searchText = value;
-                      print('this is the input text ::: $searchText');
-                    });
-                  },
-                  autofocus: false,
-                  controller: _searchBarController,
-                  decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.search),
-                      hintText: 'Search by phone number',
-                      focusColor: Colors.white,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: const BorderSide(color: Colors.black),
-                      ),
-                  ),
-                ),
-              ],
+            child: SearchBar(
+              controller: _searchBarController,
+              padding: const MaterialStatePropertyAll<EdgeInsets>(
+                  EdgeInsets.symmetric(horizontal: 16.0)),
+              leading: const Icon(Icons.search),
+              hintText: "Search by Phone Number...",
+              onChanged: (value) async{
+                setState(() {
+                  searchText = value;
+                  print('this is the input text ::: $searchText');
+                });
+              },
             ),
           ),
           /// Search bar end

@@ -15,6 +15,7 @@ import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dar
 import 'package:municipal_tracker_msunduzi/code/SQLApp/propertiesData/properties_data.dart';
 import 'location_search_dialogue.dart';
 import 'map_user_badge.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 
 const LatLng SOURCE_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);
@@ -26,6 +27,8 @@ class MapScreenMultiInvert extends StatefulWidget {
   @override
   State<MapScreenMultiInvert> createState() => _MapScreenMultiInvertState();
 }
+
+String _mapStyle = '';
 
 class _MapScreenMultiInvertState extends State<MapScreenMultiInvert> {
 
@@ -51,6 +54,10 @@ class _MapScreenMultiInvertState extends State<MapScreenMultiInvert> {
       setState(() {
         _isLoading = false;
       });
+    });
+
+    rootBundle.loadString('assets/map_style.txt').then((string) {
+      _mapStyle = string;
     });
 
     //Allows user's location to be captured while using the map
@@ -177,7 +184,7 @@ class _MapScreenMultiInvertState extends State<MapScreenMultiInvert> {
       ///for web version
       final apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
       final encodedAddress = Uri.encodeComponent(address);
-      final url = 'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey';
+      final url = 'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey&libraries=maps,drawing,visualization,places,routes&callback=initMap';
 
       final response = await http.get(Uri.parse(url));
 
@@ -343,7 +350,12 @@ class _MapScreenMultiInvertState extends State<MapScreenMultiInvert> {
                               addressConvert(_propertiesData.properties.address);
                               setState(() {
                                 _mapController = mapController;
+                                _mapController.setMapStyle(_mapStyle);
                               });
+
+                              ///to remove POI points of interest
+
+
                               },
                             initialCameraPosition: _cameraPosition
                       ),

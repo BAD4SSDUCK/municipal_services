@@ -6,11 +6,10 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:external_app_launcher/external_app_launcher.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/menu_reusable_elevated_button.dart';
+import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/counsellor_screen.dart';
 import 'dart:io';
 
-import '../PDFViewer/pdf_api.dart';
-import '../PDFViewer/view_pdf.dart';
 
 class NavDrawer extends StatelessWidget {
   const NavDrawer({Key? key}) : super(key: key);

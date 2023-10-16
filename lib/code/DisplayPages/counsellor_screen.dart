@@ -32,7 +32,8 @@ class CouncillorScreen extends StatefulWidget {
   State<CouncillorScreen> createState() => _CouncillorScreenState();
 }
 
-
+final storageRef = FirebaseStorage.instance.ref();
+String councillorName = ' ';
 
 class _CouncillorScreenState extends State<CouncillorScreen> {
   final user = FirebaseAuth.instance.currentUser!;
@@ -102,6 +103,31 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
     );
   }
 
+  Future<Widget> _getImage(BuildContext context, String imageName) async{
+    Image image;
+    final value = await FireStorageService.loadImage(context, imageName);
+    final imageUrl = await storageRef.child(imageName).getDownloadURL();
+
+    ///Check what the app is running on
+    if(defaultTargetPlatform == TargetPlatform.android){
+      image =Image.network(
+        value.toString(),
+        fit: BoxFit.fill,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }else{
+      // print('The url is::: $imageUrl');
+      image =Image.network(
+        imageUrl,
+        fit: BoxFit.fitHeight,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
+    return image;
+  }
+
   Widget wardCounsellorCard(CollectionReference<Object?> wardCounsellorStream){
     return Expanded(
       child: StreamBuilder<QuerySnapshot>(
@@ -114,6 +140,7 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                 final DocumentSnapshot documentSnapshot =
                 streamSnapshot.data!.docs[index];
 
+                councillorName = documentSnapshot['councillorName'];
 
                 if(documentSnapshot['wardNum'].trim()==dropdownValue.trim()|| dropdownValue == 'Select Ward' || dropdownValue == 'All Wards') {
                   return Card(
@@ -131,7 +158,66 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                                   fontSize: 18, fontWeight: FontWeight.w700),
                             ),
                           ),
-                          const SizedBox(height: 10,),
+                          // const SizedBox(height: 10,),
+                          InkWell(
+                            ///Can be later changed to display the picture zoomed in if user taps on it.
+                            onTap: () {
+
+                            },
+                            child: Center(
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 1),
+                                height: 100,
+                                width: 100,
+                                child: Center(
+                                  child: Card(
+                                    color: Colors.grey,
+                                    semanticContainer: true,
+                                    clipBehavior: Clip.antiAliasWithSaveLayer,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                    ),
+                                    elevation: 0,
+                                    margin: const EdgeInsets.all(10.0),
+                                    child: FutureBuilder(
+                                        future: _getImage(
+                                          ///Firebase image location must be changed to display image based on the meter number
+                                            context, 'files/councillors/$councillorName.jpg'),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.hasError) {
+                                            return const Padding(
+                                              padding: EdgeInsets.all(10.0),
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  // Text('Image not yet uploaded.',),
+                                                  // SizedBox(height: 10,),
+                                                  FaIcon(Icons.person,size: 50,),
+                                                ],
+                                              ),
+                                            );
+                                          }
+                                          if (snapshot.connectionState ==
+                                              ConnectionState.done) {
+                                            return Container(
+                                              height: 100,
+                                              width: 100,
+                                              child: snapshot.data,
+                                            );
+                                          }
+                                          if (snapshot.connectionState ==
+                                              ConnectionState.waiting) {
+                                            return Container(
+                                              child: const CircularProgressIndicator(),);
+                                          }
+                                          return Container();
+                                        }
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                           const Text(
                             'Ward:',
                             style: TextStyle(
@@ -149,8 +235,7 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                             style: TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w500),
                           ),
-                          noticeItemField(
-                              documentSnapshot['councillorPhone']),
+                          noticeItemField(documentSnapshot['councillorPhone']),
                           const SizedBox(height: 10,),
                           Column(
                             children: [

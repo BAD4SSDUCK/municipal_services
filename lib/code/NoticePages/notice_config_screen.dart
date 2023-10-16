@@ -919,44 +919,26 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
               ///Tab for searching
               Column(
                 children: [
-                  const SizedBox(height: 10,),
                   ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
                   ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
 
                   /// Search bar
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextFormField(
-                          onChanged: (value) async {
-                            setState(() {
-                              // usersNumbers = [];
-                              // usersTokens = [];
-
-                              searchText = value;
-                              print('this is the input text ::: $searchText');
-                            });
-                          },
-                          // autofocus: true,
-                          controller: _searchBarController,
-                          decoration: InputDecoration(
-                            prefixIcon: const Icon(Icons.search),
-                            hintText: 'Search by phone number',
-                            focusColor: Colors.white,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              borderSide: const BorderSide(color: Colors.black),
-                            ),
-                          ),
-                        ),
-                      ],
+                    padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
+                    child: SearchBar(
+                      controller: _searchBarController,
+                      padding: const MaterialStatePropertyAll<EdgeInsets>(
+                          EdgeInsets.symmetric(horizontal: 16.0)),
+                      leading: const Icon(Icons.search),
+                      hintText: "Search by Phone Number...",
+                      onChanged: (value) async{
+                        setState(() {
+                          searchText = value;
+                          print('this is the input text ::: $searchText');
+                        });
+                      },
                     ),
                   ),
-
                   /// Search bar end
 
                   ///made the listview card a reusable widget

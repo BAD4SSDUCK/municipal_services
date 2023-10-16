@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:municipal_tracker_msunduzi/code/Reusable/property_card.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_xlsio/xlsio.dart' as excel;
@@ -23,9 +24,9 @@ import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
-
-import '../NoticePages/notice_config_screen.dart';
-import '../Reusable/push_notification_message.dart';
+import 'package:municipal_tracker_msunduzi/code/Reusable/push_notification_message.dart';
+import 'package:municipal_tracker_msunduzi/code/Models/property.dart';
+import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_config_screen.dart';
 
 
 class UsersPropsAll extends StatefulWidget {
@@ -217,63 +218,64 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   @override
   void initState() {
     checkAdmin();
-    // _searchController.addListener(_onSearchChanged);
+    _searchController.addListener(_onSearchChanged);
     super.initState();
   }
 
   @override
   void dispose() {
-    // _searchController.removeListener(_onSearchChanged);
-    // _searchController.dispose();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
     _searchBarController;
     searchText;
     super.dispose();
   }
-  //
-  // @override
-  // void didChangeDependencies() {
-  //   super.didChangeDependencies();
-  //   resultsLoaded = getPropertiesStreamSnapshots();
-  // }
-  //
-  // _onSearchChanged() {
-  //   searchResultsList();
-  // }
-  //
-  // searchResultsList() {
-  //   var showResults = [];
-  //
-  //   if(_searchController.text != "") {
-  //     for(var propSnapshot in _allResults){
-  //       ///Need to build a property model that retrieves property data entirely from the db
-  //       var title = Property.fromSnapshot(propSnapshot).title.toLowerCase();
-  //
-  //       if(title.contains(_searchController.text.toLowerCase())) {
-  //         showResults.add(propSnapshot);
-  //       }
-  //     }
-  //
-  //   } else {
-  //     showResults = List.from(_allResults);
-  //   }
-  //   setState(() {
-  //     _resultsList = showResults;
-  //   });
-  // }
-  //
-  // getPropertiesStreamSnapshots() async {
-  //   final uid = userID;
-  //   var data = await FirebaseFirestore.instance
-  //       .collection('properties')
-  //       .doc(uid)
-  //       .collection('trips')
-  //       .get();
-  //   setState(() {
-  //     _allResults = data.docs;
-  //   });
-  //   searchResultsList();
-  //   return "complete";
-  // }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    resultsLoaded = getPropertiesStreamSnapshots();
+  }
+
+  _onSearchChanged() {
+    searchResultsList();
+  }
+
+  searchResultsList() {
+    var showResults = [];
+
+    if(_searchController.text != "") {
+      for(var propSnapshot in _allResults){
+        ///Need to build a property model that retrieves property data entirely from the db
+        var address = Property.fromSnapshot(propSnapshot).address.toLowerCase();
+
+        if(address.contains(_searchController.text.toLowerCase())) {
+          showResults.add(propSnapshot);
+        }
+      }
+
+    } else {
+      showResults = List.from(_allResults);
+    }
+    setState(() {
+      _resultsList = showResults;
+    });
+  }
+
+  getPropertiesStreamSnapshots() async {
+    final uid = userID;
+    var dataa = await _propList.get();
+    var data = await FirebaseFirestore.instance
+        .collection('properties')
+        .doc(uid)
+        .collection('address')
+        .get();
+    setState(() {
+      _allResults = data.docs;
+    });
+    searchResultsList();
+    return "complete";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -296,38 +298,32 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
       ),
       body: Column(
         children: [
-          const SizedBox(height: 10,),
           /// Search bar
           Padding(
-            padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  onChanged: (value) async{
-                    setState(() {
-                      searchText = value;
-                      print('this is the input text ::: $searchText');
-                    });
-                  },
-                  autofocus: false,
-                  controller: _searchBarController,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search),
-                    hintText: 'Search by address',
-                    focusColor: Colors.white,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: const BorderSide(color: Colors.black),
-                    ),
-                  ),
-                ),
-              ],
+            padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
+            child: SearchBar(
+              controller: _searchBarController,
+              padding: const MaterialStatePropertyAll<EdgeInsets>(
+                EdgeInsets.symmetric(horizontal: 16.0)),
+              leading: const Icon(Icons.search),
+              hintText: "Search by Address...",
+              onChanged: (value) async{
+                setState(() {
+                  searchText = value;
+                  print('this is the input text ::: $searchText');
+                });
+              },
             ),
           ),
           /// Search bar end
+
+          // Expanded(
+          //     child: ListView.builder(
+          //       itemCount: _resultsList.length,
+          //       itemBuilder: (BuildContext context, int index) =>
+          //           buildPropertyCard(context, _resultsList[index]),
+          //     )
+          // ),
 
           firebasePropertyCard(_propList),
         ],

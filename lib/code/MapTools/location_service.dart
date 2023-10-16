@@ -6,7 +6,7 @@ Future<http.Response> getLocationData(String text) async {
 
   ///Using the same uri url from a tutorial video, will need to check if that api works or is outdated
   response = await http.get(
-    Uri.parse("https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$text&key=AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY"),
+    Uri.parse("https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$text&key=AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY&libraries=maps,drawing,visualization,places,routes&callback=initMap"),
     headers: {"Content-Type": "application/json"},);
 
   print(jsonDecode(response.body));
