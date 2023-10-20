@@ -7,7 +7,7 @@ import 'package:external_app_launcher/external_app_launcher.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/menu_reusable_elevated_button.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/counsellor_screen.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/councillor_screen.dart';
 import 'dart:io';
 
 

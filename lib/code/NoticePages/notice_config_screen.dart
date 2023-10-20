@@ -37,6 +37,33 @@ class NoticeConfigScreen extends StatefulWidget {
 
 class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
+  @override
+  void initState() {
+    if(_searchController.text == ""){
+      getUsersStream();
+    }
+    checkAdmin();
+    _searchController.addListener(_onSearchChanged);
+    checkAdmin();
+    countResult();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    _headerController;
+    _messageController;
+    token;
+    title;
+    body;
+    searchText;
+    usersNumbers;
+    usersTokens;
+    super.dispose();
+  }
+
   final CollectionReference _listUserTokens =
   FirebaseFirestore.instance.collection('UserToken');
 
@@ -73,11 +100,41 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
   int numTokens = 0;
 
-  @override
-  void initState() {
-    checkAdmin();
-    countResult();
-    super.initState();
+  TextEditingController _searchController = TextEditingController();
+  List _resultsList =[];
+  List _allUserTokenResults = [];
+
+  getUsersStream() async{
+    var data = await FirebaseFirestore.instance.collection('UserToken').get();
+
+    setState(() {
+      _allUserTokenResults = data.docs;
+    });
+    searchResultsList();
+  }
+
+  _onSearchChanged() async {
+    searchResultsList();
+  }
+
+  searchResultsList() async {
+    var showResults = [];
+    if(_searchController.text != "") {
+      for(var propSnapshot in _allUserTokenResults){
+        ///Need to build a property model that retrieves property data entirely from the db
+        var address = propSnapshot['address'].toString().toLowerCase();
+
+        if(address.contains(_searchController.text.toLowerCase())) {
+          showResults.add(propSnapshot);
+        }
+      }
+    } else {
+      getUsersStream();
+      showResults = List.from(_allUserTokenResults);
+    }
+    setState(() {
+      _allUserTokenResults = showResults;
+    });
   }
 
   void countResult() async {
@@ -92,18 +149,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     print('num tokens are ::: $numTokens');
   }
 
-  @override
-  void dispose() {
-    _headerController;
-    _messageController;
-    token;
-    title;
-    body;
-    searchText;
-    usersNumbers;
-    usersTokens;
-    super.dispose();
-  }
 
   User? user = FirebaseAuth.instance.currentUser;
 
@@ -114,6 +159,106 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     } else {
       adminAcc = false;
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: Colors.grey[350],
+        appBar: AppBar(
+          title: const Text('User Notifications', style: TextStyle(color: Colors.white),),
+          backgroundColor: Colors.green,
+          iconTheme: const IconThemeData(color: Colors.white),
+          actions: <Widget>[
+            Visibility(
+              visible: adminAcc,
+              child: IconButton(
+                  onPressed: () {
+                    usersNumbers = [];
+                    usersTokens = [];
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => const NoticeConfigArcScreen()));
+                  },
+                  icon: const Icon(
+                    Icons.history_outlined, color: Colors.white,)),),
+          ],
+          bottom: const TabBar(
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+              tabs: [
+                Tab(text: 'Notify All',),
+                Tab(text: 'Targeted Notice',),
+              ]
+          ),
+        ),
+
+        body: TabBarView(
+            children: [
+
+              ///Tab for all
+              Column(
+                children: [
+                  const SizedBox(height: 10,),
+
+                  ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
+                  ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
+
+                  BasicIconButtonGrey(
+                    onPress: () async {
+                      _notifyAllUser();
+                    },
+                    labelText: 'Send Notice To All',
+                    fSize: 16,
+                    faIcon: const FaIcon(Icons.notifications,),
+                    fgColor: Theme.of(context).primaryColor,
+                    btSize: const Size(300, 50),
+                  ),
+
+                  const SizedBox(height: 10,),
+
+                  ///made the listview card a reusable widget
+                  userAndTokenCard(_listUserTokens),
+
+                ],
+              ),
+
+              ///Tab for searching
+              Column(
+                children: [
+                  ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
+                  ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
+
+                  /// Search bar
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
+                    child: SearchBar(
+
+                      controller: _searchController,
+                      padding: const MaterialStatePropertyAll<EdgeInsets>(
+                          EdgeInsets.symmetric(horizontal: 16.0)),
+                      leading: const Icon(Icons.search),
+                      hintText: "Search by Phone Number...",
+                      onChanged: (value) async{
+                        setState(() {
+                          searchText = value;
+                          print('this is the input text ::: $searchText');
+                        });
+                      },
+                    ),
+                  ),
+                  /// Search bar end
+
+                  ///made the listview card a reusable widget
+                  userAndTokenCardSearch(_listUserTokens),
+
+                ],
+              ),
+            ]
+        ),
+      ),
+    );
   }
 
   Widget tokenItemField(String tokenData) {
@@ -853,102 +998,4 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     _createBottomSheet();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: Colors.grey[350],
-        appBar: AppBar(
-          title: const Text('User Notifications', style: TextStyle(color: Colors.white),),
-          backgroundColor: Colors.green,
-          iconTheme: const IconThemeData(color: Colors.white),
-          actions: <Widget>[
-            Visibility(
-              visible: adminAcc,
-              child: IconButton(
-                  onPressed: () {
-                    usersNumbers = [];
-                    usersTokens = [];
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => const NoticeConfigArcScreen()));
-                  },
-                  icon: const Icon(
-                    Icons.history_outlined, color: Colors.white,)),),
-          ],
-          bottom: const TabBar(
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-              tabs: [
-                Tab(text: 'Notify All',),
-                Tab(text: 'Targeted Notice',),
-              ]
-          ),
-        ),
-
-        body: TabBarView(
-            children: [
-
-              ///Tab for all
-              Column(
-                children: [
-                  const SizedBox(height: 10,),
-
-                  ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
-                  ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
-
-                  BasicIconButtonGrey(
-                    onPress: () async {
-                      _notifyAllUser();
-                    },
-                    labelText: 'Send Notice To All',
-                    fSize: 16,
-                    faIcon: const FaIcon(Icons.notifications,),
-                    fgColor: Theme.of(context).primaryColor,
-                    btSize: const Size(300, 50),
-                  ),
-
-                  const SizedBox(height: 10,),
-
-                  ///made the listview card a reusable widget
-                  userAndTokenCard(_listUserTokens),
-
-                ],
-              ),
-
-              ///Tab for searching
-              Column(
-                children: [
-                  ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
-                  ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
-
-                  /// Search bar
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
-                    child: SearchBar(
-                      controller: _searchBarController,
-                      padding: const MaterialStatePropertyAll<EdgeInsets>(
-                          EdgeInsets.symmetric(horizontal: 16.0)),
-                      leading: const Icon(Icons.search),
-                      hintText: "Search by Phone Number...",
-                      onChanged: (value) async{
-                        setState(() {
-                          searchText = value;
-                          print('this is the input text ::: $searchText');
-                        });
-                      },
-                    ),
-                  ),
-                  /// Search bar end
-
-                  ///made the listview card a reusable widget
-                  userAndTokenCardSearch(_listUserTokens),
-
-                ],
-              ),
-            ]
-        ),
-      ),
-    );
-  }
 }

@@ -128,6 +128,25 @@ FirebaseFirestore.instance.collection('properties');
 
 class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
 
+  @override
+  void initState() {
+    if(_searchController.text == ""){
+      getPropertyStream();
+    }
+    // getPropertyStream();
+    _searchController.addListener(_onSearchChanged);
+    checkAdmin();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    searchText;
+    super.dispose();
+  }
+
   // text fields' controllers
   final _accountNumberController = TextEditingController();
   final _addressController = TextEditingController();
@@ -140,10 +159,8 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _idNumberController = TextEditingController();
-  final _searchBarController = TextEditingController();
 
   String searchText = '';
-  final _userIDController = userID;
 
   String formattedDate = DateFormat.MMMM().format(now);
 
@@ -181,11 +198,21 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
 
   int numTokens=0;
 
-
   String dropdownValue = 'Select Month';
   List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  List<Map<String, dynamic>> _allProps =[];
+  TextEditingController _searchController = TextEditingController();
+  List _resultsList =[];
+  List _allPropertyResults = [];
+
+  getPropertyStream() async{
+    var data = await FirebaseFirestore.instance.collection('properties').get();
+
+    setState(() {
+      _allPropertyResults = data.docs;
+    });
+    searchResultsList();
+  }
 
   void checkAdmin() {
     String? emailLogged = user?.email.toString();
@@ -196,17 +223,89 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
     }
   }
 
-  @override
-  void initState() {
-    checkAdmin();
-    super.initState();
+  _onSearchChanged() async {
+    searchResultsList();
+  }
+
+  searchResultsList() async {
+    var showResults = [];
+    getPropertyStream();
+    if(_searchController.text != "") {
+      for(var propSnapshot in _allPropertyResults){
+        ///Need to build a property model that retrieves property data entirely from the db
+        var address = propSnapshot['address'].toString().toLowerCase();
+
+        if(address.contains(_searchController.text.toLowerCase())) {
+          showResults.add(propSnapshot);
+        }
+      }
+    } else {
+      getPropertyStream();
+      showResults = List.from(_allPropertyResults);
+    }
+    setState(() {
+      getPropertyStream();
+      _allPropertyResults = showResults;
+    });
   }
 
   @override
-  void dispose() {
-    _searchBarController;
-    searchText;
-    super.dispose();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[350],
+      appBar: AppBar(
+        title: const Text('All Registered Accounts',style: TextStyle(color: Colors.white),),
+        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Colors.green,
+        actions: <Widget>[
+          Visibility(
+            visible: adminAcc,
+            child: IconButton(
+                onPressed: (){
+                  ///Generate Report here
+                  reportGeneration(_propList);
+                },
+                icon: const Icon(Icons.file_copy_outlined, color: Colors.white,)),),
+        ],
+      ),
+      body: Column(
+        children: [
+          /// Search bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
+            child: SearchBar(
+              controller: _searchController,
+              padding: const MaterialStatePropertyAll<EdgeInsets>(
+                  EdgeInsets.symmetric(horizontal: 16.0)),
+              leading: const Icon(Icons.search),
+              hintText: "Search by Address...",
+              onChanged: (value) async{
+                setState(() {
+                  searchText = value;
+                  print('this is the input text ::: $searchText');
+                });
+              },
+            ),
+          ),
+          /// Search bar end
+
+          // firebasePropertyCard(_propList),
+
+          Expanded(
+            child: propertyCard(),
+          )
+
+        ],
+      ),
+      /// Add new account, removed because it was not necessary for non-staff users.
+      //   floatingActionButton: FloatingActionButton(
+      //     onPressed: () => _create(),
+      //     child: const Icon(Icons.add_home),
+      //     backgroundColor: Colors.green,
+      //   ),
+      //   floatingActionButtonLocation: FloatingActionButtonLocation.endFloat
+
+    );
   }
 
   Future<void> _notifyThisUser([DocumentSnapshot? documentSnapshot]) async {
@@ -445,8 +544,6 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                   wMeterNumber = documentSnapshot['water meter number'];
                   propPhoneNum = documentSnapshot['cell number'];
 
-                  // _allProps.add(documentSnapshot['address'].toString() as Map<String,dynamic>);
-
                   String billMessage;///A check for if payment is outstanding or not
                   if(documentSnapshot['eBill'] != '' ||
                       documentSnapshot['eBill'] != 'R0,000.00' ||
@@ -459,7 +556,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                     billMessage = 'No outstanding payments';
                   }
 
-                  if(((documentSnapshot['address'].trim()).toLowerCase()).contains((_searchBarController.text.trim()).toLowerCase())){
+                  if(((documentSnapshot['address'].trim()).toLowerCase()).contains((_searchController.text.trim()).toLowerCase())){
                     return Card(
                       margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
                       child: Padding(
@@ -514,362 +611,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                               'Phone Number: ${documentSnapshot['cell number']}',
                               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
-                            // const SizedBox(height: 5,),
-                            // Text(
-                            //   'First Name: ${documentSnapshot['first name']}',
-                            //   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            // ),
-                            // const SizedBox(height: 5,),
-                            // Text(
-                            //   'Surname: ${documentSnapshot['last name']}',
-                            //   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            // ),
-                            // const SizedBox(height: 5,),
-                            // Text(
-                            //   'ID Number: ${documentSnapshot['id number']}',
-                            //   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            // ),
-                            const SizedBox(height: 20,),
-
-                            // const Center(
-                            //   child: Text(
-                            //     'Electricity Meter Reading Photo',
-                            //     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                            //   ),
-                            // ),
-                            // const SizedBox(height: 5,),
-                            // Column(
-                            //   children: [
-                            //     Row(
-                            //       mainAxisAlignment: MainAxisAlignment.center,
-                            //       crossAxisAlignment: CrossAxisAlignment.center,
-                            //       children: [
-                            //         BasicIconButtonGrey(
-                            //           onPress: () async {
-                            //             eMeterNumber = documentSnapshot['meter number'];
-                            //             propPhoneNum = documentSnapshot['cell number'];
-                            //             showDialog(
-                            //                 barrierDismissible: false,
-                            //                 context: context,
-                            //                 builder: (context) {
-                            //                   return AlertDialog(
-                            //                     title: const Text("Upload Electricity Meter"),
-                            //                     content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                            //                     actions: [
-                            //                       IconButton(
-                            //                         onPressed: () {
-                            //                           Navigator.pop(context);
-                            //                         },
-                            //                         icon: const Icon(
-                            //                           Icons.cancel,
-                            //                           color: Colors.red,
-                            //                         ),
-                            //                       ),
-                            //                       IconButton(
-                            //                         onPressed: () async {
-                            //                           Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                            //                           Navigator.push(context,
-                            //                               MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: propPhoneNum, meterNumber: eMeterNumber,)));
-                            //                         },
-                            //                         icon: const Icon(
-                            //                           Icons.done,
-                            //                           color: Colors.green,
-                            //                         ),
-                            //                       ),
-                            //                     ],
-                            //                   );
-                            //                 });
-                            //           },
-                            //           labelText: 'Photo',
-                            //           fSize: 16,
-                            //           faIcon: const FaIcon(Icons.camera_alt,),
-                            //           fgColor: Colors.black38,
-                            //           btSize: const Size(100, 38),
-                            //         ),
-                            //         BasicIconButtonGrey(
-                            //           onPress: () async {
-                            //             _updateE(documentSnapshot);
-                            //           },
-                            //           labelText: 'Capture',
-                            //           fSize: 16,
-                            //           faIcon: const FaIcon(Icons.edit,),
-                            //           fgColor: Theme.of(context).primaryColor,
-                            //           btSize: const Size(100, 38),
-                            //         ),
-                            //       ],
-                            //     )
-                            //   ],
-                            // ),
-                            // ///Image display item needs to get the reference from the firestore using the users uploaded meter connection
-                            // InkWell(
-                            //   ///onTap allows to open image upload page if user taps on the image.
-                            //   ///Can be later changed to display the picture zoomed in if user taps on it.
-                            //   onTap: () {
-                            //     eMeterNumber = documentSnapshot['meter number'];
-                            //     propPhoneNum = documentSnapshot['cell number'];
-                            //     showDialog(
-                            //     barrierDismissible: false,
-                            //     context: context,
-                            //     builder: (context) {
-                            //       return AlertDialog(
-                            //         title: const Text("Upload Electricity Meter"),
-                            //         content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                            //         actions: [
-                            //           IconButton(
-                            //             onPressed: () {
-                            //               Navigator.pop(context);
-                            //             },
-                            //             icon: const Icon(
-                            //               Icons.cancel,
-                            //               color: Colors.red,
-                            //             ),
-                            //           ),
-                            //           IconButton(
-                            //             onPressed: () async {
-                            //               Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                            //               Navigator.push(context,
-                            //                   MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: propPhoneNum, meterNumber: eMeterNumber,)));
-                            //             },
-                            //             icon: const Icon(
-                            //               Icons.done,
-                            //               color: Colors.green,
-                            //             ),
-                            //           ),
-                            //         ],
-                            //       );
-                            //     });
-                            //   },
-                            //
-                            //   child: Center(
-                            //     child: Container(
-                            //       margin: const EdgeInsets.only(bottom: 5),
-                            //       // height: 300,
-                            //       // width: 300,
-                            //       child: Center(
-                            //         child: Card(
-                            //           color: Colors.grey,
-                            //           semanticContainer: true,
-                            //           clipBehavior: Clip.antiAliasWithSaveLayer,
-                            //           shape: RoundedRectangleBorder(
-                            //             borderRadius: BorderRadius.circular(10.0),
-                            //           ),
-                            //           elevation: 0,
-                            //           margin: const EdgeInsets.all(10.0),
-                            //           child: FutureBuilder(
-                            //               future: _getImage(
-                            //                 ///Firebase image location must be changed to display image based on the meter number
-                            //                   context, 'files/meters/$formattedDate/$propPhoneNum/electricity/$eMeterNumber.jpg'),
-                            //               builder: (context, snapshot) {
-                            //                 if (snapshot.hasError) {
-                            //                   return const Padding(
-                            //                     padding: EdgeInsets.all(20.0),
-                            //                     child: Column(
-                            //                       mainAxisSize: MainAxisSize.min,
-                            //                       children: [
-                            //                         Text('Image not yet uploaded.',),
-                            //                         SizedBox(height: 10,),
-                            //                         FaIcon(Icons.camera_alt,),
-                            //                       ],
-                            //                     ),
-                            //                   );
-                            //                 }
-                            //                 if (snapshot.connectionState ==
-                            //                     ConnectionState.done) {
-                            //                   return Column(
-                            //                     mainAxisSize: MainAxisSize.min,
-                            //                     children: [
-                            //                       SizedBox(
-                            //                         height: 300,
-                            //                         width: 300,
-                            //                         child: snapshot.data,
-                            //                       ),
-                            //                     ],
-                            //                   );
-                            //                 }
-                            //                 if (snapshot.connectionState ==
-                            //                     ConnectionState.waiting) {
-                            //                   return Container(
-                            //                     child: const CircularProgressIndicator(),);
-                            //                 }
-                            //                 return Container();
-                            //               }
-                            //           ),
-                            //         ),
-                            //       ),
-                            //     ),
-                            //   ),
-                            // ),
-                            // const SizedBox(height: 10,),
-                            //
-                            // const Center(
-                            //   child: Text(
-                            //     'Water Meter Reading Photo',
-                            //     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                            //   ),
-                            // ),
-                            // const SizedBox(height: 5,),
-                            // Column(
-                            //   children: [
-                            //     Row(
-                            //       mainAxisAlignment: MainAxisAlignment.center,
-                            //       crossAxisAlignment: CrossAxisAlignment.center,
-                            //       children: [
-                            //         BasicIconButtonGrey(
-                            //           onPress: () async {
-                            //             wMeterNumber = documentSnapshot['water meter number'];
-                            //             propPhoneNum = documentSnapshot['cell number'];
-                            //             showDialog(
-                            //                 barrierDismissible: false,
-                            //                 context: context,
-                            //                 builder: (context) {
-                            //                   return AlertDialog(
-                            //                     title: const Text("Upload Water Meter"),
-                            //                     content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                            //                     actions: [
-                            //                       IconButton(
-                            //                         onPressed: () {
-                            //                           Navigator.pop(context);
-                            //                         },
-                            //                         icon: const Icon(
-                            //                           Icons.cancel,
-                            //                           color: Colors.red,
-                            //                         ),
-                            //                       ),
-                            //                       IconButton(
-                            //                         onPressed: () async {
-                            //                           Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                            //                           Navigator.push(context,
-                            //                               MaterialPageRoute(builder: (context) => ImageUploadWater(userNumber: propPhoneNum, meterNumber: wMeterNumber,)));
-                            //                         },
-                            //                         icon: const Icon(
-                            //                           Icons.done,
-                            //                           color: Colors.green,
-                            //                         ),
-                            //                       ),
-                            //                     ],
-                            //                   );
-                            //                 });
-                            //           },
-                            //           labelText: 'Photo',
-                            //           fSize: 16,
-                            //           faIcon: const FaIcon(Icons.camera_alt,),
-                            //           fgColor: Colors.black38,
-                            //           btSize: const Size(100, 38),
-                            //         ),
-                            //         BasicIconButtonGrey(
-                            //           onPress: () async {
-                            //             _updateW(documentSnapshot);
-                            //           },
-                            //           labelText: 'Capture',
-                            //           fSize: 16,
-                            //           faIcon: const FaIcon(Icons.edit,),
-                            //           fgColor: Theme.of(context).primaryColor,
-                            //           btSize: const Size(100, 38),
-                            //         ),
-                            //       ],
-                            //     )
-                            //   ],
-                            // ),
-                            // InkWell(
-                            //   ///onTap allows to open image upload page if user taps on the image.
-                            //   ///Can be later changed to display the picture zoomed in if user taps on it.
-                            //   onTap: () {
-                            //     wMeterNumber = documentSnapshot['water meter number'];
-                            //     propPhoneNum = documentSnapshot['cell number'];
-                            //     showDialog(
-                            //     barrierDismissible: false,
-                            //     context: context,
-                            //     builder: (context) {
-                            //       return AlertDialog(
-                            //         title: const Text("Upload Water Meter"),
-                            //         content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                            //         actions: [
-                            //           IconButton(
-                            //             onPressed: () {
-                            //               Navigator.pop(context);
-                            //             },
-                            //             icon: const Icon(
-                            //               Icons.cancel,
-                            //               color: Colors.red,
-                            //             ),
-                            //           ),
-                            //           IconButton(
-                            //             onPressed: () async {
-                            //               Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                            //               Navigator.push(context,
-                            //                   MaterialPageRoute(builder: (context) => ImageUploadWater(userNumber: propPhoneNum, meterNumber: wMeterNumber,)));
-                            //             },
-                            //             icon: const Icon(
-                            //               Icons.done,
-                            //               color: Colors.green,
-                            //             ),
-                            //           ),
-                            //         ],
-                            //       );
-                            //     });
-                            //   },
-                            //
-                            //   child: Center(
-                            //     child: Container(
-                            //       margin: const EdgeInsets.only(bottom: 5),
-                            //       // height: 300,
-                            //       // width: 300,
-                            //       child: Center(
-                            //         child: Card(
-                            //           color: Colors.grey,
-                            //           semanticContainer: true,
-                            //           clipBehavior: Clip.antiAliasWithSaveLayer,
-                            //           shape: RoundedRectangleBorder(
-                            //             borderRadius: BorderRadius.circular(10.0),
-                            //           ),
-                            //           elevation: 0,
-                            //           margin: const EdgeInsets.all(10.0),
-                            //           child: FutureBuilder(
-                            //               future: _getImageW(
-                            //                 ///Firebase image location must be changed to display image based on the meter number
-                            //                   context, 'files/meters/$formattedDate/$propPhoneNum/water/$wMeterNumber.jpg'),//$meterNumber
-                            //               builder: (context, snapshot) {
-                            //                 if (snapshot.hasError) {
-                            //                   return const Padding(
-                            //                     padding: EdgeInsets.all(20.0),
-                            //                     child: Column(
-                            //                       mainAxisSize: MainAxisSize.min,
-                            //                       children: [
-                            //                         Text('Image not yet uploaded.',),
-                            //                         SizedBox(height: 10,),
-                            //                         FaIcon(Icons.camera_alt,),
-                            //                       ],
-                            //                     ),
-                            //                   );
-                            //                 }
-                            //                 if (snapshot.connectionState ==
-                            //                     ConnectionState.done) {
-                            //                   return Container(
-                            //                     height: 300,
-                            //                     width: 300,
-                            //                     child: snapshot.data,
-                            //                   );
-                            //                 }
-                            //                 if (snapshot.connectionState ==
-                            //                     ConnectionState.waiting) {
-                            //                   return Container(
-                            //                     child: const CircularProgressIndicator(),);
-                            //                 }
-                            //                 return Container();
-                            //               }
-                            //           ),
-                            //         ),
-                            //       ),
-                            //     ),
-                            //   ),
-                            // ),
-                            // const SizedBox(height: 10,),
-                            // Text(
-                            //   billMessage,
-                            //   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            // ),
-
-                            const SizedBox(height: 10,),
+                            const SizedBox(height: 30,),
                             Column(
                               children: [
                                 Row(
@@ -970,13 +712,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                                                       ),
                                                       IconButton(
                                                         onPressed: () async {
-                                                          String cell = documentSnapshot['cell number'];
-
                                                           _disconnectThisUser(documentSnapshot);
-
-                                                          // Navigator.push(context,
-                                                          //     MaterialPageRoute(builder: (context) => NoticeConfigScreen(userNumber: cell,)));
-
                                                           Navigator.pop(context);
                                                           },
                                                         icon: const Icon(
@@ -1000,153 +736,6 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                                 ),
                               ],
                             ),
-                            // Column(
-                            //   children: [
-                            //     Row(
-                            //       mainAxisAlignment: MainAxisAlignment.center,
-                            //       crossAxisAlignment: CrossAxisAlignment.center,
-                            //       children: [
-                            //         BasicIconButtonGrey(
-                            //           onPress: () async {
-                            //             wMeterNumber = documentSnapshot['water meter number'];
-                            //             imgFolder = documentSnapshot['cell number'];
-                            //             showDialog(
-                            //                 barrierDismissible: false,
-                            //                 context: context,
-                            //                 builder: (context) {
-                            //                   return AlertDialog(
-                            //                     title: const Text("Upload Water Meter"),
-                            //                     content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                            //                     actions: [
-                            //                       IconButton(
-                            //                         onPressed: () {
-                            //                           Navigator.pop(context);
-                            //                         },
-                            //                         icon: const Icon(
-                            //                           Icons.cancel,
-                            //                           color: Colors.red,
-                            //                         ),
-                            //                       ),
-                            //                       IconButton(
-                            //                         onPressed: () async {
-                            //                           Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                            //                           Navigator.push(context,
-                            //                               MaterialPageRoute(builder: (context) => const ImageUploadWater()));
-                            //                         },
-                            //                         icon: const Icon(
-                            //                           Icons.done,
-                            //                           color: Colors.green,
-                            //                         ),
-                            //                       ),
-                            //                     ],
-                            //                   );
-                            //                 });
-                            //           },
-                            //           labelText: 'W-Meter',
-                            //           fSize: 16,
-                            //           faIcon: const FaIcon(Icons.camera_alt,),
-                            //           fgColor: Colors.black38,
-                            //           btSize: const Size(100, 38),
-                            //         ),
-                            //         BasicIconButtonGrey(
-                            //           onPress: () async {
-                            //             eMeterNumber = documentSnapshot['meter number'];
-                            //             imgFolder = documentSnapshot['cell number'];
-                            //             showDialog(
-                            //                 barrierDismissible: false,
-                            //                 context: context,
-                            //                 builder: (context) {
-                            //                   return AlertDialog(
-                            //                     title: const Text("Upload Electricity Meter"),
-                            //                     content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                            //                     actions: [
-                            //                       IconButton(
-                            //                         onPressed: () {
-                            //                           Navigator.pop(context);
-                            //                         },
-                            //                         icon: const Icon(
-                            //                           Icons.cancel,
-                            //                           color: Colors.red,
-                            //                         ),
-                            //                       ),
-                            //                       IconButton(
-                            //                         onPressed: () async {
-                            //                           Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                            //                           Navigator.push(context,
-                            //                               MaterialPageRoute(builder: (context) => ImageUploadMeter()));
-                            //                         },
-                            //                         icon: const Icon(
-                            //                           Icons.done,
-                            //                           color: Colors.green,
-                            //                         ),
-                            //                       ),
-                            //                     ],
-                            //                   );
-                            //                 });
-                            //           },
-                            //           labelText: 'E-Meter',
-                            //           fSize: 16,
-                            //           faIcon: const FaIcon(Icons.camera_alt,),
-                            //           fgColor: Colors.black38,
-                            //           btSize: const Size(100, 38),
-                            //         ),
-                            //         ///No need for a delete button but this is what a delete would look like
-                            //         // GestureDetector(
-                            //         //   onTap: () {
-                            //         //     showDialog(
-                            //         //         barrierDismissible: false,
-                            //         //         context: context,
-                            //         //         builder: (context) {
-                            //         //           return AlertDialog(
-                            //         //             title: const Text(
-                            //         //                 "Deleting Property Information"),
-                            //         //             content: const Text(
-                            //         //                 "Deleting this property will remove it entirely! Are you sure?"),
-                            //         //             actions: [
-                            //         //               IconButton(
-                            //         //                 onPressed: () {
-                            //         //                   Navigator.pop(context);
-                            //         //                 },
-                            //         //                 icon: const Icon(
-                            //         //                   Icons.cancel,
-                            //         //                   color: Colors.red,
-                            //         //                 ),
-                            //         //               ),
-                            //         //               IconButton(
-                            //         //                 onPressed: () async {
-                            //         //                   ScaffoldMessenger.of(
-                            //         //                       this.context)
-                            //         //                       .showSnackBar(
-                            //         //                     const SnackBar(
-                            //         //                       content: Text(
-                            //         //                           'Property was deleted!'),
-                            //         //                     ),
-                            //         //                   );
-                            //         //                   _delete(documentSnapshot.id);
-                            //         //                   Navigator.pop(context);
-                            //         //                 },
-                            //         //                 icon: const Icon(
-                            //         //                   Icons.done,
-                            //         //                   color: Colors.green,
-                            //         //                 ),
-                            //         //               ),
-                            //         //             ],
-                            //         //           );
-                            //         //         });
-                            //         //  },
-                            //         //   child: Row(
-                            //         //     children: [
-                            //         //       Icon(
-                            //         //         Icons.delete,
-                            //         //         color: Colors.red[700],
-                            //         //       ),
-                            //         //     ],
-                            //         //   ),
-                            //         // ),
-                            //       ],
-                            //     ),
-                            //   ],
-                            // ),
                           ],
                         ),
                       ),
@@ -1873,59 +1462,204 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
         content: Text('You have successfully deleted an account')));
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[350],
-      appBar: AppBar(
-        title: const Text('All Registered Accounts',style: TextStyle(color: Colors.white),),
-        iconTheme: const IconThemeData(color: Colors.white),
-        backgroundColor: Colors.green,
-        actions: <Widget>[
-          Visibility(
-            visible: adminAcc,
-            child: IconButton(
-                onPressed: (){
-                  ///Generate Report here
-                  reportGeneration(_propList);
-                },
-                icon: const Icon(Icons.file_copy_outlined, color: Colors.white,)),),
-        ],
-      ),
-      body: Column(
-        children: [
-          /// Search bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
-            child: SearchBar(
-              controller: _searchBarController,
-              padding: const MaterialStatePropertyAll<EdgeInsets>(
-                  EdgeInsets.symmetric(horizontal: 16.0)),
-              leading: const Icon(Icons.search),
-              hintText: "Search by Address...",
-              onChanged: (value) async{
-                setState(() {
-                  searchText = value;
-                  ///tried to refresh cards
-                  // firebasePropertyCard(_propList);
-                  print('this is the input text ::: $searchText');
-                });
-              },
+  Widget propertyCard() {
+    if (_allPropertyResults.isNotEmpty) {
+    return ListView.builder(
+      ///this call is to display all details for all users but is only displaying for the current user account.
+      ///it can be changed to display all users for the staff to see if the role is set to all later on.
+      itemCount: _allPropertyResults.length,
+      itemBuilder: (context, index) {
+        eMeterNumber = _allPropertyResults[index]['meter number'];
+        wMeterNumber = _allPropertyResults[index]['water meter number'];
+        propPhoneNum = _allPropertyResults[index]['cell number'];
+
+        String billMessage;
+
+        ///A check for if payment is outstanding or not
+        if (_allPropertyResults[index]['eBill'] != '' ||
+            _allPropertyResults[index]['eBill'] != 'R0,000.00' ||
+            _allPropertyResults[index]['eBill'] != 'R0.00' ||
+            _allPropertyResults[index]['eBill'] != 'R0' ||
+            _allPropertyResults[index]['eBill'] != '0'
+        ) {
+          billMessage = 'Utilities bill outstanding: ${_allPropertyResults[index]['eBill']}';
+        } else {
+          billMessage = 'No outstanding payments';
+        }
+
+        return Card(
+          margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Center(
+                  child: Text('Property Information',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                const SizedBox(height: 10,),
+                Text('Account Number: ${_allPropertyResults[index]['account number']}',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w400),
+                ),
+                const SizedBox(height: 5,),
+                Text('Street Address: ${_allPropertyResults[index]['address']}',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w400),
+                ),
+                const SizedBox(height: 5,),
+                Text('Area Code: ${_allPropertyResults[index]['area code']}',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w400),
+                ),
+                const SizedBox(height: 5,),
+                Text('Meter Number: ${_allPropertyResults[index]['meter number']}',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w400),
+                ),
+                const SizedBox(height: 5,),
+                Text('Meter Reading: ${_allPropertyResults[index]['meter reading']}',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w400),
+                ),
+                const SizedBox(height: 5,),
+                Text('Water Meter Number: ${_allPropertyResults[index]['water meter number']}',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w400),
+                ),
+                const SizedBox(height: 5,),
+                Text('Water Meter Reading: ${_allPropertyResults[index]['water meter reading']}',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                ),
+                const SizedBox(height: 5,),
+                Text('Phone Number: ${_allPropertyResults[index]['cell number']}',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                ),
+                const SizedBox(height: 30,),
+                Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        BasicIconButtonGrey(
+                          onPress: () async {
+                            Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!");
+
+                            String accountNumberPDF = _allPropertyResults[index]['account number'];
+                            print('The acc number is ::: $accountNumberPDF');
+
+                            final storageRef = FirebaseStorage.instance.ref().child("pdfs/$formattedDate");
+                            final listResult = await storageRef.listAll();
+                            for (var prefix in listResult.prefixes) {
+                              print('The ref is ::: $prefix');
+                              // The prefixes under storageRef.
+                              // You can call listAll() recursively on them.
+                            }
+                            for (var item in listResult.items) {
+                              print('The item is ::: $item');
+                              // The items under storageRef.
+                              if (item.toString().contains(accountNumberPDF)) {
+                                final url = item.fullPath;
+                                print('The url is ::: $url');
+                                final file = await PDFApi.loadFirebase(url);
+                                try {
+                                  if (context.mounted) openPDF(context, file);
+                                  Fluttertoast.showToast(msg: "Download Successful!");
+                                } catch (e) {
+                                  Fluttertoast.showToast(msg: "Unable to download statement.");
+                                }
+                              } else {
+                                Fluttertoast.showToast(msg: "Unable to download statement.");
+                              }
+                            }
+                          },
+                          labelText: 'Invoice',
+                          fSize: 16,
+                          faIcon: const FaIcon(Icons.picture_as_pdf,),
+                          fgColor: Colors.orangeAccent,
+                          btSize: const Size(100, 38),
+                        ),
+                        BasicIconButtonGrey(
+                          onPress: () async {
+                            accountNumberAll = _allPropertyResults[index]['account number'];
+                            locationGivenAll = _allPropertyResults[index]['address'];
+
+                            Navigator.push(context,
+                                MaterialPageRoute(builder: (context) =>
+                                    MapScreenProp(propAddress: locationGivenAll, propAccNumber: accountNumberAll,)
+                                ));
+                          },
+                          labelText: 'Map',
+                          fSize: 16,
+                          faIcon: const FaIcon(Icons.map,),
+                          fgColor: Colors.green,
+                          btSize: const Size(100, 38),
+                        ),
+                        const SizedBox(width: 5,),
+                      ],
+                    ),
+                    const SizedBox(height: 5,),
+                    Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            BasicIconButtonGrey(
+                              onPress: () async {
+                                String cell = _allPropertyResults[index]['cell number'];
+
+                                Fluttertoast.showToast(msg: "The owner must be given a notification",);
+
+                                showDialog(
+                                    barrierDismissible: false,
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        title: const Text("Notify Utilities Disconnection"),
+                                        content: const Text("This will notify the owner of the property of their water or electricity being disconnection in 14 days!\n\nAre you sure?"),
+                                        actions: [
+                                          IconButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                            },
+                                            icon: const Icon(Icons.cancel, color: Colors.red,),
+                                          ),
+                                          IconButton(
+                                            onPressed: () async {
+                                              _disconnectThisUser(_allPropertyResults[index]);
+                                              Navigator.pop(context);
+                                            },
+                                            icon: const Icon(Icons.done, color: Colors.green,),
+                                          ),
+                                        ],
+                                      );
+                                    });
+                              },
+                              labelText: 'Disconnection',
+                              fSize: 16,
+                              faIcon: const FaIcon(Icons.warning_amber,),
+                              fgColor: Colors.amber,
+                              btSize: const Size(100, 38),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          /// Search bar end
-
-          firebasePropertyCard(_propList),
-        ],
-      ),
-      /// Add new account, removed because it was not necessary for non-staff users.
-      //   floatingActionButton: FloatingActionButton(
-      //     onPressed: () => _create(),
-      //     child: const Icon(Icons.add_home),
-      //     backgroundColor: Colors.green,
-      //   ),
-      //   floatingActionButtonLocation: FloatingActionButtonLocation.endFloat
-
+        );
+      },
+    );
+    } return const Center(
+      child: CircularProgressIndicator(),
     );
   }
 

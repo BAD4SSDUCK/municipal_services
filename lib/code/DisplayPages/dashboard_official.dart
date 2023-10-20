@@ -1,7 +1,9 @@
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:html' as html;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -100,7 +102,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                   // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   //  crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
-                    // const SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Stack(
                       alignment:Alignment.topCenter,
                       children:[
@@ -293,6 +295,15 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                       IconButton(
                                         onPressed: () async {
                                           FirebaseAuth.instance.signOut();
+
+                                          if(defaultTargetPlatform == TargetPlatform.android){
+                                            FirebaseAuth.instance.signOut();
+                                            Navigator.pop(context);
+                                          } else {
+                                            FirebaseAuth.instance.signOut();
+                                            html.window.location.reload();
+                                          }
+
                                           Navigator.pop(context);
 
                                           // Navigator.popAndPushNamed(context, const MainPage() as String);

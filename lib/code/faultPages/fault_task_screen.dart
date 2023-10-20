@@ -36,6 +36,24 @@ class FireStorageService extends ChangeNotifier{
 
 class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
+  @override
+  void initState() {
+    if(_searchController.text == ""){
+      getFaultStream();
+    }
+    _searchController.addListener(_onSearchChanged);
+    checkAdmin();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    searchText;
+    super.dispose();
+  }
+
   final _accountNumberController = TextEditingController();
   final _addressController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -44,7 +62,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   final _depAllocationController = TextEditingController();
   late bool _faultResolvedController;
   final _dateReportedController = TextEditingController();
-  final _searchBarController = TextEditingController();
 
   final CollectionReference _faultData =
   FirebaseFirestore.instance.collection('faultReporting');
@@ -70,19 +87,101 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   FirebaseFirestore.instance.collection('users');
 
   @override
-  void initState() {
-    checkAdmin();
-    super.initState();
-  }
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[350],
+      appBar: AppBar(
+        title: const Text('Fault Reports Listed',style: TextStyle(color: Colors.white),),
+        backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: <Widget>[
+          Visibility(
+            visible: adminAcc,
+            child: IconButton(
+                onPressed: (){
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => const FaultTaskScreenArchive()));
+                },
+                icon: const Icon(Icons.history_outlined, color: Colors.white,)),),
+        ],
+      ),
 
-  @override
-  void dispose() {
-    _searchBarController;
-    searchText;
-    super.dispose();
+      body: Column(
+        children: [
+          /// Search bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
+            child: SearchBar(
+
+              controller: _searchController,
+              padding: const MaterialStatePropertyAll<EdgeInsets>(
+                  EdgeInsets.symmetric(horizontal: 16.0)),
+              leading: const Icon(Icons.search),
+              hintText: "Search by Address...",
+              onChanged: (value) async{
+                setState(() {
+                  searchText = value;
+                  print('this is the input text ::: $searchText');
+                });
+              },
+            ),
+          ),
+          /// Search bar end
+
+          ///made the listview card a reusable widget
+          // firebaseFaultCard(_faultData),
+
+          Expanded(
+              child: faultCard(),
+          ),
+
+          const SizedBox(height: 5,),
+
+        ],
+      ),
+    );
   }
 
   User? user = FirebaseAuth.instance.currentUser;
+
+  TextEditingController _searchController = TextEditingController();
+  List _resultsList =[];
+  List _allFaultResults = [];
+
+  getFaultStream() async{
+    var data = await FirebaseFirestore.instance.collection('faultReporting').orderBy('dateReported', descending: true).get();
+
+    setState(() {
+      _allFaultResults = data.docs;
+    });
+    searchResultsList();
+  }
+
+  _onSearchChanged() async {
+    searchResultsList();
+  }
+
+  searchResultsList() async {
+    var showResults = [];
+    getFaultStream();
+    if(_searchController.text != "") {
+      for(var faultSnapshot in _allFaultResults){
+        ///Need to build a property model that retrieves property data entirely from the db
+        var address = faultSnapshot['address'].toString().toLowerCase();
+
+        if(address.contains(_searchController.text.toLowerCase())) {
+          showResults.add(faultSnapshot);
+        }
+      }
+    } else {
+      getFaultStream();
+      showResults = List.from(_allFaultResults);
+    }
+    setState(() {
+      getFaultStream();
+      _allFaultResults = showResults;
+    });
+  }
 
   void checkAdmin() {
     String? emailLogged = user?.email.toString();
@@ -126,6 +225,507 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     );
   }
 
+  Widget faultCard(){
+    if (_allFaultResults.isNotEmpty) {
+            return ListView.builder(
+              itemCount: _allFaultResults.length,
+              itemBuilder: (context, index) {
+
+                String status;
+                if(_allFaultResults[index]['faultResolved'] == false){
+                  status = "Pending";
+                } else {
+                  status = "Completed";
+                }
+
+                if(_allFaultResults[index]['faultResolved'] == false
+                    || _allFaultResults[index]['faultStage'] == 1 || _allFaultResults[index]['faultStage'] == 3){
+                    return Card(
+                      margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,10.0),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Center(
+                              child: Text(
+                                'Fault Information',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            const SizedBox(height: 10,),
+
+                            Text(
+                              'Reference Number: ${_allFaultResults[index]['ref']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+
+                            Column(
+                              children: [
+                                if(_allFaultResults[index]['accountNumber'] != "")...[
+                                  Text(
+                                    'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else ...[
+
+                                ],
+                              ],
+                            ),
+                            Text(
+                              'Street Address of Fault: ${_allFaultResults[index]['address']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Column(
+                              children: [
+                                if(_allFaultResults[index]['faultStage'] == 1)...[
+                                  Text(
+                                    'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else if(_allFaultResults[index]['faultStage'] == 2) ...[
+                                  Text(
+                                    'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else if(_allFaultResults[index]['faultStage'] == 3) ...[
+                                  Text(
+                                    'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else if(_allFaultResults[index]['faultStage'] == 4) ...[
+                                  Text(
+                                    'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else ...[
+
+
+                                ],
+                              ],
+                            ),
+                            Text(
+                              'Fault Type: ${_allFaultResults[index]['faultType']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Column(
+                              children: [
+                                if(_allFaultResults[index]['faultDescription'] != "")...[
+                                  Text(
+                                    'Fault Description: ${_allFaultResults[index]['faultDescription']}',
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else ...[
+
+                                ],
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                if(_allFaultResults[index]['depComment1'] != "")...[
+                                  Text(
+                                    'Department Comment: ${_allFaultResults[index]['depComment1']}',
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else ...[
+
+                                ],
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                if(_allFaultResults[index]['handlerCom1'] != "")...[
+                                  Text(
+                                    'Handler Comment: ${_allFaultResults[index]['handlerCom1']}',
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else ...[
+
+                                ],
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                if(_allFaultResults[index]['depComment2'] != "")...[
+                                  Text(
+                                    'Department Final Comment: ${_allFaultResults[index]['depComment2']}',
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else ...[
+
+                                ],
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                if(_allFaultResults[index]['handlerCom2'] != "")...[
+                                  Text(
+                                    'Handler Final Comment: ${_allFaultResults[index]['handlerCom2']}',
+                                    style: const TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else ...[
+
+                                ],
+                              ],
+                            ),
+                            Text(
+                              'Resolve State: $status',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            InkWell(
+                              child: Center(
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 5),
+                                  child: Center(
+                                    child: Card(
+                                      color: Colors.grey,
+                                      semanticContainer: true,
+                                      clipBehavior: Clip.antiAliasWithSaveLayer,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10.0),
+                                      ),
+                                      elevation: 0,
+                                      margin: const EdgeInsets.all(10.0),
+                                      child: FutureBuilder(
+                                          future: _getImage(
+                                            ///Firebase image location must be changed to display image based on the address
+                                              context, 'files/faultImages/${_allFaultResults[index]['dateReported']}/${_allFaultResults[index]['address']}'),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.hasError) {
+                                              return const Padding(
+                                                padding: EdgeInsets.all(20.0),
+                                                child: Text('Image not uploaded for Fault.',),
+                                              ); //${snapshot.error} if error needs to be displayed instead
+                                            }
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.done) {
+                                              return Container(
+                                                height: 300,
+                                                width: 300,
+                                                child: snapshot.data,
+                                              );
+                                            }
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return Container(
+                                                child: const CircularProgressIndicator(),);
+                                            }
+                                            return Container();
+                                          }
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 0,),
+                            Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        accountNumberRep = _allFaultResults[index]['accountNumber'];
+                                        locationGivenRep = _allFaultResults[index]['address'];
+
+                                        Navigator.push(context,
+                                            MaterialPageRoute(
+                                                builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
+                                            ));
+                                      },
+                                      labelText: 'Location',
+                                      fSize: 14,
+                                      faIcon: const FaIcon(Icons.map,),
+                                      fgColor: Colors.green,
+                                      btSize: const Size(50, 38),
+                                    ),
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        faultStage = _allFaultResults[index]['faultStage'];
+                                        _updateReport(_allFaultResults[index]);
+                                      },
+                                      labelText: 'Update',
+                                      fSize: 14,
+                                      faIcon: const FaIcon(Icons.edit,),
+                                      fgColor: Theme.of(context).primaryColor,
+                                      btSize: const Size(50, 38),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 5,),
+                                BasicIconButtonGrey(
+                                  onPress: () async {
+                                    showDialog(
+                                        barrierDismissible: false,
+                                        context: context,
+                                        builder: (context) {
+                                          return
+                                            AlertDialog(
+                                              shape: const RoundedRectangleBorder(
+                                                  borderRadius:
+                                                  BorderRadius.all(Radius.circular(16))),
+                                              title: const Text("Call Reporter!"),
+                                              content: const Text(
+                                                  "Would you like to call the individual who logged the fault?"),
+                                              actions: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.cancel,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () {
+                                                    reporterCellGiven = _allFaultResults[index]['reporterContact'];
+
+                                                    final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
+                                                    launchUrl(_tel);
+
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.done,
+                                                    color: Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                        });
+                                  },
+                                  labelText: 'Call Reporter',
+                                  fSize: 14,
+                                  faIcon: const FaIcon(Icons.call,),
+                                  fgColor: Colors.orange,
+                                  btSize: const Size(50, 38),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  } else if((_allFaultResults[index]['faultResolved'] == false && _allFaultResults[index]['faultStage'] != 5 )
+                      || _allFaultResults[index]['faultStage'] == 2 || _allFaultResults[index]['faultStage'] == 4){
+                    return Card(
+                      margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Center(
+                              child: Text(
+                                'Fault Information',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            const SizedBox(height: 10,),
+                            Text(
+                              'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Street Address of Fault: ${_allFaultResults[index]['address']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Fault Description: ${_allFaultResults[index]['faultDescription']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Resolve State: ${_allFaultResults[index]['faultResolved'].toString()}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 20,),
+                            Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        accountNumberRep = _allFaultResults[index]['accountNumber'];
+                                        locationGivenRep = _allFaultResults[index]['address'];
+
+                                        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                        //     content: Text('$accountNumber $locationGiven ')));
+
+                                        Navigator.push(context,
+                                            MaterialPageRoute(
+                                                builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
+                                            ));
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.grey[350],
+                                        fixedSize: const Size(150, 10),),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.map,
+                                            color: Colors.green[700],
+                                          ),
+                                          const SizedBox(width: 2,),
+                                          const Text('Fault Location', style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black,),),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 5,),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        faultStage = _allFaultResults[index]['faultStage'];
+                                        _updateReport(_allFaultResults[index]);
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.grey[350],
+                                        fixedSize: const Size(150, 10),),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.edit,
+                                            color: Theme.of(context).primaryColor,
+                                          ),
+                                          const SizedBox(width: 2,),
+                                          const Text('Update Details', style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black,),),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 5,),
+                                  ],
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    showDialog(
+                                        barrierDismissible: false,
+                                        context: context,
+                                        builder: (context) {
+                                          return
+                                            AlertDialog(
+                                              shape: const RoundedRectangleBorder(
+                                                  borderRadius:
+                                                  BorderRadius.all(Radius.circular(16))),
+                                              title: const Text("Call User!"),
+                                              content: const Text(
+                                                  "Would you like to call the individual who logged the fault?"),
+                                              actions: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.cancel,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () {
+                                                    reporterCellGiven = _allFaultResults[index]['reporterContact'];
+
+                                                    final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
+                                                    launchUrl(_tel);
+
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.done,
+                                                    color: Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                        });
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.grey[350],
+                                    fixedSize: const Size(115, 10),),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.call,
+                                        color: Colors.orange[700],
+                                      ),
+                                      const SizedBox(width: 2,),
+                                      const Text('Call User', style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black,),),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 5,),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  } else {
+                    return const Card();
+                }
+              },
+            );
+          } return const Center(
+                child: CircularProgressIndicator(),
+          );
+  }
   //this widget is for displaying the fault report list all together
   Widget firebaseFaultCard(CollectionReference<Object?> faultDataStream){
     return Expanded(
@@ -146,7 +746,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                   status = "Completed";
                 }
 
-                if(((documentSnapshot['address'].trim()).toLowerCase()).contains((_searchBarController.text.trim()).toLowerCase())){
+                if(((documentSnapshot['address'].trim()).toLowerCase()).contains((_searchController.text.trim()).toLowerCase())){
                   if(streamSnapshot.data!.docs[index]['faultResolved'] == false
                       || documentSnapshot['faultStage'] == 1 || documentSnapshot['faultStage'] == 3){
                     return Card(
@@ -985,52 +1585,4 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[350],
-      appBar: AppBar(
-        title: const Text('Fault Reports Listed',style: TextStyle(color: Colors.white),),
-        backgroundColor: Colors.green,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: <Widget>[
-          Visibility(
-              visible: adminAcc,
-              child: IconButton(
-                  onPressed: (){
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => const FaultTaskScreenArchive()));
-                  },
-                  icon: const Icon(Icons.history_outlined, color: Colors.white,)),),
-        ],
-      ),
-
-      body: Column(
-        children: [
-          /// Search bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
-            child: SearchBar(
-              controller: _searchBarController,
-              padding: const MaterialStatePropertyAll<EdgeInsets>(
-                  EdgeInsets.symmetric(horizontal: 16.0)),
-              leading: const Icon(Icons.search),
-              hintText: "Search by Address...",
-              onChanged: (value) async{
-                setState(() {
-                  searchText = value;
-                  print('this is the input text ::: $searchText');
-                });
-              },
-            ),
-          ),
-          /// Search bar end
-
-          ///made the listview card a reusable widget
-          firebaseFaultCard(_faultData),
-
-        ],
-      ),
-    );
-  }
 }

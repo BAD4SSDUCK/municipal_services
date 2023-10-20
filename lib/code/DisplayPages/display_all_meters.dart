@@ -17,14 +17,14 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
+import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_tracker_msunduzi/code/Reusable/push_notification_message.dart';
 import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_meter.dart';
 import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_water.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
-import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_config_screen.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/push_notification_message.dart';
 
 
 class PropertyMetersAll extends StatefulWidget {
@@ -128,6 +128,19 @@ FirebaseFirestore.instance.collection('properties');
 
 class _PropertyMetersAllState extends State<PropertyMetersAll> {
 
+  @override
+  void initState() {
+    checkAdmin();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _searchBarController;
+    searchText;
+    super.dispose();
+  }
+
   // text fields' controllers
   final _accountNumberController = TextEditingController();
   final _addressController = TextEditingController();
@@ -194,19 +207,6 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
     } else {
       adminAcc = false;
     }
-  }
-
-  @override
-  void initState() {
-    checkAdmin();
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _searchBarController;
-    searchText;
-    super.dispose();
   }
 
   Future<void> _notifyThisUser([DocumentSnapshot? documentSnapshot]) async {
@@ -827,8 +827,6 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                                       fgColor: Colors.orangeAccent,
                                       btSize: const Size(100, 38),
                                     ),
-
-                                    const SizedBox(width: 5,),
                                   ],
                                 ),
                                 const SizedBox(height: 5,),
@@ -1785,8 +1783,10 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
   Future<void> _delete(String users) async {
     await _propList.doc(users).delete();
 
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+   if(context.mounted) {
+     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('You have successfully deleted an account')));
+   }
   }
 
   @override
@@ -1794,7 +1794,7 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('All Property',style: TextStyle(color: Colors.white),),
+        title: const Text('All Properties',style: TextStyle(color: Colors.white),),
         iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: Colors.green,
         actions: <Widget>[
@@ -1831,6 +1831,8 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
           /// Search bar end
 
           firebasePropertyCard(_propList),
+
+
         ],
       ),
       /// Add new account, removed because it was not necessary for non-staff users.

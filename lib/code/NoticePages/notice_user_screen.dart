@@ -35,6 +35,20 @@ class NoticeScreen extends StatefulWidget {
 
 class _NoticeScreenState extends State<NoticeScreen> {
 
+  @override
+  void initState() {
+    getNoticeStream();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _headerController;
+    _messageController;
+    searchText;
+    super.dispose();
+  }
+
   final user = FirebaseAuth.instance.currentUser!;
 
   final CollectionReference _listNotifications =
@@ -62,20 +76,16 @@ class _NoticeScreenState extends State<NoticeScreen> {
   bool visHide = false;
   bool adminAcc = false;
 
-  @override
-  void initState() {
-    super.initState();
-  }
+  List _resultsList =[];
+  List _allNoticesResults = [];
 
-  @override
-  void dispose() {
-    _headerController;
-    _messageController;
-    searchText;
-    super.dispose();
-  }
+  getNoticeStream() async{
+    var data = await FirebaseFirestore.instance.collection('Notifications').orderBy('date', descending: true).get();
 
-  // User? user = FirebaseAuth.instance.currentUser;
+    setState(() {
+      _allNoticesResults = data.docs;
+    });
+  }
 
   //it is called within a listview page widget
   Widget noticeItemField(String noticeData) {
@@ -105,7 +115,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Colors.amberAccent,
+        color: Colors.amber[100],
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8,),
       child: Row(
@@ -114,7 +124,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
             child: Text(
               noticeData,
               style: const TextStyle(
-                color: Colors.red,
+                color: Color.fromARGB(255, 200, 0, 0),
                 fontSize: 16,
                 fontWeight: FontWeight.w600
               ),
@@ -125,7 +135,189 @@ class _NoticeScreenState extends State<NoticeScreen> {
     );
   }
 
-  Widget userNotificationCard(CollectionReference<Object?> noticeDataStream){
+  Widget userNotificationCard(){
+    if (_allNoticesResults.isNotEmpty) {
+    return ListView.builder(
+              itemCount: _allNoticesResults.length,
+              itemBuilder: (context, index) {
+
+                if(_allNoticesResults[index]['user'] == user.phoneNumber.toString()){
+                  if(_allNoticesResults[index]['user'].contains('+27') && _allNoticesResults[index]['read'] != true && _allNoticesResults[index]['level'] == 'general' ){
+                    return Card(
+                      margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Center(
+                              child: Text(
+                                'Unread Notification',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            const SizedBox(height: 10,),
+                            const Text(
+                              'Notice Header:',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                            noticeItemField(_allNoticesResults[index]['title']),
+                            const Text(
+                              'Notice Details:',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                            noticeItemField(_allNoticesResults[index]['body']),
+                            const Text(
+                              'Notice Received Date:',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                            noticeItemField(_allNoticesResults[index]['date']),
+                            Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        notifyToken = _allNoticesResults[index]['token'];
+                                        if((_allNoticesResults[index]['user'].toString()).contains('+27')){
+                                          _notifyUpdate(_allNoticesResults[index]);
+                                        }
+                                      },
+                                      labelText: 'Mark as Read',
+                                      fSize: 14,
+                                      faIcon: const FaIcon(Icons.check_circle,),
+                                      fgColor: Colors.green,
+                                      btSize: const Size(50, 38),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  } else {
+                    return const SizedBox(width: 0, height: 0,);
+                  }
+                }
+              },
+            );
+          } return const Padding(
+            padding: EdgeInsets.all(10.0),
+            child: Center(
+                child: CircularProgressIndicator()),
+          );
+  }
+
+  Widget userWarningCard(){
+    if (_allNoticesResults.isNotEmpty) {
+      return ListView.builder(
+              itemCount: _allNoticesResults.length,
+              itemBuilder: (context, index) {
+
+                if(_allNoticesResults[index]['user'] == user.phoneNumber.toString()){
+                  if(_allNoticesResults[index]['user'].contains('+27') && _allNoticesResults[index]['read'] != true && _allNoticesResults[index]['level'] == 'severe' ){
+                    return Card(
+                      margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Center(
+                              child: Text(
+                                'Unread Notification',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            const SizedBox(height: 10,),
+                            const Text(
+                              'Notice Header:',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                            noticeItemWarningField(_allNoticesResults[index]['title'],),
+                            const Text(
+                              'Notice Details:',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                            noticeItemField(_allNoticesResults[index]['body']),
+                            const Text(
+                              'Notice Received Date:',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                            noticeItemField(_allNoticesResults[index]['date']),
+                            const SizedBox(height: 5,),
+                            Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+
+                                        String financeID = 'finance@msunduzi.gov.za';
+
+                                        String passedID = user.phoneNumber!;
+                                        String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
+                                        print('The user name of the logged in person is $userName}');
+                                        String id = passedID;
+
+                                        Navigator.push(context,
+                                            MaterialPageRoute(builder: (context) => ChatFinance(chatRoomId: id,)));
+                                        // final Uri _tel = Uri.parse('tel:+27${0333923000}');
+                                        // launchUrl(_tel);
+
+                                      },
+                                      labelText: 'Appeal',
+                                      fSize: 14,
+                                      faIcon: const FaIcon(Icons.add_call,),
+                                      fgColor: Colors.orangeAccent,
+                                      btSize: const Size(50, 38),
+                                    ),
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        notifyToken = _allNoticesResults[index]['token'];
+                                        if((_allNoticesResults[index]['user'].toString()).contains('+27')){
+                                          _notifyUpdate(_allNoticesResults[index]);
+                                        }
+                                      },
+                                      labelText: 'Mark Read',
+                                      fSize: 14,
+                                      faIcon: const FaIcon(Icons.check_circle,),
+                                      fgColor: Colors.green,
+                                      btSize: const Size(50, 38),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  } else {
+                    return const Card();
+                  }
+                }
+              },
+            );
+          }
+          return const Padding(
+            padding: EdgeInsets.all(10.0),
+            child: Center(
+                child: CircularProgressIndicator()),
+          );
+  }
+
+  Widget firebaseUserNotificationCard(CollectionReference<Object?> noticeDataStream){
     return Expanded(
       child: StreamBuilder<QuerySnapshot>(
         stream: noticeDataStream.orderBy('date', descending: true).snapshots(),
@@ -215,7 +407,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
     );
   }
 
-  Widget userWarningCard(CollectionReference<Object?> noticeDataStream){
+  Widget firebaseUserWarningCard(CollectionReference<Object?> noticeDataStream){
     return Expanded(
       child: StreamBuilder<QuerySnapshot>(
         stream: noticeDataStream.orderBy('date', descending: true).snapshots(),
@@ -227,7 +419,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                 final DocumentSnapshot documentSnapshot =
                 streamSnapshot.data!.docs[index];
 
-                if(documentSnapshot['user'] == user?.phoneNumber.toString()){
+                if(documentSnapshot['user'] == user.phoneNumber.toString()){
                   if(documentSnapshot['user'].contains('+27') && documentSnapshot['read'] != true && documentSnapshot['level'] == 'severe' ){
                     return Card(
                       margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
@@ -363,7 +555,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
   Widget build(BuildContext context) {
     return DefaultTabController(
       initialIndex: 0,
-      length: 3,
+      length: 2,
       child: Scaffold(
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
@@ -393,20 +585,24 @@ class _NoticeScreenState extends State<NoticeScreen> {
         body: TabBarView(
           children:[
             ///General notices
-            Column(
-              children: [
-                const SizedBox(height: 0,),
-                ///made the listview card a reusable widget
-                userNotificationCard(_listNotifications),
-              ],
+            Expanded(
+              child:
+              ///made the listview card a reusable widget
+              Padding(
+                padding: const EdgeInsets.only(left: 0, top: 5.0, right: 0, bottom: 5.0),
+                child: userNotificationCard(),
+              ),
+              // firebaseUserNotificationCard(_listNotifications),
             ),
             ///Warning notices
-            Column(
-              children: [
-                const SizedBox(height: 0,),
-                ///made the listview card a reusable widget
-                userWarningCard(_listNotifications),
-              ],
+            Expanded(
+              child:
+              ///made the listview card a reusable widget
+              Padding(
+                padding: const EdgeInsets.only(left: 0, top: 5.0, right: 0, bottom: 5.0),
+                child: userWarningCard(),
+              ),
+              // firebaseUserWarningCard(_listNotifications),
             ),
 
           ]
