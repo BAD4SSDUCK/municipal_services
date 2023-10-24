@@ -1,7 +1,7 @@
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:html' as html;
+// import 'dart:html' as html;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -301,7 +301,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                             Navigator.pop(context);
                                           } else {
                                             FirebaseAuth.instance.signOut();
-                                            html.window.location.reload();
+                                            // html.window.location.reload();
                                           }
 
                                           Navigator.pop(context);

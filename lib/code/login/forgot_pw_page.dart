@@ -22,18 +22,22 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(
           email: _emailController.text.trim());
-      showDialog(context: context, builder: (context){
+      if(context.mounted) {
+        showDialog(context: context, builder: (context){
         return const AlertDialog(
           content: Text('Password reset link sent! Check your email to reset the password.',textAlign: TextAlign.center,),
         );
       });
+      }
     } on FirebaseAuthException catch (e){
       print(e);
-      showDialog(context: context, builder: (context){
+      if(context.mounted) {
+        showDialog(context: context, builder: (context){
         return const AlertDialog(
           content: Text('The email you entered is not a registered member email. Register or try using a registered email.',textAlign: TextAlign.center,),
         );
       });
+      }
     }
   }
 
@@ -80,8 +84,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           const SizedBox(height: 20,),
           MaterialButton(
             onPressed: passwordReset,
-            child: const Text('Reset Password'),
             color: Colors.deepPurpleAccent,
+            child: const Text('Reset Password'),
           ),
         ],
       ),

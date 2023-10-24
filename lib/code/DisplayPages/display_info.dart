@@ -1153,7 +1153,10 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                         }
                                         if (snapshot.connectionState == ConnectionState.waiting) {
                                           return Container(
-                                            child: const CircularProgressIndicator(),);
+                                            child: const Padding(
+                                              padding: EdgeInsets.all(5.0),
+                                              child: CircularProgressIndicator(),
+                                            ),);
                                         }
                                         return Container();
                                       }
@@ -1315,7 +1318,10 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                         if (snapshot.connectionState ==
                                             ConnectionState.waiting) {
                                           return Container(
-                                            child: const CircularProgressIndicator(),);
+                                            child: const Padding(
+                                              padding: EdgeInsets.all(5.0),
+                                              child: CircularProgressIndicator(),
+                                            ),);
                                         }
                                         return Container();
                                       }

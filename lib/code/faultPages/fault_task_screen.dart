@@ -1066,39 +1066,33 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                             const Center(
                               child: Text(
                                 'Fault Information',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w700),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                               ),
                             ),
                             const SizedBox(height: 10,),
                             Text(
                               'Reporter Account Number: ${documentSnapshot['accountNumber']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
                             Text(
                               'Street Address of Fault: ${documentSnapshot['address']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
                             Text(
                               'Fault Description: ${documentSnapshot['faultDescription']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
                             Text(
                               'Resolve State: ${documentSnapshot['faultResolved'].toString()}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
                             Text(
                               'Date of Fault Report: ${documentSnapshot['dateReported']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 20,),
                             Column(

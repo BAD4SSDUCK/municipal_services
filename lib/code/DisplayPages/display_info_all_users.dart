@@ -6,6 +6,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:open_file/open_file.dart';
+import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_xlsio/xlsio.dart' as excel;
@@ -159,6 +161,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     searchText;
+    _allPropertyResults;
+    _allPropertyReport;
     super.dispose();
   }
 
@@ -225,8 +229,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
 
   TextEditingController _searchController = TextEditingController();
-  List _resultsList =[];
   List _allPropertyResults = [];
+  List _allPropertyReport = [];
 
   getPropertyStream() async{
     var data = await FirebaseFirestore.instance.collection('properties').get();
@@ -269,7 +273,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('All Registered Accounts',style: TextStyle(color: Colors.white),),
+        title: const Text('Registered Accounts',style: TextStyle(color: Colors.white),),
         iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: Colors.green,
         actions: <Widget>[
@@ -278,7 +282,36 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
             child: IconButton(
                 onPressed: (){
                   ///Generate Report here
-                  reportGeneration(_propList);
+                  showDialog(
+                      barrierDismissible: false,
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text("Generate Live Report"),
+                          content: const Text("Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
+                          actions: [
+                            IconButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              icon: const Icon(
+                                Icons.cancel,
+                                color: Colors.red,
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () async {
+                                Fluttertoast.showToast(msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
+                                reportGeneration();
+                              },
+                              icon: const Icon(
+                                Icons.done,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        );
+                      });
                 },
                 icon: const Icon(Icons.file_copy_outlined, color: Colors.white,)),),
         ],
@@ -297,7 +330,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
               onChanged: (value) async{
                 setState(() {
                   searchText = value;
-                  print('this is the input text ::: $searchText');
+                  // print('this is the input text ::: $searchText');
                 });
               },
             ),
@@ -581,7 +614,10 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                   if (snapshot.connectionState ==
                                       ConnectionState.waiting) {
                                     return Container(
-                                      child: const CircularProgressIndicator(),);
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(5.0),
+                                        child: CircularProgressIndicator(),
+                                      ),);
                                   }
                                   return Container();
                                 }
@@ -749,7 +785,10 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                   if (snapshot.connectionState ==
                                       ConnectionState.waiting) {
                                     return Container(
-                                      child: const CircularProgressIndicator(),);
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(5.0),
+                                        child: CircularProgressIndicator(),
+                                      ),);
                                   }
                                   return Container();
                                 }
@@ -2228,11 +2267,50 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   }
 
 
-  void reportGeneration(CollectionReference<Object?> propertiesDataStream){
+  Future<void> reportGeneration() async {
     final excel.Workbook workbook = excel.Workbook();
-    workbook.worksheets[0];
+    final excel.Worksheet sheet = workbook.worksheets[0];
+
+    var data = await FirebaseFirestore.instance.collection('properties').get();
+
+    setState(() {
+      _allPropertyReport = data.docs;
+    });
+
+    String column = "A";
+    int row = 0;
+
+    for(var reportSnapshot in _allPropertyReport){
+      ///Need to build a property model that retrieves property data entirely from the db
+      while(row <= _allPropertyReport.length) {
+        var accountNum = reportSnapshot['account number'].toString();
+        sheet.getRangeByName('A$row').setText(accountNum);
+
+        var address = reportSnapshot['address'].toString();
+        sheet.getRangeByName('B$row').setText(address);
+
+        const Center(
+          child: Padding(
+            padding: EdgeInsets.all(5.0),
+            child: CircularProgressIndicator(),
+          ),);
+
+        row++;
+      }
+    }
+
+    final Directory? directory = await getExternalStorageDirectory();
+    //Get directory path
+    final String? path = directory?.path;
+    //Create an empty file to write Excel data
+    final File file = File('$path/Msunduzi Property Reports.xlsx');
 
     final List<int> bytes = workbook.saveAsStream();
+    //Write Excel data
+    await file.writeAsBytes(bytes, flush: true);
+    //Launch the file (used open_file package)
+    await OpenFile.open('$path/Msunduzi Property Reports.xlsx');
+
     File('Msunduzi Property Reports.xlsx').writeAsBytes(bytes);
 
     workbook.dispose();

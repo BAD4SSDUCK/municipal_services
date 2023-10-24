@@ -42,7 +42,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     if(_searchController.text == ""){
       getUsersStream();
     }
-    checkAdmin();
     _searchController.addListener(_onSearchChanged);
     checkAdmin();
     countResult();
@@ -251,7 +250,11 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                   /// Search bar end
 
                   ///made the listview card a reusable widget
-                  userAndTokenCardSearch(_listUserTokens),
+                  // userAndTokenCardSearch(_listUserTokens),
+
+                  Expanded(
+                      child: userTokenSearchCard(),
+                  ),
 
                 ],
               ),
@@ -413,6 +416,129 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget userTokenSearchCard() {
+    if (_allUserTokenResults.isNotEmpty) {
+      return ListView.builder(
+        itemCount: _allUserTokenResults.length,
+        itemBuilder: (context, index) {
+          if (_allUserTokenResults[index].id.contains('+27')) {
+            return Card(
+              margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Center(
+                      child: Text('Users Device Number',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    const SizedBox(height: 10,),
+                    tokenItemField('User Phone Number ${_allUserTokenResults[index].id}'),
+                    Visibility(
+                      visible: false,
+                      child: Text('User Token: ${_allUserTokenResults[index]['token']}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                    ),
+                    const SizedBox(height: 10,),
+                    Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            BasicIconButtonGrey(
+                              onPress: () async {
+                                showDialog(
+                                    barrierDismissible: false,
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        shape: const RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.all(Radius.circular(16))),
+                                        title: const Text("Call User!"),
+                                        content: const Text("Would you like to call the user directly?"),
+                                        actions: [
+                                          IconButton(
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                            icon: const Icon(
+                                              Icons.cancel,
+                                              color: Colors.red,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            onPressed: () {
+                                              String cellGiven = _allUserTokenResults[index].id;
+
+                                              final Uri _tel = Uri.parse('tel:${cellGiven.toString()}');
+                                              launchUrl(_tel);
+
+                                              Navigator.of(context).pop();
+                                            },
+                                            icon: const Icon(
+                                              Icons.done,
+                                              color: Colors.green,
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    });
+                              },
+                              labelText: 'Call User',
+                              fSize: 14,
+                              faIcon: const FaIcon(Icons.call,),
+                              fgColor: Colors.green,
+                              btSize: const Size(50, 38),
+                            ),
+                            BasicIconButtonGrey(
+                              onPress: () async {
+                                notifyToken = _allUserTokenResults[index]['token'];
+                                _notifyThisUser(_allUserTokenResults[index]);
+                              },
+                              labelText: 'Notify',
+                              fSize: 14,
+                              faIcon: const FaIcon(Icons.edit,),
+                              fgColor: Theme.of(context).primaryColor,
+                              btSize: const Size(50, 38),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 5,),
+                        BasicIconButtonGrey(
+                          onPress: () async {
+                            notifyToken = _allUserTokenResults[index]['token'];
+                            _disconnectThisUser(_allUserTokenResults[index]);
+                          },
+                          labelText: 'Disconnect',
+                          fSize: 14,
+                          faIcon: const FaIcon(Icons.warning_amber,),
+                          fgColor: Colors.amber,
+                          btSize: const Size(50, 38),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          } else {
+
+          }
+        },
+      );
+    }
+    return const Padding(
+      padding: EdgeInsets.all(10.0),
+      child: Center(
+          child: CircularProgressIndicator()),
     );
   }
 

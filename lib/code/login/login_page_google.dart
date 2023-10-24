@@ -35,7 +35,7 @@ class _LoginPageGState extends State<LoginPageG>{
         password: _passwordController.text.trim(),
       );
     } on FirebaseAuthException catch (e) {
-      Navigator.of(context).pop();
+      if(context.mounted)Navigator.of(context).pop();
       switch (e.code) {
         case "invalid-email":
         //Thrown if the email address is not valid.
@@ -64,7 +64,7 @@ class _LoginPageGState extends State<LoginPageG>{
       }
     }
 
-    Navigator.of(context).pop();
+    if(context.mounted)Navigator.of(context).pop();
 
   }
 
@@ -134,7 +134,6 @@ class _LoginPageGState extends State<LoginPageG>{
                 ),
 
                 const SizedBox(height: 25,),
-
 
               ],
             ),

@@ -59,7 +59,7 @@ class _RegisterPageState extends State<RegisterPage> {
             email: _emailController.text.trim(),
             password: _passwordController.text.trim(),
           );
-          Navigator.of(context).pop();
+          if(context.mounted)Navigator.of(context).pop();
 
         } else if (passwordConfirmed() == false) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -76,9 +76,9 @@ class _RegisterPageState extends State<RegisterPage> {
           ));
           Navigator.of(context).pop();
         }
-        Navigator.of(context).pop();
+        if(context.mounted)Navigator.of(context).pop();
       }
-      Navigator.of(context).pop();
+      if(context.mounted)Navigator.of(context).pop();
     }
   }
 

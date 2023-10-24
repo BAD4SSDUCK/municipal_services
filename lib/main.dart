@@ -9,12 +9,12 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
 
+import 'package:municipal_tracker_msunduzi/code/SQLApp/auth/login_screen.dart';
+import 'package:municipal_tracker_msunduzi/code/SQLApp/fragments/dashboard_of_fragments_sql.dart';
 import 'package:municipal_tracker_msunduzi/code/SQLApp/fragments/home_frag_manager_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/SQLInt/sql_main.dart';
-import 'package:municipal_tracker_msunduzi/code/SQLApp/auth/login_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/login/citizen_otp_page.dart';
 import 'package:municipal_tracker_msunduzi/code/login/login_page.dart';
-import 'code/SQLApp/fragments/dashboard_of_fragments_sql.dart';
 
 import 'code/main_page.dart';
 
@@ -36,7 +36,7 @@ void main() async{
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
-    ]).then((value) => runApp(MyApp()));
+    ]).then((value) => runApp(const MyApp()));
   }else{
     await Firebase.initializeApp(
         options: const FirebaseOptions(
@@ -52,7 +52,7 @@ void main() async{
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
-    ]).then((value) => runApp(MyApp()));
+    ]).then((value) => runApp(const MyApp()));
   }
 
   await FirebaseMessaging.instance.getInitialMessage();
@@ -95,10 +95,7 @@ class MyApp extends StatelessWidget {
       ///MainPage links to an auth state for logging in using the necessary firebase method.
       ///If already logged in user will be immediately directed to the firebase version dashboard
       home: MainPage(),
-        //HomeManagerScreen(),
-        //DashboardOfFragments(), this is being developed for the sql version dashboard, accessible for testing without login details or db connection
-        //LoginScreen(), this is being developed and I am testing the mysql db login screen.
-        //MainPage(), For the working Firebase version.
+
     );
   }
 }
