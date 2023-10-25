@@ -423,7 +423,10 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                                           if (snapshot.connectionState ==
                                               ConnectionState.waiting) {
                                             return Container(
-                                              child: const CircularProgressIndicator(),);
+                                              child: const Padding(
+                                                padding: EdgeInsets.all(5.0),
+                                                child: CircularProgressIndicator(),
+                                              ),);
                                           }
                                           return Container();
                                         }

@@ -898,240 +898,407 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _propList.snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-          if (streamSnapshot.hasData) {
-            return ListView.builder(
-              ///this call is to display all details for all users but is only displaying for the current user account.
-              ///it can be changed to display all users for the staff to see if the role is set to all later on.
-              itemCount: streamSnapshot.data!.docs.length,
-              itemBuilder: (context, index) {
-                final DocumentSnapshot documentSnapshot =
-                streamSnapshot.data!.docs[index];
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(0.0,10.0,0.0,10.0),
+        child: StreamBuilder<QuerySnapshot>(
+          stream: _propList.snapshots(),
+          builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+            if (streamSnapshot.hasData) {
+              return ListView.builder(
+                ///this call is to display all details for all users but is only displaying for the current user account.
+                ///it can be changed to display all users for the staff to see if the role is set to all later on.
+                itemCount: streamSnapshot.data!.docs.length,
+                itemBuilder: (context, index) {
+                  final DocumentSnapshot documentSnapshot =
+                  streamSnapshot.data!.docs[index];
 
-                eMeterNumber = documentSnapshot['meter number'];
-                wMeterNumber = documentSnapshot['water meter number'];
-                propPhoneNum = documentSnapshot['cell number'];
+                  eMeterNumber = documentSnapshot['meter number'];
+                  wMeterNumber = documentSnapshot['water meter number'];
+                  propPhoneNum = documentSnapshot['cell number'];
 
-                String billMessage;///A check for if payment is outstanding or not
-                if(documentSnapshot['eBill'] != '' ||
-                    documentSnapshot['eBill'] != 'R0,000.00' ||
-                    documentSnapshot['eBill'] != 'R0.00' ||
-                    documentSnapshot['eBill'] != 'R0' ||
-                    documentSnapshot['eBill'] != '0'
-                ){
-                  billMessage = 'Utilities bill outstanding: ${documentSnapshot['eBill']}';
-                } else {
-                  billMessage = 'No outstanding payments';
-                }
+                  String billMessage;///A check for if payment is outstanding or not
+                  if(documentSnapshot['eBill'] != '' ||
+                      documentSnapshot['eBill'] != 'R0,000.00' ||
+                      documentSnapshot['eBill'] != 'R0.00' ||
+                      documentSnapshot['eBill'] != 'R0' ||
+                      documentSnapshot['eBill'] != '0'
+                  ){
+                    billMessage = 'Utilities bill outstanding: ${documentSnapshot['eBill']}';
+                  } else {
+                    billMessage = 'No outstanding payments';
+                  }
 
-                ///Check for only user information, this displays only for the users details and not all users in the database.
-                if(streamSnapshot.data!.docs[index]['cell number'] == phoneNum){
-                  return Card(
-                    margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Center(
-                            child: Text(
-                              'Property Information',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ///Check for only user information, this displays only for the users details and not all users in the database.
+                  if(streamSnapshot.data!.docs[index]['cell number'] == phoneNum){
+                    return Card(
+                      margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Center(
+                              child: Text(
+                                'Property Information',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 10,),
-                          Text(
-                            'Account Number: ${documentSnapshot['account number']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Street Address: ${documentSnapshot['address']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Area Code: ${documentSnapshot['area code']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Electric Meter Number: ${documentSnapshot['meter number']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Electric Meter Reading: ${documentSnapshot['meter reading']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Water Meter Number: ${documentSnapshot['water meter number']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Water Meter Reading: ${documentSnapshot['water meter reading']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Phone Number: ${documentSnapshot['cell number']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'First Name: ${documentSnapshot['first name']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'Surname: ${documentSnapshot['last name']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                          Text(
-                            'ID Number: ${documentSnapshot['id number']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 20,),
-
-                          const Center(
-                            child: Text(
-                              'Electricity Meter Reading Photo',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                            const SizedBox(height: 10,),
+                            Text(
+                              'Account Number: ${documentSnapshot['account number']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
-                          ),
-                          const SizedBox(height: 5,),
-                          Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  BasicIconButtonGrey(
-                                    onPress: () async {
-                                      eMeterNumber = documentSnapshot['meter number'];
-                                      propPhoneNum = documentSnapshot['cell number'];
-                                      showDialog(
-                                          barrierDismissible: false,
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: const Text("Upload Electricity Meter"),
-                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Street Address: ${documentSnapshot['address']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Area Code: ${documentSnapshot['area code']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Electric Meter Number: ${documentSnapshot['meter number']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Electric Meter Reading: ${documentSnapshot['meter reading']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Water Meter Number: ${documentSnapshot['water meter number']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Water Meter Reading: ${documentSnapshot['water meter reading']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Phone Number: ${documentSnapshot['cell number']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'First Name: ${documentSnapshot['first name']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Surname: ${documentSnapshot['last name']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'ID Number: ${documentSnapshot['id number']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 20,),
+
+                            const Center(
+                              child: Text(
+                                'Electricity Meter Reading Photo',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            const SizedBox(height: 5,),
+                            Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        eMeterNumber = documentSnapshot['meter number'];
+                                        propPhoneNum = documentSnapshot['cell number'];
+                                        showDialog(
+                                            barrierDismissible: false,
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                title: const Text("Upload Electricity Meter"),
+                                                content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                                actions: [
+                                                  IconButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    icon: const Icon(
+                                                      Icons.cancel,
+                                                      color: Colors.red,
+                                                    ),
                                                   ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () async {
-                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                                    Navigator.push(context,
-                                                        MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: propPhoneNum, meterNumber: eMeterNumber,)));
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
+                                                  IconButton(
+                                                    onPressed: () async {
+                                                      Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                                                      Navigator.push(context,
+                                                          MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: propPhoneNum, meterNumber: eMeterNumber,)));
+                                                    },
+                                                    icon: const Icon(
+                                                      Icons.done,
+                                                      color: Colors.green,
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
-                                            );
-                                          });
-                                    },
-                                    labelText: 'Electricity',
-                                    fSize: 16,
-                                    faIcon: const FaIcon(Icons.camera_alt,),
-                                    fgColor: Colors.black38,
-                                    btSize: const Size(100, 38),
-                                  ),
-                                  BasicIconButtonGrey(
-                                    onPress: () async {
-                                      _updateE(documentSnapshot);
-                                    },
-                                    labelText: 'Capture',
-                                    fSize: 16,
-                                    faIcon: const FaIcon(Icons.edit,),
-                                    fgColor: Theme.of(context).primaryColor,
-                                    btSize: const Size(100, 38),
-                                  ),
-                                ],
-                              )
-                            ],
-                          ),
-                          ///Image display item needs to get the reference from the firestore using the users uploaded meter connection
-                          InkWell(
-                            ///onTap allows to open image upload page if user taps on the image.
-                            ///Can be later changed to display the picture zoomed in if user taps on it.
-                            onTap: () {
-                              eMeterNumber = documentSnapshot['meter number'];
-                              propPhoneNum = documentSnapshot['cell number'];
-                              showDialog(
-                              barrierDismissible: false,
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: const Text("Upload Electricity Meter"),
-                                  content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                  actions: [
-                                    IconButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
+                                                ],
+                                              );
+                                            });
                                       },
-                                      icon: const Icon(
-                                        Icons.cancel,
-                                        color: Colors.red,
-                                      ),
+                                      labelText: 'Electricity',
+                                      fSize: 16,
+                                      faIcon: const FaIcon(Icons.camera_alt,),
+                                      fgColor: Colors.black38,
+                                      btSize: const Size(100, 38),
                                     ),
-                                    IconButton(
-                                      onPressed: () async {
-                                        Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                        Navigator.push(context,
-                                            MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: propPhoneNum, meterNumber: eMeterNumber,)));
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        _updateE(documentSnapshot);
                                       },
-                                      icon: const Icon(
-                                        Icons.done,
-                                        color: Colors.green,
-                                      ),
+                                      labelText: 'Capture',
+                                      fSize: 16,
+                                      faIcon: const FaIcon(Icons.edit,),
+                                      fgColor: Theme.of(context).primaryColor,
+                                      btSize: const Size(100, 38),
                                     ),
                                   ],
-                                );
-                              });
-                            },
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 5),
-                              height: 180,
-                              child: Center(
-                                child: Card(
-                                  color: Colors.grey,
-                                  semanticContainer: true,
-                                  clipBehavior: Clip.antiAliasWithSaveLayer,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10.0),
+                                )
+                              ],
+                            ),
+                            ///Image display item needs to get the reference from the firestore using the users uploaded meter connection
+                            InkWell(
+                              ///onTap allows to open image upload page if user taps on the image.
+                              ///Can be later changed to display the picture zoomed in if user taps on it.
+                              onTap: () {
+                                eMeterNumber = documentSnapshot['meter number'];
+                                propPhoneNum = documentSnapshot['cell number'];
+                                showDialog(
+                                barrierDismissible: false,
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: const Text("Upload Electricity Meter"),
+                                    content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                    actions: [
+                                      IconButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        icon: const Icon(
+                                          Icons.cancel,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () async {
+                                          Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                                          Navigator.push(context,
+                                              MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: propPhoneNum, meterNumber: eMeterNumber,)));
+                                        },
+                                        icon: const Icon(
+                                          Icons.done,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                });
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 5),
+                                height: 180,
+                                child: Center(
+                                  child: Card(
+                                    color: Colors.grey,
+                                    semanticContainer: true,
+                                    clipBehavior: Clip.antiAliasWithSaveLayer,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                    ),
+                                    elevation: 0,
+                                    margin: const EdgeInsets.all(10.0),
+                                    child: FutureBuilder(
+                                        future: _getImage(
+                                          ///Firebase image location must be changed to display image based on the meter number
+                                            context, 'files/meters/$formattedMonth/$propPhoneNum/electricity/$eMeterNumber.jpg'),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.hasError) {
+
+                                            // imgUploadCheck = false;
+                                            // updateImgCheckE(imgUploadCheck,documentSnapshot);
+
+                                            return const Padding(
+                                              padding: EdgeInsets.all(20.0),
+                                                child: Column(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Text('Image not yet uploaded.',),
+                                                    SizedBox(height: 10,),
+                                                    FaIcon(Icons.camera_alt,),
+                                                  ],
+                                                ),
+                                            );
+                                          }
+                                          if (snapshot.connectionState == ConnectionState.done) {
+
+                                            // imgUploadCheck = true;
+                                            // updateImgCheckE(imgUploadCheck,documentSnapshot);
+
+                                            return Container(
+                                              child: snapshot.data,
+                                            );
+                                          }
+                                          if (snapshot.connectionState == ConnectionState.waiting) {
+                                            return Container(
+                                              child: const Padding(
+                                                padding: EdgeInsets.all(5.0),
+                                                child: CircularProgressIndicator(),
+                                              ),);
+                                          }
+                                          return Container();
+                                        }
+                                    ),
                                   ),
-                                  elevation: 0,
-                                  margin: const EdgeInsets.all(10.0),
-                                  child: FutureBuilder(
-                                      future: _getImage(
-                                        ///Firebase image location must be changed to display image based on the meter number
-                                          context, 'files/meters/$formattedMonth/$propPhoneNum/electricity/$eMeterNumber.jpg'),
-                                      builder: (context, snapshot) {
-                                        if (snapshot.hasError) {
-
-                                          // imgUploadCheck = false;
-                                          // updateImgCheckE(imgUploadCheck,documentSnapshot);
-
-                                          return const Padding(
-                                            padding: EdgeInsets.all(20.0),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10,),
+                            const Center(
+                              child: Text(
+                                'Water Meter Reading Photo',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            const SizedBox(height: 5,),
+                            Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        wMeterNumber = documentSnapshot['water meter number'];
+                                        propPhoneNum = documentSnapshot['cell number'];
+                                        showDialog(
+                                            barrierDismissible: false,
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                title: const Text("Upload Water Meter"),
+                                                content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                                actions: [
+                                                  IconButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    icon: const Icon(
+                                                      Icons.cancel,
+                                                      color: Colors.red,
+                                                    ),
+                                                  ),
+                                                  IconButton(
+                                                    onPressed: () async {
+                                                      Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                                                      Navigator.push(context,
+                                                          MaterialPageRoute(builder: (context) => ImageUploadWater(userNumber: propPhoneNum, meterNumber: wMeterNumber,)));
+                                                    },
+                                                    icon: const Icon(
+                                                      Icons.done,
+                                                      color: Colors.green,
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            });
+                                      },
+                                      labelText: 'Water',
+                                      fSize: 16,
+                                      faIcon: const FaIcon(Icons.camera_alt,),
+                                      fgColor: Colors.black38,
+                                      btSize: const Size(100, 38),
+                                    ),
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        _updateW(documentSnapshot);
+                                      },
+                                      labelText: 'Capture',
+                                      fSize: 16,
+                                      faIcon: const FaIcon(Icons.edit,),
+                                      fgColor: Theme.of(context).primaryColor,
+                                      btSize: const Size(100, 38),
+                                    ),
+                                  ],
+                                )
+                              ],
+                            ),
+                            InkWell(
+                              ///onTap allows to open image upload page if user taps on the image.
+                              ///Can be later changed to display the picture zoomed in if user taps on it.
+                              onTap: () {
+                                wMeterNumber = documentSnapshot['water meter number'];
+                                propPhoneNum = documentSnapshot['cell number'];
+                                showDialog(
+                                barrierDismissible: false,
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: const Text("Upload Water Meter Image"),
+                                    content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                    actions: [
+                                      IconButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        icon: const Icon(
+                                          Icons.cancel,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () async {
+                                          propPhoneNum = documentSnapshot['water meter number'];
+                                          Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                                          Navigator.push(context,
+                                              MaterialPageRoute(builder: (context) => ImageUploadWater(userNumber: propPhoneNum, meterNumber: wMeterNumber,)));
+                                        },
+                                        icon: const Icon(
+                                          Icons.done,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                });
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 5),
+                                height: 180,
+                                child: Center(
+                                  child: Card(
+                                    color: Colors.grey,
+                                    semanticContainer: true,
+                                    clipBehavior: Clip.antiAliasWithSaveLayer,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                    ),
+                                    elevation: 0,
+                                    margin: const EdgeInsets.all(10.0),
+                                    child: FutureBuilder(
+                                        future: _getImageW(
+                                          ///Firebase image location must be changed to display image based on the meter number
+                                            context, 'files/meters/$formattedMonth/$propPhoneNum/water/$wMeterNumber.jpg'),//$meterNumber
+                                        builder: (context, snapshot) {
+                                          if (snapshot.hasError) {
+                                            // imgUploadCheck = false;
+                                            // updateImgCheckW(imgUploadCheck,documentSnapshot);
+                                            return const Padding(
+                                              padding: EdgeInsets.all(20.0),
                                               child: Column(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
@@ -1140,377 +1307,195 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                                   FaIcon(Icons.camera_alt,),
                                                 ],
                                               ),
-                                          );
-                                        }
-                                        if (snapshot.connectionState == ConnectionState.done) {
-
-                                          // imgUploadCheck = true;
-                                          // updateImgCheckE(imgUploadCheck,documentSnapshot);
-
-                                          return Container(
-                                            child: snapshot.data,
-                                          );
-                                        }
-                                        if (snapshot.connectionState == ConnectionState.waiting) {
-                                          return Container(
-                                            child: const Padding(
-                                              padding: EdgeInsets.all(5.0),
-                                              child: CircularProgressIndicator(),
-                                            ),);
-                                        }
-                                        return Container();
-                                      }
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10,),
-                          const Center(
-                            child: Text(
-                              'Water Meter Reading Photo',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                          const SizedBox(height: 5,),
-                          Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  BasicIconButtonGrey(
-                                    onPress: () async {
-                                      wMeterNumber = documentSnapshot['water meter number'];
-                                      propPhoneNum = documentSnapshot['cell number'];
-                                      showDialog(
-                                          barrierDismissible: false,
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              title: const Text("Upload Water Meter"),
-                                              content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () async {
-                                                    Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                                    Navigator.push(context,
-                                                        MaterialPageRoute(builder: (context) => ImageUploadWater(userNumber: propPhoneNum, meterNumber: wMeterNumber,)));
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
-                                                  ),
-                                                ),
-                                              ],
                                             );
-                                          });
-                                    },
-                                    labelText: 'Water',
-                                    fSize: 16,
-                                    faIcon: const FaIcon(Icons.camera_alt,),
-                                    fgColor: Colors.black38,
-                                    btSize: const Size(100, 38),
-                                  ),
-                                  BasicIconButtonGrey(
-                                    onPress: () async {
-                                      _updateW(documentSnapshot);
-                                    },
-                                    labelText: 'Capture',
-                                    fSize: 16,
-                                    faIcon: const FaIcon(Icons.edit,),
-                                    fgColor: Theme.of(context).primaryColor,
-                                    btSize: const Size(100, 38),
-                                  ),
-                                ],
-                              )
-                            ],
-                          ),
-                          InkWell(
-                            ///onTap allows to open image upload page if user taps on the image.
-                            ///Can be later changed to display the picture zoomed in if user taps on it.
-                            onTap: () {
-                              wMeterNumber = documentSnapshot['water meter number'];
-                              propPhoneNum = documentSnapshot['cell number'];
-                              showDialog(
-                              barrierDismissible: false,
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: const Text("Upload Water Meter Image"),
-                                  content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                  actions: [
-                                    IconButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      icon: const Icon(
-                                        Icons.cancel,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                    IconButton(
-                                      onPressed: () async {
-                                        propPhoneNum = documentSnapshot['water meter number'];
-                                        Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                        Navigator.push(context,
-                                            MaterialPageRoute(builder: (context) => ImageUploadWater(userNumber: propPhoneNum, meterNumber: wMeterNumber,)));
-                                      },
-                                      icon: const Icon(
-                                        Icons.done,
-                                        color: Colors.green,
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              });
-                            },
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 5),
-                              height: 180,
-                              child: Center(
-                                child: Card(
-                                  color: Colors.grey,
-                                  semanticContainer: true,
-                                  clipBehavior: Clip.antiAliasWithSaveLayer,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10.0),
-                                  ),
-                                  elevation: 0,
-                                  margin: const EdgeInsets.all(10.0),
-                                  child: FutureBuilder(
-                                      future: _getImageW(
-                                        ///Firebase image location must be changed to display image based on the meter number
-                                          context, 'files/meters/$formattedMonth/$propPhoneNum/water/$wMeterNumber.jpg'),//$meterNumber
-                                      builder: (context, snapshot) {
-                                        if (snapshot.hasError) {
-                                          // imgUploadCheck = false;
-                                          // updateImgCheckW(imgUploadCheck,documentSnapshot);
-                                          return const Padding(
-                                            padding: EdgeInsets.all(20.0),
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Text('Image not yet uploaded.',),
-                                                SizedBox(height: 10,),
-                                                FaIcon(Icons.camera_alt,),
-                                              ],
-                                            ),
-                                          );
-                                        }
-                                        if (snapshot.connectionState == ConnectionState.done) {
+                                          }
+                                          if (snapshot.connectionState == ConnectionState.done) {
 
-                                          // imgUploadCheck = true;
-                                          // updateImgCheckW(imgUploadCheck,documentSnapshot);
-                                          return Container(
-                                            child: snapshot.data,
-                                          );
+                                            // imgUploadCheck = true;
+                                            // updateImgCheckW(imgUploadCheck,documentSnapshot);
+                                            return Container(
+                                              child: snapshot.data,
+                                            );
+                                          }
+                                          if (snapshot.connectionState ==
+                                              ConnectionState.waiting) {
+                                            return Container(
+                                              child: const Padding(
+                                                padding: EdgeInsets.all(5.0),
+                                                child: CircularProgressIndicator(),
+                                              ),);
+                                          }
+                                          return Container();
                                         }
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.waiting) {
-                                          return Container(
-                                            child: const Padding(
-                                              padding: EdgeInsets.all(5.0),
-                                              child: CircularProgressIndicator(),
-                                            ),);
-                                        }
-                                        return Container();
-                                      }
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 10,),
-                          Text(
-                            billMessage,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
+                            const SizedBox(height: 10,),
+                            Text(
+                              billMessage,
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
 
-                          const SizedBox(height: 10,),
-                          Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  BasicIconButtonGrey(
-                                    onPress: () async {
-                                      Fluttertoast.showToast(
-                                          msg: "Now downloading your statement!\nPlease wait a few seconds!");
+                            const SizedBox(height: 10,),
+                            Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        Fluttertoast.showToast(
+                                            msg: "Now downloading your statement!\nPlease wait a few seconds!");
 
-                                      String accountNumberPDF = documentSnapshot['account number'];
-                                      print('The acc number is ::: $accountNumberPDF');
+                                        String accountNumberPDF = documentSnapshot['account number'];
+                                        print('The acc number is ::: $accountNumberPDF');
 
-                                      final storageRef = FirebaseStorage.instance.ref().child("pdfs/$formattedMonth");
-                                      final listResult = await storageRef.listAll();
-                                      for (var prefix in listResult.prefixes) {
-                                        print('The ref is ::: $prefix');
-                                        // The prefixes under storageRef.
-                                        // You can call listAll() recursively on them.
-                                      }
-                                      for (var item in listResult.items) {
-                                        print('The item is ::: $item');
-                                        // The items under storageRef.
-                                        if (item.toString().contains(accountNumberPDF)) {
-                                          final url = item.fullPath;
-                                          print('The url is ::: $url');
-                                          final file = await PDFApi.loadFirebase(url);
-                                          try {
-                                            if(context.mounted)openPDF(context, file);
-                                            Fluttertoast.showToast(
-                                                msg: "Download Successful!");
-                                          } catch (e) {
+                                        final storageRef = FirebaseStorage.instance.ref().child("pdfs/$formattedMonth");
+                                        final listResult = await storageRef.listAll();
+                                        for (var prefix in listResult.prefixes) {
+                                          print('The ref is ::: $prefix');
+                                          // The prefixes under storageRef.
+                                          // You can call listAll() recursively on them.
+                                        }
+                                        for (var item in listResult.items) {
+                                          print('The item is ::: $item');
+                                          // The items under storageRef.
+                                          if (item.toString().contains(accountNumberPDF)) {
+                                            final url = item.fullPath;
+                                            print('The url is ::: $url');
+                                            final file = await PDFApi.loadFirebase(url);
+                                            try {
+                                              if(context.mounted)openPDF(context, file);
+                                              Fluttertoast.showToast(
+                                                  msg: "Download Successful!");
+                                            } catch (e) {
+                                              Fluttertoast.showToast(msg: "Unable to download statement.");
+                                            }
+                                          } else {
                                             Fluttertoast.showToast(msg: "Unable to download statement.");
                                           }
-                                        } else {
-                                          Fluttertoast.showToast(msg: "Unable to download statement.");
                                         }
-                                      }
-                                    },
-                                    labelText: 'Invoice',
-                                    fSize: 16,
-                                    faIcon: const FaIcon(Icons.picture_as_pdf,),
-                                    fgColor: Colors.orangeAccent,
-                                    btSize: const Size(100, 38),
-                                  ),
-                                  BasicIconButtonGrey(
-                                    onPress: () async {
-                                      accountNumber = documentSnapshot['account number'];
-                                      locationGiven = documentSnapshot['address'];
+                                      },
+                                      labelText: 'Invoice',
+                                      fSize: 16,
+                                      faIcon: const FaIcon(Icons.picture_as_pdf,),
+                                      fgColor: Colors.orangeAccent,
+                                      btSize: const Size(100, 38),
+                                    ),
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        accountNumber = documentSnapshot['account number'];
+                                        locationGiven = documentSnapshot['address'];
 
-                                      Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) => const MapScreen()
-                                            //MapPage()
-                                          ));
-                                    },
-                                    labelText: 'Map',
-                                    fSize: 16,
-                                    faIcon: const FaIcon(Icons.map,),
-                                    fgColor: Colors.green,
-                                    btSize: const Size(100, 38),
-                                  ),
-                                  const SizedBox(width: 5,),
-                                ],
-                              ),
-                            ],
-                          ),
-                                  ///No need for a delete button but this is what a delete would look like
-                                  // GestureDetector(
-                                  //   onTap: () {
-                                  //     showDialog(
-                                  //         barrierDismissible: false,
-                                  //         context: context,
-                                  //         builder: (context) {
-                                  //           return AlertDialog(
-                                  //             title: const Text(
-                                  //                 "Deleting Property Information"),
-                                  //             content: const Text(
-                                  //                 "Deleting this property will remove it entirely! Are you sure?"),
-                                  //             actions: [
-                                  //               IconButton(
-                                  //                 onPressed: () {
-                                  //                   Navigator.pop(context);
-                                  //                 },
-                                  //                 icon: const Icon(
-                                  //                   Icons.cancel,
-                                  //                   color: Colors.red,
-                                  //                 ),
-                                  //               ),
-                                  //               IconButton(
-                                  //                 onPressed: () async {
-                                  //                   ScaffoldMessenger.of(
-                                  //                       this.context)
-                                  //                       .showSnackBar(
-                                  //                     const SnackBar(
-                                  //                       content: Text(
-                                  //                           'Property was deleted!'),
-                                  //                     ),
-                                  //                   );
-                                  //                   _delete(documentSnapshot.id);
-                                  //                   Navigator.pop(context);
-                                  //                 },
-                                  //                 icon: const Icon(
-                                  //                   Icons.done,
-                                  //                   color: Colors.green,
-                                  //                 ),
-                                  //               ),
-                                  //             ],
-                                  //           );
-                                  //         });
-                                  //  },
-                                  //   child: Row(
-                                  //     children: [
-                                  //       Icon(
-                                  //         Icons.delete,
-                                  //         color: Colors.red[700],
-                                  //       ),
-                                  //     ],
-                                  //   ),
-                                  // ),
+                                        Navigator.push(context,
+                                            MaterialPageRoute(builder: (context) => const MapScreen()
+                                              //MapPage()
+                                            ));
+                                      },
+                                      labelText: 'Map',
+                                      fSize: 16,
+                                      faIcon: const FaIcon(Icons.map,),
+                                      fgColor: Colors.green,
+                                      btSize: const Size(100, 38),
+                                    ),
+                                    const SizedBox(width: 5,),
+                                  ],
+                                ),
+                              ],
+                            ),
+                                    ///No need for a delete button but this is what a delete would look like
+                                    // GestureDetector(
+                                    //   onTap: () {
+                                    //     showDialog(
+                                    //         barrierDismissible: false,
+                                    //         context: context,
+                                    //         builder: (context) {
+                                    //           return AlertDialog(
+                                    //             title: const Text(
+                                    //                 "Deleting Property Information"),
+                                    //             content: const Text(
+                                    //                 "Deleting this property will remove it entirely! Are you sure?"),
+                                    //             actions: [
+                                    //               IconButton(
+                                    //                 onPressed: () {
+                                    //                   Navigator.pop(context);
+                                    //                 },
+                                    //                 icon: const Icon(
+                                    //                   Icons.cancel,
+                                    //                   color: Colors.red,
+                                    //                 ),
+                                    //               ),
+                                    //               IconButton(
+                                    //                 onPressed: () async {
+                                    //                   ScaffoldMessenger.of(
+                                    //                       this.context)
+                                    //                       .showSnackBar(
+                                    //                     const SnackBar(
+                                    //                       content: Text(
+                                    //                           'Property was deleted!'),
+                                    //                     ),
+                                    //                   );
+                                    //                   _delete(documentSnapshot.id);
+                                    //                   Navigator.pop(context);
+                                    //                 },
+                                    //                 icon: const Icon(
+                                    //                   Icons.done,
+                                    //                   color: Colors.green,
+                                    //                 ),
+                                    //               ),
+                                    //             ],
+                                    //           );
+                                    //         });
+                                    //  },
+                                    //   child: Row(
+                                    //     children: [
+                                    //       Icon(
+                                    //         Icons.delete,
+                                    //         color: Colors.red[700],
+                                    //       ),
+                                    //     ],
+                                    //   ),
+                                    // ),
 
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                }///end of single user information display.
-                else {
-                  ///a card to display ALL details for users when role is set to admin is in "display_info_all_users.dart"
-                  return const Card();
-
-                  // Padding(
-                  //   padding: EdgeInsets.all(10.0),
-                  //   child: Center(
-                  //     child: Card(
-                  //       margin: EdgeInsets.all(10),
-                  //       child: Center(
-                  //         child: Padding(
-                  //           padding: EdgeInsets.all(8.0),
-                  //           child: Text(
-                  //             'No properties registered on this number yet.',
-                  //             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                  //           ),                      ),
-                  //       ),
-                  //     ),
-                  //   ),
-                  // );
-                }
-              },
-            );
-          }
-          return const Padding(
-            padding: EdgeInsets.all(10.0),
-            child: Center(
-              child: Card(
-                margin: EdgeInsets.all(10),
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text(
-                      'No properties registered on this number yet.',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700,),
-                      textAlign: TextAlign.center,
+                    );
+                  }///end of single user information display.
+                  else {
+                    return const SizedBox(height: 0,width: 0,);
+                  }
+                },
+              );
+            }
+            return const Padding(
+              padding: EdgeInsets.all(10.0),
+              child: Center(
+                child: Card(
+                  margin: EdgeInsets.all(10),
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text(
+                        'No properties registered on this number yet.',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700,),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          );
-          // return const Padding(
-          //   padding: EdgeInsets.all(10.0),
-          //   child: Center(
-          //       child: CircularProgressIndicator()),
-          // );
-        },
+            );
+            // return const Padding(
+            //   padding: EdgeInsets.all(10.0),
+            //   child: Center(
+            //       child: CircularProgressIndicator()),
+            // );
+          },
+        ),
       ),
 
       /// Add new account, removed because it was not necessary for non-staff users.

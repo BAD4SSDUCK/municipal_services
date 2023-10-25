@@ -48,6 +48,7 @@ dependencies:
   flutter_launcher_icons: ^0.13.1
 
   animated_background: ^2.0.0
+  getwidget: ^4.0.0
 
   image_picker: ^0.8.6
   permission_handler: ^10.2.0

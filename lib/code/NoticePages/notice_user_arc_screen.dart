@@ -102,7 +102,8 @@ class _NoticeArchiveScreenState extends State<NoticeArchiveScreen> {
   }
 
   Widget userNotificationCard(CollectionReference<Object?> noticeDataStream){
-    return Expanded(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0.0,10.0,0.0,10.0),
       child: StreamBuilder<QuerySnapshot>(
         stream: noticeDataStream.orderBy('date', descending: true).snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
@@ -174,7 +175,7 @@ class _NoticeArchiveScreenState extends State<NoticeArchiveScreen> {
                       ),
                     );
                   } else {
-                    return const Card();
+                    return const SizedBox(height: 0,width: 0,);
                   }
                 }
               },
@@ -234,9 +235,8 @@ class _NoticeArchiveScreenState extends State<NoticeArchiveScreen> {
 
       body: Column(
         children: [
-          const SizedBox(height: 10,),
           ///made the listview card a reusable widget
-          userNotificationCard(_listNotifications),
+          Expanded(child: userNotificationCard(_listNotifications)),
         ],
       ),
     );

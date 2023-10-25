@@ -121,9 +121,9 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     if(_searchController.text != "") {
       for(var propSnapshot in _allUserTokenResults){
         ///Need to build a property model that retrieves property data entirely from the db
-        var address = propSnapshot['address'].toString().toLowerCase();
+        var phoneNumber = propSnapshot.id.toString().toLowerCase();
 
-        if(address.contains(_searchController.text.toLowerCase())) {
+        if(phoneNumber.contains(_searchController.text.toLowerCase())) {
           showResults.add(propSnapshot);
         }
       }
@@ -231,7 +231,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
                   /// Search bar
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
+                    padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
                     child: SearchBar(
 
                       controller: _searchController,

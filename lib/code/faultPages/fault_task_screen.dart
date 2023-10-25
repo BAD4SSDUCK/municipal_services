@@ -129,11 +129,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           /// Search bar end
 
           ///made the listview card a reusable widget
-          // firebaseFaultCard(_faultData),
+          firebaseFaultCard(_faultData),
 
-          Expanded(
-              child: faultCard(),
-          ),
+          // Expanded(child: faultCard(),),
 
           const SizedBox(height: 5,),
 
@@ -728,7 +726,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   }
   //this widget is for displaying the fault report list all together
   Widget firebaseFaultCard(CollectionReference<Object?> faultDataStream){
-    return Expanded(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0.0,10.0,0.0,10.0),
       child: StreamBuilder<QuerySnapshot>(
         stream: faultDataStream.orderBy('dateReported', descending: true).snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
@@ -750,7 +749,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                   if(streamSnapshot.data!.docs[index]['faultResolved'] == false
                       || documentSnapshot['faultStage'] == 1 || documentSnapshot['faultStage'] == 3){
                     return Card(
-                      margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,10.0),
+                      margin: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Column(
@@ -1056,7 +1055,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                   } else if((streamSnapshot.data!.docs[index]['faultResolved'] == false && documentSnapshot['faultStage'] != 5 )
                       || documentSnapshot['faultStage'] == 2 || documentSnapshot['faultStage'] == 4){
                     return Card(
-                      margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
+                      margin: const EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 10),
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Column(
@@ -1221,7 +1220,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                       ),
                     );
                   } else {
-                    return const Card();
+                    return const SizedBox(height: 0,width: 0,);
                   }
                 }
               },
