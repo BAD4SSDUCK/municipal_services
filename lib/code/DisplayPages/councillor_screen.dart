@@ -39,11 +39,10 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
 
   @override
   void initState() {
-    if(_searchController.text == ""){
+    _searchController.addListener(_onSearchChanged);
+    if(dropdownValue == 'All Wards' || dropdownValue == 'Select Ward'){
       getCouncillorStream();
     }
-    // getPropertyStream();
-    _searchController.addListener(_onSearchChanged);
     super.initState();
   }
 
@@ -81,7 +80,7 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
   String searchText = '';
 
   String dropdownValue = 'Select Ward';
-  List<String> dropdownWards = ['Select Ward','All Wards','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40',];
+  List<String> dropdownWards = ['Select Ward','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40',];
 
   bool visShow = true;
   bool visHide = false;
@@ -106,8 +105,9 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
 
   searchResultsList() async {
     var showResults = [];
-    getCouncillorStream();
+
     if(dropdownValue != 'Select Ward') {
+      getCouncillorStream();
       for(var councillorSnapshot in _allCouncillorResults){
         ///Need to build a property model that retrieves property data entirely from the db
         var wardNum = councillorSnapshot['wardNum'].toString().toLowerCase();
@@ -116,21 +116,11 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
           showResults.add(councillorSnapshot);
         }
       }
-    } else if(dropdownValue == 'Select Ward') {
-      getCouncillorStream();
-      showResults = List.from(_allCouncillorResults);
-    } else if(dropdownValue == 'All Wards') {
-      getCouncillorStream();
-      showResults = List.from(_allCouncillorResults);
     } else {
       getCouncillorStream();
       showResults = List.from(_allCouncillorResults);
     }
     setState(() {
-      if(dropdownValue == 'All Wards') {
-        getCouncillorStream();
-        showResults = List.from(_allCouncillorResults);
-      }
       _allCouncillorResults = showResults;
     });
   }
@@ -190,10 +180,7 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
         itemBuilder: (context, index) {
           councillorName = _allCouncillorResults[index]['councillorName'];
 
-          if (_allCouncillorResults[index]['wardNum'].trim() ==
-              dropdownValue.trim() || dropdownValue == 'Select Ward' ||
-              dropdownValue == 'All Wards') {
-            return Card(
+          return Card(
               margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
@@ -207,7 +194,7 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                             fontSize: 18, fontWeight: FontWeight.w700),
                       ),
                     ),
-                    // const SizedBox(height: 10,),
+                    const SizedBox(height: 10,),
                     InkWell(
 
                       ///Can be later changed to display the picture zoomed in if user taps on it.
@@ -251,7 +238,7 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                                     }
                                     if (snapshot.connectionState ==
                                         ConnectionState.done) {
-                                      return Container(
+                                      return SizedBox(
                                         height: 100,
                                         width: 100,
                                         child: snapshot.data,
@@ -259,8 +246,10 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                                     }
                                     if (snapshot.connectionState ==
                                         ConnectionState.waiting) {
-                                      return Container(
-                                        child: const CircularProgressIndicator(),);
+                                      return const Padding(
+                                        padding: EdgeInsets.all(5.0),
+                                        child: CircularProgressIndicator(),
+                                      );
                                     }
                                     return Container();
                                   }
@@ -301,11 +290,8 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                                     String councillorName = _allCouncillorResults[index]['councillorName'];
                                     print(councillorName);
                                     Navigator.push(context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                ChatCouncillor(
-                                                    chatRoomId: phoneNum,
-                                                    councillorName: councillorName)));
+                                        MaterialPageRoute(builder: (context) =>
+                                                ChatCouncillor(chatRoomId: phoneNum, councillorName: councillorName)));
                                   },
                                   labelText: 'Chat',
                                   fSize: 14,
@@ -336,7 +322,7 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                 ),
               ),
             );
-          }
+
         });
     } return const Center(
       child: CircularProgressIndicator(),
@@ -617,9 +603,8 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
           ///made the listview card a reusable widget
           // wardCounsellorCard(_listCounsellors),
 
-          Expanded(
-              child: counsellorCard()
-          ),
+          Expanded(child: counsellorCard()),
+
           const SizedBox(height: 5,),
 
         ],
