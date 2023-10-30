@@ -18,6 +18,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen_councillors.dart';
 import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_user_arc_screen.dart';
+import 'package:municipal_tracker_msunduzi/code/Reusable/cache_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:municipal_tracker_msunduzi/code/faultPages/fault_task_screen_archive.dart';
@@ -40,7 +41,7 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
   @override
   void initState() {
     _searchController.addListener(_onSearchChanged);
-    if(dropdownValue == 'All Wards' || dropdownValue == 'Select Ward'){
+    if(dropdownValue == 'Select Ward'){
       getCouncillorStream();
     }
     super.initState();
@@ -92,6 +93,8 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
 
   getCouncillorStream() async{
     var data = await FirebaseFirestore.instance.collection('councillors').orderBy('wardNum').get();
+
+    // MyCacheManager().defaultCacheManager;
 
     setState(() {
       _allCouncillorResults = data.docs;
@@ -195,6 +198,8 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                       ),
                     ),
                     const SizedBox(height: 10,),
+
+
                     InkWell(
 
                       ///Can be later changed to display the picture zoomed in if user taps on it.
@@ -216,7 +221,8 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                               ),
                               elevation: 0,
                               margin: const EdgeInsets.all(10.0),
-                              child: FutureBuilder(
+                              child:
+                              FutureBuilder(
                                   future: _getImage(
 
                                     ///Firebase image location must be changed to display image based on the councillor name
@@ -259,6 +265,8 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                         ),
                       ),
                     ),
+
+
                     const Text('Ward:',
                       style: TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w500),
@@ -343,7 +351,7 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
 
                 councillorName = documentSnapshot['councillorName'];
 
-                if(documentSnapshot['wardNum'].trim()==dropdownValue.trim()|| dropdownValue == 'Select Ward' || dropdownValue == 'All Wards') {
+                if(documentSnapshot['wardNum'].trim()==dropdownValue.trim()|| dropdownValue == 'Select Ward') {
                   return Card(
                     margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
                     child: Padding(

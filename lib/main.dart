@@ -73,10 +73,10 @@ void main() async{
   Get.put(LocationController());
 
   ///This sets the app orientation by default.
-  // SystemChrome.setPreferredOrientations([
-  //   DeviceOrientation.portraitUp,
-  //   DeviceOrientation.portraitDown,
-  // ]).then((value) => runApp(MyApp()));
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]).then((value) => runApp(MyApp()));
 
   runApp(const MyApp());
 
