@@ -198,10 +198,7 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                       ),
                     ),
                     const SizedBox(height: 10,),
-
-
                     InkWell(
-
                       ///Can be later changed to display the picture zoomed in if user taps on it.
                       onTap: () {
 
@@ -222,51 +219,55 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                               elevation: 0,
                               margin: const EdgeInsets.all(10.0),
                               child:
-                              FutureBuilder(
-                                  future: _getImage(
-
-                                    ///Firebase image location must be changed to display image based on the councillor name
-                                      context,
-                                      'files/councillors/$councillorName.jpg'),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.hasError) {
-                                      return const Padding(
-                                        padding: EdgeInsets.all(10.0),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            // Text('Image not yet uploaded.',),
-                                            // SizedBox(height: 10,),
-                                            FaIcon(Icons.person, size: 50,),
-                                          ],
-                                        ),
-                                      );
-                                    }
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.done) {
-                                      return SizedBox(
-                                        height: 100,
-                                        width: 100,
-                                        child: snapshot.data,
-                                      );
-                                    }
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return const Padding(
-                                        padding: EdgeInsets.all(5.0),
-                                        child: CircularProgressIndicator(),
-                                      );
-                                    }
-                                    return Container();
-                                  }
+                              ClipRRect(
+                                  // borderRadius: BorderRadius.circular(40.0),
+                                  child: Image.asset('assets/images/councillors/$councillorName.jpg', width: 100, height: 100,),
                               ),
+
+                              ///Old image pull method from firebase db dose not work
+                              // FutureBuilder(
+                              //     future: _getImage(
+                              //
+                              //       ///Firebase image location must be changed to display image based on the councillor name
+                              //         context, 'files/councillors/$councillorName.jpg'),
+                              //     builder: (context, snapshot) {
+                              //       if (snapshot.hasError) {
+                              //         return const Padding(
+                              //           padding: EdgeInsets.all(10.0),
+                              //           child: Column(
+                              //             mainAxisSize: MainAxisSize.min,
+                              //             children: [
+                              //               // Text('Image not yet uploaded.',),
+                              //               // SizedBox(height: 10,),
+                              //               FaIcon(Icons.person, size: 50,),
+                              //             ],
+                              //           ),
+                              //         );
+                              //       }
+                              //       if (snapshot.connectionState ==
+                              //           ConnectionState.done) {
+                              //         return SizedBox(
+                              //           height: 100,
+                              //           width: 100,
+                              //           child: snapshot.data,
+                              //         );
+                              //       }
+                              //       if (snapshot.connectionState ==
+                              //           ConnectionState.waiting) {
+                              //         return const Padding(
+                              //           padding: EdgeInsets.all(5.0),
+                              //           child: CircularProgressIndicator(),
+                              //         );
+                              //       }
+                              //       return Container();
+                              //     }
+                              // ),
+
                             ),
                           ),
                         ),
                       ),
                     ),
-
-
                     const Text('Ward:',
                       style: TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w500),
