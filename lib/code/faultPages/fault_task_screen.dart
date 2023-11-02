@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -11,6 +12,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:municipal_tracker_msunduzi/code/ReportGeneration/display_fault_report.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:municipal_tracker_msunduzi/code/faultPages/fault_task_screen_archive.dart';
@@ -51,6 +53,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     searchText;
+    getFaultStream();
     super.dispose();
   }
 
@@ -98,11 +101,21 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           Visibility(
             visible: adminAcc,
             child: IconButton(
+              onPressed: (){
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => const ReportBuilderFaults()));
+              },
+              icon: const Icon(Icons.file_copy_outlined, color: Colors.white,),),
+          ),
+          Visibility(
+            visible: adminAcc,
+            child: IconButton(
                 onPressed: (){
                   Navigator.push(context,
                       MaterialPageRoute(builder: (context) => const FaultTaskScreenArchive()));
                 },
-                icon: const Icon(Icons.history_outlined, color: Colors.white,)),),
+                icon: const Icon(Icons.history_outlined, color: Colors.white,)),
+          ),
         ],
       ),
 
@@ -110,9 +123,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
         children: [
           /// Search bar
           Padding(
-            padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
+            padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,5.0),
             child: SearchBar(
-
               controller: _searchController,
               padding: const MaterialStatePropertyAll<EdgeInsets>(
                   EdgeInsets.symmetric(horizontal: 16.0)),
@@ -129,9 +141,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           /// Search bar end
 
           ///made the listview card a reusable widget
-          firebaseFaultCard(_faultData),
+          // firebaseFaultCard(_faultData),
 
-          // Expanded(child: faultCard(),),
+          Expanded(child: faultCard(),),
 
           const SizedBox(height: 5,),
 
@@ -161,8 +173,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
   searchResultsList() async {
     var showResults = [];
-    getFaultStream();
     if(_searchController.text != "") {
+      getFaultStream();
       for(var faultSnapshot in _allFaultResults){
         ///Need to build a property model that retrieves property data entirely from the db
         var address = faultSnapshot['address'].toString().toLowerCase();
@@ -176,7 +188,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
       showResults = List.from(_allFaultResults);
     }
     setState(() {
-      getFaultStream();
       _allFaultResults = showResults;
     });
   }
@@ -193,10 +204,26 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   Future<Widget> _getImage(BuildContext context, String imageName) async{
     Image image;
     final value = await FireStorageService.loadImage(context, imageName);
-    image =Image.network(
-      value.toString(),
-      fit: BoxFit.fill,
-    );
+
+    final imageUrl = await storageRef.child(imageName).getDownloadURL();
+
+    ///Check what the app is running on
+    if(defaultTargetPlatform == TargetPlatform.android){
+      image =Image.network(
+        value.toString(),
+        fit: BoxFit.fill,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }else{
+      // print('The url is::: $imageUrl');
+      image =Image.network(
+        imageUrl,
+        fit: BoxFit.fitHeight,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
     return image;
   }
 
@@ -441,7 +468,10 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                             if (snapshot.connectionState ==
                                                 ConnectionState.waiting) {
                                               return Container(
-                                                child: const CircularProgressIndicator(),);
+                                                child: const Padding(
+                                                  padding: EdgeInsets.all(5.0),
+                                                  child: CircularProgressIndicator(),
+                                                ),);
                                             }
                                             return Container();
                                           }
@@ -716,7 +746,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                       ),
                     );
                   } else {
-                    return const Card();
+                    return const SizedBox();
                 }
               },
             );
@@ -726,8 +756,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   }
   //this widget is for displaying the fault report list all together
   Widget firebaseFaultCard(CollectionReference<Object?> faultDataStream){
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0.0,10.0,0.0,10.0),
+    return Expanded(
       child: StreamBuilder<QuerySnapshot>(
         stream: faultDataStream.orderBy('dateReported', descending: true).snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
@@ -951,7 +980,10 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                             if (snapshot.connectionState ==
                                                 ConnectionState.waiting) {
                                               return Container(
-                                                child: const CircularProgressIndicator(),);
+                                                child: const Padding(
+                                                  padding: EdgeInsets.all(5.0),
+                                                  child: CircularProgressIndicator(),
+                                                ),);
                                             }
                                             return Container();
                                           }

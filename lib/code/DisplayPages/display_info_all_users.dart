@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_prop_report.dart';
+import 'package:municipal_tracker_msunduzi/code/ReportGeneration/display_prop_report.dart';
 import 'package:open_file/open_file.dart';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
@@ -165,6 +165,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     searchText;
     _allPropertyResults;
     _allPropertyReport;
+    getPropertyStream();
     super.dispose();
   }
 
@@ -312,9 +313,9 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
           ),
           /// Search bar end
 
-          firebasePropertyCard(_propList),
+          // firebasePropertyCard(_propList),
 
-          // Expanded(child: propertyCard(),),
+          Expanded(child: propertyCard(),),
 
           const SizedBox(height: 5,),
         ],
@@ -2257,59 +2258,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     }
   }
 
-
-  Future<void> reportGeneration() async {
-    final excel.Workbook workbook = excel.Workbook();
-    final excel.Worksheet sheet = workbook.worksheets[0];
-
-    var data = await FirebaseFirestore.instance.collection('properties').get();
-
-    setState(() {
-      _allPropertyReport = data.docs;
-    });
-
-    String column = "A";
-    int row = 0;
-
-    for(var reportSnapshot in _allPropertyReport){
-      ///Need to build a property model that retrieves property data entirely from the db
-      while(row <= _allPropertyReport.length) {
-        var accountNum = reportSnapshot['account number'].toString();
-        sheet.getRangeByName('A$row').setText(accountNum);
-
-        var address = reportSnapshot['address'].toString();
-        sheet.getRangeByName('B$row').setText(address);
-
-        var eBill = reportSnapshot['eBill'].toString();
-        sheet.getRangeByName('C$row').setText(eBill);
-
-        const Center(
-          child: Padding(
-            padding: EdgeInsets.all(5.0),
-            child: CircularProgressIndicator(),
-          ),);
-
-        row++;
-      }
-    }
-
-    final Directory? directory = await getExternalStorageDirectory();
-    //Get directory path
-    final String? path = directory?.path;
-    //Create an empty file to write Excel data
-    final File file = File('$path/Msunduzi Property Reports.xlsx');
-
-    final List<int> bytes = workbook.saveAsStream();
-    //Write Excel data
-    await file.writeAsBytes(bytes, flush: true);
-    //Launch the file (used open_file package)
-    await OpenFile.open('$path/Msunduzi Property Reports.xlsx');
-
-    File('Msunduzi Property Reports.xlsx').writeAsBytes(bytes);
-
-    workbook.dispose();
-
-  }
 
   void setMonthLimits(String currentMonth) {
     String month1 = 'January';

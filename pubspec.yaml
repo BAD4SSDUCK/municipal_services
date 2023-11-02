@@ -70,6 +70,7 @@ dependencies:
   flutter_local_notifications: ^9.2.0
 
   win32: ^4.1.4
+  universal_html: ^2.2.4
   syncfusion_flutter_xlsio: ^23.1.36
   excel: ^2.1.0
   share_plus: ^7.1.0

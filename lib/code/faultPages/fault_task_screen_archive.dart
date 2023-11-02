@@ -49,6 +49,7 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     searchText;
+    getFaultStream();
     super.dispose();
   }
 
@@ -94,7 +95,7 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
     var data = await FirebaseFirestore.instance.collection('faultReporting').orderBy('dateReported', descending: true).get();
 
     setState(() {
-      _allFaultResults = data.docs;
+     _allFaultResults = data.docs;
     });
     searchResultsList();
   }
@@ -105,8 +106,8 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
 
   searchResultsList() async {
     var showResults = [];
-    getFaultStream();
     if(_searchController.text != "") {
+      getFaultStream();
       for(var faultSnapshot in _allFaultResults){
         ///Need to build a property model that retrieves property data entirely from the db
         var address = faultSnapshot['address'].toString().toLowerCase();
@@ -177,11 +178,10 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
           /// Search bar end
 
           ///made the listview card a reusable widget
-          // firebaseFaultCard(_faultData),
+          firebaseFaultCard(_faultData),
 
-          Expanded(
-            child: faultCard(),
-          ),
+          // Expanded(child: faultCard(),),
+
           const SizedBox(height: 5,),
         ],
       ),
@@ -493,11 +493,13 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                   }
               }
               );
-    } return const Padding(
+    } else {
+      return const Padding(
       padding: EdgeInsets.all(10.0),
       child: Center(
           child: CircularProgressIndicator()),
     );
+    }
   }
 
   Future<Widget> _getImage(BuildContext context, String imageName) async{
@@ -841,17 +843,18 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                       ),
                     );
                   } else {
-                    return const Card();
+                    return const SizedBox();
                   }
                 }
               },
             );
+          } else {
+            return const Padding(
+              padding: EdgeInsets.all(10.0),
+              child: Center(
+                  child: CircularProgressIndicator()),
+            );
           }
-          return const Padding(
-            padding: EdgeInsets.all(10.0),
-            child: Center(
-                child: CircularProgressIndicator()),
-          );
         },
       ),
     );

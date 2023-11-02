@@ -8,11 +8,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:getwidget/components/button/gf_icon_button.dart';
 import 'package:getwidget/getwidget.dart';
-import 'package:open_file/open_file.dart';
-import 'package:excel/excel.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:syncfusion_flutter_xlsio/xlsio.dart' as excel;
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:universal_html/html.dart' show AnchorElement;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:firebase_core/firebase_core.dart';
@@ -28,7 +29,6 @@ import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/push_notification_message.dart';
-import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_config_screen.dart';
 
 
 class ReportBuilderProps extends StatefulWidget {
@@ -268,7 +268,6 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -341,9 +340,7 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
 
           // firebasePropertyCard(_propList),
 
-          Expanded(
-              child: propertyCard(),
-          ),
+          Expanded(child: propertyCard(),),
 
           const SizedBox(height: 5,),
         ],
@@ -1899,68 +1896,68 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
     _allPropertyReport = data.docs;
 
     String column = "A";
-    int row = 0;
+    int excelRow = 1;
+    int listRow = 0;
 
     for(var reportSnapshot in _allPropertyReport){
-      ///Need to build a property model that retrieves property data entirely from the db
-      while(row <= _allPropertyReport.length) {
+      ///Property snapshot that retrieves property data entirely from the db
+      while(excelRow <= _allPropertyReport.length) {
 
-        String accountNum = reportSnapshot['account number'].toString();
-        String address = reportSnapshot['address'].toString();
-        String eBill = reportSnapshot['area code'].toString();
-        String areaCode = reportSnapshot['eBill'].toString();
-        String meterNumber = reportSnapshot['meter number'].toString();
-        String meterReading = reportSnapshot['meter reading'].toString();
-        String uploadedLatestE = reportSnapshot['imgStateE'].toString();
-        String waterMeterNum = reportSnapshot['water meter number'].toString();
-        String waterMeterReading = reportSnapshot['water meter reading'].toString();
-        String uploadedLatestW = reportSnapshot['imgStateW'].toString();
-        String firstName = reportSnapshot['first name'].toString();
-        String lastName = reportSnapshot['last name'].toString();
-        String idNumber = reportSnapshot['id number'].toString();
-        String phoneNumber = reportSnapshot['cell number'].toString();
+        print('Report Lists:::: ${_allPropertyReport[listRow]['address']}');
+        String accountNum = _allPropertyReport[listRow]['account number'].toString();
+        String address = _allPropertyReport[listRow]['address'].toString();
+        String eBill = _allPropertyReport[listRow]['area code'].toString();
+        String areaCode = _allPropertyReport[listRow]['eBill'].toString();
+        String meterNumber = _allPropertyReport[listRow]['meter number'].toString();
+        String meterReading = _allPropertyReport[listRow]['meter reading'].toString();
+        String uploadedLatestE = _allPropertyReport[listRow]['imgStateE'].toString();
+        String waterMeterNum = _allPropertyReport[listRow]['water meter number'].toString();
+        String waterMeterReading = _allPropertyReport[listRow]['water meter reading'].toString();
+        String uploadedLatestW = _allPropertyReport[listRow]['imgStateW'].toString();
+        String firstName = _allPropertyReport[listRow]['first name'].toString();
+        String lastName = _allPropertyReport[listRow]['last name'].toString();
+        String idNumber = _allPropertyReport[listRow]['id number'].toString();
+        String phoneNumber = _allPropertyReport[listRow]['cell number'].toString();
 
-        sheet.getRangeByName('A$row').setText(accountNum);
-        sheet.getRangeByName('B$row').setText(address);
-        sheet.getRangeByName('C$row').setText(areaCode);
-        sheet.getRangeByName('D$row').setText(eBill);
-        sheet.getRangeByName('E$row').setText(meterNumber);
-        sheet.getRangeByName('F$row').setText(meterReading);
-        sheet.getRangeByName('G$row').setText(uploadedLatestE);
-        sheet.getRangeByName('H$row').setText(waterMeterNum);
-        sheet.getRangeByName('I$row').setText(waterMeterReading);
-        sheet.getRangeByName('J$row').setText(uploadedLatestW);
-        sheet.getRangeByName('K$row').setText(firstName);
-        sheet.getRangeByName('L$row').setText(lastName);
-        sheet.getRangeByName('M$row').setText(idNumber);
-        sheet.getRangeByName('N$row').setText(phoneNumber);
+        sheet.getRangeByName('A$excelRow').setText(accountNum);
+        sheet.getRangeByName('B$excelRow').setText(address);
+        sheet.getRangeByName('C$excelRow').setText(areaCode);
+        sheet.getRangeByName('D$excelRow').setText(eBill);
+        sheet.getRangeByName('E$excelRow').setText(firstName);
+        sheet.getRangeByName('F$excelRow').setText(lastName);
+        sheet.getRangeByName('G$excelRow').setText(idNumber);
+        sheet.getRangeByName('H$excelRow').setText(meterNumber);
+        sheet.getRangeByName('I$excelRow').setText(meterReading);
+        sheet.getRangeByName('J$excelRow').setText(uploadedLatestE);
+        sheet.getRangeByName('K$excelRow').setText(waterMeterNum);
+        sheet.getRangeByName('L$excelRow').setText(waterMeterReading);
+        sheet.getRangeByName('M$excelRow').setText(uploadedLatestW);
+        sheet.getRangeByName('N$excelRow').setText(phoneNumber);
 
-        // const Center(
-        //   child: Padding(
-        //     padding: EdgeInsets.all(5.0),
-        //     child: CircularProgressIndicator(),
-        //   ),);
-
-        row+=1;
+        excelRow+=1;
+        listRow+=1;
       }
     }
 
-    final Directory? directory = await getExternalStorageDirectory();
-    //Get directory path
-    final String? path = directory?.path;
-    //Create an empty file to write Excel data
-    final File file = File('$path/Msunduzi Property Reports.xlsx');
-
     final List<int> bytes = workbook.saveAsStream();
-    //Write Excel data
-    await file.writeAsBytes(bytes, flush: true);
-    //Launch the file (used open_file package)
-    await OpenFile.open('$path/Msunduzi Property Reports.xlsx');
 
-    File('Msunduzi Property Reports.xlsx').writeAsBytes(bytes);
-
+    if(kIsWeb){
+      AnchorElement(href: 'data:application/ocelot-stream;charset=utf-16le;base64,${base64.encode(bytes)}')
+          ..setAttribute('download', 'Msunduzi Property Reports.xlsx')
+          ..click();
+    } else {
+      final String path = (await getApplicationSupportDirectory()).path;
+      //Create an empty file to write Excel data
+      final String filename = Platform.isWindows ? '$path\\Msunduzi Property Reports.xlsx' : '$path/Msunduzi Property Reports.xlsx';
+      final File file = File(filename);
+      final List<int> bytes = workbook.saveAsStream();
+      //Write Excel data
+      await file.writeAsBytes(bytes, flush: true);
+      //Launch the file (used open_file package)
+      await OpenFile.open('$path/Msunduzi Property Reports.xlsx');
+    }
+    // File('Msunduzi Property Reports.xlsx').writeAsBytes(bytes);
     workbook.dispose();
-
   }
 
   void setMonthLimits(String currentMonth) {

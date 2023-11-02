@@ -144,6 +144,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    getPropertyStream();
     searchText;
     super.dispose();
   }

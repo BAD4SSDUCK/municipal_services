@@ -1146,8 +1146,8 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           }
                                           if (snapshot.connectionState == ConnectionState.done) {
 
-                                            // imgUploadCheck = true;
-                                            // updateImgCheckE(imgUploadCheck,documentSnapshot);
+                                            imgUploadCheck = true;
+                                            updateImgCheckE(imgUploadCheck,documentSnapshot);
 
                                             return Container(
                                               child: snapshot.data,
@@ -1311,8 +1311,8 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           }
                                           if (snapshot.connectionState == ConnectionState.done) {
 
-                                            // imgUploadCheck = true;
-                                            // updateImgCheckW(imgUploadCheck,documentSnapshot);
+                                            imgUploadCheck = true;
+                                            updateImgCheckW(imgUploadCheck,documentSnapshot);
                                             return Container(
                                               child: snapshot.data,
                                             );
