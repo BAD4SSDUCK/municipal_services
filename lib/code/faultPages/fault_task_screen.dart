@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -12,9 +13,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:municipal_tracker_msunduzi/code/ReportGeneration/display_fault_report.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_zoom_fault_page.dart';
+import 'package:municipal_tracker_msunduzi/code/ReportGeneration/display_fault_report.dart';
 import 'package:municipal_tracker_msunduzi/code/faultPages/fault_task_screen_archive.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
@@ -36,6 +37,9 @@ class FireStorageService extends ChangeNotifier{
   }
 }
 
+String imageName = '';
+String dateReported = '';
+
 class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
   @override
@@ -54,6 +58,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     _searchController.dispose();
     searchText;
     getFaultStream();
+    searchResultsList();
     super.dispose();
   }
 
@@ -94,7 +99,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Fault Reports Listed',style: TextStyle(color: Colors.white),),
+        title: const Text('Faults Reported',style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: <Widget>[
@@ -276,26 +281,21 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                             const Center(
                               child: Text(
                                 'Fault Information',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w700),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                               ),
                             ),
                             const SizedBox(height: 10,),
-
                             Text(
                               'Reference Number: ${_allFaultResults[index]['ref']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
-
                             Column(
                               children: [
                                 if(_allFaultResults[index]['accountNumber'] != "")...[
                                   Text(
                                     'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                   ),
                                   const SizedBox(height: 5,),
                                 ] else ...[
@@ -305,8 +305,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                             ),
                             Text(
                               'Street Address of Fault: ${_allFaultResults[index]['address']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
                             Column(
@@ -314,29 +313,25 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 if(_allFaultResults[index]['faultStage'] == 1)...[
                                   Text(
                                     'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
                                   ),
                                   const SizedBox(height: 5,),
                                 ] else if(_allFaultResults[index]['faultStage'] == 2) ...[
                                   Text(
                                     'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
                                   ),
                                   const SizedBox(height: 5,),
                                 ] else if(_allFaultResults[index]['faultStage'] == 3) ...[
                                   Text(
                                     'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
                                   ),
                                   const SizedBox(height: 5,),
                                 ] else if(_allFaultResults[index]['faultStage'] == 4) ...[
                                   Text(
                                     'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
                                   ),
                                   const SizedBox(height: 5,),
                                 ] else ...[
@@ -356,8 +351,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 if(_allFaultResults[index]['faultDescription'] != "")...[
                                   Text(
                                     'Fault Description: ${_allFaultResults[index]['faultDescription']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                   ),
                                   const SizedBox(height: 5,),
                                 ] else ...[
@@ -370,8 +364,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 if(_allFaultResults[index]['depComment1'] != "")...[
                                   Text(
                                     'Department Comment: ${_allFaultResults[index]['depComment1']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                   ),
                                   const SizedBox(height: 5,),
                                 ] else ...[
@@ -384,8 +377,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 if(_allFaultResults[index]['handlerCom1'] != "")...[
                                   Text(
                                     'Handler Comment: ${_allFaultResults[index]['handlerCom1']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                   ),
                                   const SizedBox(height: 5,),
                                 ] else ...[
@@ -398,8 +390,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 if(_allFaultResults[index]['depComment2'] != "")...[
                                   Text(
                                     'Department Final Comment: ${_allFaultResults[index]['depComment2']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                   ),
                                   const SizedBox(height: 5,),
                                 ] else ...[
@@ -412,8 +403,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 if(_allFaultResults[index]['handlerCom2'] != "")...[
                                   Text(
                                     'Handler Final Comment: ${_allFaultResults[index]['handlerCom2']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                   ),
                                   const SizedBox(height: 5,),
                                 ] else ...[
@@ -423,65 +413,83 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                             ),
                             Text(
                               'Resolve State: $status',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
                             Text(
                               'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
-                            InkWell(
-                              child: Center(
-                                child: Container(
-                                  margin: const EdgeInsets.only(bottom: 5),
-                                  child: Center(
-                                    child: Card(
-                                      color: Colors.grey,
-                                      semanticContainer: true,
-                                      clipBehavior: Clip.antiAliasWithSaveLayer,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10.0),
-                                      ),
-                                      elevation: 0,
-                                      margin: const EdgeInsets.all(10.0),
-                                      child: FutureBuilder(
-                                          future: _getImage(
-                                            ///Firebase image location must be changed to display image based on the address
-                                              context, 'files/faultImages/${_allFaultResults[index]['dateReported']}/${_allFaultResults[index]['address']}'),
-                                          builder: (context, snapshot) {
-                                            if (snapshot.hasError) {
-                                              return const Padding(
-                                                padding: EdgeInsets.all(20.0),
-                                                child: Text('Image not uploaded for Fault.',),
-                                              ); //${snapshot.error} if error needs to be displayed instead
-                                            }
-                                            if (snapshot.connectionState ==
-                                                ConnectionState.done) {
-                                              return Container(
-                                                height: 300,
-                                                width: 300,
-                                                child: snapshot.data,
-                                              );
-                                            }
-                                            if (snapshot.connectionState ==
-                                                ConnectionState.waiting) {
-                                              return Container(
-                                                child: const Padding(
-                                                  padding: EdgeInsets.all(5.0),
-                                                  child: CircularProgressIndicator(),
-                                                ),);
-                                            }
-                                            return Container();
-                                          }
-                                      ),
-                                    ),
-                                  ),
-                                ),
+
+                            const SizedBox(height: 5,),
+                            Center(
+                              child: BasicIconButtonGrey(
+                                onPress: () async {
+
+                                  imageName = 'files/faultImages/${_allFaultResults[index]['dateReported']}/${_allFaultResults[index]['address']}';
+                                  dateReported = _allFaultResults[index]['dateReported'];
+
+                                  Navigator.push(context,
+                                      MaterialPageRoute(builder: (context) => ImageZoomFaultPage(imageName: imageName, dateReported: dateReported)));
+
+                                },
+                                labelText: 'View Uploaded Fault',
+                                fSize: 14,
+                                faIcon: const FaIcon(Icons.zoom_in,),
+                                fgColor: Colors.blue,
+                                btSize: const Size(100, 38),
                               ),
                             ),
-                            const SizedBox(height: 0,),
+
+                            // InkWell(
+                            //   child: Center(
+                            //     child: Container(
+                            //       margin: const EdgeInsets.only(bottom: 5),
+                            //       child: Center(
+                            //         child: Card(
+                            //           color: Colors.grey,
+                            //           semanticContainer: true,
+                            //           clipBehavior: Clip.antiAliasWithSaveLayer,
+                            //           shape: RoundedRectangleBorder(
+                            //             borderRadius: BorderRadius.circular(10.0),
+                            //           ),
+                            //           elevation: 0,
+                            //           margin: const EdgeInsets.all(10.0),
+                            //           child: FutureBuilder(
+                            //               future: _getImage(
+                            //                 ///Firebase image location must be changed to display image based on the address
+                            //                   context, 'files/faultImages/${_allFaultResults[index]['dateReported']}/${_allFaultResults[index]['address']}'),
+                            //               builder: (context, snapshot) {
+                            //                 if (snapshot.hasError) {
+                            //                   return const Padding(
+                            //                     padding: EdgeInsets.all(20.0),
+                            //                     child: Text('Image not uploaded for Fault.',),
+                            //                   ); //${snapshot.error} if error needs to be displayed instead
+                            //                 }
+                            //                 if (snapshot.connectionState ==
+                            //                     ConnectionState.done) {
+                            //                   return SizedBox(
+                            //                     height: 300,
+                            //                     width: 300,
+                            //                     child: snapshot.data,
+                            //                   );
+                            //                 }
+                            //                 if (snapshot.connectionState ==
+                            //                     ConnectionState.waiting) {
+                            //                   return Container(
+                            //                     child: const Padding(
+                            //                       padding: EdgeInsets.all(5.0),
+                            //                       child: CircularProgressIndicator(),
+                            //                     ),);
+                            //                 }
+                            //                 return Container();
+                            //               }
+                            //           ),
+                            //         ),
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
                             Column(
                               children: [
                                 Row(
@@ -517,7 +525,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 5,),
+                                // const SizedBox(height: 5,),
                                 BasicIconButtonGrey(
                                   onPress: () async {
                                     showDialog(
@@ -530,17 +538,13 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                                   borderRadius:
                                                   BorderRadius.all(Radius.circular(16))),
                                               title: const Text("Call Reporter!"),
-                                              content: const Text(
-                                                  "Would you like to call the individual who logged the fault?"),
+                                              content: const Text("Would you like to call the individual who logged the fault?"),
                                               actions: [
                                                 IconButton(
                                                   onPressed: () {
                                                     Navigator.of(context).pop();
                                                   },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
+                                                  icon: const Icon(Icons.cancel, color: Colors.red,),
                                                 ),
                                                 IconButton(
                                                   onPressed: () {
@@ -551,10 +555,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
                                                     Navigator.of(context).pop();
                                                   },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
-                                                  ),
+                                                  icon: const Icon(Icons.done, color: Colors.green,),
                                                 ),
                                               ],
                                             );
@@ -585,39 +586,33 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                             const Center(
                               child: Text(
                                 'Fault Information',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w700),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                               ),
                             ),
                             const SizedBox(height: 10,),
                             Text(
                               'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
                             Text(
                               'Street Address of Fault: ${_allFaultResults[index]['address']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
                             Text(
                               'Fault Description: ${_allFaultResults[index]['faultDescription']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
                             Text(
                               'Resolve State: ${_allFaultResults[index]['faultResolved'].toString()}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
                             Text(
                               'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 20,),
                             Column(
@@ -631,9 +626,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                         accountNumberRep = _allFaultResults[index]['accountNumber'];
                                         locationGivenRep = _allFaultResults[index]['address'];
 
-                                        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                        //     content: Text('$accountNumber $locationGiven ')));
-
                                         Navigator.push(context,
                                             MaterialPageRoute(
                                                 builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
@@ -644,18 +636,13 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                         fixedSize: const Size(150, 10),),
                                       child: Row(
                                         children: [
-                                          Icon(
-                                            Icons.map,
-                                            color: Colors.green[700],
-                                          ),
+                                          Icon(Icons.map, color: Colors.green[700],),
                                           const SizedBox(width: 2,),
-                                          const Text('Fault Location', style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black,),),
+                                          const Text('Fault Location', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
                                         ],
                                       ),
                                     ),
-                                    const SizedBox(width: 5,),
+                                    // const SizedBox(width: 5,),
                                     ElevatedButton(
                                       onPressed: () {
                                         faultStage = _allFaultResults[index]['faultStage'];
@@ -666,14 +653,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                         fixedSize: const Size(150, 10),),
                                       child: Row(
                                         children: [
-                                          Icon(
-                                            Icons.edit,
-                                            color: Theme.of(context).primaryColor,
-                                          ),
+                                          Icon(Icons.edit, color: Theme.of(context).primaryColor,),
                                           const SizedBox(width: 2,),
-                                          const Text('Update Details', style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black,),),
+                                          const Text('Update Details', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
                                         ],
                                       ),
                                     ),
@@ -688,21 +670,15 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                         builder: (context) {
                                           return
                                             AlertDialog(
-                                              shape: const RoundedRectangleBorder(
-                                                  borderRadius:
-                                                  BorderRadius.all(Radius.circular(16))),
+                                              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
                                               title: const Text("Call User!"),
-                                              content: const Text(
-                                                  "Would you like to call the individual who logged the fault?"),
+                                              content: const Text("Would you like to call the individual who logged the fault?"),
                                               actions: [
                                                 IconButton(
                                                   onPressed: () {
                                                     Navigator.of(context).pop();
                                                   },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
+                                                  icon: const Icon(Icons.cancel, color: Colors.red,),
                                                 ),
                                                 IconButton(
                                                   onPressed: () {
@@ -713,10 +689,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
                                                     Navigator.of(context).pop();
                                                   },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
-                                                  ),
+                                                  icon: const Icon(Icons.done, color: Colors.green,),
                                                 ),
                                               ],
                                             );
@@ -727,14 +700,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                     fixedSize: const Size(115, 10),),
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        Icons.call,
-                                        color: Colors.orange[700],
-                                      ),
+                                      Icon(Icons.call, color: Colors.orange[700],),
                                       const SizedBox(width: 2,),
-                                      const Text('Call User', style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black,),),
+                                      const Text('Call User', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
                                     ],
                                   ),
                                 ),

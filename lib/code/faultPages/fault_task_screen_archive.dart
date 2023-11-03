@@ -50,6 +50,7 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
     _searchController.dispose();
     searchText;
     getFaultStream();
+    searchResultsList();
     super.dispose();
   }
 
