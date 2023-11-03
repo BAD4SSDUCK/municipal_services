@@ -244,34 +244,20 @@ class _ImageZoomFaultPageState extends State<ImageZoomFaultPage> {
                                                 margin: const EdgeInsets.all(
                                                     10.0),
                                                 child: FutureBuilder(
-                                                    future: _getImage(
-
-                                                      ///Firebase image location must be changed to display image based on the address
-                                                        context,
+                                                    future: _getImage(context,
                                                         'files/faultImages/${documentSnapshot['dateReported']}/${documentSnapshot['address']}'),
-                                                    builder: (context,
-                                                        snapshot) {
+                                                    builder: (context, snapshot) {
                                                       if (snapshot.hasError) {
-                                                        return const Padding(
-                                                          padding: EdgeInsets
-                                                              .all(20.0),
-                                                          child: Text(
-                                                            'Image not uploaded for Fault.',),
+                                                        return const Padding(padding: EdgeInsets.all(20.0),
+                                                          child: Text('Image not uploaded for Fault.',),
                                                         ); //${snapshot.error} if error needs to be displayed instead
                                                       }
-                                                      if (snapshot
-                                                          .connectionState ==
-                                                          ConnectionState
-                                                              .done) {
-                                                        return SizedBox(
-                                                          height: 180,
+                                                      if (snapshot.connectionState == ConnectionState.done) {
+                                                        return Container(
                                                           child: snapshot.data,
                                                         );
                                                       }
-                                                      if (snapshot
-                                                          .connectionState ==
-                                                          ConnectionState
-                                                              .waiting) {
+                                                      if (snapshot.connectionState == ConnectionState.waiting) {
                                                         return Container(
                                                           child: const CircularProgressIndicator(),);
                                                       }
