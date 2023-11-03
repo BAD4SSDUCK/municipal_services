@@ -43,7 +43,7 @@ class ReportBuilderFaults extends StatefulWidget {
 }
 
 final FirebaseAuth auth = FirebaseAuth.instance;
-final storageRef = FirebaseStorage.instance.ref();
+// final storageRef = FirebaseStorage.instance.ref();
 
 final User? user = auth.currentUser;
 final uid = user?.uid;

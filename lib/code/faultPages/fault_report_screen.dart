@@ -630,7 +630,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                         }
                         if(streamSnapshot.data!.docs[index]['faultResolved'] == false && streamSnapshot.data!.docs[index]['reporterContact'] == userPhone){
                           return Card(
-                            margin: const EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 10),
+                            margin: const EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 5),
                             child: Padding(
                               padding: const EdgeInsets.all(20.0),
                               child: Column(
