@@ -1368,9 +1368,9 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                             print('The url is ::: $url');
                                             final file = await PDFApi.loadFirebase(url);
                                             try {
-                                              if(context.mounted)openPDF(context, file);
                                               Fluttertoast.showToast(
                                                   msg: "Download Successful!");
+                                              if(context.mounted)openPDF(context, file);
                                             } catch (e) {
                                               Fluttertoast.showToast(msg: "Unable to download statement.");
                                             }
