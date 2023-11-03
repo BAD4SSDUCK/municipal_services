@@ -1896,12 +1896,27 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
     _allPropertyReport = data.docs;
 
     String column = "A";
-    int excelRow = 1;
+    int excelRow = 2;
     int listRow = 0;
+
+    sheet.getRangeByName('A1').setText('Account #');
+    sheet.getRangeByName('B1').setText('Address');
+    sheet.getRangeByName('C1').setText('Area Code');
+    sheet.getRangeByName('D1').setText('Utilities Bill');
+    sheet.getRangeByName('E1').setText('Meter Number');
+    sheet.getRangeByName('F1').setText('Meter Reading');
+    sheet.getRangeByName('G1').setText('Electric Image Submitted');
+    sheet.getRangeByName('H1').setText('Water Meter Number');
+    sheet.getRangeByName('I1').setText('Water Meter Reading');
+    sheet.getRangeByName('J1').setText('Water Image Submitted');
+    sheet.getRangeByName('K1').setText('First Name');
+    sheet.getRangeByName('L1').setText('Last Name');
+    sheet.getRangeByName('M1').setText('ID Number');
+    sheet.getRangeByName('N1').setText('Owner Phone Number');
 
     for(var reportSnapshot in _allPropertyReport){
       ///Property snapshot that retrieves property data entirely from the db
-      while(excelRow <= _allPropertyReport.length) {
+      while(excelRow <= _allPropertyReport.length+1) {
 
         print('Report Lists:::: ${_allPropertyReport[listRow]['address']}');
         String accountNum = _allPropertyReport[listRow]['account number'].toString();
@@ -1923,15 +1938,15 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
         sheet.getRangeByName('B$excelRow').setText(address);
         sheet.getRangeByName('C$excelRow').setText(areaCode);
         sheet.getRangeByName('D$excelRow').setText(eBill);
-        sheet.getRangeByName('E$excelRow').setText(firstName);
-        sheet.getRangeByName('F$excelRow').setText(lastName);
-        sheet.getRangeByName('G$excelRow').setText(idNumber);
-        sheet.getRangeByName('H$excelRow').setText(meterNumber);
-        sheet.getRangeByName('I$excelRow').setText(meterReading);
-        sheet.getRangeByName('J$excelRow').setText(uploadedLatestE);
-        sheet.getRangeByName('K$excelRow').setText(waterMeterNum);
-        sheet.getRangeByName('L$excelRow').setText(waterMeterReading);
-        sheet.getRangeByName('M$excelRow').setText(uploadedLatestW);
+        sheet.getRangeByName('E$excelRow').setText(meterNumber);
+        sheet.getRangeByName('F$excelRow').setText(meterReading);
+        sheet.getRangeByName('G$excelRow').setText(uploadedLatestE);
+        sheet.getRangeByName('H$excelRow').setText(waterMeterNum);
+        sheet.getRangeByName('I$excelRow').setText(waterMeterReading);
+        sheet.getRangeByName('J$excelRow').setText(uploadedLatestW);
+        sheet.getRangeByName('K$excelRow').setText(firstName);
+        sheet.getRangeByName('L$excelRow').setText(lastName);
+        sheet.getRangeByName('M$excelRow').setText(idNumber);
         sheet.getRangeByName('N$excelRow').setText(phoneNumber);
 
         excelRow+=1;
@@ -1943,18 +1958,18 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
 
     if(kIsWeb){
       AnchorElement(href: 'data:application/ocelot-stream;charset=utf-16le;base64,${base64.encode(bytes)}')
-          ..setAttribute('download', 'Msunduzi Property Reports.xlsx')
+          ..setAttribute('download', 'Msunduzi Property Reports $formattedDate.xlsx')
           ..click();
     } else {
       final String path = (await getApplicationSupportDirectory()).path;
       //Create an empty file to write Excel data
-      final String filename = Platform.isWindows ? '$path\\Msunduzi Property Reports.xlsx' : '$path/Msunduzi Property Reports.xlsx';
+      final String filename = Platform.isWindows ? '$path\\Msunduzi Property Reports $formattedDate.xlsx' : '$path/Msunduzi Property Reports $formattedDate.xlsx';
       final File file = File(filename);
       final List<int> bytes = workbook.saveAsStream();
       //Write Excel data
       await file.writeAsBytes(bytes, flush: true);
       //Launch the file (used open_file package)
-      await OpenFile.open('$path/Msunduzi Property Reports.xlsx');
+      await OpenFile.open('$path/Msunduzi Property Reports $formattedDate.xlsx');
     }
     // File('Msunduzi Property Reports.xlsx').writeAsBytes(bytes);
     workbook.dispose();

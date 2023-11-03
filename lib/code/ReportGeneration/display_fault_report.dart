@@ -249,7 +249,7 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
           const SizedBox(height: 5,),
         ],
       ),
-      /// Add new account, removed because it was not necessary for non-staff users.
+
         floatingActionButton: FloatingActionButton(
           onPressed: () => {
             ///Generate Report here
@@ -535,14 +535,30 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
     _allFaultReport = data.docs;
 
     String column = "A";
-    int excelRow = 1;
+    int excelRow = 2;
     int listRow = 0;
+
+    sheet.getRangeByName('A1').setText('Ref #');
+    sheet.getRangeByName('B1').setText('Account #');
+    sheet.getRangeByName('C1').setText('Address');
+    sheet.getRangeByName('D1').setText('Report Date');
+    sheet.getRangeByName('E1').setText('Fault Type');
+    sheet.getRangeByName('F1').setText('Fault Description');
+    sheet.getRangeByName('G1').setText('Fault Handler');
+    sheet.getRangeByName('H1').setText('Fault Stage');
+    sheet.getRangeByName('I1').setText('Resolve Status');
+    sheet.getRangeByName('J1').setText('Reporters Phone Number');
+    sheet.getRangeByName('K1').setText('Department Admin Comment 1');
+    sheet.getRangeByName('L1').setText('Handler Comment 1');
+    sheet.getRangeByName('M1').setText('Department Admin Comment 2');
+    sheet.getRangeByName('N1').setText('Handler Comment 2');
+    sheet.getRangeByName('O1').setText('Department Admin Comment 3');
 
     for(var reportSnapshot in _allFaultReport){
       ///Need to build a property model that retrieves property data entirely from the db
-      while(excelRow <= _allFaultReport.length) {
-
+      while(excelRow <= _allFaultReport.length+1) {
         print('Report Lists:::: ${_allFaultReport[listRow]['address']}');
+
         String referenceNum     = _allFaultReport[listRow]['ref'].toString();
         String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();
         String address          = _allFaultReport[listRow]['address'].toString();
