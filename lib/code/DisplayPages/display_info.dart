@@ -118,6 +118,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
         "imgStateE": imgCheck,
       });
     }
+
   }
 
   Future<void> updateImgCheckW(bool imgCheck, [DocumentSnapshot? documentSnapshot]) async{
@@ -128,6 +129,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
         "imgStateW": imgCheck,
       });
     }
+
   }
 
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
@@ -1129,8 +1131,8 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                         builder: (context, snapshot) {
                                           if (snapshot.hasError) {
 
-                                            // imgUploadCheck = false;
-                                            // updateImgCheckE(imgUploadCheck,documentSnapshot);
+                                            imgUploadCheck = false;
+                                            updateImgCheckE(imgUploadCheck,documentSnapshot);
 
                                             return const Padding(
                                               padding: EdgeInsets.all(20.0),
@@ -1295,8 +1297,10 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                             context, 'files/meters/$formattedMonth/$propPhoneNum/water/$wMeterNumber.jpg'),//$meterNumber
                                         builder: (context, snapshot) {
                                           if (snapshot.hasError) {
-                                            // imgUploadCheck = false;
-                                            // updateImgCheckW(imgUploadCheck,documentSnapshot);
+
+                                            imgUploadCheck = false;
+                                            updateImgCheckW(imgUploadCheck,documentSnapshot);
+
                                             return const Padding(
                                               padding: EdgeInsets.all(20.0),
                                               child: Column(
@@ -1313,6 +1317,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
 
                                             imgUploadCheck = true;
                                             updateImgCheckW(imgUploadCheck,documentSnapshot);
+
                                             return Container(
                                               child: snapshot.data,
                                             );

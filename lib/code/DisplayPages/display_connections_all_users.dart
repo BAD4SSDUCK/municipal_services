@@ -115,7 +115,7 @@ Future<Widget> _getImageW(BuildContext context, String imageName2) async{
     );
   }else{
     image2 =Image.network(
-      value.toString(),
+      imageUrl,
       fit: BoxFit.fitHeight,
       width: double.infinity,
       height: double.infinity,
@@ -231,8 +231,8 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
 
   searchResultsList() async {
     var showResults = [];
-    getPropertyStream();
     if(_searchController.text != "") {
+      getPropertyStream();
       for(var propSnapshot in _allPropertyResults){
         ///Need to build a property model that retrieves property data entirely from the db
         var address = propSnapshot['address'].toString().toLowerCase();
@@ -246,7 +246,6 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
       showResults = List.from(_allPropertyResults);
     }
     setState(() {
-      getPropertyStream();
       _allPropertyResults = showResults;
     });
   }
@@ -1504,33 +1503,27 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                 ),
                 const SizedBox(height: 10,),
                 Text('Account Number: ${_allPropertyResults[index]['account number']}',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w400),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                 ),
                 const SizedBox(height: 5,),
                 Text('Street Address: ${_allPropertyResults[index]['address']}',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w400),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                 ),
                 const SizedBox(height: 5,),
                 Text('Area Code: ${_allPropertyResults[index]['area code']}',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w400),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                 ),
                 const SizedBox(height: 5,),
                 Text('Meter Number: ${_allPropertyResults[index]['meter number']}',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w400),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                 ),
                 const SizedBox(height: 5,),
                 Text('Meter Reading: ${_allPropertyResults[index]['meter reading']}',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w400),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                 ),
                 const SizedBox(height: 5,),
                 Text('Water Meter Number: ${_allPropertyResults[index]['water meter number']}',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w400),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                 ),
                 const SizedBox(height: 5,),
                 Text('Water Meter Reading: ${_allPropertyResults[index]['water meter reading']}',

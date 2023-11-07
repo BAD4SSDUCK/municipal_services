@@ -121,6 +121,7 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
         "imgStateE": imgCheck,
       });
     }
+
   }
 
   Future<void> updateImgCheckW(bool imgCheck, [DocumentSnapshot? documentSnapshot]) async{
@@ -131,6 +132,7 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
         "imgStateW": imgCheck,
       });
     }
+
   }
 
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
@@ -941,27 +943,28 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Center(
+                            Center(
                               child: Text(
-                                'Property Information',
-                                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                                'Property Information for ${documentSnapshot['address']}',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
                               ),
                             ),
                             const SizedBox(height: 10,),
                             Text(
                               'Account Number: ${documentSnapshot['account number']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, ),
                             ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Street Address: ${documentSnapshot['address']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Area Code: ${documentSnapshot['area code']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
+                            // const SizedBox(height: 5,),
+                            // Text(
+                            //   'Street Address: ${documentSnapshot['address']}',
+                            //   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            // ),
+                            // const SizedBox(height: 5,),
+                            // Text(
+                            //   'Area Code: ${documentSnapshot['area code']}',
+                            //   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            // ),
                             const SizedBox(height: 10,),
                             const Center(
                               child: Text(
@@ -1205,8 +1208,10 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                                             context, 'files/meters/$formattedMonth/$propPhoneNum/water/$wMeterNumber.jpg'),//$meterNumber
                                         builder: (context, snapshot) {
                                           if (snapshot.hasError) {
-                                            // imgUploadCheck = false;
-                                            // updateImgCheckW(imgUploadCheck,documentSnapshot);
+
+                                            imgUploadCheck = false;
+                                            updateImgCheckW(imgUploadCheck,documentSnapshot);
+
                                             return const Padding(
                                               padding: EdgeInsets.all(20.0),
                                               child: Column(
@@ -1223,6 +1228,7 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
 
                                             imgUploadCheck = true;
                                             updateImgCheckW(imgUploadCheck,documentSnapshot);
+
                                             return Container(
                                               child: snapshot.data,
                                             );

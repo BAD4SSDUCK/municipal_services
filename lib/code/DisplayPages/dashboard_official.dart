@@ -37,6 +37,14 @@ class HomeManagerScreen extends StatefulWidget {
   State<StatefulWidget> createState() =>_HomeManagerScreenState();
 }
 
+final FirebaseAuth auth = FirebaseAuth.instance;
+
+final User? user = auth.currentUser;
+final uid = user?.uid;
+final email = user?.email;
+String userID = uid as String;
+String userEmail = email as String;
+
 class _HomeManagerScreenState extends State<HomeManagerScreen>{
 
   bool loading = true;
@@ -47,23 +55,49 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
     super.initState();
     fToast =FToast();
     fToast.init(context);
-    visibilityCheckAdmin();
-    //Fluttertoast.showToast(msg: "Navigate The App From The Bottom Tabs.", gravity: ToastGravity.CENTER);
-
+    adminCheck();
   }
 
   bool visShow = true;
   bool visHide = false;
   bool visAdmin = false;
 
-  void visibilityCheckAdmin() {
-    User? user = FirebaseAuth.instance.currentUser;
-    String? emailLogged = user?.email.toString();
+  String userRole = '';
+  List _allUserRolesResults = [];
 
-    if(emailLogged?.contains("admin") == true){
+  void adminCheck() {
+    getUsersStream();
+    if(userRole == 'Admin'|| userRole == 'Administrator'){
       visAdmin = true;
     } else {
       visAdmin = false;
+    }
+  }
+
+  getUsersStream() async{
+    var data = await FirebaseFirestore.instance.collection('users').get();
+    setState(() {
+      _allUserRolesResults = data.docs;
+    });
+    getUserDetails();
+  }
+
+  getUserDetails() async {
+    for (var userSnapshot in _allUserRolesResults) {
+      ///Need to build a property model that retrieves property data entirely from the db
+      var user = userSnapshot['email'].toString();
+      var role = userSnapshot['userRole'].toString();
+
+      if (user == userEmail) {
+        userRole = role;
+        print('My Role is::: $userRole');
+
+        if (userRole == 'Admin' || userRole == 'Administrator') {
+          visAdmin = true;
+        } else {
+          visAdmin = false;
+        }
+      }
     }
   }
 

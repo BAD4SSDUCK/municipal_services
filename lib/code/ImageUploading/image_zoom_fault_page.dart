@@ -84,21 +84,6 @@ Future<Widget> _getImageW(BuildContext context, String imageName2) async{
 
 class _ImageZoomFaultPageState extends State<ImageZoomFaultPage> {
 
-  // text fields' controllers
-  final _accountNumberController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _areaCodeController = TextEditingController();
-  final _meterNumberController = TextEditingController();
-  final _meterReadingController = TextEditingController();
-  final _waterMeterController = TextEditingController();
-  final _waterMeterReadingController = TextEditingController();
-  final _cellNumberController = TextEditingController();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-  final _idNumberController = TextEditingController();
-
-  final _userIDController = userID;
-
   String formattedMonth = DateFormat.MMMM().format(now);//format for full Month by name
   String formattedDateMonth = DateFormat.MMMMd().format(now);//format for Day Month only
 
@@ -156,23 +141,23 @@ class _ImageZoomFaultPageState extends State<ImageZoomFaultPage> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Center(
+                                Center(
                                   child: Text(
-                                    'Fault Information',
-                                    style: TextStyle(
+                                    'Fault ${documentSnapshot['ref']}',
+                                    style: const TextStyle(
                                         fontSize: 19,
                                         fontWeight: FontWeight.w700),
                                   ),
                                 ),
                                 const SizedBox(height: 10,),
 
-                                Text(
-                                  'Reference Number: ${documentSnapshot['ref']}',
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w400),
-                                ),
-                                const SizedBox(height: 5,),
+                                // Text(
+                                //   'Reference Number: ${documentSnapshot['ref']}',
+                                //   style: TextStyle(
+                                //       fontSize: 19,
+                                //       fontWeight: FontWeight.w700),
+                                // ),
+                                // const SizedBox(height: 5,),
 
                                 Text(
                                   'Street Address of Fault: ${documentSnapshot['address']}',
@@ -190,59 +175,47 @@ class _ImageZoomFaultPageState extends State<ImageZoomFaultPage> {
                                 const SizedBox(height: 5,),
                                 Column(
                                   children: [
-                                    if(documentSnapshot['faultDescription'] !=
-                                        "")...[
+                                    if(documentSnapshot['faultDescription'] != "")...[
                                       Text(
                                         'Fault Description: ${documentSnapshot['faultDescription']}',
-                                        style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w400),
+                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                       ),
                                       const SizedBox(height: 5,),
-                                    ] else
-                                      ...[
-                                      ],
+                                    ] else ...[
+
+                                    ],
                                   ],
                                 ),
 
                                 Text(
                                   'Resolve State: $status',
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w400),
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                 ),
                                 const SizedBox(height: 5,),
                                 Text(
                                   'Date of Fault Report: ${documentSnapshot['dateReported']}',
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w400),
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                 ),
                                 const SizedBox(height: 5,),
                                 Column(
                                   children: [
-                                    if(documentSnapshot['faultDescription'] !=
-                                        "")...[
+                                    if(documentSnapshot['faultDescription'] != "")...[
                                       Visibility(
                                         visible: imageVisibility,
                                         child: InkWell(
                                           child: Container(
-                                            margin: const EdgeInsets.only(
-                                                bottom: 5),
+                                            margin: const EdgeInsets.only(bottom: 5),
                                             // height: 180,
                                             child: Center(
                                               child: Card(
                                                 color: Colors.grey,
                                                 semanticContainer: true,
-                                                clipBehavior: Clip
-                                                    .antiAliasWithSaveLayer,
+                                                clipBehavior: Clip.antiAliasWithSaveLayer,
                                                 shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius
-                                                      .circular(10.0),
+                                                  borderRadius: BorderRadius.circular(10.0),
                                                 ),
                                                 elevation: 0,
-                                                margin: const EdgeInsets.all(
-                                                    10.0),
+                                                margin: const EdgeInsets.all(10.0),
                                                 child: FutureBuilder(
                                                     future: _getImage(context,
                                                         'files/faultImages/${documentSnapshot['dateReported']}/${documentSnapshot['address']}'),
@@ -269,9 +242,9 @@ class _ImageZoomFaultPageState extends State<ImageZoomFaultPage> {
                                           ),
                                         ),
                                       ),
-                                    ] else
-                                      ...[
-                                      ],
+                                    ] else ...[
+
+                                    ],
                                   ],
                                 ),
                                 const SizedBox(height: 0,),
@@ -289,17 +262,12 @@ class _ImageZoomFaultPageState extends State<ImageZoomFaultPage> {
                                         children: [
                                           BasicIconButtonGreen(
                                             onPress: () {
-                                              accountNumberRep =
-                                              documentSnapshot['accountNumber'];
-                                              locationGivenRep =
-                                              documentSnapshot['address'];
+                                              accountNumberRep = documentSnapshot['accountNumber'];
+                                              locationGivenRep = documentSnapshot['address'];
 
-                                              Navigator.push(context,
-                                                  MaterialPageRoute(
+                                              Navigator.push(context, MaterialPageRoute(
                                                       builder: (context) =>
-                                                          MapScreenProp(
-                                                            propAddress: locationGivenRep,
-                                                            propAccNumber: accountNumberRep,)
+                                                          MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
                                                     //MapPage()
                                                   ));
                                             },
@@ -311,23 +279,16 @@ class _ImageZoomFaultPageState extends State<ImageZoomFaultPage> {
                                           ),
                                           BasicIconButtonGreen(
                                             onPress: () {
-                                              locationGivenRep =
-                                              documentSnapshot['address'];
-                                              reporterDateGiven =
-                                              documentSnapshot['dateReported'];
-                                              Navigator.push(context,
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          FaultImageUpload(
-                                                              propertyAddress: locationGivenRep,
-                                                              reportedDate: reporterDateGiven)
+                                              locationGivenRep = documentSnapshot['address'];
+                                              reporterDateGiven = documentSnapshot['dateReported'];
+                                              Navigator.push(context, MaterialPageRoute(builder: (context) =>
+                                                          FaultImageUpload(propertyAddress: locationGivenRep, reportedDate: reporterDateGiven)
                                                     //MapPage()
                                                   ));
                                             },
                                             labelText: 'Image +',
                                             fSize: 14,
-                                            faIcon: const FaIcon(
-                                                Icons.photo_camera),
+                                            faIcon: const FaIcon(Icons.photo_camera),
                                             fgColor: Colors.blueGrey,
                                             btSize: const Size(40, 40),
                                           ),
@@ -405,7 +366,6 @@ class _ImageZoomFaultPageState extends State<ImageZoomFaultPage> {
                     else {
                       return const SizedBox();
                     }
-
                   },
                 );
               }

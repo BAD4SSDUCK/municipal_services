@@ -40,7 +40,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
   @override
   void initState() {
     if(_searchController.text == ""){
-      getUsersStream();
+      getUsersTokenStream();
     }
     _searchController.addListener(_onSearchChanged);
     checkAdmin();
@@ -103,7 +103,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
   List _resultsList =[];
   List _allUserTokenResults = [];
 
-  getUsersStream() async{
+  getUsersTokenStream() async{
     var data = await FirebaseFirestore.instance.collection('UserToken').get();
 
     setState(() {
@@ -119,16 +119,17 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
   searchResultsList() async {
     var showResults = [];
     if(_searchController.text != "") {
-      for(var propSnapshot in _allUserTokenResults){
+      getUsersTokenStream();
+      for(var userTokenSnapshot in _allUserTokenResults){
         ///Need to build a property model that retrieves property data entirely from the db
-        var phoneNumber = propSnapshot.id.toString().toLowerCase();
+        var phoneNumber = userTokenSnapshot.id.toString().toLowerCase();
 
         if(phoneNumber.contains(_searchController.text.toLowerCase())) {
-          showResults.add(propSnapshot);
+          showResults.add(userTokenSnapshot);
         }
       }
     } else {
-      getUsersStream();
+      getUsersTokenStream();
       showResults = List.from(_allUserTokenResults);
     }
     setState(() {
