@@ -1202,8 +1202,7 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                                               child: snapshot.data,
                                             );
                                           }
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.waiting) {
+                                          if (snapshot.connectionState == ConnectionState.waiting) {
                                             return Container(
                                               child: const Padding(
                                                 padding: EdgeInsets.all(5.0),
@@ -1318,8 +1317,7 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                                             final file = await PDFApi.loadFirebase(url);
                                             try {
                                               if(context.mounted)openPDF(context, file);
-                                              Fluttertoast.showToast(
-                                                  msg: "Download Successful!");
+                                              Fluttertoast.showToast(msg: "Download Successful!");
                                             } catch (e) {
                                               Fluttertoast.showToast(msg: "Unable to download statement.");
                                             }
