@@ -43,14 +43,11 @@ String eMeterNumber = ' ';
 String accountNumberW = ' ';
 String locationGivenW = ' ';
 String wMeterNumber = ' ';
-
 String propPhoneNum = ' ';
 
 bool visibilityState1 = true;
 bool visibilityState2 = false;
-
 bool imgUploadCheck = false;
-
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
 
@@ -108,11 +105,6 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
   final CollectionReference _propList =
   FirebaseFirestore.instance.collection('properties');
 
-  ///For getting sub collections within a collection
-  // final CollectionReference _propListMonthBill = FirebaseFirestore.instance
-  //     .collection('properties').doc('documentID')
-  //     .collection('month').doc('monthID') as CollectionReference<Object?>;
-
   Future<void> updateImgCheckE(bool imgCheck, [DocumentSnapshot? documentSnapshot]) async{
     if (documentSnapshot != null) {
       await _propList
@@ -154,14 +146,8 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
         builder: (BuildContext ctx) {
           return SingleChildScrollView(
             child: Padding(
-              padding: EdgeInsets.only(
-                  top: 20,
-                  left: 20,
-                  right: 20,
-                  bottom: MediaQuery
-                      .of(ctx)
-                      .viewInsets
-                      .bottom + 20),
+              padding: EdgeInsets.only(top: 20, left: 20, right: 20,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -263,7 +249,6 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                       final String lastName = _lastNameController.text;
                       final String idNumber = _idNumberController.text;
                       if (accountNumber != null) {
-
 
                         await _propList.add({
                           "account number": accountNumber,
@@ -415,9 +400,7 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                       decoration: const InputDecoration(labelText: 'ID Number'),
                     ),
                   ),
-                  const SizedBox(
-                    height: 20,
-                  ),
+                  const SizedBox(height: 20,),
                   ElevatedButton(
                     child: const Text('Update'),
                     onPressed: () async {
@@ -496,14 +479,8 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
         builder: (BuildContext ctx) {
           return SingleChildScrollView(
             child: Padding(
-              padding: EdgeInsets.only(
-                  top: 20,
-                  left: 20,
-                  right: 20,
-                  bottom: MediaQuery
-                      .of(ctx)
-                      .viewInsets
-                      .bottom + 20),
+              padding: EdgeInsets.only(top: 20, left: 20, right: 20,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -589,9 +566,7 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                       decoration: const InputDecoration(labelText: 'ID Number'),
                     ),
                   ),
-                  const SizedBox(
-                    height: 20,
-                  ),
+                  const SizedBox(height: 20,),
                   ElevatedButton(
                     child: const Text('Update'),
                     onPressed: () async {
@@ -704,14 +679,8 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
         builder: (BuildContext ctx) {
           return SingleChildScrollView(
             child: Padding(
-              padding: EdgeInsets.only(
-                  top: 20,
-                  left: 20,
-                  right: 20,
-                  bottom: MediaQuery
-                      .of(ctx)
-                      .viewInsets
-                      .bottom + 20),
+              padding: EdgeInsets.only(top: 20, left: 20, right: 20,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -927,7 +896,7 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                       documentSnapshot['eBill'] != 'R0.00' ||
                       documentSnapshot['eBill'] != 'R0' ||
                       documentSnapshot['eBill'] != '0'
-                  ){
+                  ) {
                     billMessage = 'Utilities bill outstanding: ${documentSnapshot['eBill']}';
                   } else {
                     billMessage = 'No outstanding payments';
