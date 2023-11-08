@@ -45,6 +45,8 @@ class _MapScreenMultiInvertState extends State<MapScreenMultiInvert> {
   String location ='Null, Press Button';
   String Address = 'search';
 
+  List _allPropertiesResults = [];
+
   @override
   void initState(){
 
@@ -65,7 +67,8 @@ class _MapScreenMultiInvertState extends State<MapScreenMultiInvert> {
     //Set camera position based on db address given
     addressConvert('Chief Albert Luthuli St, Pietermaritzburg, 3200');
     //Set multiple markers
-    multiMarkerInit();
+    // multiMarkerInit();
+    getPropertyStream();
     //Set up initial locations
     setInitialLocation();
     //Set up the marker icons
@@ -227,7 +230,7 @@ class _MapScreenMultiInvertState extends State<MapScreenMultiInvert> {
           ///A check for if meter image is outstanding or not and add the address of the outstanding images to the map marker
 
           if(defaultTargetPlatform == TargetPlatform.android){
-            if (result['imgStateE'] == true || result['imgStateW'] == true){
+            if (result['imgStateE'] != false || result['imgStateW'] != false){
               try {
                 List<Location> locations = await locationFromAddress(address);
 
@@ -246,7 +249,7 @@ class _MapScreenMultiInvertState extends State<MapScreenMultiInvert> {
               }
             }
           }else{
-            if (result['imgStateE'] == true || result['imgStateW'] == true){
+            if (result['imgStateE'] != false || result['imgStateW'] != false){
               try {
                 List<Location> locations = await locationFromAddress(address);
 
@@ -296,6 +299,64 @@ class _MapScreenMultiInvertState extends State<MapScreenMultiInvert> {
     });
   }
 
+  getPropertyStream() async{
+    var data = await FirebaseFirestore.instance.collection('properties').get();
+    setState(() {
+      _allPropertiesResults = data.docs;
+    });
+    getPropertyDetails();
+  }
+
+  getPropertyDetails() async {
+    for (var propertySnapshot in _allPropertiesResults) {
+      ///Need to build a property model that retrieves property data entirely from the db
+      var prop = propertySnapshot['address'].toString();
+      var meterImageState = propertySnapshot['imgStateE'];
+      var waterImageState = propertySnapshot['imgStateW'];
+
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        if (meterImageState == true || waterImageState == true) {
+          addressConvert(prop);
+          try {
+            List<Location> locations = await locationFromAddress(prop);
+
+            if (locations.isNotEmpty) {
+              Location location = locations.first;
+
+              double latitude = location.latitude;
+              double longitude = location.longitude;
+
+              addressLocation = LatLng(latitude, longitude);
+
+              showPinOnMap();
+            }
+          } catch (e) {
+            addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
+          }
+        }
+      } else {
+        if (meterImageState == true || waterImageState == true) {
+          try {
+            List<Location> locations = await locationFromAddress(prop);
+
+            if (locations.isNotEmpty) {
+              Location location = locations.first;
+
+              double latitude = location.latitude;
+              double longitude = location.longitude;
+
+              addressLocation = LatLng(latitude, longitude);
+
+              showPinOnMap();
+            }
+          } catch (e) {
+            addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
+          }
+        }
+      }
+    }
+  }
+
   void setAddressLocation() async {
     addressLocation = LatLng(
         SOURCE_LOCATION.latitude,
@@ -337,29 +398,22 @@ class _MapScreenMultiInvertState extends State<MapScreenMultiInvert> {
                   ///loading page component starts here
                   _isLoading
                       ? const Center(child: CircularProgressIndicator(),)
-                      : Expanded(
-                        ///everything put into this expanded widget will be loading for the amount of seconds established in the initState()
-                        child: GoogleMap(
-                            myLocationEnabled: true,
-                            compassEnabled: false,
-                            tiltGesturesEnabled: false,
-                            markers: _markers,
-                            mapType: MapType.normal,
+                      : GoogleMap(
+                          myLocationEnabled: true,
+                          compassEnabled: false,
+                          tiltGesturesEnabled: false,
+                          markers: _markers,
+                          mapType: MapType.normal,
 
-                            onMapCreated: (GoogleMapController mapController) {
-                              addressConvert(_propertiesData.properties.address);
-                              setState(() {
-                                _mapController = mapController;
-                                _mapController.setMapStyle(_mapStyle);
-                              });
-
-                              ///to remove POI points of interest
-
-
-                              },
-                            initialCameraPosition: _cameraPosition
+                          onMapCreated: (GoogleMapController mapController) {
+                            addressConvert(_propertiesData.properties.address);
+                            setState(() {
+                              _mapController = mapController;
+                              _mapController.setMapStyle(_mapStyle);
+                            });
+                            },
+                          initialCameraPosition: _cameraPosition
                       ),
-                  ),
 
                   ///Positioned widget is for searching an address
                   Positioned(
@@ -368,7 +422,7 @@ class _MapScreenMultiInvertState extends State<MapScreenMultiInvert> {
                       child: GestureDetector(
                         onTap: () {
                           Get.dialog(LocationSearchDialogue(mapController: _mapController));
-                          Fluttertoast.showToast(msg: "Select address from the list!", gravity: ToastGravity.CENTER);
+                          Fluttertoast.showToast(msg: "Select address from the search list!", gravity: ToastGravity.CENTER);
                           },
                         child: Container(
                           height: 50,
