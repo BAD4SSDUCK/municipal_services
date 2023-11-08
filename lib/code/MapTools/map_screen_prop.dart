@@ -230,22 +230,19 @@ class _MapScreenPropState extends State<MapScreenProp> {
                   ///loading page component starts here
                   _isLoading
                       ? const Center(child: CircularProgressIndicator(),)
-                      : Expanded(
-                        ///everything put into this expanded widget will be loading for the amount of seconds established in the initState()
-                        child: GoogleMap(
-                            myLocationEnabled: true,
-                            compassEnabled: false,
-                            tiltGesturesEnabled: false,
-                            markers: _markers,
-                            mapType: MapType.normal,
+                      : GoogleMap(
+                          myLocationEnabled: true,
+                          compassEnabled: false,
+                          tiltGesturesEnabled: false,
+                          markers: _markers,
+                          mapType: MapType.normal,
 
-                            onMapCreated: (GoogleMapController mapController) {
-                              addressConvert();
-                              _mapController = mapController;
-                            },
-                            initialCameraPosition: _cameraPosition
+                          onMapCreated: (GoogleMapController mapController) {
+                            addressConvert();
+                            _mapController = mapController;
+                          },
+                          initialCameraPosition: _cameraPosition
                       ),
-                  ),
 
                   ///Positioned widget is for searching an address but will not be used in view mode
                   // Positioned(
