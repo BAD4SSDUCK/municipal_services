@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
@@ -649,6 +650,29 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                     ),
                   ),
 
+                  ///An attempt to zoom
+                  // GestureDetector(
+                  //   onTap: () {
+                  //     showImageViewer(context, Image.asset("files/meters/$formattedDate/${_allPropertyResults[index]['cell number']}/water/${_allPropertyResults[index]['water meter number']}.jpg").image,
+                  //         swipeDismissible: false);
+                  //   },
+                  //   child:const Center(
+                  //     child: Padding(
+                  //       padding: EdgeInsets.all(20.0),
+                  //       child: Column(
+                  //         mainAxisSize: MainAxisSize.min,
+                  //         children: [
+                  //           Text('Open Image.',),
+                  //           SizedBox(height: 10,),
+                  //           FaIcon(Icons.image,),
+                  //         ],
+                  //       ),
+                  //     )
+                  //   )
+                  // ),
+                  ///Attempt failed for now
+
+
                   // Column(
                   //   children: [
                   //     Row(
@@ -898,6 +922,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
       child: CircularProgressIndicator(),
     );
   }
+
+
 
   Future<void> updateImgCheckE(bool imgCheck, [DocumentSnapshot? documentSnapshot]) async{
     if (documentSnapshot != null) {
