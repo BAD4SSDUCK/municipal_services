@@ -32,6 +32,7 @@ dependencies:
   flutter:
     sdk: flutter
   url_launcher: ^6.1.14
+  table_calendar: ^3.0.9
   webview_flutter: ^4.2.2
   external_app_launcher: ^3.1.0
   device_apps: ^2.2.0
