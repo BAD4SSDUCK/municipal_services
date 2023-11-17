@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:municipal_tracker_msunduzi/code/EventsPages/display_events_calendar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:external_app_launcher/external_app_launcher.dart';
@@ -98,7 +99,9 @@ Widget buildMenuItems(BuildContext context) => Wrap(
           fontWeight: FontWeight.bold,
           fontSize: 18,),),
       onTap: () {
-
+            Navigator.push(context,
+              MaterialPageRoute(builder: (context) => const EventsCalendar()),
+            );
       },
     ),
     // ListTile(
