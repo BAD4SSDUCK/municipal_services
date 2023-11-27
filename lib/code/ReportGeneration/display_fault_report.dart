@@ -262,21 +262,56 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
                     content: const Text(
                         "Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
                     actions: [
-                      IconButton(
-                        onPressed: () {
+                      BasicIconButtonGrey(
+                        onPress: () {
                           Navigator.pop(context);
                         },
-                        icon: const Icon(Icons.cancel, color: Colors.red,),
+                        labelText: "Cancel", fSize: 12, faIcon: const FaIcon(Icons.cancel), fgColor: Colors.red, btSize: const Size(10,10),
                       ),
-                      IconButton(
-                        onPressed: () async {
+                      BasicIconButtonGrey(
+                        onPress: () async {
                           Fluttertoast.showToast(
                               msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
-                          reportGeneration();
+                          reportGenerationWaste();
                           Navigator.pop(context);
                         },
-                        icon: const Icon(Icons.done, color: Colors.green,
-                        ),
+                        labelText: "Roadworks", fSize: 12, faIcon: const FaIcon(Icons.add_road), fgColor: Colors.black54, btSize: const Size(10,10),
+                      ),
+                      BasicIconButtonGrey(
+                        onPress: () async {
+                          Fluttertoast.showToast(
+                              msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
+                          reportGenerationWaste();
+                          Navigator.pop(context);
+                        },
+                        labelText: "Waste Management", fSize: 12, faIcon: const FaIcon(Icons.recycling), fgColor: Colors.brown, btSize: const Size(10,10),
+                      ),
+                      BasicIconButtonGrey(
+                        onPress: () async {
+                          Fluttertoast.showToast(
+                              msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
+                          reportGenerationWater();
+                          Navigator.pop(context);
+                        },
+                        labelText: "Water & Sanitation", fSize: 12, faIcon: const FaIcon(Icons.water_drop_outlined), fgColor: Colors.blue, btSize: const Size(10,10),
+                      ),
+                      BasicIconButtonGrey(
+                          onPress: () async {
+                            Fluttertoast.showToast(
+                                msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
+                            reportGenerationElectricity();
+                            Navigator.pop(context);
+                          },
+                          labelText: "Electricity", fSize: 12, faIcon: const FaIcon(Icons.power), fgColor: Colors.yellow, btSize: const Size(10,10),
+                      ),
+                      BasicIconButtonGrey(
+                        onPress: () async {
+                          Fluttertoast.showToast(
+                              msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
+                          reportGenerationElectricity();
+                          Navigator.pop(context);
+                        },
+                        labelText: "All", fSize: 12, faIcon: const FaIcon(Icons.check_circle), fgColor: Colors.green, btSize: const Size(10,10),
                       ),
                     ],
                   );
@@ -349,8 +384,7 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
                   const SizedBox(height: 5,),
                   Column(
                     children: [
-                      if(_allFaultResults[index]['faultDescription'] !=
-                          "")...[
+                      if(_allFaultResults[index]['faultDescription'] != "")...[
                         Text(
                           'Fault Description: ${_allFaultResults[index]['faultDescription']}',
                           style: const TextStyle(
@@ -597,10 +631,6 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
     }
 
     final List<int> bytes = workbook.saveAsStream();
-    ///File path managing on android
-    // final Directory? directory = await getExternalStorageDirectory();
-    //Get directory path
-    // final String? path = directory?.path;
 
     if(kIsWeb){
       AnchorElement(href: 'data:application/ocelot-stream;charset=utf-16le;base64,${base64.encode(bytes)}')
@@ -616,14 +646,397 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
       await OpenFile.open('$path/Msunduzi Faults Report $formattedDate.xlsx');
     }
 
-    // final String path = (await getApplicationSupportDirectory()).path;
-    // //Create an empty file to write Excel data
-    // final File file = File('$path/Msunduzi Property Reports.xlsx');
-    // //Write Excel data
-    // await file.writeAsBytes(bytes, flush: true);
-    // //Launch the file (used open_file package)
-    // await OpenFile.open('$path/Msunduzi Property Reports.xlsx');
-    // File('Msunduzi Property Reports.xlsx').writeAsBytes(bytes);
+    workbook.dispose();
+
+  }
+
+  Future<void> reportGenerationElectricity() async {
+    final excel.Workbook workbook = excel.Workbook();
+    final excel.Worksheet sheet = workbook.worksheets[0];
+
+    var data = await FirebaseFirestore.instance.collection('faultReporting').get();
+
+    _allFaultReport = data.docs;
+
+    String column = "A";
+    int excelRowFill = 2;
+    int excelRow = 2;
+    int listRow = 0;
+
+      sheet.getRangeByName('A1').setText('Ref #');
+      sheet.getRangeByName('B1').setText('Account #');
+      sheet.getRangeByName('C1').setText('Address');
+      sheet.getRangeByName('D1').setText('Report Date');
+      sheet.getRangeByName('E1').setText('Fault Type');
+      sheet.getRangeByName('F1').setText('Fault Description');
+      sheet.getRangeByName('G1').setText('Fault Handler');
+      sheet.getRangeByName('H1').setText('Fault Stage');
+      sheet.getRangeByName('I1').setText('Resolve Status');
+      sheet.getRangeByName('J1').setText('Reporters Phone Number');
+      sheet.getRangeByName('K1').setText('Department Admin Comment 1');
+      sheet.getRangeByName('L1').setText('Handler Comment 1');
+      sheet.getRangeByName('M1').setText('Department Admin Comment 2');
+      sheet.getRangeByName('N1').setText('Handler Comment 2');
+      sheet.getRangeByName('O1').setText('Department Admin Comment 3');
+
+      for (var reportSnapshot in _allFaultReport) {
+        ///Need to build a property model that retrieves property data entirely from the db
+        while (excelRow <= _allFaultReport.length + 1) {
+          if (_allFaultReport[listRow]['faultType'].toString() == 'Electricity') {
+
+            print('Report Lists:::: ${_allFaultReport[listRow]['address']}');
+
+            String referenceNum     = _allFaultReport[listRow]['ref'].toString();
+            String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();
+            String address          = _allFaultReport[listRow]['address'].toString();
+            String faultDate        = _allFaultReport[listRow]['dateReported'].toString();
+            String faultType        = _allFaultReport[listRow]['faultType'].toString();
+            String faultDescription = _allFaultReport[listRow]['faultDescription'].toString();
+            String faultHandler     = _allFaultReport[listRow]['deptHandler'].toString();
+            String faultStage       = _allFaultReport[listRow]['faultStage'].toString();
+            String resolveStatus    = _allFaultReport[listRow]['faultResolved'].toString();
+            String phoneNumber      = _allFaultReport[listRow]['reporterContact'].toString();
+            String depCom1          = _allFaultReport[listRow]['depComment1'].toString();
+            String handlerCom1      = _allFaultReport[listRow]['handlerCom1'].toString();
+            String depCom2          = _allFaultReport[listRow]['depComment2'].toString();
+            String handlerCom2      = _allFaultReport[listRow]['handlerCom2'].toString();
+            String depCom3          = _allFaultReport[listRow]['depComment3'].toString();
+
+            sheet.getRangeByName('A$excelRowFill').setText(referenceNum);
+            sheet.getRangeByName('B$excelRowFill').setText(accountNum);
+            sheet.getRangeByName('C$excelRowFill').setText(address);
+            sheet.getRangeByName('D$excelRowFill').setText(faultDate);
+            sheet.getRangeByName('E$excelRowFill').setText(faultType);
+            sheet.getRangeByName('F$excelRowFill').setText(faultDescription);
+            sheet.getRangeByName('G$excelRowFill').setText(faultHandler);
+            sheet.getRangeByName('H$excelRowFill').setText(faultStage);
+            sheet.getRangeByName('I$excelRowFill').setText(resolveStatus);
+            sheet.getRangeByName('J$excelRowFill').setText(phoneNumber);
+            sheet.getRangeByName('K$excelRowFill').setText(depCom1);
+            sheet.getRangeByName('L$excelRowFill').setText(handlerCom1);
+            sheet.getRangeByName('M$excelRowFill').setText(depCom2);
+            sheet.getRangeByName('N$excelRowFill').setText(handlerCom2);
+            sheet.getRangeByName('O$excelRowFill').setText(depCom3);
+
+            excelRowFill += 1;
+            excelRow += 1;
+            listRow += 1;
+          } else {
+            excelRow += 1;
+            listRow += 1;
+          }
+      }
+    }
+
+    final List<int> bytes = workbook.saveAsStream();
+
+    if(kIsWeb){
+      AnchorElement(href: 'data:application/ocelot-stream;charset=utf-16le;base64,${base64.encode(bytes)}')
+          ..setAttribute('download', 'Msunduzi Faults Electricity Report $formattedDate.xlsx')
+          ..click();
+
+    } else {
+      final String path = (await getApplicationSupportDirectory()).path;
+      final String filename = Platform.isWindows ? '$path\\Msunduzi Faults Electricity Report $formattedDate.xlsx' : '$path/Msunduzi Faults Electricity Report $formattedDate.xlsx';
+      final File file = File(filename);
+      final List<int> bytes = workbook.saveAsStream();
+      await file.writeAsBytes(bytes, flush: true);
+      await OpenFile.open('$path/Msunduzi Faults Electricity Report $formattedDate.xlsx');
+    }
+
+    workbook.dispose();
+
+  }
+
+  Future<void> reportGenerationWater() async {
+    final excel.Workbook workbook = excel.Workbook();
+    final excel.Worksheet sheet = workbook.worksheets[0];
+
+    var data = await FirebaseFirestore.instance.collection('faultReporting').get();
+
+    _allFaultReport = data.docs;
+
+    String column = "A";
+    int excelRowFill = 2;
+    int excelRow = 2;
+    int listRow = 0;
+
+    sheet.getRangeByName('A1').setText('Ref #');
+    sheet.getRangeByName('B1').setText('Account #');
+    sheet.getRangeByName('C1').setText('Address');
+    sheet.getRangeByName('D1').setText('Report Date');
+    sheet.getRangeByName('E1').setText('Fault Type');
+    sheet.getRangeByName('F1').setText('Fault Description');
+    sheet.getRangeByName('G1').setText('Fault Handler');
+    sheet.getRangeByName('H1').setText('Fault Stage');
+    sheet.getRangeByName('I1').setText('Resolve Status');
+    sheet.getRangeByName('J1').setText('Reporters Phone Number');
+    sheet.getRangeByName('K1').setText('Department Admin Comment 1');
+    sheet.getRangeByName('L1').setText('Handler Comment 1');
+    sheet.getRangeByName('M1').setText('Department Admin Comment 2');
+    sheet.getRangeByName('N1').setText('Handler Comment 2');
+    sheet.getRangeByName('O1').setText('Department Admin Comment 3');
+
+    for (var reportSnapshot in _allFaultReport) {
+      ///Need to build a property model that retrieves property data entirely from the db
+      while (excelRow <= _allFaultReport.length + 1) {
+        if (_allFaultReport[listRow]['faultType'].toString() == 'Water & Sanitation') {
+
+            print('Report Lists:::: ${_allFaultReport[listRow]['address']}');
+
+            String referenceNum     = _allFaultReport[listRow]['ref'].toString();
+            String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();
+            String address          = _allFaultReport[listRow]['address'].toString();
+            String faultDate        = _allFaultReport[listRow]['dateReported'].toString();
+            String faultType        = _allFaultReport[listRow]['faultType'].toString();
+            String faultDescription = _allFaultReport[listRow]['faultDescription'].toString();
+            String faultHandler     = _allFaultReport[listRow]['deptHandler'].toString();
+            String faultStage       = _allFaultReport[listRow]['faultStage'].toString();
+            String resolveStatus    = _allFaultReport[listRow]['faultResolved'].toString();
+            String phoneNumber      = _allFaultReport[listRow]['reporterContact'].toString();
+            String depCom1          = _allFaultReport[listRow]['depComment1'].toString();
+            String handlerCom1      = _allFaultReport[listRow]['handlerCom1'].toString();
+            String depCom2          = _allFaultReport[listRow]['depComment2'].toString();
+            String handlerCom2      = _allFaultReport[listRow]['handlerCom2'].toString();
+            String depCom3          = _allFaultReport[listRow]['depComment3'].toString();
+
+            sheet.getRangeByName('A$excelRowFill').setText(referenceNum);
+            sheet.getRangeByName('B$excelRowFill').setText(accountNum);
+            sheet.getRangeByName('C$excelRowFill').setText(address);
+            sheet.getRangeByName('D$excelRowFill').setText(faultDate);
+            sheet.getRangeByName('E$excelRowFill').setText(faultType);
+            sheet.getRangeByName('F$excelRowFill').setText(faultDescription);
+            sheet.getRangeByName('G$excelRowFill').setText(faultHandler);
+            sheet.getRangeByName('H$excelRowFill').setText(faultStage);
+            sheet.getRangeByName('I$excelRowFill').setText(resolveStatus);
+            sheet.getRangeByName('J$excelRowFill').setText(phoneNumber);
+            sheet.getRangeByName('K$excelRowFill').setText(depCom1);
+            sheet.getRangeByName('L$excelRowFill').setText(handlerCom1);
+            sheet.getRangeByName('M$excelRowFill').setText(depCom2);
+            sheet.getRangeByName('N$excelRowFill').setText(handlerCom2);
+            sheet.getRangeByName('O$excelRowFill').setText(depCom3);
+
+            excelRowFill += 1;
+            excelRow += 1;
+            listRow += 1;
+        } else {
+          excelRow += 1;
+          listRow += 1;
+        }
+      }
+    }
+
+    final List<int> bytes = workbook.saveAsStream();
+
+    if(kIsWeb){
+      AnchorElement(href: 'data:application/ocelot-stream;charset=utf-16le;base64,${base64.encode(bytes)}')
+        ..setAttribute('download', 'Msunduzi Faults Water & Sanitation Report $formattedDate.xlsx')
+        ..click();
+
+    } else {
+      final String path = (await getApplicationSupportDirectory()).path;
+      final String filename = Platform.isWindows ? '$path\\Msunduzi Faults Water & Sanitation Report $formattedDate.xlsx' : '$path/Msunduzi Faults Water & Sanitation Report $formattedDate.xlsx';
+      final File file = File(filename);
+      final List<int> bytes = workbook.saveAsStream();
+      await file.writeAsBytes(bytes, flush: true);
+      await OpenFile.open('$path/Msunduzi Faults Water & Sanitation Report $formattedDate.xlsx');
+    }
+
+    workbook.dispose();
+
+  }
+
+  Future<void> reportGenerationWaste() async {
+    final excel.Workbook workbook = excel.Workbook();
+    final excel.Worksheet sheet = workbook.worksheets[0];
+
+    var data = await FirebaseFirestore.instance.collection('faultReporting').get();
+
+    _allFaultReport = data.docs;
+
+    String column = "A";
+    int excelRowFill = 2;
+    int excelRow = 2;
+    int listRow = 0;
+
+    sheet.getRangeByName('A1').setText('Ref #');
+    sheet.getRangeByName('B1').setText('Account #');
+    sheet.getRangeByName('C1').setText('Address');
+    sheet.getRangeByName('D1').setText('Report Date');
+    sheet.getRangeByName('E1').setText('Fault Type');
+    sheet.getRangeByName('F1').setText('Fault Description');
+    sheet.getRangeByName('G1').setText('Fault Handler');
+    sheet.getRangeByName('H1').setText('Fault Stage');
+    sheet.getRangeByName('I1').setText('Resolve Status');
+    sheet.getRangeByName('J1').setText('Reporters Phone Number');
+    sheet.getRangeByName('K1').setText('Department Admin Comment 1');
+    sheet.getRangeByName('L1').setText('Handler Comment 1');
+    sheet.getRangeByName('M1').setText('Department Admin Comment 2');
+    sheet.getRangeByName('N1').setText('Handler Comment 2');
+    sheet.getRangeByName('O1').setText('Department Admin Comment 3');
+
+    for (var reportSnapshot in _allFaultReport) {
+      ///Need to build a property model that retrieves property data entirely from the db
+      while (excelRow <= _allFaultReport.length + 1) {
+        if (_allFaultReport[listRow]['faultType'].toString() == 'Waste Management') {
+
+          print('Report Lists:::: ${_allFaultReport[listRow]['address']}');
+
+          String referenceNum     = _allFaultReport[listRow]['ref'].toString();
+          String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();
+          String address          = _allFaultReport[listRow]['address'].toString();
+          String faultDate        = _allFaultReport[listRow]['dateReported'].toString();
+          String faultType        = _allFaultReport[listRow]['faultType'].toString();
+          String faultDescription = _allFaultReport[listRow]['faultDescription'].toString();
+          String faultHandler     = _allFaultReport[listRow]['deptHandler'].toString();
+          String faultStage       = _allFaultReport[listRow]['faultStage'].toString();
+          String resolveStatus    = _allFaultReport[listRow]['faultResolved'].toString();
+          String phoneNumber      = _allFaultReport[listRow]['reporterContact'].toString();
+          String depCom1          = _allFaultReport[listRow]['depComment1'].toString();
+          String handlerCom1      = _allFaultReport[listRow]['handlerCom1'].toString();
+          String depCom2          = _allFaultReport[listRow]['depComment2'].toString();
+          String handlerCom2      = _allFaultReport[listRow]['handlerCom2'].toString();
+          String depCom3          = _allFaultReport[listRow]['depComment3'].toString();
+
+          sheet.getRangeByName('A$excelRowFill').setText(referenceNum);
+          sheet.getRangeByName('B$excelRowFill').setText(accountNum);
+          sheet.getRangeByName('C$excelRowFill').setText(address);
+          sheet.getRangeByName('D$excelRowFill').setText(faultDate);
+          sheet.getRangeByName('E$excelRowFill').setText(faultType);
+          sheet.getRangeByName('F$excelRowFill').setText(faultDescription);
+          sheet.getRangeByName('G$excelRowFill').setText(faultHandler);
+          sheet.getRangeByName('H$excelRowFill').setText(faultStage);
+          sheet.getRangeByName('I$excelRowFill').setText(resolveStatus);
+          sheet.getRangeByName('J$excelRowFill').setText(phoneNumber);
+          sheet.getRangeByName('K$excelRowFill').setText(depCom1);
+          sheet.getRangeByName('L$excelRowFill').setText(handlerCom1);
+          sheet.getRangeByName('M$excelRowFill').setText(depCom2);
+          sheet.getRangeByName('N$excelRowFill').setText(handlerCom2);
+          sheet.getRangeByName('O$excelRowFill').setText(depCom3);
+
+          excelRowFill += 1;
+          excelRow += 1;
+          listRow += 1;
+        } else {
+          excelRow += 1;
+          listRow += 1;
+        }
+      }
+    }
+
+    final List<int> bytes = workbook.saveAsStream();
+
+    if(kIsWeb){
+      AnchorElement(href: 'data:application/ocelot-stream;charset=utf-16le;base64,${base64.encode(bytes)}')
+        ..setAttribute('download', 'Msunduzi Faults Water & Sanitation Report $formattedDate.xlsx')
+        ..click();
+
+    } else {
+      final String path = (await getApplicationSupportDirectory()).path;
+      final String filename = Platform.isWindows ? '$path\\Msunduzi Faults Water & Sanitation Report $formattedDate.xlsx' : '$path/Msunduzi Faults Water & Sanitation Report $formattedDate.xlsx';
+      final File file = File(filename);
+      final List<int> bytes = workbook.saveAsStream();
+      await file.writeAsBytes(bytes, flush: true);
+      await OpenFile.open('$path/Msunduzi Faults Water & Sanitation Report $formattedDate.xlsx');
+    }
+
+    workbook.dispose();
+
+  }
+
+  Future<void> reportGenerationRoadworks() async {
+    final excel.Workbook workbook = excel.Workbook();
+    final excel.Worksheet sheet = workbook.worksheets[0];
+
+    var data = await FirebaseFirestore.instance.collection('faultReporting').get();
+
+    _allFaultReport = data.docs;
+
+    String column = "A";
+    int excelRowFill = 2;
+    int excelRow = 2;
+    int listRow = 0;
+
+    sheet.getRangeByName('A1').setText('Ref #');
+    sheet.getRangeByName('B1').setText('Account #');
+    sheet.getRangeByName('C1').setText('Address');
+    sheet.getRangeByName('D1').setText('Report Date');
+    sheet.getRangeByName('E1').setText('Fault Type');
+    sheet.getRangeByName('F1').setText('Fault Description');
+    sheet.getRangeByName('G1').setText('Fault Handler');
+    sheet.getRangeByName('H1').setText('Fault Stage');
+    sheet.getRangeByName('I1').setText('Resolve Status');
+    sheet.getRangeByName('J1').setText('Reporters Phone Number');
+    sheet.getRangeByName('K1').setText('Department Admin Comment 1');
+    sheet.getRangeByName('L1').setText('Handler Comment 1');
+    sheet.getRangeByName('M1').setText('Department Admin Comment 2');
+    sheet.getRangeByName('N1').setText('Handler Comment 2');
+    sheet.getRangeByName('O1').setText('Department Admin Comment 3');
+
+    for (var reportSnapshot in _allFaultReport) {
+      ///Need to build a property model that retrieves property data entirely from the db
+      while (excelRow <= _allFaultReport.length + 1) {
+        if (_allFaultReport[listRow]['faultType'].toString() == 'Roadworks') {
+
+          print('Report Lists:::: ${_allFaultReport[listRow]['address']}');
+
+          String referenceNum     = _allFaultReport[listRow]['ref'].toString();
+          String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();
+          String address          = _allFaultReport[listRow]['address'].toString();
+          String faultDate        = _allFaultReport[listRow]['dateReported'].toString();
+          String faultType        = _allFaultReport[listRow]['faultType'].toString();
+          String faultDescription = _allFaultReport[listRow]['faultDescription'].toString();
+          String faultHandler     = _allFaultReport[listRow]['deptHandler'].toString();
+          String faultStage       = _allFaultReport[listRow]['faultStage'].toString();
+          String resolveStatus    = _allFaultReport[listRow]['faultResolved'].toString();
+          String phoneNumber      = _allFaultReport[listRow]['reporterContact'].toString();
+          String depCom1          = _allFaultReport[listRow]['depComment1'].toString();
+          String handlerCom1      = _allFaultReport[listRow]['handlerCom1'].toString();
+          String depCom2          = _allFaultReport[listRow]['depComment2'].toString();
+          String handlerCom2      = _allFaultReport[listRow]['handlerCom2'].toString();
+          String depCom3          = _allFaultReport[listRow]['depComment3'].toString();
+
+          sheet.getRangeByName('A$excelRowFill').setText(referenceNum);
+          sheet.getRangeByName('B$excelRowFill').setText(accountNum);
+          sheet.getRangeByName('C$excelRowFill').setText(address);
+          sheet.getRangeByName('D$excelRowFill').setText(faultDate);
+          sheet.getRangeByName('E$excelRowFill').setText(faultType);
+          sheet.getRangeByName('F$excelRowFill').setText(faultDescription);
+          sheet.getRangeByName('G$excelRowFill').setText(faultHandler);
+          sheet.getRangeByName('H$excelRowFill').setText(faultStage);
+          sheet.getRangeByName('I$excelRowFill').setText(resolveStatus);
+          sheet.getRangeByName('J$excelRowFill').setText(phoneNumber);
+          sheet.getRangeByName('K$excelRowFill').setText(depCom1);
+          sheet.getRangeByName('L$excelRowFill').setText(handlerCom1);
+          sheet.getRangeByName('M$excelRowFill').setText(depCom2);
+          sheet.getRangeByName('N$excelRowFill').setText(handlerCom2);
+          sheet.getRangeByName('O$excelRowFill').setText(depCom3);
+
+          excelRowFill += 1;
+          excelRow += 1;
+          listRow += 1;
+        } else {
+          excelRow += 1;
+          listRow += 1;
+        }
+      }
+    }
+
+    final List<int> bytes = workbook.saveAsStream();
+
+    if(kIsWeb){
+      AnchorElement(href: 'data:application/ocelot-stream;charset=utf-16le;base64,${base64.encode(bytes)}')
+        ..setAttribute('download', 'Msunduzi Faults Water & Sanitation Report $formattedDate.xlsx')
+        ..click();
+
+    } else {
+      final String path = (await getApplicationSupportDirectory()).path;
+      final String filename = Platform.isWindows ? '$path\\Msunduzi Faults Water & Sanitation Report $formattedDate.xlsx' : '$path/Msunduzi Faults Water & Sanitation Report $formattedDate.xlsx';
+      final File file = File(filename);
+      final List<int> bytes = workbook.saveAsStream();
+      await file.writeAsBytes(bytes, flush: true);
+      await OpenFile.open('$path/Msunduzi Faults Water & Sanitation Report $formattedDate.xlsx');
+    }
 
     workbook.dispose();
 
