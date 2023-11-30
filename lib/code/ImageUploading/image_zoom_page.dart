@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -600,6 +601,14 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                           "user id" : userID,
                         });
 
+                        await FirebaseFirestore.instance
+                            .collection('consumption').doc(formattedMonth)
+                            .collection('address').doc(address).set({
+                          "address": address,
+                          "meter reading": meterReading,
+                          "water meter reading": waterMeterReading,
+                        });
+
                         _accountNumberController.text = '';
                         _addressController.text = '';
                         _areaCodeController.text = '';
@@ -647,6 +656,8 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                                 );
                               });
                         }
+
+                        Fluttertoast.showToast(msg: "Reading updated!");
                       }
                     },
                   )
@@ -800,6 +811,14 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                           "last name": lastName,
                           "id number": idNumber,
                           "user id" : userID,
+                        });
+
+                        await FirebaseFirestore.instance
+                            .collection('consumption').doc(formattedMonth)
+                            .collection('address').doc(address).set({
+                          "address": address,
+                          "meter reading": meterReading,
+                          "water meter reading": waterMeterReading,
                         });
 
                         _accountNumberController.text = '';

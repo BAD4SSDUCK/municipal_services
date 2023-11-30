@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_property_trend.dart';
 import 'package:open_file/open_file.dart';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
@@ -56,6 +57,7 @@ String eMeterNumber = '';
 String accountNumberW = '';
 String locationGivenW = '';
 String wMeterNumber = '';
+String addressForTrend = '';
 
 String propPhoneNum = '';
 String imageName = '';
@@ -199,6 +201,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   String searchText = '';
 
   String formattedDate = DateFormat.MMMM().format(now);
+  String formattedMonth = DateFormat.MMMM().format(now);//format for full Month by name
+  String formattedDateMonth = DateFormat.MMMMd().format(now);//format for Day Month only
 
   final CollectionReference _listUserTokens =
   FirebaseFirestore.instance.collection('UserToken');
@@ -433,7 +437,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
                   const Center(
                     child: Text(
-                      'Electricity Meter Reading Photo',
+                      'Electricity & Water Meter Photos',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                     ),
                   ),
@@ -622,55 +626,33 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   //     ),
                   //   ),
                   // ),
-                  const SizedBox(height: 10,),
-
-                  const Center(
-                    child: Text(
-                      'Water Meter Reading Photo',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  const SizedBox(height: 5,),
-                  Center(
-                    child: BasicIconButtonGrey(
-                      onPress: () async {
-
-                        imageName = 'files/meters/$formattedDate/${_allPropertyResults[index]['cell number']}/water/${_allPropertyResults[index]['water meter number']}.jpg';
-                        addressSnap = _allPropertyResults[index]['address'];
-
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (context) => ImageZoomPage(imageName: imageName, addressSnap: addressSnap)));
-
-                      },
-                      labelText: 'View Uploaded Image',
-                      fSize: 16,
-                      faIcon: const FaIcon(Icons.zoom_in,),
-                      fgColor: Colors.blue,
-                      btSize: const Size(100, 38),
-                    ),
-                  ),
-
-                  ///An attempt to zoom
-                  // GestureDetector(
-                  //   onTap: () {
-                  //     showImageViewer(context, Image.asset("files/meters/$formattedDate/${_allPropertyResults[index]['cell number']}/water/${_allPropertyResults[index]['water meter number']}.jpg").image,
-                  //         swipeDismissible: false);
-                  //   },
-                  //   child:const Center(
-                  //     child: Padding(
-                  //       padding: EdgeInsets.all(20.0),
-                  //       child: Column(
-                  //         mainAxisSize: MainAxisSize.min,
-                  //         children: [
-                  //           Text('Open Image.',),
-                  //           SizedBox(height: 10,),
-                  //           FaIcon(Icons.image,),
-                  //         ],
-                  //       ),
-                  //     )
-                  //   )
+                  // const SizedBox(height: 10,),
+                  //
+                  // const Center(
+                  //   child: Text(
+                  //     'Water Meter Reading Photo',
+                  //     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  //   ),
                   // ),
-                  ///Attempt failed for now
+                  // const SizedBox(height: 5,),
+                  // Center(
+                  //   child: BasicIconButtonGrey(
+                  //     onPress: () async {
+                  //
+                  //       imageName = 'files/meters/$formattedDate/${_allPropertyResults[index]['cell number']}/water/${_allPropertyResults[index]['water meter number']}.jpg';
+                  //       addressSnap = _allPropertyResults[index]['address'];
+                  //
+                  //       Navigator.push(context,
+                  //           MaterialPageRoute(builder: (context) => ImageZoomPage(imageName: imageName, addressSnap: addressSnap)));
+                  //
+                  //     },
+                  //     labelText: 'View Uploaded Image',
+                  //     fSize: 16,
+                  //     faIcon: const FaIcon(Icons.zoom_in,),
+                  //     fgColor: Colors.blue,
+                  //     btSize: const Size(100, 38),
+                  //   ),
+                  // ),
 
 
                   // Column(
@@ -846,6 +828,20 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   const SizedBox(height: 10,),
                   Column(
                     children: [
+                      BasicIconButtonGrey(
+                        onPress: () async {
+                          addressForTrend = _allPropertyResults[index]['address'];
+
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) => PropertyTrend(addressTarget: addressForTrend)
+                              ));
+                        },
+                        labelText: 'History',
+                        fSize: 16,
+                        faIcon: const FaIcon(Icons.stacked_line_chart,),
+                        fgColor: Colors.purple,
+                        btSize: const Size(100, 38),
+                      ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -2104,6 +2100,24 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                           "id number": idNumber,
                           "user id" : userID,
                         });
+
+                        final CollectionReference _propMonthReadings = FirebaseFirestore.instance
+                            .collection('consumption').doc(formattedMonth)
+                            .collection('address').doc(address) as CollectionReference<Object?>;
+
+                        if(_propMonthReadings.id != address || _propMonthReadings.id == '' ){
+                          await _propMonthReadings.add({
+                            "address": address,
+                            "meter reading": meterReading,
+                            "water meter reading": waterMeterReading,
+                          });
+                        } else {
+                          await _propMonthReadings.doc(address).update({
+                            "address": address,
+                            "meter reading": meterReading,
+                            "water meter reading": waterMeterReading,
+                          });
+                        }
 
                         _accountNumberController.text = '';
                         _addressController.text = '';

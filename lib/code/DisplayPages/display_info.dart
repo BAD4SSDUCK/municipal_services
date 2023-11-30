@@ -259,9 +259,8 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                       final String firstName = _firstNameController.text;
                       final String lastName = _lastNameController.text;
                       final String idNumber = _idNumberController.text;
+
                       if (accountNumber != null) {
-
-
                         await _propList.add({
                           "account number": accountNumber,
                           "address": address,
@@ -275,6 +274,15 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                           "last name": lastName,
                           "id number": idNumber
                         });
+
+                        await FirebaseFirestore.instance
+                            .collection('consumption').doc(formattedMonth)
+                            .collection('address').doc(address).set({
+                          "address": address,
+                          "meter reading": meterReading,
+                          "water meter reading": waterMeterReading,
+                        });
+
                         _accountNumberController.text = '';
                         _addressController.text = '';
                         _areaCodeController.text = '';
@@ -446,6 +454,14 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                           "last name": lastName,
                           "id number": idNumber,
                           "user id" : userID,
+                        });
+
+                        await FirebaseFirestore.instance
+                            .collection('consumption').doc(formattedMonth)
+                            .collection('address').doc(address).set({
+                          "address": address,
+                          "meter reading": meterReading,
+                          "water meter reading": waterMeterReading,
                         });
 
                         _accountNumberController.text = '';
@@ -620,6 +636,14 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                           "last name": lastName,
                           "id number": idNumber,
                           "user id" : userID,
+                        });
+
+                        await FirebaseFirestore.instance
+                            .collection('consumption').doc(formattedMonth)
+                            .collection('address').doc(address).set({
+                          "address": address,
+                          "meter reading": meterReading,
+                          "water meter reading": waterMeterReading,
                         });
 
                         _accountNumberController.text = '';
@@ -828,6 +852,14 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                           "last name": lastName,
                           "id number": idNumber,
                           "user id" : userID,
+                        });
+
+                        await FirebaseFirestore.instance
+                            .collection('consumption').doc(formattedMonth)
+                            .collection('address').doc(address).set({
+                          "address": address,
+                          "meter reading": meterReading,
+                          "water meter reading": waterMeterReading,
                         });
 
                         _accountNumberController.text = '';
