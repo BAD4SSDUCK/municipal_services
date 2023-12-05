@@ -62,295 +62,26 @@ class _PropertyTrendState extends State<PropertyTrend> {
   final CollectionReference _propList =
   FirebaseFirestore.instance.collection('properties');
 
-
   String formattedDate = DateFormat.MMMM().format(now);
 
   String dropdownValue = 'Select Month';
   List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
+  List<String> consumptionMonthRetrieve =[];
+  List<String> consumptionElectricityReadings =[];
+  List<String> consumptionWaterReadings =[];
+  List<String> consumptionPropRetrieve =[];
+  List _allPropertyConsumption = [];
 
   @override
   void initState() {
-    if(defaultTargetPlatform == TargetPlatform.android
-        // || phone == null
-    ){
+    if(defaultTargetPlatform == TargetPlatform.android){
       String userPhone = phone as String;
     } else {
       String userEmail = email as String;
     }
     setMonthLimits(formattedDate);
+    getCollectionData();
     super.initState();
-  }
-
-  Widget firebasePDFCard(CollectionReference<Object?> pdfDataStream){
-    return Expanded(
-      child: StreamBuilder<QuerySnapshot>(
-        stream: pdfDataStream.snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-          if (streamSnapshot.hasData) {
-            return ListView.builder(
-              ///this call is to display all details for all users but is only displaying for the current user account.
-              ///it can be changed to display all users for the staff to see if the role is set to all later on.
-              itemCount: streamSnapshot.data!.docs.length,
-              itemBuilder: (context, index) {
-                final DocumentSnapshot documentSnapshot =
-                streamSnapshot.data!.docs[index];
-
-                ///Check for only user information, this displays only for the users details and not all users in the database.
-                if(streamSnapshot.data!.docs[index]['address'] == widget.addressTarget) {
-                  return Card(
-                    margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Center(
-                              child: Text(
-                                'Property Data',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                            const SizedBox(height: 10,),
-                            Text(
-                              'Account Number: ${documentSnapshot['account number']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Street Address: ${documentSnapshot['address']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Area Code: ${documentSnapshot['area code']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 20,),
-
-                            Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Column(
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            BasicIconButtonGrey(
-                                              onPress: () async {
-
-                                                String financeID = 'finance@msunduzi.gov.za';
-
-                                                String passedID = user.phoneNumber!;
-                                                String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
-                                                print('The user name of the logged in person is $userName}');
-                                                String id = passedID;
-
-                                                Navigator.push(context,
-                                                    MaterialPageRoute(builder: (context) => ChatFinance(chatRoomId: id,)));
-
-                                              },
-                                              labelText: 'Dispute',
-                                              fSize: 16,
-                                              faIcon: const FaIcon(Icons.error_outline),
-                                              fgColor: Colors.red,
-                                              btSize: const Size(100, 38),
-                                            ),
-                                            BasicIconButtonGrey(
-                                              onPress: () async {
-
-                                                String accountNumberPDF = documentSnapshot['account number'];
-                                                print('The acc number is ::: $accountNumberPDF');
-                                                print('The month we are in is::: $formattedDate');
-
-                                                // getPDFByAccMon(accountNumberPDF,formattedDate);
-                                                if(dropdownValue=='Select Month'){
-                                                  getPDFByAccMon(accountNumberPDF,formattedDate);
-                                                  print('The month selected is::: $dropdownValue');
-                                                } else {
-                                                  getPDFByAccMon(accountNumberPDF,dropdownValue);
-                                                  print('The month selected is::: $dropdownValue');
-                                                }
-
-                                              },
-                                              labelText: 'Invoice',
-                                              fSize: 16,
-                                              faIcon: const FaIcon(Icons.download),
-                                              fgColor: Colors.green,
-                                              btSize: const Size(100, 38),
-                                            ),
-
-                                            const SizedBox(width: 5,),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ]
-                      ),
-                    ),
-                  );
-                }///end of single user information display.
-                else {
-                  return Card();
-                }
-              },
-            );
-          }
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-      ),
-    );
-  }
-
-  ///To add the card
-  Widget propertyConsumptionCard(){
-
-    final CollectionReference _propMonthReadings = FirebaseFirestore.instance
-        .collection('consumption').doc(formattedMonth)
-        .collection('address').doc(widget.addressTarget) as CollectionReference<Object?>;
-
-    return Expanded(
-      child: StreamBuilder<QuerySnapshot>(
-        stream: _propMonthReadings.snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-          if (streamSnapshot.hasData) {
-            return ListView.builder(
-              ///this call is to display all details for all users but is only displaying for the current user account.
-              ///it can be changed to display all users for the staff to see if the role is set to all later on.
-              itemCount: streamSnapshot.data!.docs.length,
-              itemBuilder: (context, index) {
-                final DocumentSnapshot documentSnapshot =
-                streamSnapshot.data!.docs[index];
-
-                ///Check for only user information, this displays only for the users details and not all users in the database.
-                if(streamSnapshot.data!.docs[index]['address'] == widget.addressTarget) {
-                  return Card(
-                    margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Center(
-                              child: Text(
-                                'Reading Data',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                            const SizedBox(height: 10,),
-                            Text(
-                              'Street Address: ${documentSnapshot['address']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Area Code: ${documentSnapshot['area code']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 20,),
-
-                            // Column(
-                            //   children: [
-                            //     Row(
-                            //       mainAxisAlignment: MainAxisAlignment.center,
-                            //       crossAxisAlignment: CrossAxisAlignment.center,
-                            //       children: [
-                            //         Column(
-                            //           children: [
-                            //             Row(
-                            //               mainAxisAlignment: MainAxisAlignment.center,
-                            //               crossAxisAlignment: CrossAxisAlignment.center,
-                            //               children: [
-                            //                 BasicIconButtonGrey(
-                            //                   onPress: () async {
-                            //
-                            //                     String financeID = 'finance@msunduzi.gov.za';
-                            //
-                            //                     String passedID = user.phoneNumber!;
-                            //                     String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
-                            //                     print('The user name of the logged in person is $userName}');
-                            //                     String id = passedID;
-                            //
-                            //                     Navigator.push(context,
-                            //                         MaterialPageRoute(builder: (context) => ChatFinance(chatRoomId: id,)));
-                            //
-                            //                   },
-                            //                   labelText: 'Dispute',
-                            //                   fSize: 16,
-                            //                   faIcon: const FaIcon(Icons.error_outline),
-                            //                   fgColor: Colors.red,
-                            //                   btSize: const Size(100, 38),
-                            //                 ),
-                            //                 BasicIconButtonGrey(
-                            //                   onPress: () async {
-                            //
-                            //                     String accountNumberPDF = documentSnapshot['account number'];
-                            //                     print('The acc number is ::: $accountNumberPDF');
-                            //                     print('The month we are in is::: $formattedDate');
-                            //
-                            //                     // getPDFByAccMon(accountNumberPDF,formattedDate);
-                            //                     if(dropdownValue=='Select Month'){
-                            //                       getPDFByAccMon(accountNumberPDF,formattedDate);
-                            //                       print('The month selected is::: $dropdownValue');
-                            //                     } else {
-                            //                       getPDFByAccMon(accountNumberPDF,dropdownValue);
-                            //                       print('The month selected is::: $dropdownValue');
-                            //                     }
-                            //
-                            //                   },
-                            //                   labelText: 'Invoice',
-                            //                   fSize: 16,
-                            //                   faIcon: const FaIcon(Icons.download),
-                            //                   fgColor: Colors.green,
-                            //                   btSize: const Size(100, 38),
-                            //                 ),
-                            //
-                            //                 const SizedBox(width: 5,),
-                            //               ],
-                            //             ),
-                            //           ],
-                            //         ),
-                            //
-                            //       ],
-                            //     ),
-                            //   ],
-                            // ),
-                          ]
-                      ),
-                    ),
-                  );
-                }///end of single user information display.
-                else {
-                  return Card();
-                }
-              },
-            );
-          }
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        },
-      ),
-    );
   }
 
   @override
@@ -459,117 +190,285 @@ class _PropertyTrendState extends State<PropertyTrend> {
 
           firebasePDFCard(_propList),
 
+          // propertyConsumptionCard(),
+
         ],
       ),
     );
   }
 
-  ///This function gets the document on the firestore in the month that we are in as well as if the document name contains the properties account number
-  void getPDFByAccMon(String accNum, String month) async{
-    Fluttertoast.showToast(
-        msg: "Now downloading your statement!\nPlease wait a few seconds!");
+  Widget firebasePDFCard(CollectionReference<Object?> pdfDataStream){
+    return Expanded(
+      child: StreamBuilder<QuerySnapshot>(
+        stream: pdfDataStream.snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+          if (streamSnapshot.hasData) {
+            return ListView.builder(
+              ///this call is to display all details for all users but is only displaying for the current user account.
+              ///it can be changed to display all users for the staff to see if the role is set to all later on.
+              itemCount: streamSnapshot.data!.docs.length,
+              itemBuilder: (context, index) {
+                final DocumentSnapshot documentSnapshot =
+                streamSnapshot.data!.docs[index];
 
-    final storageRef = FirebaseStorage.instance.ref().child("pdfs/$month");
-    final listResult = await storageRef.listAll();
-    for (var prefix in listResult.prefixes) {
-      print('The ref is ::: $prefix');
-      // The prefixes under storageRef.
-      // You can call listAll() recursively on them.
-    }
-    for (var item in listResult.items) {
-      print('The item is ::: $item');
-      // The items under storageRef.
-      if (item.toString().contains(accNum)) {
-        final url = item.fullPath;
-        print('The url is ::: $url');
-        final file = await PDFApi.loadFirebase(url);
-        try {
-          Fluttertoast.showToast(
-              msg: "Download Successful!");
-          if(context.mounted)openPDF(context, file);
-        } catch (e) {
-          Fluttertoast.showToast(msg: "Unable to download statement.");
-          if (context.mounted) {
-            showDialog(
-                barrierDismissible: false,
-                context: context,
-                builder: (context) {
-                  return
-                    AlertDialog(
-                      shape: const RoundedRectangleBorder(
-                          borderRadius:
-                          BorderRadius.all(Radius.circular(16))),
-                      title: const Text("Statement Download Error"),
-                      content: const Text(
-                          "Would you like to contact the municipality for assistance on this error?"),
-                      actions: [
-                        IconButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          icon: const Icon(
-                            Icons.cancel,
-                            color: Colors.red,
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            final Uri _tel = Uri.parse('tel:+27${0800001868}');
-                            launchUrl(_tel);
-                            Navigator.of(context).pop();
-                          },
-                          icon: const Icon(
-                            Icons.done,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    );
-                });
-          }
-        }
-      } else if(item.toString().contains(accNum)!=true) {
-        Fluttertoast.showToast(msg: "Unable to download statement.");
-        if(context.mounted) {
-          showDialog(
-              barrierDismissible: false,
-              context: context,
-              builder: (context) {
-                return
-                  AlertDialog(
-                    shape: const RoundedRectangleBorder(
-                        borderRadius:
-                        BorderRadius.all(Radius.circular(16))),
-                    title: const Text("Statement Download Error"),
-                    content: const Text(
-                        "Would you like to contact the municipality for assistance on this error?"),
-                    actions: [
-                      IconButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        icon: const Icon(
-                          Icons.cancel,
-                          color: Colors.red,
-                        ),
+                ///Check for only user information, this displays only for the users details and not all users in the database.
+                if(streamSnapshot.data!.docs[index]['address'] == widget.addressTarget) {
+                  return Card(
+                    margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Center(
+                              child: Text(
+                                'Property Data',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            const SizedBox(height: 10,),
+                            Text(
+                              'Account Number: ${documentSnapshot['account number']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Street Address: ${documentSnapshot['address']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Area Code: ${documentSnapshot['area code']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 20,),
+
+                          ]
                       ),
-                      IconButton(
-                        onPressed: () {
-                          final Uri _tel = Uri.parse('tel:+27${0800001868}');
-                          launchUrl(_tel);
-                          Navigator.of(context).pop();
-                        },
-                        icon: const Icon(
-                          Icons.done,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ],
+                    ),
                   );
-              });
-        }
+                }///end of single user information display.
+                else {
+                  return Card();
+                }
+              },
+            );
+          }
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      ),
+    );
+  }
+
+  ///To add the card
+  Widget propertyConsumptionCard(){
+
+    final CollectionReference _propMonthReadings = FirebaseFirestore.instance
+        .collection('consumption').doc(formattedMonth)
+        .collection('address').doc(widget.addressTarget) as CollectionReference<Object?>;
+
+    final propertyRef = FirebaseFirestore.instance.collectionGroup('consumption').get();
+
+    return Expanded(
+      child: StreamBuilder<QuerySnapshot>(
+        stream: _propMonthReadings.snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+          if (streamSnapshot.hasData) {
+            return ListView.builder(
+              ///this call is to display all details for all users but is only displaying for the current user account.
+              ///it can be changed to display all users for the staff to see if the role is set to all later on.
+              itemCount: streamSnapshot.data!.docs.length,
+              itemBuilder: (context, index) {
+                final DocumentSnapshot documentSnapshot =
+                streamSnapshot.data!.docs[index];
+
+                ///Check for only user information, this displays only for the users details and not all users in the database.
+                if(streamSnapshot.data!.docs[index]['address'] == widget.addressTarget) {
+                  return Card(
+                    margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Center(
+                              child: Text(
+                                'Reading Data',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            const SizedBox(height: 10,),
+                            Text(
+                              'Street Address: ${documentSnapshot['address']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Month of Reading: ${documentSnapshot.id}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Electricity Meter Reading: ${documentSnapshot['meter reading']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            Text(
+                              'Water Meter Reading: ${documentSnapshot['Water Meter Reading']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 20,),
+
+                            // Column(
+                            //   children: [
+                            //     Row(
+                            //       mainAxisAlignment: MainAxisAlignment.center,
+                            //       crossAxisAlignment: CrossAxisAlignment.center,
+                            //       children: [
+                            //         Column(
+                            //           children: [
+                            //             Row(
+                            //               mainAxisAlignment: MainAxisAlignment.center,
+                            //               crossAxisAlignment: CrossAxisAlignment.center,
+                            //               children: [
+                            //                 BasicIconButtonGrey(
+                            //                   onPress: () async {
+                            //
+                            //                     String financeID = 'finance@msunduzi.gov.za';
+                            //
+                            //                     String passedID = user.phoneNumber!;
+                            //                     String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
+                            //                     print('The user name of the logged in person is $userName}');
+                            //                     String id = passedID;
+                            //
+                            //                     Navigator.push(context,
+                            //                         MaterialPageRoute(builder: (context) => ChatFinance(chatRoomId: id,)));
+                            //
+                            //                   },
+                            //                   labelText: 'Dispute',
+                            //                   fSize: 16,
+                            //                   faIcon: const FaIcon(Icons.error_outline),
+                            //                   fgColor: Colors.red,
+                            //                   btSize: const Size(100, 38),
+                            //                 ),
+                            //                 BasicIconButtonGrey(
+                            //                   onPress: () async {
+                            //
+                            //                     String accountNumberPDF = documentSnapshot['account number'];
+                            //                     print('The acc number is ::: $accountNumberPDF');
+                            //                     print('The month we are in is::: $formattedDate');
+                            //
+                            //                     // getPDFByAccMon(accountNumberPDF,formattedDate);
+                            //                     if(dropdownValue=='Select Month'){
+                            //                       getPDFByAccMon(accountNumberPDF,formattedDate);
+                            //                       print('The month selected is::: $dropdownValue');
+                            //                     } else {
+                            //                       getPDFByAccMon(accountNumberPDF,dropdownValue);
+                            //                       print('The month selected is::: $dropdownValue');
+                            //                     }
+                            //
+                            //                   },
+                            //                   labelText: 'Invoice',
+                            //                   fSize: 16,
+                            //                   faIcon: const FaIcon(Icons.download),
+                            //                   fgColor: Colors.green,
+                            //                   btSize: const Size(100, 38),
+                            //                 ),
+                            //
+                            //                 const SizedBox(width: 5,),
+                            //               ],
+                            //             ),
+                            //           ],
+                            //         ),
+                            //
+                            //       ],
+                            //     ),
+                            //   ],
+                            // ),
+                          ]
+                      ),
+                    ),
+                  );
+                }///end of single user information display.
+                else {
+                  return Card();
+                }
+              },
+            );
+          }
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      ),
+    );
+  }
+
+
+  Future getCollectionData() async {
+    await FirebaseFirestore.instance
+        .collectionGroup('consumption')
+        .get()
+        .then((QuerySnapshot snapshot) {
+      final docs = snapshot.docs;
+      for (var data in docs) {
+        consumptionMonthRetrieve.add(data.id);
+
+        print(data.reference.id);
+
+        print(data.id);
       }
+
+    });
+
+    final QuerySnapshot<Map<String, dynamic>> consumptionQuery =
+    await FirebaseFirestore.instance.collection("consumption").doc(formattedMonth).collection('address').get();
+    
+    // consumptionPropRetrieve = consumptionQuery.docs.map((consumption) => Consumption.fromSnapshot(consumption)).toList();
+
+    for(var propSnapshot in _allPropertyConsumption){
+      ///Need to build a property model that retrieves property data entirely from the db
+      var electricity = propSnapshot['meter reading'].toString();
+      var water = propSnapshot['water meter reading'].toString();
+
+      consumptionElectricityReadings.add(electricity);
+      consumptionWaterReadings.add(water);
+
     }
+
+    print('Query items are:::: $consumptionQuery');
+
+    print('Retrieved consumption ID/month:::: $consumptionMonthRetrieve');
+    print('Retrieved consumption address:::: $consumptionPropRetrieve');
+
+  }
+
+  void loadConsumptionData() async{
+
+    final QuerySnapshot<Map<String, dynamic>> consumptionQuery =
+    await FirebaseFirestore.instance.collection("consumption").doc(formattedMonth).collection('address').get();
+
+    // try{
+    //   final QuerySnapshot<Map<String, dynamic>> consumptionMonthQuery =
+    //       await consumptionQuery.docs.map((consumption) => Consumption.fromSnapshot(consumption)).toList();
+    // }
+
+
+
+
   }
 
   void setMonthLimits(String currentMonth) {
