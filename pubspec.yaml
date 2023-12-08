@@ -73,6 +73,7 @@ dependencies:
   win32: ^4.1.4
   universal_html: ^2.2.4
   syncfusion_flutter_xlsio: ^23.1.36
+  syncfusion_flutter_charts: ^23.2.7
   excel: ^2.1.0
   share_plus: ^7.1.0
   flutter_pdfview: ^1.2.5
@@ -136,8 +137,8 @@ flutter_launcher_icons:
   ios: true
   remove_alpha_ios: true
   image_path: "assets/images/applogo.png"
-  adaptive_icon_background: "#ffffff"
-  adaptive_icon_foreground: "assets/images/logo_foreground.png"
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/images/applogo.png"
 
 flutter:
 

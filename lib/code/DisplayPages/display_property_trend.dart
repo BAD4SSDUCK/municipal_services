@@ -1,20 +1,22 @@
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart';
-import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen_finance.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
+import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen_finance.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 
 
@@ -69,6 +71,7 @@ class _PropertyTrendState extends State<PropertyTrend> {
   List<String> consumptionMonthRetrieve =[];
   List<String> consumptionElectricityReadings =[];
   List<String> consumptionWaterReadings =[];
+  late String consumptionProp;
   List<String> consumptionPropRetrieve =[];
   List _allPropertyConsumption = [];
 
@@ -187,6 +190,15 @@ class _PropertyTrendState extends State<PropertyTrend> {
           ),
 
           const SizedBox(height: 5,),
+
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Card(
+                child: SfCartesianChart(),
+              ),
+            ),
+          ),
 
           firebasePDFCard(_propList),
 
@@ -427,15 +439,33 @@ class _PropertyTrendState extends State<PropertyTrend> {
       for (var data in docs) {
         consumptionMonthRetrieve.add(data.id);
 
-        print(data.reference.id);
-
         print(data.id);
       }
 
     });
 
-    final QuerySnapshot<Map<String, dynamic>> consumptionQuery =
-    await FirebaseFirestore.instance.collection("consumption").doc(formattedMonth).collection('address').get();
+    final CollectionReference _propMonthReadings = FirebaseFirestore.instance
+        .collection('consumption').doc(formattedMonth)
+        .collection('address').doc(widget.addressTarget).get() as CollectionReference<Object?>;
+
+    _allPropertyConsumption.add(_propMonthReadings);
+
+    print(_allPropertyConsumption);
+
+
+    // final QuerySnapshot<Map<String, dynamic>> consumptionQuery =
+    // await FirebaseFirestore.instance.collection("consumption").doc(formattedMonth).collection('address').get();
+
+    // final CollectionReference consumptionQuery =
+    // await FirebaseFirestore.instance.collectionGroup("consumption")
+    //     .where("consumption" == formattedMonth)
+    //     .get()
+    //     .then(
+    //       (value) =>  consumptionProp = value.id;,
+    //   onError: (e) => print("Error completing: $e"),
+    // );
+
+    // print('Query items are:::: $consumptionQuery');
     
     // consumptionPropRetrieve = consumptionQuery.docs.map((consumption) => Consumption.fromSnapshot(consumption)).toList();
 
@@ -448,8 +478,6 @@ class _PropertyTrendState extends State<PropertyTrend> {
       consumptionWaterReadings.add(water);
 
     }
-
-    print('Query items are:::: $consumptionQuery');
 
     print('Retrieved consumption ID/month:::: $consumptionMonthRetrieve');
     print('Retrieved consumption address:::: $consumptionPropRetrieve');

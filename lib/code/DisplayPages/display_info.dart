@@ -8,6 +8,7 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_property_trend.dart';
 
 import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_meter.dart';
 import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_water.dart';
@@ -40,6 +41,7 @@ String eMeterNumber = ' ';
 String accountNumberW = ' ';
 String locationGivenW = ' ';
 String wMeterNumber = ' ';
+String addressForTrend = ' ';
 
 String propPhoneNum = ' ';
 
@@ -1378,6 +1380,20 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                             const SizedBox(height: 10,),
                             Column(
                               children: [
+                                BasicIconButtonGrey(
+                                  onPress: () async {
+                                    addressForTrend = documentSnapshot['address'];
+
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) => PropertyTrend(addressTarget: addressForTrend),
+                                        ));
+                                  },
+                                  labelText: 'History',
+                                  fSize: 16,
+                                  faIcon: const FaIcon(Icons.stacked_line_chart,),
+                                  fgColor: Colors.purple,
+                                  btSize: const Size(100, 38),
+                                ),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
