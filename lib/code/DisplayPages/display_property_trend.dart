@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
@@ -33,6 +34,7 @@ final FirebaseAuth auth = FirebaseAuth.instance;
 final storageRef = FirebaseStorage.instance.ref();
 
 DateTime now = DateTime.now();
+int monthNum = 1;
 
 final User? user = auth.currentUser;
 final uid = user?.uid;
@@ -84,6 +86,7 @@ class _PropertyTrendState extends State<PropertyTrend> {
     }
     setMonthLimits(formattedDate);
     getCollectionData();
+    loadConsumptionData();
     super.initState();
   }
 
@@ -195,12 +198,20 @@ class _PropertyTrendState extends State<PropertyTrend> {
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Card(
-                child: SfCartesianChart(),
+                child: SfCartesianChart(
+                  // series: <ChartSeries>[
+                  //   LineSeries<ConsumptionData, double>(dataSource: _allPropertyConsumption,
+                  //   xValueMapper: (ConsumptionData consumption, _) => consumption.address,
+                  //   yValueMapper: (ConsumptionData consumption, _) => consumption.meterReading)
+                  // ],
+
+
+                ),
               ),
             ),
           ),
 
-          firebasePDFCard(_propList),
+          firebasePropertyCard(_propList),
 
           // propertyConsumptionCard(),
 
@@ -209,10 +220,10 @@ class _PropertyTrendState extends State<PropertyTrend> {
     );
   }
 
-  Widget firebasePDFCard(CollectionReference<Object?> pdfDataStream){
+  Widget firebasePropertyCard(CollectionReference<Object?> propertyDataStream){
     return Expanded(
       child: StreamBuilder<QuerySnapshot>(
-        stream: pdfDataStream.snapshots(),
+        stream: propertyDataStream.snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
           if (streamSnapshot.hasData) {
             return ListView.builder(
@@ -266,7 +277,7 @@ class _PropertyTrendState extends State<PropertyTrend> {
                   );
                 }///end of single user information display.
                 else {
-                  return Card();
+                  return const SizedBox(height: 0, width: 0,);
                 }
               },
             );
@@ -282,147 +293,80 @@ class _PropertyTrendState extends State<PropertyTrend> {
   ///To add the card
   Widget propertyConsumptionCard(){
 
-    final CollectionReference _propMonthReadings = FirebaseFirestore.instance
-        .collection('consumption').doc(formattedMonth)
-        .collection('address').doc(widget.addressTarget) as CollectionReference<Object?>;
-
-    final propertyRef = FirebaseFirestore.instance.collectionGroup('consumption').get();
+    // final CollectionReference _propMonthReadings = FirebaseFirestore.instance
+    //     .collection('consumption').doc(formattedMonth)
+    //     .collection('address').doc(widget.addressTarget) as CollectionReference<Object?>;
+    // final propertyRef = FirebaseFirestore.instance.collectionGroup('consumption').get();
 
     return Expanded(
-      child: StreamBuilder<QuerySnapshot>(
-        stream: _propMonthReadings.snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-          if (streamSnapshot.hasData) {
-            return ListView.builder(
-              ///this call is to display all details for all users but is only displaying for the current user account.
-              ///it can be changed to display all users for the staff to see if the role is set to all later on.
-              itemCount: streamSnapshot.data!.docs.length,
-              itemBuilder: (context, index) {
-                final DocumentSnapshot documentSnapshot =
-                streamSnapshot.data!.docs[index];
+      child: FutureBuilder<QuerySnapshot>(
+        future: FirebaseFirestore.instance
+            .collection('consumption')
+            .doc(formattedMonth)
+            .collection('address').get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            if (snapshot.data!.docs.isEmpty) {
+              return const Card(
+                margin: EdgeInsets.only(left: 5, right: 5, top: 5, bottom: 5),
+                child: Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: Text(
+                    'Readings not taken for this month',
+                    style: TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              );
+            } else if (snapshot.hasData) {
 
-                ///Check for only user information, this displays only for the users details and not all users in the database.
-                if(streamSnapshot.data!.docs[index]['address'] == widget.addressTarget) {
-                  return Card(
-                    margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Center(
-                              child: Text(
-                                'Reading Data',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                            const SizedBox(height: 10,),
-                            Text(
-                              'Street Address: ${documentSnapshot['address']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Month of Reading: ${documentSnapshot.id}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Electricity Meter Reading: ${documentSnapshot['meter reading']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Water Meter Reading: ${documentSnapshot['Water Meter Reading']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 20,),
+              // print(snapshot);
+              return Card(
+                margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Text(
+                            'Property Readings for ${snapshot.data?.docs[monthNum][formattedMonth]}',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        const SizedBox(height: 10,),
+                        Text(
+                          'Address: ${snapshot.data?.docs[monthNum]['address']}',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 5,),
+                        Text(
+                          'Electricity Meter Reading Address: ${snapshot.data?.docs[monthNum]['address']}',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 5,),
+                        Text(
+                          'Area Code: ${snapshot.data?.docs[monthNum]['area code']}',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 20,),
 
-                            // Column(
-                            //   children: [
-                            //     Row(
-                            //       mainAxisAlignment: MainAxisAlignment.center,
-                            //       crossAxisAlignment: CrossAxisAlignment.center,
-                            //       children: [
-                            //         Column(
-                            //           children: [
-                            //             Row(
-                            //               mainAxisAlignment: MainAxisAlignment.center,
-                            //               crossAxisAlignment: CrossAxisAlignment.center,
-                            //               children: [
-                            //                 BasicIconButtonGrey(
-                            //                   onPress: () async {
-                            //
-                            //                     String financeID = 'finance@msunduzi.gov.za';
-                            //
-                            //                     String passedID = user.phoneNumber!;
-                            //                     String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
-                            //                     print('The user name of the logged in person is $userName}');
-                            //                     String id = passedID;
-                            //
-                            //                     Navigator.push(context,
-                            //                         MaterialPageRoute(builder: (context) => ChatFinance(chatRoomId: id,)));
-                            //
-                            //                   },
-                            //                   labelText: 'Dispute',
-                            //                   fSize: 16,
-                            //                   faIcon: const FaIcon(Icons.error_outline),
-                            //                   fgColor: Colors.red,
-                            //                   btSize: const Size(100, 38),
-                            //                 ),
-                            //                 BasicIconButtonGrey(
-                            //                   onPress: () async {
-                            //
-                            //                     String accountNumberPDF = documentSnapshot['account number'];
-                            //                     print('The acc number is ::: $accountNumberPDF');
-                            //                     print('The month we are in is::: $formattedDate');
-                            //
-                            //                     // getPDFByAccMon(accountNumberPDF,formattedDate);
-                            //                     if(dropdownValue=='Select Month'){
-                            //                       getPDFByAccMon(accountNumberPDF,formattedDate);
-                            //                       print('The month selected is::: $dropdownValue');
-                            //                     } else {
-                            //                       getPDFByAccMon(accountNumberPDF,dropdownValue);
-                            //                       print('The month selected is::: $dropdownValue');
-                            //                     }
-                            //
-                            //                   },
-                            //                   labelText: 'Invoice',
-                            //                   fSize: 16,
-                            //                   faIcon: const FaIcon(Icons.download),
-                            //                   fgColor: Colors.green,
-                            //                   btSize: const Size(100, 38),
-                            //                 ),
-                            //
-                            //                 const SizedBox(width: 5,),
-                            //               ],
-                            //             ),
-                            //           ],
-                            //         ),
-                            //
-                            //       ],
-                            //     ),
-                            //   ],
-                            // ),
-                          ]
-                      ),
-                    ),
-                  );
-                }///end of single user information display.
-                else {
-                  return Card();
-                }
-              },
-            );
+                      ]
+                  ),
+                ),
+
+              );
+            }
           }
-          return const Center(
-            child: CircularProgressIndicator(),
+          return const SizedBox(
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
           );
         },
       ),
@@ -431,48 +375,33 @@ class _PropertyTrendState extends State<PropertyTrend> {
 
 
   Future getCollectionData() async {
-    await FirebaseFirestore.instance
-        .collectionGroup('consumption')
-        .get()
-        .then((QuerySnapshot snapshot) {
-      final docs = snapshot.docs;
-      for (var data in docs) {
-        consumptionMonthRetrieve.add(data.id);
 
-        print(data.id);
-      }
-
-    });
-
-    final CollectionReference _propMonthReadings = FirebaseFirestore.instance
-        .collection('consumption').doc(formattedMonth)
-        .collection('address').doc(widget.addressTarget).get() as CollectionReference<Object?>;
-
-    _allPropertyConsumption.add(_propMonthReadings);
-
-    print(_allPropertyConsumption);
-
-
-    // final QuerySnapshot<Map<String, dynamic>> consumptionQuery =
-    // await FirebaseFirestore.instance.collection("consumption").doc(formattedMonth).collection('address').get();
-
-    // final CollectionReference consumptionQuery =
-    // await FirebaseFirestore.instance.collectionGroup("consumption")
-    //     .where("consumption" == formattedMonth)
-    //     .get()
-    //     .then(
-    //       (value) =>  consumptionProp = value.id;,
-    //   onError: (e) => print("Error completing: $e"),
-    // );
-
-    // print('Query items are:::: $consumptionQuery');
-    
-    // consumptionPropRetrieve = consumptionQuery.docs.map((consumption) => Consumption.fromSnapshot(consumption)).toList();
+    loadConsumptionData();
 
     for(var propSnapshot in _allPropertyConsumption){
+
+      await FirebaseFirestore.instance
+          .collection('consumption')
+          .doc().collection('address')
+          .get()
+          .then((QuerySnapshot snapshot) {
+        final docs = snapshot.docs;
+        for (var data in docs) {
+          consumptionMonthRetrieve.add(data.id);
+          _allPropertyConsumption.add(docs.single);
+
+          print('Retrieved consumption test::: $consumptionMonthRetrieve');
+          print('Retrieved consumption test2::: $_allPropertyConsumption');
+          print('Retrieved month id test::: ${data.id}');
+        }
+
+      });
+
       ///Need to build a property model that retrieves property data entirely from the db
       var electricity = propSnapshot['meter reading'].toString();
       var water = propSnapshot['water meter reading'].toString();
+
+      print('Retrieved reading :::: $electricity');
 
       consumptionElectricityReadings.add(electricity);
       consumptionWaterReadings.add(water);
@@ -481,22 +410,30 @@ class _PropertyTrendState extends State<PropertyTrend> {
 
     print('Retrieved consumption ID/month:::: $consumptionMonthRetrieve');
     print('Retrieved consumption address:::: $consumptionPropRetrieve');
+    print('Retrieved consumption Electricity:::: $consumptionElectricityReadings');
+    print('Retrieved consumption Water:::: $consumptionWaterReadings');
 
   }
 
-  void loadConsumptionData() async{
+  loadConsumptionData() async {
+      List consumptionPropRetrieve = await FirebaseFirestore.instance.collection("consumption")
+          .get()
+          .then((val) => val.docs);
+      for (int i=0; i<dropdownMonths.length; i++)
+      {
+        FirebaseFirestore.instance.collection("consumption").doc(
+            consumptionPropRetrieve[i].toString()).collection(widget.addressTarget).snapshots().listen(CreateListofCconsumption);
+      }
+  }
 
-    final QuerySnapshot<Map<String, dynamic>> consumptionQuery =
-    await FirebaseFirestore.instance.collection("consumption").doc(formattedMonth).collection('address').get();
+  CreateListofCconsumption(QuerySnapshot snapshot) async {
+    var docs = snapshot.docs;
+    for (var Doc in docs)
+    {
+      _allPropertyConsumption.add(ConsumptionData.fromFireStore(Doc));
+    }
 
-    // try{
-    //   final QuerySnapshot<Map<String, dynamic>> consumptionMonthQuery =
-    //       await consumptionQuery.docs.map((consumption) => Consumption.fromSnapshot(consumption)).toList();
-    // }
-
-
-
-
+    print('hhi $_allPropertyConsumption');
   }
 
   void setMonthLimits(String currentMonth) {
@@ -512,6 +449,24 @@ class _PropertyTrendState extends State<PropertyTrend> {
     String month10 = 'October';
     String month11 = 'November';
     String month12 = 'December';
+
+
+    switch(formattedMonth){
+      case 'January': monthNum = 1; break;
+      case 'February': monthNum = 2; break;
+      case 'March': monthNum = 3; break;
+      case 'April': monthNum = 4; break;
+      case 'May': monthNum = 5; break;
+      case 'June': monthNum = 6; break;
+      case 'July': monthNum = 7; break;
+      case 'August': monthNum = 8; break;
+      case 'September': monthNum = 9; break;
+      case 'October': monthNum = 10; break;
+      case 'November': monthNum = 11; break;
+      case 'December': monthNum = 12; break;
+    }
+
+    print('current month numbered is:::: $monthNum');
 
     if (currentMonth.contains(month1)) {
       dropdownMonths = ['Select Month', month10,month11,month12,currentMonth,];
@@ -556,8 +511,25 @@ class _PropertyTrendState extends State<PropertyTrend> {
     }
   }
 
-  ///pdf view loader getting file name onPress/onTap that passes pdf filename to this class.
-  void openPDF(BuildContext context, File file) => Navigator.of(context).push(
-    MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
-  );
+}
+
+class ConsumptionData {
+
+  final String month;
+  final String address;
+  final String meterReading;
+  final String waterReading;
+
+  ConsumptionData({required this.month, required this.address, required this.meterReading, required this.waterReading});
+  factory ConsumptionData.fromFireStore(DocumentSnapshot doc) {
+
+    Map data = doc.data as Map<String, dynamic> ;
+    return ConsumptionData(
+        month: doc.id,
+        address: data['address'],
+        meterReading: data['meter reading'],
+        waterReading: data['water meter reading'],
+    );
+
+  }
 }

@@ -58,6 +58,8 @@ String eMeterNumber = ' ';
 String accountNumberW = ' ';
 String locationGivenW = ' ';
 String wMeterNumber = ' ';
+String dateRange1 = ' ';
+String dateRange2 = ' ';
 
 String propPhoneNum = ' ';
 
@@ -114,6 +116,8 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
   String searchText = '';
 
   String formattedDate = DateFormat.MMMM().format(now);
+  DateTime startDate = DateTime.now();
+  DateTime endDate = DateTime.now();
 
   List<String> usersNumbers =[];
   List<String> usersTokens =[];
@@ -225,6 +229,111 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
       ),
       body: Column(
         children: [
+          ///For date range entry
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,0.0),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
+              decoration: const BoxDecoration(shape: BoxShape.rectangle, color: Colors.white,),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          showDatePicker(
+                            context: context,
+                            initialDate: startDate,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2101),
+                          ).then((pickedDate) {
+                            if (pickedDate != null && pickedDate != startDate) {
+                              setState(() {
+                                startDate = pickedDate;
+                              });
+                            }
+                          });
+                        },
+                        child: const Text('Start Date'),
+                      ),
+                      Text(
+                        "${startDate.toLocal()}".split(' ')[0],
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          showDatePicker(
+                            context: context,
+                            initialDate: endDate,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2101),
+                          ).then((pickedDate) {
+                            if (pickedDate != null && pickedDate != endDate) {
+                              setState(() {
+                                endDate = pickedDate;
+                              });
+                            }
+                          });
+                        },
+                        child: const Text('End Date'),
+                      ),
+                      Text(
+                        "${endDate.toLocal()}".split(' ')[0],
+                        style: const TextStyle(fontSize: 20,),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10,),
+                  ElevatedButton(
+                    onPressed: () {
+                      dateRange1 = startDate.toString();
+                      dateRange2 = endDate.toString();
+
+                      showDialog(
+                          barrierDismissible: false,
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text("Generate Live Report"),
+                              content: const Text("Generating a report will go through all faults filtered between the start and end dates you have given.\n\nAre you ready to proceed? This may take some time."),
+                              actions: [
+                                IconButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  icon: const Icon(Icons.cancel, color: Colors.red,),
+                                ),
+                                IconButton(
+                                  onPressed: () async {
+                                    Fluttertoast.showToast(msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
+                                    reportGeneration();
+                                    Navigator.pop(context);
+                                  },
+                                  icon: const Icon(Icons.done, color: Colors.green,),
+                                ),
+                              ],
+                            );
+                          });
+
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.white, fixedSize: const Size(200, 40),),
+                    child: Row(
+                      children: [
+                        Icon(Icons.bar_chart, color: Colors.grey[700],),
+                        const SizedBox(width: 2,),
+                        const Text(
+                          'Generate Report', style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,),),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
           /// Search bar
           Padding(
             padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
@@ -308,7 +417,7 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
                         onPress: () async {
                           Fluttertoast.showToast(
                               msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
-                          reportGenerationElectricity();
+                          reportGeneration();
                           Navigator.pop(context);
                         },
                         labelText: "All", fSize: 12, faIcon: const FaIcon(Icons.check_circle), fgColor: Colors.green, btSize: const Size(10,10),
@@ -592,6 +701,43 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
       ///Need to build a property model that retrieves property data entirely from the db
       while(excelRow <= _allFaultReport.length+1) {
         print('Report Lists:::: ${_allFaultReport[listRow]['address']}');
+        
+        if(_allFaultReport[listRow]['dateReported'].toString().contains(dateRange1)){
+          String referenceNum     = _allFaultReport[listRow]['ref'].toString();
+          String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();
+          String address          = _allFaultReport[listRow]['address'].toString();
+          String faultDate        = _allFaultReport[listRow]['dateReported'].toString();
+          String faultType        = _allFaultReport[listRow]['faultType'].toString();
+          String faultDescription = _allFaultReport[listRow]['faultDescription'].toString();
+          String faultHandler     = _allFaultReport[listRow]['deptHandler'].toString();
+          String faultStage       = _allFaultReport[listRow]['faultStage'].toString();
+          String resolveStatus    = _allFaultReport[listRow]['faultResolved'].toString();
+          String phoneNumber      = _allFaultReport[listRow]['reporterContact'].toString();
+          String depCom1          = _allFaultReport[listRow]['depComment1'].toString();
+          String handlerCom1      = _allFaultReport[listRow]['handlerCom1'].toString();
+          String depCom2          = _allFaultReport[listRow]['depComment2'].toString();
+          String handlerCom2      = _allFaultReport[listRow]['handlerCom2'].toString();
+          String depCom3          = _allFaultReport[listRow]['depComment3'].toString();
+
+          sheet.getRangeByName('A$excelRow').setText(referenceNum);
+          sheet.getRangeByName('B$excelRow').setText(accountNum);
+          sheet.getRangeByName('C$excelRow').setText(address);
+          sheet.getRangeByName('D$excelRow').setText(faultDate);
+          sheet.getRangeByName('E$excelRow').setText(faultType);
+          sheet.getRangeByName('F$excelRow').setText(faultDescription);
+          sheet.getRangeByName('G$excelRow').setText(faultHandler);
+          sheet.getRangeByName('H$excelRow').setText(faultStage);
+          sheet.getRangeByName('I$excelRow').setText(resolveStatus);
+          sheet.getRangeByName('J$excelRow').setText(phoneNumber);
+          sheet.getRangeByName('K$excelRow').setText(depCom1);
+          sheet.getRangeByName('L$excelRow').setText(handlerCom1);
+          sheet.getRangeByName('M$excelRow').setText(depCom2);
+          sheet.getRangeByName('N$excelRow').setText(handlerCom2);
+          sheet.getRangeByName('O$excelRow').setText(depCom3);
+
+          excelRow+=1;
+          listRow+=1;
+        }
 
         String referenceNum     = _allFaultReport[listRow]['ref'].toString();
         String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();
