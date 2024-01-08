@@ -24,10 +24,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
-import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_meter.dart';
-import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_water.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
-import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/push_notification_message.dart';
@@ -47,7 +44,9 @@ final FirebaseAuth auth = FirebaseAuth.instance;
 
 final User? user = auth.currentUser;
 final uid = user?.uid;
+final email = user?.email;
 String userID = uid as String;
+String userEmail = email as String;
 DateTime now = DateTime.now();
 
 String phoneNum = ' ';
@@ -101,11 +100,39 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
   }
 
   void checkAdmin() {
+    getUsersStream();
     String? emailLogged = user?.email.toString();
-    if(emailLogged?.contains("admin") == true){
+    if(userRole == 'Admin'|| userRole == 'Administrator'){
       adminAcc = true;
     } else {
       adminAcc = false;
+    }
+  }
+
+  getUsersStream() async{
+    var data = await FirebaseFirestore.instance.collection('users').get();
+    setState(() {
+      _allUserRolesResults = data.docs;
+    });
+    getUserDetails();
+  }
+
+  getUserDetails() async {
+    for (var userSnapshot in _allUserRolesResults) {
+      ///Need to build a property model that retrieves property data entirely from the db
+      var user = userSnapshot['email'].toString();
+      var role = userSnapshot['userRole'].toString();
+
+      if (user == userEmail) {
+        userRole = role;
+        print('My Role is::: $userRole');
+
+        if (userRole == 'Admin' || userRole == 'Administrator') {
+          adminAcc = true;
+        } else {
+          adminAcc = false;
+        }
+      }
     }
   }
 
@@ -116,6 +143,7 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
   String searchText = '';
 
   String formattedDate = DateFormat.MMMM().format(now);
+  String formattedDateTime = DateFormat('yyyy-MM-dd – kk:mm').format(now);
   DateTime startDate = DateTime.now();
   DateTime endDate = DateTime.now();
 
@@ -137,6 +165,8 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
   String token = '';
   String notifyToken = '';
 
+  String userRole = '';
+  List _allUserRolesResults = [];
   bool visShow = true;
   bool visHide = false;
   bool adminAcc = false;
@@ -153,9 +183,29 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
   getFaultStream() async{
     var data = await FirebaseFirestore.instance.collection('faultReporting').get();
 
-    setState(() {
-      _allFaultResults = data.docs;
-    });
+    CollectionReference collection = FirebaseFirestore.instance.collection('faultReporting');
+
+    DateTime dateParseString = DateTime.parse(formattedDateTime);
+    DateFormat('yyyy-MM-dd – kk:mm').format(DateTime.parse(formattedDateTime));
+
+    if(startDate != dateParseString){
+      _allFaultResults = [];
+
+      QuerySnapshot querySnapshot = await collection
+          .where('dateReported', isGreaterThanOrEqualTo: startDate.toUtc())
+          .where('dateReported', isLessThanOrEqualTo: endDate.toUtc())
+          .get();
+
+      List<DocumentSnapshot> documents = querySnapshot.docs;
+      setState(() {
+        _allFaultResults = documents;
+      });
+    } else {
+      setState(() {
+        _allFaultResults = data.docs;
+      });
+    }
+
     searchResultsList();
   }
 
@@ -289,6 +339,8 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
                     onPressed: () {
                       dateRange1 = startDate.toString();
                       dateRange2 = endDate.toString();
+
+                      // DateTime dateTimeString1 = DateTime.parse(dateRange1);
 
                       showDialog(
                           barrierDismissible: false,
@@ -702,42 +754,42 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
       while(excelRow <= _allFaultReport.length+1) {
         print('Report Lists:::: ${_allFaultReport[listRow]['address']}');
         
-        if(_allFaultReport[listRow]['dateReported'].toString().contains(dateRange1)){
-          String referenceNum     = _allFaultReport[listRow]['ref'].toString();
-          String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();
-          String address          = _allFaultReport[listRow]['address'].toString();
-          String faultDate        = _allFaultReport[listRow]['dateReported'].toString();
-          String faultType        = _allFaultReport[listRow]['faultType'].toString();
-          String faultDescription = _allFaultReport[listRow]['faultDescription'].toString();
-          String faultHandler     = _allFaultReport[listRow]['deptHandler'].toString();
-          String faultStage       = _allFaultReport[listRow]['faultStage'].toString();
-          String resolveStatus    = _allFaultReport[listRow]['faultResolved'].toString();
-          String phoneNumber      = _allFaultReport[listRow]['reporterContact'].toString();
-          String depCom1          = _allFaultReport[listRow]['depComment1'].toString();
-          String handlerCom1      = _allFaultReport[listRow]['handlerCom1'].toString();
-          String depCom2          = _allFaultReport[listRow]['depComment2'].toString();
-          String handlerCom2      = _allFaultReport[listRow]['handlerCom2'].toString();
-          String depCom3          = _allFaultReport[listRow]['depComment3'].toString();
-
-          sheet.getRangeByName('A$excelRow').setText(referenceNum);
-          sheet.getRangeByName('B$excelRow').setText(accountNum);
-          sheet.getRangeByName('C$excelRow').setText(address);
-          sheet.getRangeByName('D$excelRow').setText(faultDate);
-          sheet.getRangeByName('E$excelRow').setText(faultType);
-          sheet.getRangeByName('F$excelRow').setText(faultDescription);
-          sheet.getRangeByName('G$excelRow').setText(faultHandler);
-          sheet.getRangeByName('H$excelRow').setText(faultStage);
-          sheet.getRangeByName('I$excelRow').setText(resolveStatus);
-          sheet.getRangeByName('J$excelRow').setText(phoneNumber);
-          sheet.getRangeByName('K$excelRow').setText(depCom1);
-          sheet.getRangeByName('L$excelRow').setText(handlerCom1);
-          sheet.getRangeByName('M$excelRow').setText(depCom2);
-          sheet.getRangeByName('N$excelRow').setText(handlerCom2);
-          sheet.getRangeByName('O$excelRow').setText(depCom3);
-
-          excelRow+=1;
-          listRow+=1;
-        }
+        // if(_allFaultReport[listRow]['dateReported'].toString().contains(dateRange1)){
+        //   String referenceNum     = _allFaultReport[listRow]['ref'].toString();
+        //   String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();
+        //   String address          = _allFaultReport[listRow]['address'].toString();
+        //   String faultDate        = _allFaultReport[listRow]['dateReported'].toString();
+        //   String faultType        = _allFaultReport[listRow]['faultType'].toString();
+        //   String faultDescription = _allFaultReport[listRow]['faultDescription'].toString();
+        //   String faultHandler     = _allFaultReport[listRow]['deptHandler'].toString();
+        //   String faultStage       = _allFaultReport[listRow]['faultStage'].toString();
+        //   String resolveStatus    = _allFaultReport[listRow]['faultResolved'].toString();
+        //   String phoneNumber      = _allFaultReport[listRow]['reporterContact'].toString();
+        //   String depCom1          = _allFaultReport[listRow]['depComment1'].toString();
+        //   String handlerCom1      = _allFaultReport[listRow]['handlerCom1'].toString();
+        //   String depCom2          = _allFaultReport[listRow]['depComment2'].toString();
+        //   String handlerCom2      = _allFaultReport[listRow]['handlerCom2'].toString();
+        //   String depCom3          = _allFaultReport[listRow]['depComment3'].toString();
+        //
+        //   sheet.getRangeByName('A$excelRow').setText(referenceNum);
+        //   sheet.getRangeByName('B$excelRow').setText(accountNum);
+        //   sheet.getRangeByName('C$excelRow').setText(address);
+        //   sheet.getRangeByName('D$excelRow').setText(faultDate);
+        //   sheet.getRangeByName('E$excelRow').setText(faultType);
+        //   sheet.getRangeByName('F$excelRow').setText(faultDescription);
+        //   sheet.getRangeByName('G$excelRow').setText(faultHandler);
+        //   sheet.getRangeByName('H$excelRow').setText(faultStage);
+        //   sheet.getRangeByName('I$excelRow').setText(resolveStatus);
+        //   sheet.getRangeByName('J$excelRow').setText(phoneNumber);
+        //   sheet.getRangeByName('K$excelRow').setText(depCom1);
+        //   sheet.getRangeByName('L$excelRow').setText(handlerCom1);
+        //   sheet.getRangeByName('M$excelRow').setText(depCom2);
+        //   sheet.getRangeByName('N$excelRow').setText(handlerCom2);
+        //   sheet.getRangeByName('O$excelRow').setText(depCom3);
+        //
+        //   excelRow+=1;
+        //   listRow+=1;
+        // }
 
         String referenceNum     = _allFaultReport[listRow]['ref'].toString();
         String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();

@@ -172,6 +172,8 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
     _userEmailController.text = '';
     _cellNumberController.text = '';
     _passwordController.text = '';
+    dropdownValue = 'Select Department...';
+    dropdownValue2 = 'Select Role...';
 
     await showModalBottomSheet(
         isScrollControlled: true,
@@ -246,7 +248,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                             style: const TextStyle(fontSize: 16),
                           ),
                         );
-                      }).toList(),
+                      }).toSet().toList(),
                       onChanged: (String? newValue) {
                         setState(() {
                           dropdownValue = newValue!;
@@ -278,7 +280,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                             style: const TextStyle(fontSize: 16),
                           ),
                         );
-                      }).toList(),
+                      }).toSet().toList(),
                       onChanged: (String? newValue) {
                         setState(() {
                           dropdownValue2 = newValue!;
@@ -367,6 +369,8 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
       _userNameController.text = documentSnapshot['userName'];
       dropdownValue = documentSnapshot['deptName'];
       dropdownValue2 = documentSnapshot['userRole'];
+      _deptNameController.text = documentSnapshot['deptName'];
+      _userRoleController.text = documentSnapshot['userRole'];
       _firstNameController.text = documentSnapshot['firstName'];
       _lastNameController.text = documentSnapshot['lastName'];
       _userEmailController.text = documentSnapshot['email'];
@@ -445,7 +449,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                             style: const TextStyle(fontSize: 16),
                           ),
                         );
-                      }).toList(),
+                      }).toSet().toList(),
                       onChanged: (String? newValue) {
                         setState(() {
                           dropdownValue = newValue!;
@@ -477,7 +481,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                             style: const TextStyle(fontSize: 16),
                           ),
                         );
-                      }).toList(),
+                      }).toSet().toList(),
                       onChanged: (String? newValue) {
                         setState(() {
                           dropdownValue2 = newValue!;
@@ -509,7 +513,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                       child: const Text('Update'),
                       onPressed: () async {
                         final String userName = _userNameController.text;
-                        final String deptName = dropdownValue;
+                        final String deptName = _deptNameController.text;
                         final String userRole = _userRoleController.text;
                         final String firstName = _firstNameController.text;
                         final String lastName = _lastNameController.text;
@@ -532,11 +536,12 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                           });
 
                           _userNameController.text = '';
+                          _deptNameController.text = '';
                           _userRoleController.text = '';
                           _firstNameController.text = '';
                           _lastNameController.text = '';
-                          _cellNumberController.text = '';
                           _userEmailController.text = '';
+                          _cellNumberController.text = '';
 
                           if(context.mounted)Navigator.of(context).pop();
                         }
@@ -607,7 +612,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                             style: const TextStyle(fontSize: 16),
                           ),
                         );
-                      }).toList(),
+                      }).toSet().toList(),
                       onChanged: (String? newValue) {
                         setState(() {
                           dropdownValue = newValue!;
@@ -660,7 +665,8 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
       _deptNameController.text = documentSnapshot['deptName'];
       _userRoleController.text = documentSnapshot['userRole'];
 
-      dropdownValue = documentSnapshot['deptName'];
+      dropdownValue = 'Select Department...';
+      // dropdownValue = documentSnapshot['deptName'];
     }
 
     await showModalBottomSheet(
@@ -712,7 +718,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                             style: const TextStyle(fontSize: 16),
                           ),
                         );
-                      }).toList(),
+                      }).toSet().toList(),
                       onChanged: (String? newValue) {
                         setState(() {
                           dropdownValue = newValue!;

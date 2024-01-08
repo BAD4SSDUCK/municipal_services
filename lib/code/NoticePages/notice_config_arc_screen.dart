@@ -31,6 +31,13 @@ class NoticeConfigArcScreen extends StatefulWidget {
   State<NoticeConfigArcScreen> createState() => _NoticeConfigArcScreenState();
 }
 
+final FirebaseAuth auth = FirebaseAuth.instance;
+
+final User? user = auth.currentUser;
+final uid = user?.uid;
+final email = user?.email;
+String userID = uid as String;
+String userEmail = email as String;
 
 class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
 
@@ -60,6 +67,8 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
   String notifyToken = '';
   String searchText = '';
 
+  String userRole = '';
+  List _allUserRolesResults = [];
   bool visShow = true;
   bool visHide = false;
   bool adminAcc = false;
@@ -81,14 +90,40 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
   User? user = FirebaseAuth.instance.currentUser;
 
   void checkAdmin() {
-    String? emailLogged = user?.email.toString();
-    if(emailLogged?.contains("admin") == true){
+    getUsersStream();
+    if(userRole == 'Admin'|| userRole == 'Administrator'){
       adminAcc = true;
     } else {
       adminAcc = false;
     }
   }
 
+  getUsersStream() async{
+    var data = await FirebaseFirestore.instance.collection('users').get();
+    setState(() {
+      _allUserRolesResults = data.docs;
+    });
+    getUserDetails();
+  }
+
+  getUserDetails() async {
+    for (var userSnapshot in _allUserRolesResults) {
+      ///Need to build a property model that retrieves property data entirely from the db
+      var user = userSnapshot['email'].toString();
+      var role = userSnapshot['userRole'].toString();
+
+      if (user == userEmail) {
+        userRole = role;
+        print('My Role is::: $userRole');
+
+        if (userRole == 'Admin' || userRole == 'Administrator') {
+          adminAcc = true;
+        } else {
+          adminAcc = false;
+        }
+      }
+    }
+  }
 
   //this widget is for displaying a property field of information with an icon next to it, NB. the icon is to make it look good
   //it is called within a listview page widget

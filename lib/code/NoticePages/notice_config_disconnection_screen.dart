@@ -34,6 +34,13 @@ class NoticeConfigDisconScreen extends StatefulWidget {
   State<NoticeConfigDisconScreen> createState() => _NoticeConfigDisconScreenState();
 }
 
+final FirebaseAuth auth = FirebaseAuth.instance;
+
+final User? user = auth.currentUser;
+final uid = user?.uid;
+final email = user?.email;
+String userID = uid as String;
+String userEmail = email as String;
 
 class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
 
@@ -67,6 +74,8 @@ class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
   String notifyToken = '';
   String searchText = '';
 
+  String userRole = '';
+  List _allUserRolesResults = [];
   bool visShow = true;
   bool visHide = false;
   bool adminAcc = false;
@@ -117,11 +126,38 @@ class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
   User? user = FirebaseAuth.instance.currentUser;
 
   void checkAdmin() {
-    String? emailLogged = user?.email.toString();
-    if (emailLogged?.contains("admin") == true) {
+    getUsersStream();
+    if(userRole == 'Admin'|| userRole == 'Administrator'){
       adminAcc = true;
     } else {
       adminAcc = false;
+    }
+  }
+
+  getUsersStream() async{
+    var data = await FirebaseFirestore.instance.collection('users').get();
+    setState(() {
+      _allUserRolesResults = data.docs;
+    });
+    getUserDetails();
+  }
+
+  getUserDetails() async {
+    for (var userSnapshot in _allUserRolesResults) {
+      ///Need to build a property model that retrieves property data entirely from the db
+      var user = userSnapshot['email'].toString();
+      var role = userSnapshot['userRole'].toString();
+
+      if (user == userEmail) {
+        userRole = role;
+        print('My Role is::: $userRole');
+
+        if (userRole == 'Admin' || userRole == 'Administrator') {
+          adminAcc = true;
+        } else {
+          adminAcc = false;
+        }
+      }
     }
   }
 
