@@ -97,6 +97,8 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
 
   //this widget is for displaying a user information with an icon next to it, NB. the icon is to make it look good
   Widget adminUserField(IconData iconImg, String dbData) {
+    double c_width = MediaQuery.of(context).size.width*0.8;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -111,10 +113,13 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
             color: Colors.black,
           ),
           const SizedBox(width: 6,),
-          Text(
-            dbData,
-            style: const TextStyle(
-              fontSize: 15,
+          Expanded(
+            child: Text(
+              dbData,
+              style: const TextStyle(
+                overflow: TextOverflow.fade,
+                fontSize: 15,
+              ),
             ),
           ),
         ],
@@ -367,8 +372,8 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
 
     if (documentSnapshot != null) {
       _userNameController.text = documentSnapshot['userName'];
-      dropdownValue = documentSnapshot['deptName'];
-      dropdownValue2 = documentSnapshot['userRole'];
+      // dropdownValue = documentSnapshot['deptName'];
+      // dropdownValue2 = documentSnapshot['userRole'];
       _deptNameController.text = documentSnapshot['deptName'];
       _userRoleController.text = documentSnapshot['userRole'];
       _firstNameController.text = documentSnapshot['firstName'];
@@ -428,7 +433,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                     ),
                   ),
                   Visibility(
-                    visible: visHide,
+                    visible: visShow,
                     child: TextField(
                       controller: _deptNameController,
                       decoration: const InputDecoration(
@@ -437,7 +442,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                   ),
 
                   Visibility(
-                    visible: visShow,
+                    visible: visHide,
                     child: DropdownButtonFormField <String>(
                       value: dropdownValue,
                       items: deptName
@@ -460,7 +465,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
 
 
                   Visibility(
-                    visible: visHide,
+                    visible: visShow,
                     child: TextField(
                       controller: _userRoleController,
                       decoration: const InputDecoration(
@@ -469,7 +474,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                   ),
 
                   Visibility(
-                    visible: visShow,
+                    visible: visHide,
                     child: DropdownButtonFormField <String>(
                       value: dropdownValue2,
                       items: deptRole
@@ -635,7 +640,8 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                   ElevatedButton(
                       child: const Text('Create'),
                       onPressed: () async {
-                        final String deptName = _deptNameController.text;
+                        // final String deptName = _deptNameController.text;
+                        final String deptName = dropdownValue;
                         final String userRole = _userRoleController.text;
                         const bool official = true;
 
@@ -665,7 +671,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
       _deptNameController.text = documentSnapshot['deptName'];
       _userRoleController.text = documentSnapshot['userRole'];
 
-      dropdownValue = 'Select Department...';
+      dropdownValue = documentSnapshot['deptName'];
       // dropdownValue = documentSnapshot['deptName'];
     }
 
@@ -741,7 +747,8 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                   ElevatedButton(
                       child: const Text('Update'),
                       onPressed: () async {
-                        final String deptName = _deptNameController.text;
+                        // final String deptName = _deptNameController.text;
+                        final String deptName = dropdownValue;
                         final String userRole = _userRoleController.text;
                         const bool official = true;
 
@@ -769,7 +776,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
   }
 
   Future<void> _deleteDeptRole(String deptID) async {
-    await _deptInfo.doc(deptID).delete();
+    await _deptRoles.doc(deptID).delete();
     Fluttertoast.showToast(msg: "You have successfully deleted a department & role!");
   }
 
@@ -1009,12 +1016,6 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                       final DocumentSnapshot deptDocumentSnapshot =
                       streamSnapshot.data!.docs[index];
 
-                      // if(deptName.length-1<streamSnapshot.data!.docs.length) {
-                      //   deptName.add(deptDocumentSnapshot['deptName']);
-                      // }
-                      // print(deptName);
-                      // print(deptName.length);
-
                       if (streamSnapshot.data!.docs[index]['official'] == true) {
                         return Card(
                           margin: const EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 5),
@@ -1074,9 +1075,8 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                                                                   String deleteDept = deptDocumentSnapshot.reference.id;
                                                                   deptName.remove(deptDocumentSnapshot['deptName']);
                                                                   _deleteDept(deleteDept);
-
                                                                   Navigator.of(context).pop();
-                                                                  Navigator.of(context).pop();
+                                                                  // Navigator.of(context).pop();
                                                                 },
                                                                 icon: const Icon(
                                                                   Icons.done,
@@ -1158,19 +1158,13 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
             ),///Tab for department list view
 
             StreamBuilder(
-              stream: _deptRoles.snapshots(),
+              stream: _deptRoles.orderBy('userRole', descending: false).snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
                 if (streamSnapshot.hasData) {
                   return ListView.builder(
                     itemCount: streamSnapshot.data!.docs.length,
                     itemBuilder: (context, index) {
                       final DocumentSnapshot deptRoleDocumentSnapshot = streamSnapshot.data!.docs[index];
-
-                      // if(deptRole.length-1<streamSnapshot.data!.docs.length) {
-                      //   deptRole.add(deptRoleDocumentSnapshot['userRole']);
-                      // }
-                      // print(deptRole);
-                      // print(deptRole.length);
 
                       if (streamSnapshot.data!.docs[index]['official'] == true) {
                         return Card(
@@ -1231,11 +1225,11 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                                                               ),
                                                               IconButton(
                                                                 onPressed: () {
-                                                                  String deleteDept = deptRoleDocumentSnapshot.reference.id;
+                                                                  String deleteDept = deptRoleDocumentSnapshot.id;
                                                                   deptRole.remove(deptRoleDocumentSnapshot['userRole']);
                                                                   _deleteDeptRole(deleteDept);
                                                                   Navigator.of(context).pop();
-                                                                  Navigator.of(context).pop();
+                                                                  // Navigator.of(context).pop();
                                                                 },
                                                                 icon: const Icon(
                                                                   Icons.done,
@@ -1317,19 +1311,13 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
             ),///Tab for department roles
 
             StreamBuilder(
-              stream: _usersList.snapshots(),
+              stream: _usersList.orderBy('deptName', descending: false).snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
                 if (streamSnapshot.hasData) {
                   return ListView.builder(
                     itemCount: streamSnapshot.data!.docs.length,
                     itemBuilder: (context, index) {
                       final DocumentSnapshot userDocumentSnapshot = streamSnapshot.data!.docs[index];
-
-                      // if(userDocumentSnapshot['email'].contains('@') && usersEmails.length<numUsers) {
-                      //   usersEmails.add(userDocumentSnapshot['email']);
-                      // }
-                      // print(usersEmails);
-                      // print(usersEmails.length);
 
                       if (streamSnapshot.data!.docs[index]['official'] == true) {
                         return Card(
@@ -1405,10 +1393,10 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                                                               ),
                                                               IconButton(
                                                                 onPressed: () {
-                                                                  String deleteUser = userDocumentSnapshot.reference.id;
+                                                                  String deleteUser = userDocumentSnapshot.id;
                                                                   _delete(deleteUser);
                                                                   Navigator.of(context).pop();
-                                                                  Navigator.of(context).pop();
+                                                                  // Navigator.of(context).pop();
                                                                 },
                                                                 icon: const Icon(
                                                                   Icons.done,

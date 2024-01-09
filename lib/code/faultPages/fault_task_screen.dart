@@ -93,7 +93,10 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   List _allUserRolesResults = [];
   bool visShow = true;
   bool visHide = false;
-  bool cardShow1 = true;
+
+  bool visManager = false;
+  bool visHandler = false;
+  bool visWorker = false;
 
   bool adminAcc = false;
   bool visStage1 = false;
@@ -238,6 +241,22 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
         if (userRole == 'Admin' || userRole == 'Administrator') {
           adminAcc = true;
         } else {
+          adminAcc = false;
+        }
+        if (userRole == 'Manager'){
+          visManager = true;
+          visHandler = false;
+          visWorker = false;
+          adminAcc = false;
+        } else if(userRole == 'Handler'){
+          visManager = false;
+          visHandler = true;
+          visWorker = false;
+          adminAcc = false;
+        } else if(userRole == 'Worker'){
+          visManager = false;
+          visHandler = false;
+          visWorker = true;
           adminAcc = false;
         }
       }

@@ -101,7 +101,6 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
 
   void checkAdmin() {
     getUsersStream();
-    String? emailLogged = user?.email.toString();
     if(userRole == 'Admin'|| userRole == 'Administrator'){
       adminAcc = true;
     } else {
@@ -340,7 +339,7 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
                       dateRange1 = startDate.toString();
                       dateRange2 = endDate.toString();
 
-                      // DateTime dateTimeString1 = DateTime.parse(dateRange1);
+                      DateTime dateTimeString1 = DateTime.parse(dateRange1);
 
                       showDialog(
                           barrierDismissible: false,
@@ -1301,4 +1300,62 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
   void openPDF(BuildContext context, File file) => Navigator.of(context).push(
     MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
   );
+
+  List<ReportData> getReportData(){
+
+    final List<ReportData> reportData =[];
+
+    int allReportRow = 1;
+
+    for(var reportSnapshot in _allFaultReport){
+      ///Need to build a property model that retrieves property data entirely from the db
+      while(allReportRow <= _allFaultReport.length+1) {
+        reportData.add(
+            ReportData(
+              _allFaultReport[allReportRow]['ref'].toString(),
+              _allFaultReport[allReportRow]['faultResolved'] as bool,
+              _allFaultReport[allReportRow]['faultType'].toString(),
+              _allFaultReport[allReportRow]['accountNumber'].toString(),
+              _allFaultReport[allReportRow]['address'].toString(),
+              _allFaultReport[allReportRow]['dateReported'].toString(),
+              _allFaultReport[allReportRow]['depAllocated'].toString(),
+              _allFaultReport[allReportRow]['deptHandler'].toString(),
+              _allFaultReport[allReportRow]['faultDescription'].toString(),
+              _allFaultReport[allReportRow]['faultStage'].toString(),
+              _allFaultReport[allReportRow]['reporterContact'].toString(),
+              _allFaultReport[allReportRow]['depComment1'].toString(),
+              _allFaultReport[allReportRow]['depComment2'].toString(),
+              _allFaultReport[allReportRow]['depComment3'].toString(),
+              _allFaultReport[allReportRow]['handlerCom1'].toString(),
+              _allFaultReport[allReportRow]['handlerCom2'].toString(),
+            )
+        );
+        allReportRow += 1;
+      }
+    }
+    return reportData;
+  }
+
+}
+
+class ReportData{
+  ReportData(this.ref, this.faultResolved, this.faultType, this.accountNumber, this.address, this.dateReported, this.depAllocated, this.depHandler, this.faultDescription, this.faultStage, this.reporterContact, this.depCom1, this.depCom2, this.depCom3, this.handlerCom1, this.handlerCom2);
+
+  final String ref;
+  final bool faultResolved;
+  final String faultType;
+  final String accountNumber;
+  final String address;
+  final String dateReported;
+  final String depAllocated;
+  final String depHandler;
+  final String faultDescription;
+  final String faultStage;
+  final String reporterContact;
+  final String depCom1;
+  final String depCom2;
+  final String depCom3;
+  final String handlerCom1;
+  final String handlerCom2;
+
 }

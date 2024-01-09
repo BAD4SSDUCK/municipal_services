@@ -76,7 +76,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
   bool buttonEnabled = true;
   String location ='Null, Press Button';
-  String Address = 'search';
+  String Address = '';
 
   @override
   void initState() {
@@ -1155,7 +1155,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
     DateTime now = DateTime.now();
     String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
 
-    final String addressFault = Address;
+    final String addressFault = _addressController.text;
     final String faultDescription = _faultDescriptionController.text;
     final String refNum = UniqueKey().toString();
 
