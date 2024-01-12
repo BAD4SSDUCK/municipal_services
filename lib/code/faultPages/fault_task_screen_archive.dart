@@ -16,6 +16,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
 
+import '../Reusable/icon_elevated_button.dart';
+
 class FaultTaskScreenArchive extends StatefulWidget {
   const FaultTaskScreenArchive({Key? key}) : super(key: key);
 
@@ -49,7 +51,7 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
       getFaultStream();
     }
     _searchController.addListener(_onSearchChanged);
-    checkAdmin();
+    checkRole();
     super.initState();
   }
 
@@ -88,6 +90,8 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
   bool cardShow1 = true;
 
   bool adminAcc = false;
+  bool managerAcc = false;
+  bool employeeAcc = false;
   bool visStage1 = false;
   bool visStage2 = false;
   bool visStage3 = false;
@@ -133,17 +137,24 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
       showResults = List.from(_allFaultResults);
     }
     setState(() {
-      getFaultStream();
       _allFaultResults = showResults;
     });
   }
 
-  void checkAdmin() {
+  void checkRole() {
     getUsersStream();
     if(userRole == 'Admin'|| userRole == 'Administrator'){
       adminAcc = true;
+      managerAcc = false;
+      employeeAcc = false;
+    } else if(userRole == 'Manager'){
+      adminAcc = false;
+      managerAcc = true;
+      employeeAcc = false;
     } else {
       adminAcc = false;
+      managerAcc = false;
+      employeeAcc = true;
     }
   }
 
@@ -217,9 +228,9 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
           /// Search bar end
 
           ///made the listview card a reusable widget
-          firebaseFaultCard(_faultData),
+          // firebaseFaultCard(_faultData),
 
-          // Expanded(child: faultCard(),),
+          Expanded(child: faultCard(),),
 
           const SizedBox(height: 5,),
         ],
@@ -230,315 +241,251 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
   //this widget is for displaying the fault report list all together
   Widget faultCard(){
     if (_allFaultResults.isNotEmpty) {
-            return ListView.builder(
-              itemCount: _allFaultResults.length,
-              itemBuilder: (context, index) {
+      return ListView.builder(
+        itemCount: _allFaultResults.length,
+        itemBuilder: (context, index) {
 
-                  if(_allFaultResults[index]['faultResolved'] == true || _allFaultResults[index]['faultStage'] >= 5){
-                    return Card(
-                      margin: const EdgeInsets.fromLTRB(10.0,0.0,10.0,10.0),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
+          String status;
+          if (_allFaultResults[index]['faultResolved'] == false) {
+            status = "Pending";
+          } else {
+            status = "Completed";
+          }
+
+          if (_allFaultResults[index]['faultResolved'] == true) {
+            return Card(margin: const EdgeInsets.fromLTRB(10.0, 0.0, 10.0, 10.0),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Center(
+                      child: Text(
+                        'Fault Information',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    const SizedBox(height: 10,),
+
+                    Text(
+                      'Reference Number: ${_allFaultResults[index]['ref']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['accountNumber'] !=
+                            "")...[
+                          Text(
+                            'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
+                            style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Text(
+                      'Street Address of Fault: ${_allFaultResults[index]['address']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Text(
+                      'Fault Type: ${_allFaultResults[index]['faultType']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['faultDescription'] != "")...[
+                          Text(
+                            'Fault Description: ${_allFaultResults[index]['faultDescription']}',
+                            style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['handlerCom1'] != "")...[
+                          Text(
+                            'Handler Comment: ${_allFaultResults[index]['handlerCom1']}',
+                            style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['adminComment'] != "")...[
+                          Text(
+                            'Admin Comment: ${_allFaultResults[index]['adminComment']}',
+                            style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['handlerCom2'] != "")...[
+                          Text(
+                            'Handler Final Comment: ${_allFaultResults[index]['handlerCom2']}',
+                            style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['depComment2'] != "")...[
+                          Text(
+                            'Department Final Comment: ${_allFaultResults[index]['depComment2']}',
+                            style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Text(
+                      'Resolve State: $status',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Text(
+                      'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 20,),
+                    Column(
+                      children: [
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            const Center(
-                              child: Text(
-                                'Fault Information',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w700),
+                            ElevatedButton(
+                              onPressed: () {
+                                accountNumberRep = _allFaultResults[index]['accountNumber'];
+                                locationGivenRep = _allFaultResults[index]['address'];
+
+                                Navigator.push(context, MaterialPageRoute(builder: (context) =>
+                                    MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
+                                ));
+                              },
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(140, 10),),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.map, color: Colors.green[700],),
+                                  const SizedBox(width: 2,),
+                                  const Text(
+                                    'Location', style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black,),),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 10,),
-                            Column(
-                              children: [
-                                if(_allFaultResults[index]['accountNumber'] != "")...[
-                                  Text(
-                                    'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else ...[
+                            const SizedBox(width: 5,),
+                            ElevatedButton(
+                              onPressed: () {
+                                showDialog(
+                                    barrierDismissible: false,
+                                    context: context,
+                                    builder: (context) {
+                                      return
+                                        AlertDialog(
+                                          shape: const RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(16))),
+                                          title: const Text("Call Reporter!"),
+                                          content: const Text("Would you like to call the individual who logged the fault?"),
+                                          actions: [
+                                            IconButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                              icon: const Icon(Icons.cancel, color: Colors.red,
+                                              ),
+                                            ),
+                                            IconButton(
+                                              onPressed: () {
+                                                reporterCellGiven = _allFaultResults[index]['reporterContact'];
 
-                                ],
-                              ],
-                            ),
-                            Text(
-                              'Street Address of Fault: ${_allFaultResults[index]['address']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Fault Type: ${_allFaultResults[index]['faultType']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Column(
-                              children: [
-                                if(_allFaultResults[index]['faultDescription'] != "")...[
-                                  Text(
-                                    'Fault Description: ${_allFaultResults[index]['faultDescription']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else ...[
+                                                final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
+                                                launchUrl(_tel);
 
+                                                Navigator.of(context).pop();
+                                              },
+                                              icon: const Icon(Icons.done, color: Colors.green,),
+                                            ),
+                                          ],
+                                        );
+                                    });
+                              },
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(140, 10),),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.call, color: Colors.orange[700],),
+                                  const SizedBox(width: 2,),
+                                  const Text('Call User', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
                                 ],
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                if(_allFaultResults[index]['handlerCom1'] != "")...[
-                                  Text(
-                                    'Handler Comment: ${_allFaultResults[index]['handlerCom1']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else ...[
-
-                                ],
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                if(_allFaultResults[index]['depComment1'] != "")...[
-                                  Text(
-                                    'Department Comment 1: ${_allFaultResults[index]['depComment1']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else ...[
-
-                                ],
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                if(_allFaultResults[index]['handlerCom2'] != "")...[
-                                  Text(
-                                    'Handler Final Comment: ${_allFaultResults[index]['handlerCom2']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else ...[
-
-                                ],
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                if(_allFaultResults[index]['depComment2'] != "")...[
-                                  Text(
-                                    'Department Final Comment: ${_allFaultResults[index]['depComment2']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else ...[
-
-                                ],
-                              ],
-                            ),
-                            Text(
-                              'Resolve State: ${_allFaultResults[index]['faultResolved'].toString()}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            InkWell(
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 5),
-                                height: 180,
-                                child: Center(
-                                  child: Card(
-                                    color: Colors.grey,
-                                    semanticContainer: true,
-                                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                    ),
-                                    elevation: 0,
-                                    margin: const EdgeInsets.all(10.0),
-                                    child: FutureBuilder(
-                                        future: _getImage(
-                                          ///Firebase image location must be changed to display image based on the address
-                                            context, 'files/faultImages/${_allFaultResults[index]['dateReported']}/${_allFaultResults[index]['address']}'),
-                                        builder: (context, snapshot) {
-                                          if (snapshot.hasError) {
-                                            return const Padding(
-                                              padding: EdgeInsets.all(20.0),
-                                              child: Text('Image not uploaded for Fault.',),
-                                            ); //${snapshot.error} if error needs to be displayed instead
-                                          }
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.done) {
-                                            return Container(
-                                              child: snapshot.data,
-                                            );
-                                          }
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.waiting) {
-                                            return Container(
-                                              child: const CircularProgressIndicator(),);
-                                          }
-                                          return Container();
-                                        }
-                                    ),
-                                  ),
-                                ),
                               ),
                             ),
-                            const SizedBox(height: 20,),
-                            Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        accountNumberRep = _allFaultResults[index]['accountNumber'];
-                                        locationGivenRep = _allFaultResults[index]['address'];
-
-                                        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                        //     content: Text('$accountNumber $locationGiven ')));
-
-                                        Navigator.push(context,
-                                            MaterialPageRoute(
-                                                builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                            ));
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.grey[350],
-                                        fixedSize: const Size(160, 10),),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.map,
-                                            color: Colors.green[700],
-                                          ),
-                                          const SizedBox(width: 2,),
-                                          const Text('Location', style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black,),),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 5,),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        faultStage = _allFaultResults[index]['faultStage'];
-                                        _updateReport(_allFaultResults[index]);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.grey[350],
-                                        fixedSize: const Size(110, 10),),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.edit,
-                                            color: Theme.of(context).primaryColor,
-                                          ),
-                                          const SizedBox(width: 2,),
-                                          const Text('Update', style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black,),),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 5,),
-                                  ],
-                                ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    showDialog(
-                                        barrierDismissible: false,
-                                        context: context,
-                                        builder: (context) {
-                                          return
-                                            AlertDialog(
-                                              shape: const RoundedRectangleBorder(
-                                                  borderRadius:
-                                                  BorderRadius.all(Radius.circular(16))),
-                                              title: const Text("Call Reporter!"),
-                                              content: const Text(
-                                                  "Would you like to call the individual who logged the fault?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () {
-                                                    reporterCellGiven = _allFaultResults[index]['reporterContact'];
-
-                                                    final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                                    launchUrl(_tel);
-
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                        });
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.grey[350],
-                                    fixedSize: const Size(150, 10),),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.call,
-                                        color: Colors.orange[700],
-                                      ),
-                                      const SizedBox(width: 2,),
-                                      const Text('Call Reporter', style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black,),),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 5,),
-                              ],
-                            ),
+                            const SizedBox(width: 5,),
                           ],
                         ),
-                      ),
-                    );
-                  } else {
-                    return const Card();
-                  }
-              }
-              );
-    } else {
-      return const Padding(
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          } else {
+            return const SizedBox();
+          }
+
+
+        },
+      );
+    }
+    return const Padding(
       padding: EdgeInsets.all(10.0),
       child: Center(
           child: CircularProgressIndicator()),
     );
-    }
+
   }
 
   Future<Widget> _getImage(BuildContext context, String imageName) async{
@@ -661,9 +608,9 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                             ),
                             Column(
                               children: [
-                                if(documentSnapshot['depComment1'] != "")...[
+                                if(documentSnapshot['adminComment'] != "")...[
                                   Text(
-                                    'Department Comment 1: ${documentSnapshot['depComment1']}',
+                                    'Admin Comment: ${documentSnapshot['adminComment']}',
                                     style: const TextStyle(
                                         fontSize: 16, fontWeight: FontWeight.w400),
                                   ),
@@ -949,7 +896,7 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
 
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
     void _createBottomSheet() async{
-      Future<void> future = showModalBottomSheet(
+      showModalBottomSheet(
           context: context,
           builder: await showModalBottomSheet(
               isScrollControlled: true,

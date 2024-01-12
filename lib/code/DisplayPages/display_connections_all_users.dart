@@ -504,7 +504,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                                   DateTime now = DateTime.now();
                                   String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
 
-                                  final String tokenSelected = documentSnapshot?['token'];
+                                  final String? tokenSelected = documentSnapshot?['token'];
                                   final String? userNumber = documentSnapshot?['cell number'];
                                   final String notificationTitle = title.text;
                                   final String notificationBody = body.text;
@@ -513,8 +513,8 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
 
                                   if (title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty) {
                                     await _listNotifications.add({
-                                      "token": tokenSelected,
-                                      "user": userNumber,
+                                      "token": tokenSelected.toString(),
+                                      "user": userNumber.toString(),
                                       "title": notificationTitle,
                                       "body": notificationBody,
                                       "read": readStatus,

@@ -698,9 +698,9 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                     ),
                                     Column(
                                       children: [
-                                        if(documentSnapshot['depComment1'] != "")...[
+                                        if(documentSnapshot['adminComment'] != "")...[
                                           Text(
-                                            'Department Comment 1: ${documentSnapshot['depComment1']}',
+                                            'Admin Comment: ${documentSnapshot['adminComment']}',
                                             style: const TextStyle(
                                                 fontSize: 16, fontWeight: FontWeight.w400),
                                           ),
@@ -1167,6 +1167,9 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
         "faultType": dropdownValue,
         "reporterContact": userPhone,
         "deptHandler": '',
+        "handlerAllocated": '',
+        "reAllocationComment": '',
+        "adminComment": '',
         "depComment1": '',
         "depComment2": '',
         "depComment3": '',

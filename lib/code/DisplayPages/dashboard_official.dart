@@ -52,15 +52,25 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
 
   @override
   void initState() {
-    super.initState();
     fToast =FToast();
     fToast.init(context);
     adminCheck();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    fToast =FToast();
+    fToast.init(context);
+    adminCheck();
+    super.dispose();
   }
 
   bool visShow = true;
   bool visHide = false;
   bool visAdmin = false;
+  bool visManager = false;
+  bool visEmployee = false;
 
   String userRole = '';
   List _allUserRolesResults = [];
@@ -92,11 +102,20 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
         userRole = role;
         print('My Role is::: $userRole');
 
-        if (userRole == 'Admin' || userRole == 'Administrator') {
+        if(userRole == 'Admin'|| userRole == 'Administrator'){
           visAdmin = true;
+          visManager = false;
+          visEmployee = false;
+        } else if(userRole == 'Manager'){
+          visAdmin = false;
+          visManager = true;
+          visEmployee = false;
         } else {
           visAdmin = false;
+          visManager = false;
+          visEmployee = true;
         }
+
       }
     }
   }

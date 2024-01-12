@@ -306,10 +306,7 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
                         },
                         child: const Text('Start Date'),
                       ),
-                      Text(
-                        "${startDate.toLocal()}".split(' ')[0],
-                        style: const TextStyle(fontSize: 20),
-                      ),
+
                       ElevatedButton(
                         onPressed: () {
                           showDatePicker(
@@ -327,11 +324,37 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
                         },
                         child: const Text('End Date'),
                       ),
-                      Text(
-                        "${endDate.toLocal()}".split(' ')[0],
-                        style: const TextStyle(fontSize: 20,),
-                      ),
+
                     ],
+                  ),
+                  const SizedBox(height: 10,),
+                  Center(
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 25),
+                                child: Text(
+                                  "${startDate.toLocal()}".split(' ')[0],
+                                  style: const TextStyle(fontSize: 18),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 25),
+                                child: Text(
+                                  "${endDate.toLocal()}".split(' ')[0],
+                                  style: const TextStyle(fontSize: 18,),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 10,),
                   ElevatedButton(
@@ -422,56 +445,62 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
                     content: const Text(
                         "Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
                     actions: [
-                      BasicIconButtonGrey(
-                        onPress: () {
-                          Navigator.pop(context);
-                        },
-                        labelText: "Cancel", fSize: 12, faIcon: const FaIcon(Icons.cancel), fgColor: Colors.red, btSize: const Size(10,10),
-                      ),
-                      BasicIconButtonGrey(
-                        onPress: () async {
-                          Fluttertoast.showToast(
-                              msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
-                          reportGenerationWaste();
-                          Navigator.pop(context);
-                        },
-                        labelText: "Roadworks", fSize: 12, faIcon: const FaIcon(Icons.add_road), fgColor: Colors.black54, btSize: const Size(10,10),
-                      ),
-                      BasicIconButtonGrey(
-                        onPress: () async {
-                          Fluttertoast.showToast(
-                              msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
-                          reportGenerationWaste();
-                          Navigator.pop(context);
-                        },
-                        labelText: "Waste Management", fSize: 12, faIcon: const FaIcon(Icons.recycling), fgColor: Colors.brown, btSize: const Size(10,10),
-                      ),
-                      BasicIconButtonGrey(
-                        onPress: () async {
-                          Fluttertoast.showToast(
-                              msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
-                          reportGenerationWater();
-                          Navigator.pop(context);
-                        },
-                        labelText: "Water & Sanitation", fSize: 12, faIcon: const FaIcon(Icons.water_drop_outlined), fgColor: Colors.blue, btSize: const Size(10,10),
-                      ),
-                      BasicIconButtonGrey(
-                          onPress: () async {
-                            Fluttertoast.showToast(
-                                msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
-                            reportGenerationElectricity();
-                            Navigator.pop(context);
-                          },
-                          labelText: "Electricity", fSize: 12, faIcon: const FaIcon(Icons.power), fgColor: Colors.yellow, btSize: const Size(10,10),
-                      ),
-                      BasicIconButtonGrey(
-                        onPress: () async {
-                          Fluttertoast.showToast(
-                              msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
-                          reportGeneration();
-                          Navigator.pop(context);
-                        },
-                        labelText: "All", fSize: 12, faIcon: const FaIcon(Icons.check_circle), fgColor: Colors.green, btSize: const Size(10,10),
+                      Center(
+                        child: Column(
+                          children: [
+                            BasicIconButtonGrey(
+                              onPress: () {
+                                Navigator.pop(context);
+                              },
+                              labelText: "Cancel", fSize: 12, faIcon: const FaIcon(Icons.cancel), fgColor: Colors.red, btSize: const Size(50,10),
+                            ),
+                            BasicIconButtonGrey(
+                              onPress: () async {
+                                Fluttertoast.showToast(
+                                    msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
+                                reportGenerationWaste();
+                                Navigator.pop(context);
+                              },
+                              labelText: "Roadworks", fSize: 12, faIcon: const FaIcon(Icons.add_road), fgColor: Colors.black54, btSize: const Size(50,10),
+                            ),
+                            BasicIconButtonGrey(
+                              onPress: () async {
+                                Fluttertoast.showToast(
+                                    msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
+                                reportGenerationWaste();
+                                Navigator.pop(context);
+                              },
+                              labelText: "Waste Management", fSize: 12, faIcon: const FaIcon(Icons.recycling), fgColor: Colors.brown, btSize: const Size(50,10),
+                            ),
+                            BasicIconButtonGrey(
+                              onPress: () async {
+                                Fluttertoast.showToast(
+                                    msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
+                                reportGenerationWater();
+                                Navigator.pop(context);
+                              },
+                              labelText: "Water & Sanitation", fSize: 12, faIcon: const FaIcon(Icons.water_drop_outlined), fgColor: Colors.blue, btSize: const Size(50,10),
+                            ),
+                            BasicIconButtonGrey(
+                              onPress: () async {
+                                Fluttertoast.showToast(
+                                    msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
+                                reportGenerationElectricity();
+                                Navigator.pop(context);
+                              },
+                              labelText: "Electricity", fSize: 12, faIcon: const FaIcon(Icons.power), fgColor: Colors.yellow, btSize: const Size(50,10),
+                            ),
+                            BasicIconButtonGrey(
+                              onPress: () async {
+                                Fluttertoast.showToast(
+                                    msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
+                                reportGeneration();
+                                Navigator.pop(context);
+                              },
+                              labelText: "All", fSize: 12, faIcon: const FaIcon(Icons.check_circle), fgColor: Colors.green, btSize: const Size(50,10),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   );
@@ -574,9 +603,9 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
                   ),
                   Column(
                     children: [
-                      if(_allFaultResults[index]['depComment1'] != "")...[
+                      if(_allFaultResults[index]['adminComment'] != "")...[
                         Text(
-                          'Department Comment 1: ${_allFaultResults[index]['depComment1']}',
+                          'Admin Comment: ${_allFaultResults[index]['adminComment']}',
                           style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w400),

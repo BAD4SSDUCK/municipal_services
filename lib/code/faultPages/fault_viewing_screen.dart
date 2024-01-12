@@ -543,9 +543,9 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                           ),
                           Column(
                             children: [
-                              if(documentSnapshot['depComment1'] != "")...[
+                              if(documentSnapshot['adminComment'] != "")...[
                                 Text(
-                                  'Department Comment 1: ${documentSnapshot['depComment1']}',
+                                  'Admin Comment: ${documentSnapshot['adminComment']}',
                                   style: const TextStyle(
                                       fontSize: 16, fontWeight: FontWeight.w400),
                                 ),
@@ -571,9 +571,9 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                           ),
                           Column(
                             children: [
-                              if(documentSnapshot['depComment2'] != "")...[
+                              if(documentSnapshot['adminComment'] != "")...[
                                 Text(
-                                  'Department Comment 2: ${documentSnapshot['depComment2']}',
+                                  'Admin Comment: ${documentSnapshot['adminComment']}',
                                   style: const TextStyle(
                                       fontSize: 16, fontWeight: FontWeight.w400),
                                 ),

@@ -43,6 +43,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
     countRoleResult();
     getDBUsers(_usersList);
     getDBDept(_deptInfo);
+    getDBRoles(_roles);
     getDBDeptRoles(_deptRoles);
     super.initState();
   }
@@ -73,6 +74,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
   List<String> deptName =["Select Department..."];
   String dropdownValue = 'Select Department...';
   int numDept = 0;
+  List<String> role =["Select Role..."];
   List<String> deptRole =["Select Role..."];
   String dropdownValue2 = 'Select Role...';
   int numRoles = 0;
@@ -82,6 +84,9 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
 
   final CollectionReference _deptInfo =
   FirebaseFirestore.instance.collection('departments');
+
+  final CollectionReference _roles =
+  FirebaseFirestore.instance.collection('roles');
 
   final CollectionReference _deptRoles =
   FirebaseFirestore.instance.collection('departmentRoles');
@@ -153,6 +158,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
     );
   }
 
+  ///to fix register authentication on user creation
   static Future<UserCredential> register(String email, String password) async {
     FirebaseApp app = await Firebase.initializeApp(
         name: 'Secondary', options: Firebase.app().options);
@@ -164,6 +170,22 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
     return Future.sync(() => userCredential);
   }///Firebase auth user creation for officials login details
 
+  Future<void> createAuthUser(String emailReg, String passwordReg) async {
+    try{
+    UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: emailReg,
+      password: passwordReg,
+    );
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'weak-password'){
+        print('The password provided is too weak.');
+      } else if (e.code == 'email-already-in-use') {
+        print('The account already exists for that email.');
+      }
+    } catch (e){
+      print(e);
+    }
+  }
 
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
 
@@ -347,6 +369,8 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                           });
 
                           register(email,password);
+
+                          createAuthUser(email,password);
 
                           _userNameController.text = '';
                           _deptNameController.text = '';
@@ -956,6 +980,19 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
       }
     });
   }///Looping department collection
+
+  void getDBRoles(CollectionReference roles) async {
+    roles.get().then((querySnapshot) async {
+      for (var result in querySnapshot.docs) {
+        print('The department is::: ${result['deptName']}');
+        if(role.length-1<querySnapshot.docs.length) {
+          role.add(result['deptName']);
+        }
+        print(role);
+        print(role.length);
+      }
+    });
+  }///Looping roles collection
 
   void getDBDeptRoles(CollectionReference deptRoles) async {
     deptRoles.get().then((querySnapshot) async {
