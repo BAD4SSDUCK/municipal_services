@@ -58,6 +58,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     }
     _searchController.addListener(_onSearchChanged);
     checkRole();
+    // getUserDepartmentDetails();
+    getDBDept(_departmentData);
     super.initState();
   }
 
@@ -66,8 +68,12 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     searchText;
+    checkRole();
+    getUsersStream();
     getFaultStream();
     searchResultsList();
+    myUserRole;
+    myDepartment;
     adminAcc;
     managerAcc;
     employeeAcc;
@@ -91,6 +97,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   final CollectionReference _faultData =
   FirebaseFirestore.instance.collection('faultReporting');
 
+  final CollectionReference _departmentData =
+  FirebaseFirestore.instance.collection('departments');
+
   String accountNumberRep = '';
   String locationGivenRep = '';
   int faultStage = 0;
@@ -105,10 +114,12 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   List<String> _allUserByNames = ["Assign User..."];
   List<String> _managerUserNames = ["Assign User..."];
   List<String> _employeesUserNames = ["Assign User..."];
+  List<String> _deptName = ["Select Department..."];
 
-  String userRole = '';
+  String myUserRole = '';
   String myDepartment = '';
   List _allUserRolesResults = [];
+  List _allUserResults = [];
   bool visShow = true;
   bool visHide = false;
 
@@ -175,9 +186,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           ),
           /// Search bar end
 
-          ///made the listview card a reusable widget
-          // firebaseFaultCard(_faultData),
-
           Expanded(child: faultCard(),),
 
           const SizedBox(height: 5,),
@@ -187,6 +195,15 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     );
   }
 
+  void getDBDept(CollectionReference dept) async {
+    dept.get().then((querySnapshot) async {
+      for (var result in querySnapshot.docs) {
+        if(_deptName.length-1<querySnapshot.docs.length) {
+          _deptName.add(result['deptName']);
+        }
+      }
+    });
+  }///Looping department collection
 
   getFaultStream() async{
     var data = await FirebaseFirestore.instance.collection('faultReporting').orderBy('dateReported', descending: true).get();
@@ -224,11 +241,11 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
   void checkRole() {
     getUsersStream();
-    if(userRole == 'Admin'|| userRole == 'Administrator'){
+    if(myUserRole == 'Admin'|| myUserRole == 'Administrator'){
       adminAcc = true;
       managerAcc = false;
       employeeAcc = false;
-    } else if(userRole == 'Manager'){
+    } else if(myUserRole == 'Manager'){
       adminAcc = false;
       managerAcc = true;
       employeeAcc = false;
@@ -260,27 +277,21 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
       _allUserNames.add(userName);
       _allUserByNames.add('$firstName $lastName');
 
-      if (role == 'Manager'){
-        _managerUserNames.add(userName);
-      } else if (role == 'Employee'){
-        _employeesUserNames.add(userName);
-      }
-
       if (userEmail == myUserEmail) {
-        userRole = role;
-        print('My Role is::: $userRole');
+        myUserRole = role;
+        print('My Role is::: $myUserRole');
         myDepartment = userDepartment;
         print('My Department is::: $myDepartment');
 
-        if(userRole == 'Admin'|| userRole == 'Administrator'){
+        if(myUserRole == 'Admin'|| myUserRole == 'Administrator'){
           adminAcc = true;
           managerAcc = false;
           employeeAcc = false;
-        } else if(userRole == 'Service Provider'){
+        } else if(myUserRole == 'Service Provider'){
           adminAcc = false;
           managerAcc = true;
           employeeAcc = false;
-        } else if(userRole == 'Manager'){
+        } else if(myUserRole == 'Manager'){
           adminAcc = false;
           managerAcc = true;
           employeeAcc = false;
@@ -289,7 +300,45 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           managerAcc = false;
           employeeAcc = true;
         }
+      }
+    }
+    getUserDepartmentDetails();
+  }
 
+  getUserDepartmentDetails() async {
+
+    var data = await FirebaseFirestore.instance.collection('users').get();
+    _allUserResults = data.docs;
+
+    for (var userSnapshot in _allUserResults) {
+      ///Need to build a property model that retrieves property data entirely from the db
+      var userEmail = userSnapshot['email'].toString();
+      var role = userSnapshot['userRole'].toString();
+      var userName = userSnapshot['userName'].toString();
+      var firstName = userSnapshot['firstName'].toString();
+      var lastName = userSnapshot['lastName'].toString();
+      var userDepartment = userSnapshot['deptName'].toString();
+
+      if (role == 'Manager'){
+        if(userDepartment==myDepartment){
+          _managerUserNames.add(userName);
+          print('Manager to list::: $userName');
+        }
+        else if ((myUserRole != 'Manager'|| myUserRole != 'Employee')) {
+          _managerUserNames.add(userName);
+          print('Manager to list::: $userName');
+        }
+
+
+      } else if (role == 'Employee'){
+        if(userDepartment==myDepartment ){
+          _employeesUserNames.add(userName);
+          print('Employee to list::: $userName');
+        }
+        else if ((myUserRole != 'Manager'|| myUserRole != 'Employee')) {
+          _employeesUserNames.add(userName);
+          print('Employee to list::: $userName');
+        }
       }
     }
   }
@@ -356,299 +405,789 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           }
 
           if (_allFaultResults[index]['faultResolved'] == false) {
-            return Card(
-              margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Center(
-                      child: Text(
-                        'Fault Information',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            if(myDepartment == _allFaultResults[index]['faultType']){
+              return Card(
+                margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Center(
+                        child: Text(
+                          'Fault Information',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10,),
-                    Text(
-                      'Reference Number: ${_allFaultResults[index]['ref']}',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                    ),
-                    const SizedBox(height: 5,),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['accountNumber'] != "")...[
-                          Text(
-                            'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Text(
-                      'Street Address of Fault: ${_allFaultResults[index]['address']}',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                    ),
-                    const SizedBox(height: 5,),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['faultStage'] == 1)...[
-                          Text(
-                            'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          if(_allFaultResults[index]['faultStage'] == 2) ...[
+                      const SizedBox(height: 10,),
+                      Text(
+                        'Reference Number: ${_allFaultResults[index]['ref']}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['accountNumber'] != "")...[
                             Text(
-                              'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
+                              'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
                           ] else
-                            if(_allFaultResults[index]['faultStage'] == 3) ...[
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Text(
+                        'Street Address of Fault: ${_allFaultResults[index]['address']}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Text(
+                        'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['faultStage'] == 1)...[
+                            Text(
+                              'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            if(_allFaultResults[index]['faultStage'] == 2) ...[
                               Text(
                                 'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
                               ),
                               const SizedBox(height: 5,),
                             ] else
-                              if(_allFaultResults[index]['faultStage'] == 4) ...[
+                              if(_allFaultResults[index]['faultStage'] == 3) ...[
                                 Text(
                                   'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
                                 ),
                                 const SizedBox(height: 5,),
                               ] else
-                                if(_allFaultResults[index]['faultStage'] == 5) ...[
+                                if(_allFaultResults[index]['faultStage'] == 4) ...[
                                   Text(
                                     'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
                                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
                                   ),
                                   const SizedBox(height: 5,),
-                              ] else
-                                ...[
-                                ],
-                      ],
-                    ),
-                    Text(
-                      'Fault Type: ${_allFaultResults[index]['faultType']}',
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w400),
-                    ),
-                    const SizedBox(height: 5,),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['faultDescription'] != "")...[
-                          Text(
-                            'Fault Description: ${_allFaultResults[index]['faultDescription']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['adminComment'] != "")...[
-                          Text(
-                            'Admin Comment: ${_allFaultResults[index]['adminComment']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['depComment1'] != "")...[
-                          Text(
-                            'Department Comment: ${_allFaultResults[index]['depComment1']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['handlerCom1'] != "")...[
-                          Text(
-                            'Manager Comment: ${_allFaultResults[index]['handlerCom1']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['depComment2'] != "")...[
-                          Text(
-                            'Department Final Comment: ${_allFaultResults[index]['depComment2']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['handlerCom2'] != "")...[
-                          Text(
-                            'Manager Final Comment: ${_allFaultResults[index]['handlerCom2']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Text(
-                      'Resolve State: $status',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                    ),
-                    const SizedBox(height: 5,),
-                    Text(
-                      'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                    ),
-
-                    const SizedBox(height: 5,),
-                    Center(
-                      child: BasicIconButtonGrey(
-                        onPress: () async {
-                          imageName =
-                          'files/faultImages/${_allFaultResults[index]['dateReported']}/${_allFaultResults[index]['address']}';
-                          dateReported = _allFaultResults[index]['dateReported'];
-
-                          Navigator.push(context, MaterialPageRoute(builder: (context) =>
-                                  ImageZoomFaultPage(imageName: imageName, dateReported: dateReported)));
-                        },
-                        labelText: 'View Fault Image',
-                        fSize: 14,
-                        faIcon: const FaIcon(Icons.zoom_in,),
-                        fgColor: Colors.blue,
-                        btSize: const Size(100, 38),
+                                ] else
+                                  if(_allFaultResults[index]['faultStage'] == 5) ...[
+                                    Text(
+                                      'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                    ),
+                                    const SizedBox(height: 5,),
+                                  ] else
+                                    ...[
+                                    ],
+                        ],
                       ),
-                    ),
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            BasicIconButtonGrey(
-                              onPress: () async {
-                                accountNumberRep = _allFaultResults[index]['accountNumber'];
-                                locationGivenRep = _allFaultResults[index]['address'];
-
-                                Navigator.push(context, MaterialPageRoute(
-                                        builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                ));
-                              },
-                              labelText: 'Location',
-                              fSize: 14,
-                              faIcon: const FaIcon(Icons.map,),
-                              fgColor: Colors.green,
-                              btSize: const Size(50, 38),
+                      Text(
+                        'Fault Type: ${_allFaultResults[index]['faultType']}',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['faultDescription'] != "")...[
+                            Text(
+                              'Fault Description: ${_allFaultResults[index]['faultDescription']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
-                            BasicIconButtonGrey(
-                              onPress: () async {
-                                showDialog(
-                                    barrierDismissible: false,
-                                    context: context,
-                                    builder: (context) {
-                                      return
-                                        AlertDialog(
-                                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
-                                          title: const Text("Call Reporter!"),
-                                          content: const Text("Would you like to call the individual who logged the fault?"),
-                                          actions: [
-                                            IconButton(
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                              },
-                                              icon: const Icon(Icons.cancel, color: Colors.red,),
-                                            ),
-                                            IconButton(
-                                              onPressed: () {
-                                                reporterCellGiven = _allFaultResults[index]['reporterContact'];
-
-                                                final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                                launchUrl(_tel);
-
-                                                Navigator.of(context).pop();
-                                              },
-                                              icon: const Icon(Icons.done, color: Colors.green,),
-                                            ),
-                                          ],
-                                        );
-                                    });
-                              },
-                              labelText: 'Call User',
-                              fSize: 14,
-                              faIcon: const FaIcon(Icons.call,),
-                              fgColor: Colors.orange,
-                              btSize: const Size(50, 38),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['adminComment'] != "")...[
+                            Text(
+                              'Admin Comment: ${_allFaultResults[index]['adminComment']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
-                          ],
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['reallocationComment'] != "")...[
+                            Text(
+                              'Reason fault reallocated: ${_allFaultResults[index]['reAllocationComment']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerAllocated'] != "")...[
+                            Text(
+                              'Manager of fault: ${_allFaultResults[index]['managerAllocated']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeAllocated'] != "")...[
+                            Text(
+                              'Attendee Allocated: ${_allFaultResults[index]['attendeeAllocated']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeCom1'] != "")...[
+                            Text(
+                              'Attendee Comment: ${_allFaultResults[index]['attendeeCom1']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerCom1'] != "")...[
+                            Text(
+                              'Manager Comment: ${_allFaultResults[index]['managerCom1']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeCom2'] != "")...[
+                            Text(
+                              'Attendee Followup Comment: ${_allFaultResults[index]['attendeeCom2']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerCom2'] != "")...[
+                            Text(
+                              'Manager Final/Additional Comment: ${_allFaultResults[index]['managerCom2']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeCom3'] != "")...[
+                            Text(
+                              'Attendee Final Comment: ${_allFaultResults[index]['attendeeCom3']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerCom3'] != "")...[
+                            Text(
+                              'Manager Final Comment: ${_allFaultResults[index]['managerCom3']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Text(
+                        'Resolve State: $status',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+
+                      const SizedBox(height: 5,),
+                      Center(
+                        child: BasicIconButtonGrey(
+                          onPress: () async {
+                            imageName = 'files/faultImages/${_allFaultResults[index]['dateReported']}/${_allFaultResults[index]['address']}';
+                            dateReported = _allFaultResults[index]['dateReported'];
+
+                            Navigator.push(context, MaterialPageRoute(builder: (context) =>
+                                ImageZoomFaultPage(imageName: imageName, dateReported: dateReported)));
+                          },
+                          labelText: 'View Fault Image',
+                          fSize: 14,
+                          faIcon: const FaIcon(Icons.zoom_in,),
+                          fgColor: Colors.grey,
+                          btSize: const Size(100, 38),
                         ),
-                        // const SizedBox(height: 5,),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Visibility(
-                              visible: adminAcc,
-                              child: BasicIconButtonGrey(
+                      ),
+                      Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              BasicIconButtonGrey(
                                 onPress: () async {
-                                  faultStage = _allFaultResults[index]['faultStage'];
-                                  _reassignReport(_allFaultResults[index]);
+                                  accountNumberRep = _allFaultResults[index]['accountNumber'];
+                                  locationGivenRep = _allFaultResults[index]['address'];
+
+                                  Navigator.push(context, MaterialPageRoute(
+                                      builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
+                                  ));
                                 },
-                                labelText: 'Reassign',
+                                labelText: 'Location',
                                 fSize: 14,
-                                faIcon: const FaIcon(Icons.update,),
-                                fgColor: Theme.of(context).primaryColor,
+                                faIcon: const FaIcon(Icons.map,),
+                                fgColor: Colors.green,
                                 btSize: const Size(50, 38),
                               ),
-                            ),
-                            BasicIconButtonGrey(
-                              onPress: () async {
-                                faultStage = _allFaultResults[index]['faultStage'];
-                                _updateReport(_allFaultResults[index]);
-                              },
-                              labelText: 'Update',
-                              fSize: 14,
-                              faIcon: const FaIcon(Icons.edit,),
-                              fgColor: Theme.of(context).primaryColor,
-                              btSize: const Size(50, 38),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
+                              BasicIconButtonGrey(
+                                onPress: () async {
+                                  showDialog(
+                                      barrierDismissible: false,
+                                      context: context,
+                                      builder: (context) {
+                                        return
+                                          AlertDialog(
+                                            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+                                            title: const Text("Call Reporter!"),
+                                            content: const Text("Would you like to call the individual who logged the fault?"),
+                                            actions: [
+                                              IconButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop();
+                                                },
+                                                icon: const Icon(Icons.cancel, color: Colors.red,),
+                                              ),
+                                              IconButton(
+                                                onPressed: () {
+                                                  reporterCellGiven = _allFaultResults[index]['reporterContact'];
+
+                                                  final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
+                                                  launchUrl(_tel);
+
+                                                  Navigator.of(context).pop();
+                                                },
+                                                icon: const Icon(Icons.done, color: Colors.green,),
+                                              ),
+                                            ],
+                                          );
+                                      });
+                                },
+                                labelText: 'Call User',
+                                fSize: 14,
+                                faIcon: const FaIcon(Icons.call,),
+                                fgColor: Colors.orange,
+                                btSize: const Size(50, 38),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              Visibility(
+                                visible: adminAcc,
+                                child: Center(
+                                  child: BasicIconButtonGrey(
+                                    onPress: () async {
+                                      _reassignDept(_allFaultResults[index]);
+                                    },
+                                    labelText: 'Department Correction',
+                                    fSize: 14,
+                                    faIcon: const FaIcon(Icons.compare_arrows,),
+                                    fgColor: Colors.blue,
+                                    btSize: const Size(50, 38),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          // const SizedBox(height: 5,),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Visibility(
+                                visible: (_allFaultResults[index]['faultStage'] == 2 || _allFaultResults[index]['faultStage'] == 3) && (managerAcc || employeeAcc),
+                                child: BasicIconButtonGrey(
+                                  onPress: () async {
+                                    faultStage = _allFaultResults[index]['faultStage'];
+                                    ///working on
+                                    _returnFaultToAdmin(_allFaultResults[index]);
+                                  },
+                                  labelText: 'Return',
+                                  fSize: 14,
+                                  faIcon: const FaIcon(Icons.error_outline,),
+                                  fgColor: Colors.orangeAccent,
+                                  btSize: const Size(50, 38),
+                                ),
+                              ),
+                              Visibility(
+                                visible: adminAcc,
+                                child: BasicIconButtonGrey(
+                                  onPress: () async {
+                                    _reassignFault(_allFaultResults[index]);
+                                  },
+                                  labelText: 'Reassign',
+                                  fSize: 14,
+                                  faIcon: const FaIcon(Icons.update,),
+                                  fgColor: Theme.of(context).primaryColor,
+                                  btSize: const Size(50, 38),
+                                ),
+                              ),
+                              BasicIconButtonGrey(
+                                onPress: () async {
+                                  faultStage = _allFaultResults[index]['faultStage'];
+                                  _updateReport(_allFaultResults[index]);
+                                },
+                                labelText: 'Update',
+                                fSize: 14,
+                                faIcon: const FaIcon(Icons.edit,),
+                                fgColor: Colors.blue,
+                                btSize: const Size(50, 38),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          } else {
-            return const SizedBox();
+              );
+            } else if(myDepartment == 'Service Provider' || myDepartment == 'Developer'){
+              return Card(
+                margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Center(
+                        child: Text(
+                          'Fault Information',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      const SizedBox(height: 10,),
+                      Text(
+                        'Reference Number: ${_allFaultResults[index]['ref']}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['accountNumber'] != "")...[
+                            Text(
+                              'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Text(
+                        'Street Address of Fault: ${_allFaultResults[index]['address']}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Text(
+                        'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['faultStage'] == 1)...[
+                            Text(
+                              'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            if(_allFaultResults[index]['faultStage'] == 2) ...[
+                              Text(
+                                'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              if(_allFaultResults[index]['faultStage'] == 3) ...[
+                                Text(
+                                  'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
+                                ),
+                                const SizedBox(height: 5,),
+                              ] else
+                                if(_allFaultResults[index]['faultStage'] == 4) ...[
+                                  Text(
+                                    'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else
+                                  if(_allFaultResults[index]['faultStage'] == 5) ...[
+                                    Text(
+                                      'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                    ),
+                                    const SizedBox(height: 5,),
+                                  ] else
+                                    ...[
+                                    ],
+                        ],
+                      ),
+                      Text(
+                        'Fault Type: ${_allFaultResults[index]['faultType']}',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['faultDescription'] != "")...[
+                            Text(
+                              'Fault Description: ${_allFaultResults[index]['faultDescription']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['adminComment'] != "")...[
+                            Text(
+                              'Admin Comment: ${_allFaultResults[index]['adminComment']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['reallocationComment'] != "")...[
+                            Text(
+                              'Reason fault reallocated: ${_allFaultResults[index]['reAllocationComment']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerAllocated'] != "")...[
+                            Text(
+                              'Manager of fault: ${_allFaultResults[index]['managerAllocated']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeAllocated'] != "")...[
+                            Text(
+                              'Attendee Allocated: ${_allFaultResults[index]['attendeeAllocated']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeCom1'] != "")...[
+                            Text(
+                              'Attendee Comment: ${_allFaultResults[index]['attendeeCom1']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerCom1'] != "")...[
+                            Text(
+                              'Manager Comment: ${_allFaultResults[index]['managerCom1']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeCom2'] != "")...[
+                            Text(
+                              'Attendee Followup Comment: ${_allFaultResults[index]['attendeeCom2']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerCom2'] != "")...[
+                            Text(
+                              'Manager Final/Additional Comment: ${_allFaultResults[index]['managerCom2']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeCom3'] != "")...[
+                            Text(
+                              'Attendee Final Comment: ${_allFaultResults[index]['attendeeCom3']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerCom3'] != "")...[
+                            Text(
+                              'Manager Final Comment: ${_allFaultResults[index]['managerCom3']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Text(
+                        'Resolve State: $status',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+
+                      const SizedBox(height: 5,),
+                      Center(
+                        child: BasicIconButtonGrey(
+                          onPress: () async {
+                            imageName = 'files/faultImages/${_allFaultResults[index]['dateReported']}/${_allFaultResults[index]['address']}';
+                            dateReported = _allFaultResults[index]['dateReported'];
+
+                            Navigator.push(context, MaterialPageRoute(builder: (context) =>
+                                ImageZoomFaultPage(imageName: imageName, dateReported: dateReported)));
+                          },
+                          labelText: 'View Fault Image',
+                          fSize: 14,
+                          faIcon: const FaIcon(Icons.zoom_in,),
+                          fgColor: Colors.grey,
+                          btSize: const Size(100, 38),
+                        ),
+                      ),
+                      Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              BasicIconButtonGrey(
+                                onPress: () async {
+                                  accountNumberRep = _allFaultResults[index]['accountNumber'];
+                                  locationGivenRep = _allFaultResults[index]['address'];
+
+                                  Navigator.push(context, MaterialPageRoute(
+                                      builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
+                                  ));
+                                },
+                                labelText: 'Location',
+                                fSize: 14,
+                                faIcon: const FaIcon(Icons.map,),
+                                fgColor: Colors.green,
+                                btSize: const Size(50, 38),
+                              ),
+                              BasicIconButtonGrey(
+                                onPress: () async {
+                                  showDialog(
+                                      barrierDismissible: false,
+                                      context: context,
+                                      builder: (context) {
+                                        return
+                                          AlertDialog(
+                                            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+                                            title: const Text("Call Reporter!"),
+                                            content: const Text("Would you like to call the individual who logged the fault?"),
+                                            actions: [
+                                              IconButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop();
+                                                },
+                                                icon: const Icon(Icons.cancel, color: Colors.red,),
+                                              ),
+                                              IconButton(
+                                                onPressed: () {
+                                                  reporterCellGiven = _allFaultResults[index]['reporterContact'];
+
+                                                  final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
+                                                  launchUrl(_tel);
+
+                                                  Navigator.of(context).pop();
+                                                },
+                                                icon: const Icon(Icons.done, color: Colors.green,),
+                                              ),
+                                            ],
+                                          );
+                                      });
+                                },
+                                labelText: 'Call User',
+                                fSize: 14,
+                                faIcon: const FaIcon(Icons.call,),
+                                fgColor: Colors.orange,
+                                btSize: const Size(50, 38),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              Visibility(
+                                visible: adminAcc,
+                                child: Center(
+                                  child: BasicIconButtonGrey(
+                                    onPress: () async {
+                                      _reassignDept(_allFaultResults[index]);
+                                    },
+                                    labelText: 'Department Correction',
+                                    fSize: 14,
+                                    faIcon: const FaIcon(Icons.compare_arrows,),
+                                    fgColor: Colors.blue,
+                                    btSize: const Size(50, 38),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          // const SizedBox(height: 5,),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Visibility(
+                                visible: (_allFaultResults[index]['faultStage'] == 2 || _allFaultResults[index]['faultStage'] == 3) && (managerAcc || employeeAcc),
+                                child: BasicIconButtonGrey(
+                                  onPress: () async {
+                                    faultStage = _allFaultResults[index]['faultStage'];
+                                    ///working on
+                                    _returnFaultToAdmin(_allFaultResults[index]);
+                                  },
+                                  labelText: 'Return',
+                                  fSize: 14,
+                                  faIcon: const FaIcon(Icons.error_outline,),
+                                  fgColor: Colors.orangeAccent,
+                                  btSize: const Size(50, 38),
+                                ),
+                              ),
+                              Visibility(
+                                visible: adminAcc,
+                                child: BasicIconButtonGrey(
+                                  onPress: () async {
+                                    _reassignFault(_allFaultResults[index]);
+                                  },
+                                  labelText: 'Reassign',
+                                  fSize: 14,
+                                  faIcon: const FaIcon(Icons.update,),
+                                  fgColor: Theme.of(context).primaryColor,
+                                  btSize: const Size(50, 38),
+                                ),
+                              ),
+                              BasicIconButtonGrey(
+                                onPress: () async {
+                                  faultStage = _allFaultResults[index]['faultStage'];
+                                  _updateReport(_allFaultResults[index]);
+                                },
+                                labelText: 'Update',
+                                fSize: 14,
+                                faIcon: const FaIcon(Icons.edit,),
+                                fgColor: Colors.blue,
+                                btSize: const Size(50, 38),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            } else {
+              return const SizedBox();
+            }
           }
         },
       );
@@ -657,531 +1196,21 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
       child: CircularProgressIndicator(),
     );
   }
-  //this widget is for displaying the fault report list all together
-  Widget firebaseFaultCard(CollectionReference<Object?> faultDataStream){
-    return Expanded(
-      child: StreamBuilder<QuerySnapshot>(
-        stream: faultDataStream.orderBy('dateReported', descending: true).snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-          if (streamSnapshot.hasData) {
-            return ListView.builder(
-              itemCount: streamSnapshot.data!.docs.length,
-              itemBuilder: (context, index) {
-                final DocumentSnapshot documentSnapshot =
-                streamSnapshot.data!.docs[index];
-
-                String status;
-                if(documentSnapshot['faultResolved'] == false){
-                  status = "Pending";
-                } else {
-                  status = "Completed";
-                }
-
-                if(((documentSnapshot['address'].trim()).toLowerCase()).contains((_searchController.text.trim()).toLowerCase())){
-                  if(streamSnapshot.data!.docs[index]['faultResolved'] == false
-                      || documentSnapshot['faultStage'] == 1 || documentSnapshot['faultStage'] == 3){
-                    return Card(
-                      margin: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Center(
-                              child: Text(
-                                'Fault Information',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                            const SizedBox(height: 10,),
-
-                            Text(
-                              'Reference Number: ${documentSnapshot['ref']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-
-                            Column(
-                              children: [
-                                if(documentSnapshot['accountNumber'] != "")...[
-                                  Text(
-                                    'Reporter Account Number: ${documentSnapshot['accountNumber']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else ...[
-
-                                ],
-                              ],
-                            ),
-                            Text(
-                              'Street Address of Fault: ${documentSnapshot['address']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Column(
-                              children: [
-                                if(documentSnapshot['faultStage'] == 1)...[
-                                  Text(
-                                    'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else if(documentSnapshot['faultStage'] == 2) ...[
-                                  Text(
-                                    'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else if(documentSnapshot['faultStage'] == 3) ...[
-                                  Text(
-                                    'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else if(documentSnapshot['faultStage'] == 4) ...[
-                                  Text(
-                                    'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else ...[
-
-
-                                ],
-                              ],
-                            ),
-                            Text(
-                              'Fault Type: ${documentSnapshot['faultType']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Column(
-                              children: [
-                                if(documentSnapshot['faultDescription'] != "")...[
-                                  Text(
-                                    'Fault Description: ${documentSnapshot['faultDescription']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else ...[
-
-                                ],
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                if(documentSnapshot['depComment1'] != "")...[
-                                  Text(
-                                    'Department Comment: ${documentSnapshot['depComment1']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else ...[
-
-                                ],
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                if(documentSnapshot['handlerCom1'] != "")...[
-                                  Text(
-                                    'Handler Comment: ${documentSnapshot['handlerCom1']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else ...[
-
-                                ],
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                if(documentSnapshot['depComment2'] != "")...[
-                                  Text(
-                                    'Department Final Comment: ${documentSnapshot['depComment2']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else ...[
-
-                                ],
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                if(documentSnapshot['handlerCom2'] != "")...[
-                                  Text(
-                                    'Handler Final Comment: ${documentSnapshot['handlerCom2']}',
-                                    style: const TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w400),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else ...[
-
-                                ],
-                              ],
-                            ),
-                            Text(
-                              'Resolve State: $status',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Date of Fault Report: ${documentSnapshot['dateReported']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            InkWell(
-                              child: Center(
-                                child: Container(
-                                  margin: const EdgeInsets.only(bottom: 5),
-                                  child: Center(
-                                    child: Card(
-                                      color: Colors.grey,
-                                      semanticContainer: true,
-                                      clipBehavior: Clip.antiAliasWithSaveLayer,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10.0),
-                                      ),
-                                      elevation: 0,
-                                      margin: const EdgeInsets.all(10.0),
-                                      child: FutureBuilder(
-                                          future: _getImage(
-                                            ///Firebase image location must be changed to display image based on the address
-                                              context, 'files/faultImages/${documentSnapshot['dateReported']}/${documentSnapshot['address']}'),
-                                          builder: (context, snapshot) {
-                                            if (snapshot.hasError) {
-                                              return const Padding(
-                                                padding: EdgeInsets.all(20.0),
-                                                child: Text('Image not uploaded for Fault.',),
-                                              ); //${snapshot.error} if error needs to be displayed instead
-                                            }
-                                            if (snapshot.connectionState ==
-                                                ConnectionState.done) {
-                                              return Container(
-                                                height: 300,
-                                                width: 300,
-                                                child: snapshot.data,
-                                              );
-                                            }
-                                            if (snapshot.connectionState ==
-                                                ConnectionState.waiting) {
-                                              return Container(
-                                                child: const Padding(
-                                                  padding: EdgeInsets.all(5.0),
-                                                  child: CircularProgressIndicator(),
-                                                ),);
-                                            }
-                                            return Container();
-                                          }
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 0,),
-                            Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    BasicIconButtonGrey(
-                                      onPress: () async {
-                                        accountNumberRep = documentSnapshot['accountNumber'];
-                                        locationGivenRep = documentSnapshot['address'];
-
-                                        Navigator.push(context,
-                                            MaterialPageRoute(
-                                                builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                            ));
-                                      },
-                                      labelText: 'Location',
-                                      fSize: 14,
-                                      faIcon: const FaIcon(Icons.map,),
-                                      fgColor: Colors.green,
-                                      btSize: const Size(50, 38),
-                                    ),
-                                    BasicIconButtonGrey(
-                                      onPress: () async {
-                                        faultStage = documentSnapshot['faultStage'];
-                                        _updateReport(documentSnapshot);
-                                      },
-                                      labelText: 'Update',
-                                      fSize: 14,
-                                      faIcon: const FaIcon(Icons.edit,),
-                                      fgColor: Theme.of(context).primaryColor,
-                                      btSize: const Size(50, 38),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 5,),
-                                BasicIconButtonGrey(
-                                  onPress: () async {
-                                    showDialog(
-                                        barrierDismissible: false,
-                                        context: context,
-                                        builder: (context) {
-                                          return
-                                            AlertDialog(
-                                              shape: const RoundedRectangleBorder(
-                                                  borderRadius:
-                                                  BorderRadius.all(Radius.circular(16))),
-                                              title: const Text("Call Reporter!"),
-                                              content: const Text(
-                                                  "Would you like to call the individual who logged the fault?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () {
-                                                    reporterCellGiven = documentSnapshot['reporterContact'];
-
-                                                    final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                                    launchUrl(_tel);
-
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                        });
-                                  },
-                                  labelText: 'Call Reporter',
-                                  fSize: 14,
-                                  faIcon: const FaIcon(Icons.call,),
-                                  fgColor: Colors.orange,
-                                  btSize: const Size(50, 38),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  } else if((streamSnapshot.data!.docs[index]['faultResolved'] == false && documentSnapshot['faultStage'] != 5 )
-                      || documentSnapshot['faultStage'] == 2 || documentSnapshot['faultStage'] == 4){
-                    return Card(
-                      margin: const EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 10),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Center(
-                              child: Text(
-                                'Fault Information',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                            const SizedBox(height: 10,),
-                            Text(
-                              'Reporter Account Number: ${documentSnapshot['accountNumber']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Street Address of Fault: ${documentSnapshot['address']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Fault Description: ${documentSnapshot['faultDescription']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Resolve State: ${documentSnapshot['faultResolved'].toString()}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Date of Fault Report: ${documentSnapshot['dateReported']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 20,),
-                            Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        accountNumberRep = documentSnapshot['accountNumber'];
-                                        locationGivenRep = documentSnapshot['address'];
-
-                                        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                        //     content: Text('$accountNumber $locationGiven ')));
-
-                                        Navigator.push(context,
-                                            MaterialPageRoute(
-                                                builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                            ));
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.grey[350],
-                                        fixedSize: const Size(150, 10),),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.map,
-                                            color: Colors.green[700],
-                                          ),
-                                          const SizedBox(width: 2,),
-                                          const Text('Fault Location', style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black,),),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 5,),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        faultStage = documentSnapshot['faultStage'];
-                                        _updateReport(documentSnapshot);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.grey[350],
-                                        fixedSize: const Size(150, 10),),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.edit,
-                                            color: Theme.of(context).primaryColor,
-                                          ),
-                                          const SizedBox(width: 2,),
-                                          const Text('Update Details', style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black,),),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 5,),
-                                  ],
-                                ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    showDialog(
-                                        barrierDismissible: false,
-                                        context: context,
-                                        builder: (context) {
-                                          return
-                                            AlertDialog(
-                                              shape: const RoundedRectangleBorder(
-                                                  borderRadius:
-                                                  BorderRadius.all(Radius.circular(16))),
-                                              title: const Text("Call User!"),
-                                              content: const Text(
-                                                  "Would you like to call the individual who logged the fault?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () {
-                                                    reporterCellGiven = documentSnapshot['reporterContact'];
-
-                                                    final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                                    launchUrl(_tel);
-
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                        });
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.grey[350],
-                                    fixedSize: const Size(115, 10),),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.call,
-                                        color: Colors.orange[700],
-                                      ),
-                                      const SizedBox(width: 2,),
-                                      const Text('Call User', style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black,),),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 5,),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  } else {
-                    return const SizedBox(height: 0,width: 0,);
-                  }
-                }
-              },
-            );
-          }
-          return const Padding(
-            padding: EdgeInsets.all(10.0),
-            child: Center(
-                child: CircularProgressIndicator()),
-          );
-        },
-      ),
-    );
-  }///no longer in use due to issues with mass image loading from firebase causing
 
   //This class is for updating the report stages by the manager and the handler to comment through phases of the report
   Future<void> _updateReport([DocumentSnapshot? documentSnapshot]) async {
 
-    // String dropdownValue = 'Select Department...';
-    String dropdownValue = documentSnapshot?['faultType'];
-    // String dropdownValue = documentSnapshot?['faultType'];
+    String dropdownValue = 'Select Department...';
+    dropdownValue = documentSnapshot?['faultType'];
     String dropdownValue2 = 'Assign User...';
+    String dropdownValue3 = 'Assign User...';
 
-    if(documentSnapshot?['handlerAllocated'] != ""){
-      String dropdownValue2 = documentSnapshot?['faultType'];;
-    }
+    // if(documentSnapshot?['managerAllocated'] != "" && documentSnapshot?['managerAllocated'] != "Service Provider" && documentSnapshot?['managerAllocated'] != "Developer" ){
+    //   dropdownValue2 = documentSnapshot?['managerAllocated'];
+    // }
+    // if(documentSnapshot?['attendeeAllocated'] != "" && documentSnapshot?['attendeeAllocated'] != "Service Provider" && documentSnapshot?['attendeeAllocated'] != "Developer" ){
+    //   dropdownValue3 = documentSnapshot?['attendeeAllocated'];
+    // }
 
     //This checks the current state of the fault stage 5 is resolve stage
     int stageNum = documentSnapshot!['faultStage'];
@@ -1220,11 +1249,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     _accountNumberController.text = documentSnapshot['accountNumber'];
     _addressController.text = documentSnapshot['address'];
     _descriptionController.text = documentSnapshot['faultDescription'];
-    _deptHandlerController.text = documentSnapshot['deptHandler'];
     _commentController.text = '';
     _depAllocationController.text = documentSnapshot['depAllocated'];
     _faultResolvedController = documentSnapshot['faultResolved'];
-    _dateReportedController.text = documentSnapshot['dateReported'];
 
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
     void _createBottomSheet() async{
@@ -1248,8 +1275,12 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Visibility(
-                              visible: employeeAcc,
-                              child: const Text('Only Administrators and Managers may process faults.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700 ),),
+                              visible: visStage1 && employeeAcc,
+                              child: const Text('Only Administrators may assign faults.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700 ),),
+                            ),
+                            Visibility(
+                              visible: (visStage2 || visStage3 ||visStage4 ||visStage5) && adminAcc,
+                              child: const Text('Awaiting Attendee & Manager processing.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700 ),),
                             ),
                             Visibility(
                               visible: visStage1 && adminAcc,
@@ -1259,7 +1290,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                               visible: visStage1 && adminAcc,
                               child: DropdownButtonFormField <String>(
                                 value: dropdownValue,
-                                items: <String>['Select Department...','Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
+                                items: _deptName.toSet()
                                     .map<DropdownMenuItem<String>>((String value) {
                                   return DropdownMenuItem<String>(
                                     value: value,
@@ -1276,13 +1307,36 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
                             Visibility(
                               visible: visStage1 && adminAcc,
-                              child: const Text('Assignee Allocation'),
+                              child: const Text('Attendee Allocation'),
+                            ),
+                            Visibility(
+                              visible: visStage1 && adminAcc,
+                              child: DropdownButtonFormField <String>(
+                                value: dropdownValue3,
+                                items: _employeesUserNames.toSet()
+                                    .map<DropdownMenuItem<String>>((String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(value, style: const TextStyle(fontSize: 16),),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    dropdownValue3 = newValue!;
+                                  });
+                                },
+                              ),
+                            ),
+
+                            Visibility(
+                              visible: visStage1 && adminAcc,
+                              child: const Text('Department Manager Allocated'),
                             ),
                             Visibility(
                               visible: visStage1 && adminAcc,
                               child: DropdownButtonFormField <String>(
                                 value: dropdownValue2,
-                                items: _managerUserNames
+                                items: _managerUserNames.toSet()
                                     .map<DropdownMenuItem<String>>((String value) {
                                   return DropdownMenuItem<String>(
                                     value: value,
@@ -1297,55 +1351,32 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                               ),
                             ),
 
-                            Visibility(
-                              visible: visStage2 && managerAcc,
-                              child: const Text('Assign Repair Team Head'),
-                            ),
-                            Visibility(
-                              visible: visStage2 && managerAcc,
-                              child: DropdownButtonFormField <String>(
-                                value: dropdownValue2,
-                                items: _employeesUserNames
-                                    .map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value, style: const TextStyle(fontSize: 16),),
-                                  );
-                                }).toSet().toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    dropdownValue2 = newValue!;
-                                  });
-                                },
-                              ),
-                            ),
 
                             Visibility(
-                              visible: visHide,
-                              child: TextField(
-                                keyboardType: TextInputType.text,
-                                controller: _deptHandlerController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Assignee Allocation',),
-                              ),
-                            ),
-
-                            Visibility(
-                              visible: adminAcc,
+                              visible: (visStage1 || visStage2 || visStage4 || visStage5) && adminAcc,
                               child: TextField(
                                 keyboardType: TextInputType.text,
                                 controller: _commentController,
                                 decoration: const InputDecoration(
-                                  labelText: 'Comment to Manager',),
+                                  labelText: 'Comment...',),
                               ),
                             ),
                             Visibility(
-                              visible: managerAcc,
+                              visible: (visStage2 || visStage3 || visStage5) && managerAcc,
                               child: TextField(
                                 keyboardType: TextInputType.text,
                                 controller: _commentController,
                                 decoration: const InputDecoration(
-                                  labelText: 'Comment to Administrator',),
+                                  labelText: 'Comment...',),
+                              ),
+                            ),
+                            Visibility(
+                              visible: (visStage2 || visStage3 || visStage5) && employeeAcc,
+                              child: TextField(
+                                keyboardType: TextInputType.text,
+                                controller: _commentController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Comment...',),
                               ),
                             ),
                             const SizedBox(height: 10,),
@@ -1376,144 +1407,223 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                             const SizedBox(
                               height: 10,
                             ),
-                            Visibility(
-                              visible: adminAcc || managerAcc,
-                              child: ElevatedButton(
-                                child: const Text('Update'),
-                                onPressed: () async {
-                                  final String reporterNumber = documentSnapshot['reporterContact'];
-                                  final String userComment = _commentController.text;
-                                  final String depSelected = dropdownValue;
-                                  final String deptUserAllocated = _deptHandlerController.text;
-                                  final bool faultResolved = _faultResolvedController;
+                            Row(
+                              children: [
+                                Visibility(
+                                  visible: (visStage1 && adminAcc) || ((visStage3 || visStage5) && managerAcc) || ((visStage2 || visStage4) && employeeAcc),
+                                  child: ElevatedButton(
+                                    child: const Text('Update'),
+                                    onPressed: () async {
+                                      final String depSelected = dropdownValue;
+                                      final String attendeeAllocated = dropdownValue3;
+                                      final String managerAllocated = dropdownValue2;
+                                      final String userComment = _commentController.text;
+                                      final bool faultResolved = _faultResolvedController;
 
-                                  if (faultStage == 1) {
-                                    if(_deptHandlerController.text != '' || _deptHandlerController.text.isNotEmpty){
-                                      await _faultData
-                                          .doc(documentSnapshot.id)
-                                          .update({
-                                        "depAllocated": depSelected,
-                                        "deptHandler": deptUserAllocated,
-                                        "adminComment": userComment,
-                                        "faultStage": 2,
-                                      });
+                                      if (faultStage == 1 && adminAcc) {
+                                        if((_commentController.text != '' || _commentController.text.isNotEmpty) && (dropdownValue2 != 'Assign User...' && dropdownValue3 != 'Assign User...' && dropdownValue != 'Select Department...')){
+                                          await _faultData
+                                              .doc(documentSnapshot.id)
+                                              .update({
+                                            "depAllocated": depSelected,
+                                            "attendeeAllocated": attendeeAllocated,
+                                            "managerAllocated": managerAllocated,
+                                            "adminComment": userComment,
+                                            "faultStage": 2,
+                                          });
 
-                                    } else if(dropdownValue == 'Select Department...'){
-                                      Fluttertoast.showToast(msg: 'Please allocate the fault to the correct department before continuing', gravity: ToastGravity.CENTER);
-                                    } else {
-                                      Fluttertoast.showToast(msg: 'Please assign handler to the Fault before continuing', gravity: ToastGravity.CENTER);
-                                    }
+                                          dropdownValue = 'Select Department...';
+                                          dropdownValue2 = 'Assign User...';
+                                          dropdownValue3 = 'Assign User...';
+                                          _commentController.text = '';
+                                          _faultResolvedController = false;
 
-                                    _commentController.text = '';
-                                    _depAllocationController.text = '';
-                                    dropdownValue = 'Select Department...';
-                                    _faultResolvedController = false;
-                                    _dateReportedController.text = '';
+                                          visStage1 = false;
+                                          visStage2 = false;
+                                          visStage3 = false;
+                                          visStage4 = false;
+                                          visStage4 = false;
 
-                                    visStage1 = false;
-                                    visStage2 = false;
-                                    visStage3 = false;
-                                    visStage4 = false;
-                                    visStage4 = false;
+                                          Navigator.of(context).pop();
 
-                                    Navigator.of(context).pop();
+                                        } else if (dropdownValue == 'Select Department...'){
+                                          Fluttertoast.showToast(msg: 'Please allocate the fault to the correct department before continuing', gravity: ToastGravity.CENTER);
+                                        } else {
+                                          Fluttertoast.showToast(msg: 'Please comment to the attendee, assign attendee and manager to the fault before continuing', gravity: ToastGravity.CENTER);
+                                        }
 
-                                  } else if (faultStage == 2) {
-                                    await _faultData
-                                        .doc(documentSnapshot.id)
-                                        .update({
-                                      "handlerCom1": userComment,
-                                      "faultStage": 3,
-                                    });
-                                    _commentController.text = '';
-                                    _depAllocationController.text = '';
-                                    dropdownValue = '';
-                                    _faultResolvedController = false;
-                                    _dateReportedController.text = '';
+                                      } else if (faultStage == 2) {
+                                        if(employeeAcc){
+                                          await _faultData
+                                              .doc(documentSnapshot.id)
+                                              .update({
+                                            "attendeeCom1": userComment,
+                                            "faultStage": 3,
+                                          });
 
-                                    visStage1 = false;
-                                    visStage2 = false;
-                                    visStage3 = false;
-                                    visStage4 = false;
-                                    visStage5 = false;
+                                          _commentController.text = '';
+                                          _depAllocationController.text = '';
+                                          dropdownValue = '';
+                                          _faultResolvedController = false;
+                                          _dateReportedController.text = '';
 
-                                    Navigator.of(context).pop();
+                                          visStage1 = false;
+                                          visStage2 = false;
+                                          visStage3 = false;
+                                          visStage4 = false;
+                                          visStage5 = false;
 
-                                  } else if (faultStage == 3) {
-                                    if (reporterNumber != null) {
-                                      await _faultData
-                                          .doc(documentSnapshot.id)
-                                          .update({
-                                        "depComment1": userComment,
-                                        "faultResolved": faultResolved,
-                                        "faultStage": 4,
-                                      });
-                                    }
-                                    _commentController.text = '';
-                                    _depAllocationController.text = '';
-                                    dropdownValue = '';
-                                    _faultResolvedController = false;
-                                    _dateReportedController.text = '';
+                                          if(context.mounted)Navigator.of(context).pop();
+                                        } else if (managerAcc){
+                                          await _faultData
+                                              .doc(documentSnapshot.id)
+                                              .update({
+                                            "managerCom1": userComment,
+                                            "faultStage": 3,
+                                          });
 
-                                    visStage1 = false;
-                                    visStage2 = false;
-                                    visStage3 = false;
-                                    visStage4 = false;
-                                    visStage5 = false;
+                                          _commentController.text = '';
+                                          _depAllocationController.text = '';
+                                          dropdownValue = '';
+                                          _faultResolvedController = false;
+                                          _dateReportedController.text = '';
 
-                                    Navigator.of(context).pop();
+                                          visStage1 = false;
+                                          visStage2 = false;
+                                          visStage3 = false;
+                                          visStage4 = false;
+                                          visStage5 = false;
 
-                                  } else if (faultStage == 4) {
-                                    if (reporterNumber != null) {
-                                      await _faultData
-                                          .doc(documentSnapshot.id)
-                                          .update({
-                                        "handlerCom2": userComment,
-                                        "faultResolved": faultResolved,
-                                        "faultStage": 5,
-                                      });
-                                    }
-                                    _commentController.text = '';
-                                    _depAllocationController.text = '';
-                                    dropdownValue = '';
-                                    _faultResolvedController = false;
-                                    _dateReportedController.text = '';
+                                          if(context.mounted)Navigator.of(context).pop();
+                                        } else{
+                                          Fluttertoast.showToast(msg: 'Please give a comment of information before continuing', gravity: ToastGravity.CENTER);
+                                        }
 
-                                    visStage1 = false;
-                                    visStage2 = false;
-                                    visStage3 = false;
-                                    visStage4 = false;
-                                    visStage5 = false;
+                                      } else if (faultStage == 3) {
+                                        if(employeeAcc){
+                                          await _faultData
+                                              .doc(documentSnapshot.id)
+                                              .update({
+                                            "attendeeCom2": userComment,
+                                            "faultStage": 4,
+                                          });
 
-                                    Navigator.of(context).pop();
+                                          _commentController.text = '';
+                                          _depAllocationController.text = '';
+                                          dropdownValue = '';
+                                          _faultResolvedController = false;
+                                          _dateReportedController.text = '';
 
-                                  }else if (faultStage == 5) {
-                                    if (reporterNumber != null) {
-                                      await _faultData
-                                          .doc(documentSnapshot.id)
-                                          .update({
-                                        "depComment2": userComment,
-                                        "faultResolved": faultResolved,
-                                        "faultStage": 6,
-                                      });
-                                    }
-                                    _commentController.text = '';
-                                    _depAllocationController.text = '';
-                                    dropdownValue = '';
-                                    _faultResolvedController = false;
-                                    _dateReportedController.text = '';
+                                          visStage1 = false;
+                                          visStage2 = false;
+                                          visStage3 = false;
+                                          visStage4 = false;
+                                          visStage5 = false;
 
-                                    visStage1 = false;
-                                    visStage2 = false;
-                                    visStage3 = false;
-                                    visStage4 = false;
-                                    visStage5 = false;
+                                          if(context.mounted)Navigator.of(context).pop();
+                                        } else if (managerAcc){
+                                          await _faultData
+                                              .doc(documentSnapshot.id)
+                                              .update({
+                                            "managerCom2": userComment,
+                                            "faultStage": 3,
+                                          });
 
-                                    Navigator.of(context).pop();
+                                          _commentController.text = '';
+                                          _depAllocationController.text = '';
+                                          dropdownValue = '';
+                                          _faultResolvedController = false;
+                                          _dateReportedController.text = '';
 
-                                  }
-                                },
-                              ),
+                                          visStage1 = false;
+                                          visStage2 = false;
+                                          visStage3 = false;
+                                          visStage4 = false;
+                                          visStage5 = false;
+
+                                          if(context.mounted)Navigator.of(context).pop();
+                                        } else{
+                                          Fluttertoast.showToast(msg: 'Please give a comment of information before continuing', gravity: ToastGravity.CENTER);
+                                        }
+
+                                      } else if (faultStage == 4) {
+                                        if((_commentController.text != '' || _commentController.text.isNotEmpty) && faultResolved == true){
+                                          await _faultData
+                                              .doc(documentSnapshot.id)
+                                              .update({
+                                            "managerCom2": userComment,
+                                            "faultResolved": faultResolved,
+                                            "faultStage": 5,
+                                          });
+
+                                          _commentController.text = '';
+                                          _depAllocationController.text = '';
+                                          dropdownValue = '';
+                                          _faultResolvedController = false;
+                                          _dateReportedController.text = '';
+
+                                          visStage1 = false;
+                                          visStage2 = false;
+                                          visStage3 = false;
+                                          visStage4 = false;
+                                          visStage5 = false;
+
+                                          if(context.mounted)Navigator.of(context).pop();
+                                        } else if ((_commentController.text != '' || _commentController.text.isNotEmpty) && faultResolved == true){
+                                          await _faultData
+                                              .doc(documentSnapshot.id)
+                                              .update({
+                                            "managerCom2": userComment,
+                                            "faultResolved": faultResolved,
+                                            "faultStage": 3,
+                                          });
+
+                                          _commentController.text = '';
+                                          _depAllocationController.text = '';
+                                          dropdownValue = '';
+                                          _faultResolvedController = false;
+                                          _dateReportedController.text = '';
+
+                                          visStage1 = false;
+                                          visStage2 = false;
+                                          visStage3 = false;
+                                          visStage4 = false;
+                                          visStage5 = false;
+
+                                          if(context.mounted)Navigator.of(context).pop();
+                                        } else {
+                                          Fluttertoast.showToast(msg: 'Please give a comment to what you are doing before continuing', gravity: ToastGravity.CENTER);
+                                        }
+
+
+                                      } else if (faultStage == 5) {
+                                        await _faultData
+                                            .doc(documentSnapshot.id)
+                                            .update({
+                                          "managerCom3": userComment,
+                                          "faultResolved": faultResolved,
+                                          "faultStage": 6,
+                                        });
+
+                                        _commentController.text = '';
+                                        _depAllocationController.text = '';
+                                        dropdownValue = '';
+                                        _faultResolvedController = false;
+                                        _dateReportedController.text = '';
+
+                                        visStage1 = false;
+                                        visStage2 = false;
+                                        visStage3 = false;
+                                        visStage4 = false;
+                                        visStage5 = false;
+
+                                        if(context.mounted)Navigator.of(context).pop();
+
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
                             )
                           ],
                         ),
@@ -1528,11 +1638,13 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
   }
 
-  Future<void> _reassignReport([DocumentSnapshot? documentSnapshot]) async {
+  Future<void> _reassignFault([DocumentSnapshot? documentSnapshot]) async {
 
     String dropdownValue = 'Select Department...';
-    // String dropdownValue = documentSnapshot?['faultType'];
+    dropdownValue = documentSnapshot?['faultType'];
     String dropdownValue2 = 'Assign User...';
+    String dropdownValue3 = 'Assign User...';
+    _commentController.text = '';
 
     //This checks the current state of the fault stage 5 is resolve stage
     int stageNum = documentSnapshot!['faultStage'];
@@ -1568,15 +1680,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
       visStage5 = true;
     }
 
-    _accountNumberController.text = documentSnapshot['accountNumber'];
-    _addressController.text = documentSnapshot['address'];
-    _descriptionController.text = documentSnapshot['faultDescription'];
-    _deptHandlerController.text = documentSnapshot['deptHandler'];
-    _commentController.text = '';
-    _depAllocationController.text = documentSnapshot['depAllocated'];
-    _faultResolvedController = documentSnapshot['faultResolved'];
-    _dateReportedController.text = documentSnapshot['dateReported'];
-
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
     void _createBottomSheet() async{
       showModalBottomSheet(
@@ -1599,10 +1702,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Visibility(
-                              visible: employeeAcc,
-                              child: const Text('Only Administrators and Managers may process faults.'),
-                            ),
-                            Visibility(
                               visible: adminAcc,
                               child: const Text('Department Allocation'),
                             ),
@@ -1610,7 +1709,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                               visible: adminAcc,
                               child: DropdownButtonFormField <String>(
                                 value: dropdownValue,
-                                items: <String>['Select Department...','Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
+                                items: _deptName.toSet()
                                     .map<DropdownMenuItem<String>>((String value) {
                                   return DropdownMenuItem<String>(
                                     value: value,
@@ -1627,19 +1726,19 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
                             Visibility(
                               visible: adminAcc,
-                              child: const Text('Assignee Allocation'),
+                              child: const Text('Manager Allocation'),
                             ),
                             Visibility(
                               visible: adminAcc,
                               child: DropdownButtonFormField <String>(
                                 value: dropdownValue2,
-                                items: _managerUserNames
+                                items: _managerUserNames.toSet()
                                     .map<DropdownMenuItem<String>>((String value) {
                                   return DropdownMenuItem<String>(
                                     value: value,
                                     child: Text(value, style: const TextStyle(fontSize: 16),),
                                   );
-                                }).toSet().toList(),
+                                }).toList(),
                                 onChanged: (String? newValue) {
                                   setState(() {
                                     dropdownValue2 = newValue!;
@@ -1649,84 +1748,79 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                             ),
 
                             Visibility(
-                              visible: visHide,
-                              child: TextField(
-                                keyboardType: TextInputType.text,
-                                controller: _deptHandlerController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Assignee Allocation',),
+                              visible: adminAcc,
+                              child: const Text('Attendee Allocation'),
+                            ),
+                            Visibility(
+                              visible: adminAcc,
+                              child: DropdownButtonFormField <String>(
+                                value: dropdownValue3,
+                                items: _employeesUserNames.toSet()
+                                    .map<DropdownMenuItem<String>>((String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(value, style: const TextStyle(fontSize: 16),),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    dropdownValue3 = newValue!;
+                                  });
+                                },
                               ),
                             ),
+
                             Visibility(
                               visible: adminAcc,
                               child: TextField(
                                 keyboardType: TextInputType.text,
                                 controller: _commentController,
                                 decoration: const InputDecoration(
-                                  labelText: 'Reason for reallocation',),
+                                  labelText: 'Reason for reallocation...',),
                               ),
                             ),
-                            Visibility(
-                              visible: managerAcc,
-                              child: TextField(
-                                keyboardType: TextInputType.text,
-                                controller: _commentController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Comment to Administrator',),
-                              ),
-                            ),
-                            const SizedBox(height: 10,),
-                            Visibility(
-                              visible: (visStage3 || visStage4) && managerAcc,
-                              child:
-                              Container(
-                                height: 50,
-                                padding: const EdgeInsets.only(left: 0.0, right: 25.0),
-                                child: Row(
-                                  children: <Widget>[
-                                    const Text('Fault Resolved?', style: TextStyle(fontSize: 16, fontWeight:FontWeight.w400 ),),
-                                    const SizedBox(width: 5,),
-                                    Checkbox(
-                                      checkColor: Colors.white,
-                                      fillColor: MaterialStateProperty.all<Color>(Colors.green),
-                                      value: _faultResolvedController,
-                                      onChanged: (bool? value) async {
-                                        setState(() {
-                                          _faultResolvedController = value!;
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
+
                             const SizedBox(height: 10,),
                             ElevatedButton(
                               child: const Text('Reassign'),
                               onPressed: () async {
                                 final String userComment = _commentController.text;
                                 final String depSelected = dropdownValue;
-                                final String deptUserAllocated = _deptHandlerController.text;
-                                final bool faultResolved = _faultResolvedController;
+                                final String managerAllocated = dropdownValue2;
+                                final String attendeeAllocated = dropdownValue3;
 
                                 if (_deptHandlerController.text != '' ||
                                     _deptHandlerController.text.isNotEmpty) {
                                   await _faultData
                                       .doc(documentSnapshot.id)
                                       .update({
-                                    "reAllocationComment": userComment,
+                                    "reallocationComment": userComment,
                                     "depAllocated": depSelected,
-                                    "deptHandler": deptUserAllocated,
+                                    "managerAllocated": managerAllocated,
+                                    "attendeeAllocated": attendeeAllocated,
+                                    "faultResolved": false,
                                     "faultStage": 2,
                                   });
                                 } else
-                                if (dropdownValue == 'Select Department...') {
+                                if (dropdownValue2 == 'Assign User...') {
                                   Fluttertoast.showToast(
-                                      msg: 'Please allocate the fault to the correct department before continuing',
+                                      msg: 'Please allocate the fault to a new manager if necessary!',
                                       gravity: ToastGravity.CENTER);
-                                } else {
+                                } else
+                                if (dropdownValue3 == 'Assign User...') {
                                   Fluttertoast.showToast(
-                                      msg: 'Please assign handler to the Fault before continuing',
+                                      msg: 'Please allocate the fault to a new fault attendee!',
+                                      gravity: ToastGravity.CENTER);
+                                } else
+                                if (_commentController.text != '' ||
+                                    _commentController.text.isNotEmpty) {
+                                  Fluttertoast.showToast(
+                                      msg: 'Please provide reasoning for your reallocation!',
+                                      gravity: ToastGravity.CENTER);
+                                }
+                                else {
+                                  Fluttertoast.showToast(
+                                      msg: 'Please allocate the fault to a new attendee or manager and explain your reallocation!',
                                       gravity: ToastGravity.CENTER);
                                 }
 
@@ -1829,29 +1923,25 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Visibility(
-                              visible: employeeAcc,
-                              child: const Text('Only Administrators and Managers may process faults.'),
-                            ),
-                            Visibility(
-                              visible: adminAcc,
-                              child: const Text('Department Allocation'),
+                              visible: (visStage1) && employeeAcc,
+                              child: const Text('Only Administrators may assign this fault.'),
                             ),
 
                             Visibility(
                               visible: managerAcc,
-                              child: const Text('Assign Repair Employee'),
+                              child: const Text('Return fault to administrator'),
                             ),
                             Visibility(
-                              visible: managerAcc,
+                              visible: adminAcc && visStage1,
                               child: DropdownButtonFormField <String>(
                                 value: dropdownValue2,
-                                items: _employeesUserNames
+                                items: _employeesUserNames.toSet()
                                     .map<DropdownMenuItem<String>>((String value) {
                                   return DropdownMenuItem<String>(
                                     value: value,
                                     child: Text(value, style: const TextStyle(fontSize: 16),),
                                   );
-                                }).toSet().toList(),
+                                }).toList(),
                                 onChanged: (String? newValue) {
                                   setState(() {
                                     dropdownValue2 = newValue!;
@@ -1861,55 +1951,94 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                             ),
 
                             Visibility(
-                              visible: managerAcc,
+                              visible: employeeAcc,
+                              child: const Text('Return fault to manager'),
+                            ),
+                            Visibility(
+                              visible: (visStage2 || visStage3 ) && (managerAcc || employeeAcc),
                               child: TextField(
                                 keyboardType: TextInputType.text,
                                 controller: _commentController,
                                 decoration: const InputDecoration(
-                                  labelText: 'Reason for assignment',),
+                                  labelText: 'Reason for return',),
                               ),
                             ),
                             const SizedBox(height: 10,),
-                            ElevatedButton(
-                              child: const Text('Assign Worker'),
-                              onPressed: () async {
-                                final String userComment = _commentController.text;
-                                final String employeeSelected = dropdownValue2;
-                                final String deptUserAllocated = _deptHandlerController.text;
 
-                                if (_deptHandlerController.text != '' ||
-                                    _deptHandlerController.text.isNotEmpty) {
-                                  await _faultData
-                                      .doc(documentSnapshot.id)
-                                      .update({
-                                    "reAllocationComment": userComment,
-                                    "employeeAllocated": employeeSelected,
-                                  });
-                                } else
-                                if (dropdownValue == 'Select Department...') {
-                                  Fluttertoast.showToast(
-                                      msg: 'Please allocate the fault to the correct department before continuing',
-                                      gravity: ToastGravity.CENTER);
-                                } else {
-                                  Fluttertoast.showToast(
-                                      msg: 'Please assign handler to the Fault before continuing',
-                                      gravity: ToastGravity.CENTER);
-                                }
+                            Visibility(
+                              visible: (visStage2 || visStage3 || visStage4 || visStage5) && managerAcc,
+                              child: ElevatedButton(
+                                child: const Text('Return Fault'),
+                                onPressed: () async {
+                                  final String userComment = _commentController.text;
 
-                                _commentController.text = '';
-                                _depAllocationController.text = '';
-                                dropdownValue = 'Select Department...';
-                                _faultResolvedController = false;
-                                _dateReportedController.text = '';
+                                  if (_commentController.text != '' ||
+                                      _commentController.text.isNotEmpty) {
+                                    await _faultData
+                                        .doc(documentSnapshot.id)
+                                        .update({
+                                      "managerReturnCom": userComment,
+                                      "faultStage": 1,
+                                    });
+                                  } else {
+                                    Fluttertoast.showToast(
+                                        msg: 'Please explain why you want to return this fault to the admin to reassign',
+                                        gravity: ToastGravity.CENTER);
+                                  }
 
-                                visStage1 = false;
-                                visStage2 = false;
-                                visStage3 = false;
-                                visStage4 = false;
-                                visStage4 = false;
+                                  _commentController.text = '';
+                                  _depAllocationController.text = '';
+                                  dropdownValue = 'Select Department...';
+                                  _faultResolvedController = false;
+                                  _dateReportedController.text = '';
 
-                                Navigator.of(context).pop();
-                              },
+                                  visStage1 = false;
+                                  visStage2 = false;
+                                  visStage3 = false;
+                                  visStage4 = false;
+                                  visStage4 = false;
+
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ),//button for managers to return a fault if it cannot be handled
+
+                            Visibility(
+                              visible: (visStage3 || visStage4 ) && employeeAcc,
+                              child: ElevatedButton(
+                                child: const Text('Return to manager'),
+                                onPressed: () async {
+                                  final String userComment = _commentController.text;
+
+                                  if (_commentController.text != '' ||
+                                      _commentController.text.isNotEmpty) {
+                                    await _faultData
+                                        .doc(documentSnapshot.id)
+                                        .update({
+                                      "attendeeReturnCom": userComment,
+                                      "faultStage": 2,
+                                    });
+                                  } else {
+                                    Fluttertoast.showToast(
+                                        msg: 'Please explain why you want to return this fault to your manager to reassign',
+                                        gravity: ToastGravity.CENTER);
+                                  }
+
+                                  _commentController.text = '';
+                                  _depAllocationController.text = '';
+                                  dropdownValue = 'Select Department...';
+                                  _faultResolvedController = false;
+                                  _dateReportedController.text = '';
+
+                                  visStage1 = false;
+                                  visStage2 = false;
+                                  visStage3 = false;
+                                  visStage4 = false;
+                                  visStage4 = false;
+
+                                  Navigator.of(context).pop();
+                                },
+                              ),
                             )
                           ],
                         ),
@@ -1924,7 +2053,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
   }
 
-  Future<void> _referBackReport([DocumentSnapshot? documentSnapshot]) async {
+  Future<void> _returnFaultToAdmin([DocumentSnapshot? documentSnapshot]) async {
 
     String dropdownValue = 'Select Department...';
     // String dropdownValue = documentSnapshot?['faultType'];
@@ -1994,10 +2123,176 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+
+                            Visibility(
+                              visible: managerAcc,
+                              child: const Text('Return fault to administrator'),
+                            ),
+
                             Visibility(
                               visible: employeeAcc,
-                              child: const Text('Only Administrators and Managers may process faults.'),
+                              child: const Text('Return fault to manager'),
                             ),
+
+                            Visibility(
+                              visible: (visStage2 || visStage3 ) && (managerAcc || employeeAcc),
+                              child: TextField(
+                                keyboardType: TextInputType.text,
+                                controller: _commentController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Reason for returning fault',),
+                              ),
+                            ),
+                            const SizedBox(height: 10,),
+
+                            Visibility(
+                              visible: (visStage2 || visStage3 || visStage4 || visStage5) && managerAcc,
+                              child: ElevatedButton(
+                                child: const Text('Return Fault'),
+                                onPressed: () async {
+                                  final String userComment = _commentController.text;
+
+                                  if (_commentController.text != '' ||
+                                      _commentController.text.isNotEmpty) {
+                                    await _faultData
+                                        .doc(documentSnapshot.id)
+                                        .update({
+                                      "managerReturnCom": userComment,
+                                      "faultStage": 1,
+                                    });
+                                  } else {
+                                    Fluttertoast.showToast(
+                                        msg: 'Please explain why you want to return this fault to the admin to reassign',
+                                        gravity: ToastGravity.CENTER);
+                                  }
+
+                                  _commentController.text = '';
+                                  _depAllocationController.text = '';
+                                  dropdownValue = 'Select Department...';
+                                  _faultResolvedController = false;
+                                  _dateReportedController.text = '';
+
+                                  visStage1 = false;
+                                  visStage2 = false;
+                                  visStage3 = false;
+                                  visStage4 = false;
+                                  visStage4 = false;
+
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ),//button for managers to return a fault if it cannot be handled
+
+                            Visibility(
+                              visible: (visStage3 || visStage4 ) && employeeAcc,
+                              child: ElevatedButton(
+                                child: const Text('Return to manager'),
+                                onPressed: () async {
+                                  final String userComment = _commentController.text;
+
+                                  if (_commentController.text != '' ||
+                                      _commentController.text.isNotEmpty) {
+                                    await _faultData
+                                        .doc(documentSnapshot.id)
+                                        .update({
+                                      "attendeeReturnCom": userComment,
+                                      "faultStage": 2,
+                                    });
+                                  } else {
+                                    Fluttertoast.showToast(
+                                        msg: 'Please explain why you want to return this fault to your manager to reassign',
+                                        gravity: ToastGravity.CENTER);
+                                  }
+
+                                  _commentController.text = '';
+                                  _depAllocationController.text = '';
+                                  dropdownValue = 'Select Department...';
+                                  _faultResolvedController = false;
+                                  _dateReportedController.text = '';
+
+                                  visStage1 = false;
+                                  visStage2 = false;
+                                  visStage3 = false;
+                                  visStage4 = false;
+                                  visStage4 = false;
+
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }));
+    }
+
+    _createBottomSheet();
+
+  }
+
+  Future<void> _reassignDept([DocumentSnapshot? documentSnapshot]) async {
+
+    String dropdownValue = 'Select Department...';
+    _commentController.text = '';
+
+    //This checks the current state of the fault stage 5 is resolve stage
+    int stageNum = documentSnapshot!['faultStage'];
+    if (stageNum == 1) {
+      visStage1 = true;
+      visStage2 = false;
+      visStage3 = false;
+      visStage4 = false;
+      visStage5 = false;
+    } else if (stageNum == 2) {
+      visStage1 = false;
+      visStage2 = true;
+      visStage3 = false;
+      visStage4 = false;
+      visStage5 = false;
+    } else if (stageNum == 3) {
+      visStage1 = false;
+      visStage2 = false;
+      visStage3 = true;
+      visStage4 = false;
+      visStage5 = false;
+    } else if (stageNum == 4) {
+      visStage1 = false;
+      visStage2 = false;
+      visStage3 = false;
+      visStage4 = true;
+      visStage5 = false;
+    } else if (stageNum == 5) {
+      visStage1 = false;
+      visStage2 = false;
+      visStage3 = false;
+      visStage4 = false;
+      visStage5 = true;
+    }
+
+    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
+    void _createBottomSheet() async{
+      showModalBottomSheet(
+          context: context,
+          builder: await showModalBottomSheet(
+              isScrollControlled: true,
+              context: context,
+              builder: (BuildContext ctx) {
+                return StatefulBuilder(
+                  builder: (BuildContext context, StateSetter setState) {
+                    return SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                            top: 20,
+                            left: 20,
+                            right: 20,
+                            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Visibility(
                               visible: adminAcc,
                               child: const Text('Department Allocation'),
@@ -2006,7 +2301,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                               visible: adminAcc,
                               child: DropdownButtonFormField <String>(
                                 value: dropdownValue,
-                                items: <String>['Select Department...','Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
+                                items: _deptName.toSet()
                                     .map<DropdownMenuItem<String>>((String value) {
                                   return DropdownMenuItem<String>(
                                     value: value,
@@ -2020,109 +2315,42 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 },
                               ),
                             ),
-
-                            Visibility(
-                              visible: adminAcc,
-                              child: const Text('Assignee Allocation'),
-                            ),
-                            Visibility(
-                              visible: adminAcc,
-                              child: DropdownButtonFormField <String>(
-                                value: dropdownValue2,
-                                items: _allUserNames
-                                    .map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value, style: const TextStyle(fontSize: 16),),
-                                  );
-                                }).toSet().toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    dropdownValue2 = newValue!;
-                                  });
-                                },
-                              ),
-                            ),
-
-                            Visibility(
-                              visible: visHide,
-                              child: TextField(
-                                keyboardType: TextInputType.text,
-                                controller: _deptHandlerController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Assignee Allocation',),
-                              ),
-                            ),
                             Visibility(
                               visible: adminAcc,
                               child: TextField(
                                 keyboardType: TextInputType.text,
                                 controller: _commentController,
                                 decoration: const InputDecoration(
-                                  labelText: 'Reason for reallocation',),
+                                  labelText: 'Reason for swapping fault department...',),
                               ),
                             ),
-                            Visibility(
-                              visible: managerAcc,
-                              child: TextField(
-                                keyboardType: TextInputType.text,
-                                controller: _commentController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Reason for Returning back',),
-                              ),
-                            ),
-                            const SizedBox(height: 10,),
-                            Visibility(
-                              visible: (visStage3 || visStage4) && managerAcc,
-                              child:
-                              Container(
-                                height: 50,
-                                padding: const EdgeInsets.only(left: 0.0, right: 25.0),
-                                child: Row(
-                                  children: <Widget>[
-                                    const Text('Fault Resolved?', style: TextStyle(fontSize: 16, fontWeight:FontWeight.w400 ),),
-                                    const SizedBox(width: 5,),
-                                    Checkbox(
-                                      checkColor: Colors.white,
-                                      fillColor: MaterialStateProperty.all<Color>(Colors.green),
-                                      value: _faultResolvedController,
-                                      onChanged: (bool? value) async {
-                                        setState(() {
-                                          _faultResolvedController = value!;
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
+
                             const SizedBox(height: 10,),
                             ElevatedButton(
-                              child: const Text('Reassign'),
+                              child: const Text('Send to Department'),
                               onPressed: () async {
                                 final String userComment = _commentController.text;
                                 final String depSelected = dropdownValue;
-                                final String deptUserAllocated = _deptHandlerController.text;
-                                final bool faultResolved = _faultResolvedController;
 
-                                if (_deptHandlerController.text != '' ||
-                                    _deptHandlerController.text.isNotEmpty) {
+                                if (dropdownValue != 'Select Department...' && (_commentController.text != '' ||
+                                _commentController.text.isNotEmpty)) {
                                   await _faultData
                                       .doc(documentSnapshot.id)
                                       .update({
-                                    "reAllocationComment": userComment,
+                                    "departmentSwitchComment": userComment,
+                                    "faultType": depSelected,
                                     "depAllocated": depSelected,
-                                    "deptHandler": deptUserAllocated,
+                                    "faultResolved": false,
                                     "faultStage": 1,
                                   });
-                                } else
-                                if (dropdownValue == 'Select Department...') {
+                                } else if (_commentController.text != '' ||
+                                    _commentController.text.isNotEmpty) {
                                   Fluttertoast.showToast(
-                                      msg: 'Please allocate the fault to the correct department before continuing',
+                                      msg: 'Please provide reasoning for switching department!',
                                       gravity: ToastGravity.CENTER);
                                 } else {
                                   Fluttertoast.showToast(
-                                      msg: 'Please assign handler to the Fault before continuing',
+                                      msg: 'Please select the department you wish to transfer this fault to!',
                                       gravity: ToastGravity.CENTER);
                                 }
 

@@ -263,29 +263,21 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                     const Center(
                       child: Text(
                         'Fault Information',
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                       ),
                     ),
                     const SizedBox(height: 10,),
-
                     Text(
                       'Reference Number: ${_allFaultResults[index]['ref']}',
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w400),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                     ),
                     const SizedBox(height: 5,),
-
                     Column(
                       children: [
-                        if(_allFaultResults[index]['accountNumber'] !=
-                            "")...[
+                        if(_allFaultResults[index]['accountNumber'] != "")...[
                           Text(
                             'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
-                            style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                         ] else
@@ -295,10 +287,55 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                     ),
                     Text(
                       'Street Address of Fault: ${_allFaultResults[index]['address']}',
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w400),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                     ),
                     const SizedBox(height: 5,),
+                    Text(
+                      'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['faultStage'] == 1)...[
+                          Text(
+                            'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          if(_allFaultResults[index]['faultStage'] == 2) ...[
+                            Text(
+                              'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            if(_allFaultResults[index]['faultStage'] == 3) ...[
+                              Text(
+                                'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              if(_allFaultResults[index]['faultStage'] == 4) ...[
+                                Text(
+                                  'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                ),
+                                const SizedBox(height: 5,),
+                              ] else
+                                if(_allFaultResults[index]['faultStage'] == 5) ...[
+                                  Text(
+                                    'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else
+                                  ...[
+                                  ],
+                      ],
+                    ),
                     Text(
                       'Fault Type: ${_allFaultResults[index]['faultType']}',
                       style: const TextStyle(
@@ -310,24 +347,7 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                         if(_allFaultResults[index]['faultDescription'] != "")...[
                           Text(
                             'Fault Description: ${_allFaultResults[index]['faultDescription']}',
-                            style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['handlerCom1'] != "")...[
-                          Text(
-                            'Handler Comment: ${_allFaultResults[index]['handlerCom1']}',
-                            style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                         ] else
@@ -340,9 +360,7 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                         if(_allFaultResults[index]['adminComment'] != "")...[
                           Text(
                             'Admin Comment: ${_allFaultResults[index]['adminComment']}',
-                            style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                         ] else
@@ -352,12 +370,10 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                     ),
                     Column(
                       children: [
-                        if(_allFaultResults[index]['handlerCom2'] != "")...[
+                        if(_allFaultResults[index]['reallocationComment'] != "")...[
                           Text(
-                            'Handler Final Comment: ${_allFaultResults[index]['handlerCom2']}',
-                            style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400),
+                            'Reason fault reallocated: ${_allFaultResults[index]['reAllocationComment']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                         ] else
@@ -367,12 +383,102 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                     ),
                     Column(
                       children: [
-                        if(_allFaultResults[index]['depComment2'] != "")...[
+                        if(_allFaultResults[index]['managerAllocated'] != "")...[
                           Text(
-                            'Department Final Comment: ${_allFaultResults[index]['depComment2']}',
-                            style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400),
+                            'Manager of fault: ${_allFaultResults[index]['managerAllocated']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['attendeeAllocated'] != "")...[
+                          Text(
+                            'Attendee Allocated: ${_allFaultResults[index]['attendeeAllocated']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['attendeeCom1'] != "")...[
+                          Text(
+                            'Attendee Comment: ${_allFaultResults[index]['attendeeCom1']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['managerCom1'] != "")...[
+                          Text(
+                            'Manager Comment: ${_allFaultResults[index]['managerCom1']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['attendeeCom2'] != "")...[
+                          Text(
+                            'Attendee Followup Comment: ${_allFaultResults[index]['attendeeCom2']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['managerCom2'] != "")...[
+                          Text(
+                            'Manager Final/Additional Comment: ${_allFaultResults[index]['managerCom2']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['attendeeCom3'] != "")...[
+                          Text(
+                            'Attendee Final Comment: ${_allFaultResults[index]['attendeeCom3']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['managerCom3'] != "")...[
+                          Text(
+                            'Manager Final Comment: ${_allFaultResults[index]['managerCom3']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5,),
                         ] else
@@ -382,14 +488,7 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                     ),
                     Text(
                       'Resolve State: $status',
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w400),
-                    ),
-                    const SizedBox(height: 5,),
-                    Text(
-                      'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w400),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                     ),
                     const SizedBox(height: 20,),
                     Column(
@@ -398,37 +497,31 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            ElevatedButton(
-                              onPressed: () {
+                            BasicIconButtonGrey(
+                              onPress: () async {
                                 accountNumberRep = _allFaultResults[index]['accountNumber'];
                                 locationGivenRep = _allFaultResults[index]['address'];
 
-                                Navigator.push(context, MaterialPageRoute(builder: (context) =>
-                                    MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
+                                Navigator.push(context, MaterialPageRoute(
+                                    builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
                                 ));
                               },
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(140, 10),),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.map, color: Colors.green[700],),
-                                  const SizedBox(width: 2,),
-                                  const Text(
-                                    'Location', style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black,),),
-                                ],
-                              ),
+                              labelText: 'Location',
+                              fSize: 14,
+                              faIcon: const FaIcon(Icons.map,),
+                              fgColor: Colors.green,
+                              btSize: const Size(50, 38),
                             ),
                             const SizedBox(width: 5,),
-                            ElevatedButton(
-                              onPressed: () {
+                            BasicIconButtonGrey(
+                              onPress: () async {
                                 showDialog(
                                     barrierDismissible: false,
                                     context: context,
                                     builder: (context) {
                                       return
                                         AlertDialog(
-                                          shape: const RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(16))),
+                                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
                                           title: const Text("Call Reporter!"),
                                           content: const Text("Would you like to call the individual who logged the fault?"),
                                           actions: [
@@ -436,8 +529,7 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                                               onPressed: () {
                                                 Navigator.of(context).pop();
                                               },
-                                              icon: const Icon(Icons.cancel, color: Colors.red,
-                                              ),
+                                              icon: const Icon(Icons.cancel, color: Colors.red,),
                                             ),
                                             IconButton(
                                               onPressed: () {
@@ -454,16 +546,32 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                                         );
                                     });
                               },
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(140, 10),),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.call, color: Colors.orange[700],),
-                                  const SizedBox(width: 2,),
-                                  const Text('Call User', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
-                                ],
-                              ),
+                              labelText: 'Call User',
+                              fSize: 14,
+                              faIcon: const FaIcon(Icons.call,),
+                              fgColor: Colors.orange,
+                              btSize: const Size(50, 38),
                             ),
                             const SizedBox(width: 5,),
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            Visibility(
+                              visible: adminAcc,
+                              child: Center(
+                                child: BasicIconButtonGrey(
+                                  onPress: () async {
+                                    _updateReport(_allFaultResults[index]);
+                                  },
+                                  labelText: 'Remove from archive',
+                                  fSize: 14,
+                                  faIcon: const FaIcon(Icons.replay_circle_filled,),
+                                  fgColor: Colors.blue,
+                                  btSize: const Size(50, 38),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -849,50 +957,8 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
   //This class is for updating the report stages by the manager and the handler to comment through phases of the report
   Future<void> _updateReport([DocumentSnapshot? documentSnapshot]) async {
 
-    String dropdownValue = 'Electricity';
-    int stageNum = documentSnapshot!['faultStage'];
+      _faultResolvedController = documentSnapshot?['faultResolved'];
 
-    if (stageNum == 1) {
-      visStage1 = true;
-      visStage2 = false;
-      visStage3 = false;
-      visStage4 = false;
-      visStage5 = false;
-    } else if (stageNum == 2) {
-      visStage1 = false;
-      visStage2 = true;
-      visStage3 = false;
-      visStage4 = false;
-      visStage5 = false;
-    } else if (stageNum == 3) {
-      visStage1 = false;
-      visStage2 = false;
-      visStage3 = true;
-      visStage4 = false;
-      visStage5 = false;
-    } else if (stageNum == 4) {
-      visStage1 = false;
-      visStage2 = false;
-      visStage3 = false;
-      visStage4 = true;
-      visStage5 = false;
-    } else if (stageNum == 5) {
-      visStage1 = false;
-      visStage2 = false;
-      visStage3 = false;
-      visStage4 = false;
-      visStage5 = true;
-    }
-
-    if (documentSnapshot != null) {
-      _accountNumberController.text = documentSnapshot['accountNumber'];
-      _addressController.text = documentSnapshot['address'];
-      _descriptionController.text = documentSnapshot['faultDescription'];
-      _commentController.text = '';
-      _depAllocationController.text = documentSnapshot['depAllocated'];
-      _faultResolvedController = documentSnapshot['faultResolved'];
-      _dateReportedController.text = documentSnapshot['dateReported'];
-    }
 
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
     void _createBottomSheet() async{
@@ -915,56 +981,13 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Visibility(
-                              visible: visStage1,
-                              child: const Text('Department Allocation'),
-                            ),
-                            Visibility(
-                              visible: visStage1,
-                              child: DropdownButtonFormField <String>(
-                                value: dropdownValue,
-                                items: <String>['Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
-                                    .map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(
-                                      value,
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    dropdownValue = newValue!;
-                                  });
-                                },
-                              ),
-                            ),
-                            Visibility(
-                              visible: visStage1,
-                              child: TextField(
-                                keyboardType: TextInputType.text,
-                                controller: _deptHandlerController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Handler User Allocation',),
-                              ),
-                            ),
+
                             Visibility(
                               visible: visShow,
-                              child: TextField(
-                                keyboardType: TextInputType.text,
-                                controller: _commentController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Comment to Department',),
-                              ),
-                            ),
-                            const SizedBox(height: 10,),
-                            Visibility(
-                              visible: visStage5,
                               child: const Text('Re-open Fault'),
                             ),
                             Visibility(
-                              visible: visStage3 || visStage4 || visStage5,
+                              visible: visShow,
                               child:
                               Container(
                                 height: 50,
@@ -990,160 +1013,22 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
                             ),
                             const SizedBox(height: 10,),
                             ElevatedButton(
-                              child: const Text('Update'),
+                              child: const Text('Set Resolve Status'),
                               onPressed: () async {
-                                final String reporterNumber = documentSnapshot['reporterContact'];
-                                final String userComment = _commentController.text;
-                                final String deptUserAllocated = _deptHandlerController.text;
-                                final String depSelected = dropdownValue;
                                 final bool faultResolved = _faultResolvedController;
 
-                                if (faultStage == 1) {
-                                  if (reporterNumber != null) {
-                                    if(_deptHandlerController.text != '' || _deptHandlerController.text.isNotEmpty){
-                                      await _faultData
-                                          .doc(documentSnapshot.id)
-                                          .update({
-                                        "depComment1": userComment,
-                                        "depAllocated": depSelected,
-                                        "deptHandler": deptUserAllocated,
-                                        "faultStage": 2,
-                                      });
-                                    } else {
-
-                                      Fluttertoast.showToast(msg: 'Please Assign Handler to the Fault Before Continuing', gravity: ToastGravity.CENTER);
-                                    }
-                                  }
-                                  _accountNumberController.text = '';
-                                  _addressController.text = '';
-                                  _accountNumberController.text = '';
-                                  _addressController.text = '';
-                                  _commentController.text = '';
-                                  _depAllocationController.text = '';
-                                  dropdownValue = '';
-                                  _faultResolvedController = false;
-                                  _dateReportedController.text = '';
-
-                                  visStage1 = false;
-                                  visStage2 = false;
-                                  visStage3 = false;
-                                  visStage4 = false;
-                                  visStage5 = false;
-
-                                  if(context.mounted)Navigator.of(context).pop();
-
-                                } else if (faultStage == 2) {
-                                  if (reporterNumber != null) {
-                                    await _faultData
-                                        .doc(documentSnapshot.id)
-                                        .update({
-                                      "handlerCom1": userComment,
-                                      "faultStage": 3,
-                                    });
-                                  }
-                                  _accountNumberController.text = '';
-                                  _addressController.text = '';
-                                  _accountNumberController.text = '';
-                                  _addressController.text = '';
-                                  _commentController.text = '';
-                                  _depAllocationController.text = '';
-                                  dropdownValue = '';
-                                  _faultResolvedController = false;
-                                  _dateReportedController.text = '';
-
-                                  visStage1 = false;
-                                  visStage2 = false;
-                                  visStage3 = false;
-                                  visStage4 = false;
-                                  visStage5 = false;
-
-                                  Navigator.of(context).pop();
-
-                                } else if (faultStage == 3) {
-                                  if (reporterNumber != null) {
-                                    await _faultData
-                                        .doc(documentSnapshot.id)
-                                        .update({
-                                      "depComment2": userComment,
-                                      "faultResolved": faultResolved,
-                                      "faultStage": 4,
-                                    });
-                                  }
-                                  _accountNumberController.text = '';
-                                  _addressController.text = '';
-                                  _accountNumberController.text = '';
-                                  _addressController.text = '';
-                                  _commentController.text = '';
-                                  _depAllocationController.text = '';
-                                  dropdownValue = '';
-                                  _faultResolvedController = false;
-                                  _dateReportedController.text = '';
-
-                                  visStage1 = false;
-                                  visStage2 = false;
-                                  visStage3 = false;
-                                  visStage4 = false;
-                                  visStage5 = false;
-
-                                  if(context.mounted)Navigator.of(context).pop();
-
-                                } else if (faultStage == 5) {
-                                  if (reporterNumber != null) {
-                                    await _faultData
-                                        .doc(documentSnapshot.id)
-                                        .update({
-                                      "depComment1": userComment,
-                                      "faultResolved": faultResolved,
-                                      "faultStage": 1,
-                                    });
-                                  }
-                                  _accountNumberController.text = '';
-                                  _addressController.text = '';
-                                  _accountNumberController.text = '';
-                                  _addressController.text = '';
-                                  _commentController.text = '';
-                                  _depAllocationController.text = '';
-                                  dropdownValue = '';
-                                  _faultResolvedController = false;
-                                  _dateReportedController.text = '';
-
-                                  visStage1 = false;
-                                  visStage2 = false;
-                                  visStage3 = false;
-                                  visStage4 = false;
-                                  visStage5 = false;
-
-                                  if(context.mounted)Navigator.of(context).pop();
-
-                                } else if (faultStage == 4) {
-                                  if (reporterNumber != null) {
-                                    await _faultData
-                                        .doc(documentSnapshot.id)
-                                        .update({
-                                      "handlerCom2": userComment,
-                                      "faultResolved": faultResolved,
-                                      "faultStage": 5,
-                                    });
-                                  }
-                                  _accountNumberController.text = '';
-                                  _addressController.text = '';
-                                  _accountNumberController.text = '';
-                                  _addressController.text = '';
-                                  _commentController.text = '';
-                                  _depAllocationController.text = '';
-                                  dropdownValue = '';
-                                  _faultResolvedController = false;
-                                  _dateReportedController.text = '';
-
-                                  visStage1 = false;
-                                  visStage2 = false;
-                                  visStage3 = false;
-                                  visStage4 = false;
-                                  visStage5 = false;
-
-                                  if(context.mounted)Navigator.of(context).pop();
-
+                                if (_faultResolvedController != true) {
+                                  await _faultData
+                                      .doc(documentSnapshot?.id).update({
+                                    "faultResolved": faultResolved,
+                                    "faultStage": 1,
+                                  });
+                                  Fluttertoast.showToast(msg: 'Fault has been moved to unresolved fault stage 1', gravity: ToastGravity.CENTER);
                                 }
+
+                                _faultResolvedController = false;
+
+                                if(context.mounted)Navigator.of(context).pop();
 
                               },
                             )

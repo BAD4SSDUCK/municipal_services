@@ -544,6 +544,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  const SizedBox(height: 5,),
                                   const Center(
                                     child: Text(
                                       'Property Information',
@@ -598,7 +599,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           );
                         } else {
                           ///a card to display ALL details for users when role is set to admin is in "display_info_all_users.dart"
-                          return const Card();
+                          return const SizedBox();
                         }
                       },
                     );
@@ -642,40 +643,79 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                     const Center(
                                       child: Text(
                                         'Fault Information',
-                                        style: TextStyle(
-                                            fontSize: 19, fontWeight: FontWeight.w700),
+                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                                       ),
                                     ),
                                     const SizedBox(height: 10,),
-
                                     Text(
                                       'Reference Number: ${documentSnapshot['ref']}',
-                                      style: const TextStyle(
-                                          fontSize: 16, fontWeight: FontWeight.w400),
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                     ),
                                     const SizedBox(height: 5,),
-
-
                                     Column(
                                       children: [
-                                        if(status != "")...[
+                                        if(documentSnapshot['accountNumber'] != "")...[
                                           Text(
                                             'Reporter Account Number: ${documentSnapshot['accountNumber']}',
-                                            style: const TextStyle(
-                                                fontSize: 16, fontWeight: FontWeight.w400),
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                           ),
                                           const SizedBox(height: 5,),
-                                        ] else ...[
-
-                                        ],
+                                        ] else
+                                          ...[
+                                          ],
                                       ],
                                     ),
                                     Text(
                                       'Street Address of Fault: ${documentSnapshot['address']}',
-                                      style: const TextStyle(
-                                          fontSize: 16, fontWeight: FontWeight.w400),
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                     ),
                                     const SizedBox(height: 5,),
+                                    Text(
+                                      'Date of Fault Report: ${documentSnapshot['dateReported']}',
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                                    ),
+                                    const SizedBox(height: 5,),
+                                    Column(
+                                      children: [
+                                        if(documentSnapshot['faultStage'] == 1)...[
+                                          Text(
+                                            'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
+                                          ),
+                                          const SizedBox(height: 5,),
+                                        ] else
+                                          if(documentSnapshot['faultStage'] == 2) ...[
+                                            Text(
+                                              'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
+                                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
+                                            ),
+                                            const SizedBox(height: 5,),
+                                          ] else
+                                            if(documentSnapshot['faultStage'] == 3) ...[
+                                              Text(
+                                                'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
+                                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
+                                              ),
+                                              const SizedBox(height: 5,),
+                                            ] else
+                                              if(documentSnapshot['faultStage'] == 4) ...[
+                                                Text(
+                                                  'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
+                                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                                ),
+                                                const SizedBox(height: 5,),
+                                              ] else
+                                                if(documentSnapshot['faultStage'] == 5) ...[
+                                                  Text(
+                                                    'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
+                                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                                  ),
+                                                  const SizedBox(height: 5,),
+                                                ] else
+                                                  ...[
+                                                  ],
+                                      ],
+                                    ),
                                     Text(
                                       'Fault Type: ${documentSnapshot['faultType']}',
                                       style: const TextStyle(
@@ -687,13 +727,12 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                         if(documentSnapshot['faultDescription'] != "")...[
                                           Text(
                                             'Fault Description: ${documentSnapshot['faultDescription']}',
-                                            style: const TextStyle(
-                                                fontSize: 16, fontWeight: FontWeight.w400),
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                           ),
                                           const SizedBox(height: 5,),
-                                        ] else ...[
-
-                                        ],
+                                        ] else
+                                          ...[
+                                          ],
                                       ],
                                     ),
                                     Column(
@@ -701,82 +740,138 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                         if(documentSnapshot['adminComment'] != "")...[
                                           Text(
                                             'Admin Comment: ${documentSnapshot['adminComment']}',
-                                            style: const TextStyle(
-                                                fontSize: 16, fontWeight: FontWeight.w400),
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                           ),
                                           const SizedBox(height: 5,),
-                                        ] else ...[
-
-                                        ],
+                                        ] else
+                                          ...[
+                                          ],
                                       ],
                                     ),
                                     Column(
                                       children: [
-                                        if(documentSnapshot['handlerCom1'] != "")...[
+                                        if(documentSnapshot['reallocationComment'] != "")...[
                                           Text(
-                                            'Handler Comment: ${documentSnapshot['handlerCom1']}',
-                                            style: const TextStyle(
-                                                fontSize: 16, fontWeight: FontWeight.w400),
+                                            'Reason fault reallocated: ${documentSnapshot['reAllocationComment']}',
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                           ),
                                           const SizedBox(height: 5,),
-                                        ] else ...[
-
-                                        ],
+                                        ] else
+                                          ...[
+                                          ],
                                       ],
                                     ),
                                     Column(
                                       children: [
-                                        if(documentSnapshot['depComment2'] != "")...[
+                                        if(documentSnapshot['managerAllocated'] != "")...[
                                           Text(
-                                            'Department Comment: ${documentSnapshot['depComment2']}',
-                                            style: const TextStyle(
-                                                fontSize: 16, fontWeight: FontWeight.w400),
+                                            'Manager of fault: ${documentSnapshot['managerAllocated']}',
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                           ),
                                           const SizedBox(height: 5,),
-                                        ] else ...[
+                                        ] else
+                                          ...[
+                                          ],
+                                      ],
+                                    ),
 
-                                        ],
+                                    Column(
+                                      children: [
+                                        if(documentSnapshot['attendeeAllocated'] != "")...[
+                                          Text(
+                                            'Attendee Allocated: ${documentSnapshot['attendeeAllocated']}',
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                                          ),
+                                          const SizedBox(height: 5,),
+                                        ] else
+                                          ...[
+                                          ],
                                       ],
                                     ),
                                     Column(
                                       children: [
-                                        if(documentSnapshot['handlerCom2'] != "")...[
+                                        if(documentSnapshot['attendeeCom1'] != "")...[
                                           Text(
-                                            'Handler Final Comment: ${documentSnapshot['handlerCom2']}',
-                                            style: const TextStyle(
-                                                fontSize: 16, fontWeight: FontWeight.w400),
+                                            'Attendee Comment: ${documentSnapshot['attendeeCom1']}',
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                           ),
                                           const SizedBox(height: 5,),
-                                        ] else ...[
-
-                                        ],
+                                        ] else
+                                          ...[
+                                          ],
                                       ],
                                     ),
                                     Column(
                                       children: [
-                                        if(documentSnapshot['depComment3'] != "")...[
+                                        if(documentSnapshot['managerCom1'] != "")...[
                                           Text(
-                                            'Department Final Comment: ${documentSnapshot['depComment3']}',
-                                            style: const TextStyle(
-                                                fontSize: 16, fontWeight: FontWeight.w400),
+                                            'Manager Comment: ${documentSnapshot['managerCom1']}',
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                           ),
                                           const SizedBox(height: 5,),
-                                        ] else ...[
-
-                                        ],
+                                        ] else
+                                          ...[
+                                          ],
+                                      ],
+                                    ),
+                                    Column(
+                                      children: [
+                                        if(documentSnapshot['attendeeCom2'] != "")...[
+                                          Text(
+                                            'Attendee Followup Comment: ${documentSnapshot['attendeeCom2']}',
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                                          ),
+                                          const SizedBox(height: 5,),
+                                        ] else
+                                          ...[
+                                          ],
+                                      ],
+                                    ),
+                                    Column(
+                                      children: [
+                                        if(documentSnapshot['managerCom2'] != "")...[
+                                          Text(
+                                            'Manager Final/Additional Comment: ${documentSnapshot['managerCom2']}',
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                                          ),
+                                          const SizedBox(height: 5,),
+                                        ] else
+                                          ...[
+                                          ],
+                                      ],
+                                    ),
+                                    Column(
+                                      children: [
+                                        if(documentSnapshot['attendeeCom3'] != "")...[
+                                          Text(
+                                            'Attendee Final Comment: ${documentSnapshot['attendeeCom3']}',
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                                          ),
+                                          const SizedBox(height: 5,),
+                                        ] else
+                                          ...[
+                                          ],
+                                      ],
+                                    ),
+                                    Column(
+                                      children: [
+                                        if(documentSnapshot['managerCom3'] != "")...[
+                                          Text(
+                                            'Manager Final Comment: ${documentSnapshot['managerCom3']}',
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                                          ),
+                                          const SizedBox(height: 5,),
+                                        ] else
+                                          ...[
+                                          ],
                                       ],
                                     ),
                                     Text(
                                       'Resolve State: $status',
-                                      style: const TextStyle(
-                                          fontSize: 16, fontWeight: FontWeight.w400),
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                     ),
+
                                     const SizedBox(height: 5,),
-                                    Text(
-                                      'Date of Fault Report: ${documentSnapshot['dateReported']}',
-                                      style: const TextStyle(
-                                          fontSize: 16, fontWeight: FontWeight.w400),
-                                    ),
                                     const SizedBox(height: 5,),
                                     Column(
                                       children: [
@@ -947,7 +1042,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                             );
                           }
                           else {
-                            return const Card();
+                            return const SizedBox();
                           }
                         },
                       );
@@ -1108,23 +1203,30 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
     if (_currentUser != null) {
       await _faultData.add({
+        "ref": refNum,
         "uid": _currentUser,
         "accountNumber": '',
         "address": addressFault,
         "faultType": dropdownValue,
         "reporterContact": userPhone,
-        "deptHandler": '',
-        "depComment1": '',
-        "depComment2": '',
-        "depComment3": '',
-        "handlerCom1": '',
-        "handlerCom2": '',
+        "departmentSwitchComment": '',
+        "reallocationComment": '',
+        "attendeeAllocated": '',
+        "managerAllocated": '',
+        "adminComment": '',
+        "attendeeCom1": '',
+        "attendeeCom2": '',
+        "attendeeCom3": '',
+        "managerCom1": '',
+        "managerCom2": '',
+        "managerCom3": '',
+        "managerReturnCom": '',
+        "attendeeReturnCom": '',
         "faultDescription": faultDescription,
         "depAllocated": '',
         "faultResolved": false,
         "dateReported": formattedDate,
         "faultStage": 1,
-        "ref": refNum,
       });
 
       try {
@@ -1161,26 +1263,30 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
     if (_currentUser != null) {
       await _faultData.add({
+        "ref": refNum,
         "uid": _currentUser,
         "accountNumber": '',
         "address": addressFault,
         "faultType": dropdownValue,
         "reporterContact": userPhone,
-        "deptHandler": '',
-        "handlerAllocated": '',
-        "reAllocationComment": '',
+        "departmentSwitchComment": '',
+        "reallocationComment": '',
+        "attendeeAllocated": '',
+        "managerAllocated": '',
         "adminComment": '',
-        "depComment1": '',
-        "depComment2": '',
-        "depComment3": '',
-        "handlerCom1": '',
-        "handlerCom2": '',
+        "attendeeCom1": '',
+        "attendeeCom2": '',
+        "attendeeCom3": '',
+        "managerCom1": '',
+        "managerCom2": '',
+        "managerCom3": '',
+        "managerReturnCom": '',
+        "attendeeReturnCom": '',
         "faultDescription": faultDescription,
         "depAllocated": '',
         "faultResolved": false,
         "dateReported": formattedDate,
         "faultStage": 1,
-        "ref": refNum,
       });
 
       _addressController.text = '';
@@ -1294,6 +1400,8 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                                     "depComment3": '',
                                                     "handlerCom1": '',
                                                     "handlerCom2": '',
+                                                    "managerReturnCom": '',
+                                                    "employeeReturnCom": '',
                                                     "faultType": faultType,
                                                     "faultDescription": faultDescription,
                                                     "dateReported": formattedDate,

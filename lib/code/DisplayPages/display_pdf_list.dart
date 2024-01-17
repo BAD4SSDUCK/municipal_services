@@ -378,46 +378,6 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                 });
           }
         }
-      } else if(item.toString().contains(accNum)!=true) {
-        Fluttertoast.showToast(msg: "Unable to download statement.");
-        if(context.mounted) {
-          showDialog(
-              barrierDismissible: false,
-              context: context,
-              builder: (context) {
-                return
-                  AlertDialog(
-                    shape: const RoundedRectangleBorder(
-                        borderRadius:
-                        BorderRadius.all(Radius.circular(16))),
-                    title: const Text("Statement Download Error"),
-                    content: const Text(
-                        "Would you like to contact the municipality for assistance on this error?"),
-                    actions: [
-                      IconButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        icon: const Icon(
-                          Icons.cancel,
-                          color: Colors.red,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          final Uri _tel = Uri.parse('tel:+27${0800001868}');
-                          launchUrl(_tel);
-                          Navigator.of(context).pop();
-                        },
-                        icon: const Icon(
-                          Icons.done,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ],
-                  );
-              });
-        }
       }
     }
   }

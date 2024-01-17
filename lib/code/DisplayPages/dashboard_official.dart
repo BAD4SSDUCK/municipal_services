@@ -62,6 +62,12 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
   void dispose() {
     fToast =FToast();
     fToast.init(context);
+    userRole;
+    visShow;
+    visHide;
+    visAdmin;
+    visManager;
+    visEmployee;
     adminCheck();
     super.dispose();
   }
