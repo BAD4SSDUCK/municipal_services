@@ -118,6 +118,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
   String myUserRole = '';
   String myDepartment = '';
+  String autoManager = '';
   List _allUserRolesResults = [];
   List _allUserResults = [];
   bool visShow = true;
@@ -288,8 +289,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           managerAcc = false;
           employeeAcc = false;
         } else if(myUserRole == 'Service Provider'){
-          adminAcc = false;
-          managerAcc = true;
+          adminAcc = true;
+          managerAcc = false;
           employeeAcc = false;
         } else if(myUserRole == 'Manager'){
           adminAcc = false;
@@ -323,8 +324,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
         if(userDepartment==myDepartment){
           _managerUserNames.add(userName);
           print('Manager to list::: $userName');
+          autoManager = userName;
         }
-        else if ((myUserRole != 'Manager'|| myUserRole != 'Employee')) {
+        else if ((myDepartment != 'Water & Sanitation' && myDepartment != 'Waste Management' && myDepartment != 'Electricity' && myDepartment != 'Roadworks')) {
           _managerUserNames.add(userName);
           print('Manager to list::: $userName');
         }
@@ -335,7 +337,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           _employeesUserNames.add(userName);
           print('Employee to list::: $userName');
         }
-        else if ((myUserRole != 'Manager'|| myUserRole != 'Employee')) {
+        else if ((myDepartment != 'Water & Sanitation' && myDepartment != 'Waste Management' && myDepartment != 'Electricity' && myDepartment != 'Roadworks')) {
           _employeesUserNames.add(userName);
           print('Employee to list::: $userName');
         }
@@ -1329,11 +1331,13 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                             ),
 
                             Visibility(
-                              visible: visStage1 && adminAcc,
+                              // visible: visStage1 && adminAcc,
+                              visible: visHide,
                               child: const Text('Department Manager Allocated'),
                             ),
                             Visibility(
-                              visible: visStage1 && adminAcc,
+                              // visible: visStage1 && adminAcc,
+                              visible: visHide,
                               child: DropdownButtonFormField <String>(
                                 value: dropdownValue2,
                                 items: _managerUserNames.toSet()
@@ -1416,12 +1420,15 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                     onPressed: () async {
                                       final String depSelected = dropdownValue;
                                       final String attendeeAllocated = dropdownValue3;
-                                      final String managerAllocated = dropdownValue2;
+                                      String managerAllocated = dropdownValue2;
                                       final String userComment = _commentController.text;
                                       final bool faultResolved = _faultResolvedController;
 
                                       if (faultStage == 1 && adminAcc) {
-                                        if((_commentController.text != '' || _commentController.text.isNotEmpty) && (dropdownValue2 != 'Assign User...' && dropdownValue3 != 'Assign User...' && dropdownValue != 'Select Department...')){
+                                        if (autoManager != ''){
+                                          managerAllocated = autoManager;
+                                        }
+                                        if((_commentController.text != '' || _commentController.text.isNotEmpty) && (dropdownValue3 != 'Assign User...' && dropdownValue != 'Select Department...')){ ///dropdownValue2 != 'Assign User...' &&
                                           await _faultData
                                               .doc(documentSnapshot.id)
                                               .update({

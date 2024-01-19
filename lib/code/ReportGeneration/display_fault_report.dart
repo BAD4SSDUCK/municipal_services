@@ -762,94 +762,134 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
     int listRow = 0;
 
     sheet.getRangeByName('A1').setText('Ref #');
-    sheet.getRangeByName('B1').setText('Account #');
-    sheet.getRangeByName('C1').setText('Address');
-    sheet.getRangeByName('D1').setText('Report Date');
-    sheet.getRangeByName('E1').setText('Fault Type');
-    sheet.getRangeByName('F1').setText('Fault Description');
-    sheet.getRangeByName('G1').setText('Fault Handler');
-    sheet.getRangeByName('H1').setText('Fault Stage');
-    sheet.getRangeByName('I1').setText('Resolve Status');
+    sheet.getRangeByName('B1').setText('Resolve Status');
+    sheet.getRangeByName('C1').setText('Fault Type');
+    sheet.getRangeByName('D1').setText('Account #');
+    sheet.getRangeByName('E1').setText('Address');
+    sheet.getRangeByName('F1').setText('Report Date');
+    sheet.getRangeByName('G1').setText('Department Allocated');
+    sheet.getRangeByName('H1').setText('Fault Description');
+    sheet.getRangeByName('I1').setText('Fault Stage');
     sheet.getRangeByName('J1').setText('Reporters Phone Number');
-    sheet.getRangeByName('K1').setText('Department Admin Comment 1');
-    sheet.getRangeByName('L1').setText('Handler Comment 1');
-    sheet.getRangeByName('M1').setText('Department Admin Comment 2');
-    sheet.getRangeByName('N1').setText('Handler Comment 2');
-    sheet.getRangeByName('O1').setText('Department Admin Comment 3');
+    sheet.getRangeByName('K1').setText('Attendee Allocated');
+    sheet.getRangeByName('L1').setText('Manager Allocated');
+    sheet.getRangeByName('M1').setText('Admin Comment');
+    sheet.getRangeByName('N1').setText('Attendee Com1');
+    sheet.getRangeByName('O1').setText('Manager Com1');
+    sheet.getRangeByName('P1').setText('Attendee Com2');
+    sheet.getRangeByName('Q1').setText('Manager Com2');
+    sheet.getRangeByName('R1').setText('Attendee Com3');
+    sheet.getRangeByName('S1').setText('Manager Com3');
+    sheet.getRangeByName('T1').setText('Department SwitchComment');
+    sheet.getRangeByName('U1').setText('Reallocation Comment');
+    sheet.getRangeByName('V1').setText('Manager ReturnCom');
+    sheet.getRangeByName('W1').setText('Attendee ReturnCom');
 
     for(var reportSnapshot in _allFaultReport){
       ///Need to build a property model that retrieves property data entirely from the db
       while(excelRow <= _allFaultReport.length+1) {
         print('Report Lists:::: ${_allFaultReport[listRow]['address']}');
         
-        // if(_allFaultReport[listRow]['dateReported'].toString().contains(dateRange1)){
-        //   String referenceNum     = _allFaultReport[listRow]['ref'].toString();
-        //   String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();
-        //   String address          = _allFaultReport[listRow]['address'].toString();
-        //   String faultDate        = _allFaultReport[listRow]['dateReported'].toString();
-        //   String faultType        = _allFaultReport[listRow]['faultType'].toString();
-        //   String faultDescription = _allFaultReport[listRow]['faultDescription'].toString();
-        //   String faultHandler     = _allFaultReport[listRow]['deptHandler'].toString();
-        //   String faultStage       = _allFaultReport[listRow]['faultStage'].toString();
-        //   String resolveStatus    = _allFaultReport[listRow]['faultResolved'].toString();
-        //   String phoneNumber      = _allFaultReport[listRow]['reporterContact'].toString();
-        //   String depCom1          = _allFaultReport[listRow]['depComment1'].toString();
-        //   String handlerCom1      = _allFaultReport[listRow]['handlerCom1'].toString();
-        //   String depCom2          = _allFaultReport[listRow]['depComment2'].toString();
-        //   String handlerCom2      = _allFaultReport[listRow]['handlerCom2'].toString();
-        //   String depCom3          = _allFaultReport[listRow]['depComment3'].toString();
-        //
-        //   sheet.getRangeByName('A$excelRow').setText(referenceNum);
-        //   sheet.getRangeByName('B$excelRow').setText(accountNum);
-        //   sheet.getRangeByName('C$excelRow').setText(address);
-        //   sheet.getRangeByName('D$excelRow').setText(faultDate);
-        //   sheet.getRangeByName('E$excelRow').setText(faultType);
-        //   sheet.getRangeByName('F$excelRow').setText(faultDescription);
-        //   sheet.getRangeByName('G$excelRow').setText(faultHandler);
-        //   sheet.getRangeByName('H$excelRow').setText(faultStage);
-        //   sheet.getRangeByName('I$excelRow').setText(resolveStatus);
-        //   sheet.getRangeByName('J$excelRow').setText(phoneNumber);
-        //   sheet.getRangeByName('K$excelRow').setText(depCom1);
-        //   sheet.getRangeByName('L$excelRow').setText(handlerCom1);
-        //   sheet.getRangeByName('M$excelRow').setText(depCom2);
-        //   sheet.getRangeByName('N$excelRow').setText(handlerCom2);
-        //   sheet.getRangeByName('O$excelRow').setText(depCom3);
-        //
-        //   excelRow+=1;
-        //   listRow+=1;
-        // }
+        if(_allFaultReport[listRow]['dateReported'].toString().contains(dateRange1)){
+          String referenceNum      = _allFaultReport[listRow]['ref'].toString();
+          String resolveStatus     = _allFaultReport[listRow]['faultResolved'].toString();
+          String faultType         = _allFaultReport[listRow]['faultType'].toString();
+          String accountNum        = _allFaultReport[listRow]['accountNumber'].toString();
+          String address           = _allFaultReport[listRow]['address'].toString();
+          String faultDate         = _allFaultReport[listRow]['dateReported'].toString();
+          String depAllocated      = _allFaultReport[listRow]['depAllocated'].toString();
+          String faultDescription  = _allFaultReport[listRow]['faultDescription'].toString();
+          String faultStage        = _allFaultReport[listRow]['faultStage'].toString();
+          String phoneNumber       = _allFaultReport[listRow]['reporterContact'].toString();
+          String attendeeAlloc     = _allFaultReport[listRow]['attendeeAllocated'].toString();
+          String managerAlloc      = _allFaultReport[listRow]['managerAllocated'].toString();
+          String adminCom          = _allFaultReport[listRow]['adminComment'].toString();
+          String attendeeCom1      = _allFaultReport[listRow]['attendeeCom1'].toString();
+          String managerCom1       = _allFaultReport[listRow]['managerCom1'].toString();
+          String attendeeCom2      = _allFaultReport[listRow]['attendeeCom2'].toString();
+          String managerCom2       = _allFaultReport[listRow]['managerCom2'].toString();
+          String attendeeCom3      = _allFaultReport[listRow]['attendeeCom3'].toString();
+          String managerCom3       = _allFaultReport[listRow]['managerCom3'].toString();
+          String deptSwitchCom     = _allFaultReport[listRow]['departmentSwitchComment'].toString();
+          String reallocCom        = _allFaultReport[listRow]['reallocationComment'].toString();
+          String managerReturnCom  = _allFaultReport[listRow]['managerReturnCom'].toString();
+          String attendeeReturnCom = _allFaultReport[listRow]['attendeeReturnCom'].toString();
 
-        String referenceNum     = _allFaultReport[listRow]['ref'].toString();
-        String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();
-        String address          = _allFaultReport[listRow]['address'].toString();
-        String faultDate        = _allFaultReport[listRow]['dateReported'].toString();
-        String faultType        = _allFaultReport[listRow]['faultType'].toString();
-        String faultDescription = _allFaultReport[listRow]['faultDescription'].toString();
-        String faultHandler     = _allFaultReport[listRow]['deptHandler'].toString();
-        String faultStage       = _allFaultReport[listRow]['faultStage'].toString();
-        String resolveStatus    = _allFaultReport[listRow]['faultResolved'].toString();
-        String phoneNumber      = _allFaultReport[listRow]['reporterContact'].toString();
-        String depCom1          = _allFaultReport[listRow]['depComment1'].toString();
-        String handlerCom1      = _allFaultReport[listRow]['handlerCom1'].toString();
-        String depCom2          = _allFaultReport[listRow]['depComment2'].toString();
-        String handlerCom2      = _allFaultReport[listRow]['handlerCom2'].toString();
-        String depCom3          = _allFaultReport[listRow]['depComment3'].toString();
+          sheet.getRangeByName('A$excelRow').setText(referenceNum);
+          sheet.getRangeByName('B$excelRow').setText(resolveStatus);
+          sheet.getRangeByName('C$excelRow').setText(faultType);
+          sheet.getRangeByName('D$excelRow').setText(accountNum);
+          sheet.getRangeByName('E$excelRow').setText(address);
+          sheet.getRangeByName('F$excelRow').setText(faultDate);
+          sheet.getRangeByName('G$excelRow').setText(depAllocated);
+          sheet.getRangeByName('H$excelRow').setText(faultDescription);
+          sheet.getRangeByName('I$excelRow').setText(faultStage);
+          sheet.getRangeByName('J$excelRow').setText(phoneNumber);
+          sheet.getRangeByName('K$excelRow').setText(attendeeAlloc);
+          sheet.getRangeByName('L$excelRow').setText(managerAlloc);
+          sheet.getRangeByName('M$excelRow').setText(adminCom);
+          sheet.getRangeByName('N$excelRow').setText(attendeeCom1);
+          sheet.getRangeByName('O$excelRow').setText(managerCom1);
+          sheet.getRangeByName('P$excelRow').setText(attendeeCom2);
+          sheet.getRangeByName('Q$excelRow').setText(managerCom2);
+          sheet.getRangeByName('R$excelRow').setText(attendeeCom3);
+          sheet.getRangeByName('S$excelRow').setText(managerCom3);
+          sheet.getRangeByName('T$excelRow').setText(deptSwitchCom);
+          sheet.getRangeByName('U$excelRow').setText(reallocCom);
+          sheet.getRangeByName('V$excelRow').setText(managerReturnCom);
+          sheet.getRangeByName('W$excelRow').setText(attendeeReturnCom);
+
+          excelRow+=1;
+          listRow+=1;
+        }
+
+        String referenceNum      = _allFaultReport[listRow]['ref'].toString();
+        String resolveStatus     = _allFaultReport[listRow]['faultResolved'].toString();
+        String faultType         = _allFaultReport[listRow]['faultType'].toString();
+        String accountNum        = _allFaultReport[listRow]['accountNumber'].toString();
+        String address           = _allFaultReport[listRow]['address'].toString();
+        String faultDate         = _allFaultReport[listRow]['dateReported'].toString();
+        String depAllocated      = _allFaultReport[listRow]['depAllocated'].toString();
+        String faultDescription  = _allFaultReport[listRow]['faultDescription'].toString();
+        String faultStage        = _allFaultReport[listRow]['faultStage'].toString();
+        String phoneNumber       = _allFaultReport[listRow]['reporterContact'].toString();
+        String attendeeAlloc     = _allFaultReport[listRow]['attendeeAllocated'].toString();
+        String managerAlloc      = _allFaultReport[listRow]['managerAllocated'].toString();
+        String adminCom          = _allFaultReport[listRow]['adminComment'].toString();
+        String attendeeCom1      = _allFaultReport[listRow]['attendeeCom1'].toString();
+        String managerCom1       = _allFaultReport[listRow]['managerCom1'].toString();
+        String attendeeCom2      = _allFaultReport[listRow]['attendeeCom2'].toString();
+        String managerCom2       = _allFaultReport[listRow]['managerCom2'].toString();
+        String attendeeCom3      = _allFaultReport[listRow]['attendeeCom3'].toString();
+        String managerCom3       = _allFaultReport[listRow]['managerCom3'].toString();
+        String deptSwitchCom     = _allFaultReport[listRow]['departmentSwitchComment'].toString();
+        String reallocCom        = _allFaultReport[listRow]['reallocationComment'].toString();
+        String managerReturnCom  = _allFaultReport[listRow]['managerReturnCom'].toString();
+        String attendeeReturnCom = _allFaultReport[listRow]['attendeeReturnCom'].toString();
 
         sheet.getRangeByName('A$excelRow').setText(referenceNum);
-        sheet.getRangeByName('B$excelRow').setText(accountNum);
-        sheet.getRangeByName('C$excelRow').setText(address);
-        sheet.getRangeByName('D$excelRow').setText(faultDate);
-        sheet.getRangeByName('E$excelRow').setText(faultType);
-        sheet.getRangeByName('F$excelRow').setText(faultDescription);
-        sheet.getRangeByName('G$excelRow').setText(faultHandler);
-        sheet.getRangeByName('H$excelRow').setText(faultStage);
-        sheet.getRangeByName('I$excelRow').setText(resolveStatus);
+        sheet.getRangeByName('B$excelRow').setText(resolveStatus);
+        sheet.getRangeByName('C$excelRow').setText(faultType);
+        sheet.getRangeByName('D$excelRow').setText(accountNum);
+        sheet.getRangeByName('E$excelRow').setText(address);
+        sheet.getRangeByName('F$excelRow').setText(faultDate);
+        sheet.getRangeByName('G$excelRow').setText(depAllocated);
+        sheet.getRangeByName('H$excelRow').setText(faultDescription);
+        sheet.getRangeByName('I$excelRow').setText(faultStage);
         sheet.getRangeByName('J$excelRow').setText(phoneNumber);
-        sheet.getRangeByName('K$excelRow').setText(depCom1);
-        sheet.getRangeByName('L$excelRow').setText(handlerCom1);
-        sheet.getRangeByName('M$excelRow').setText(depCom2);
-        sheet.getRangeByName('N$excelRow').setText(handlerCom2);
-        sheet.getRangeByName('O$excelRow').setText(depCom3);
+        sheet.getRangeByName('K$excelRow').setText(attendeeAlloc);
+        sheet.getRangeByName('L$excelRow').setText(managerAlloc);
+        sheet.getRangeByName('M$excelRow').setText(adminCom);
+        sheet.getRangeByName('N$excelRow').setText(attendeeCom1);
+        sheet.getRangeByName('O$excelRow').setText(managerCom1);
+        sheet.getRangeByName('P$excelRow').setText(attendeeCom2);
+        sheet.getRangeByName('Q$excelRow').setText(managerCom2);
+        sheet.getRangeByName('R$excelRow').setText(attendeeCom3);
+        sheet.getRangeByName('S$excelRow').setText(managerCom3);
+        sheet.getRangeByName('T$excelRow').setText(deptSwitchCom);
+        sheet.getRangeByName('U$excelRow').setText(reallocCom);
+        sheet.getRangeByName('V$excelRow').setText(managerReturnCom);
+        sheet.getRangeByName('W$excelRow').setText(attendeeReturnCom);
 
         excelRow+=1;
         listRow+=1;
@@ -889,21 +929,29 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
     int excelRow = 2;
     int listRow = 0;
 
-      sheet.getRangeByName('A1').setText('Ref #');
-      sheet.getRangeByName('B1').setText('Account #');
-      sheet.getRangeByName('C1').setText('Address');
-      sheet.getRangeByName('D1').setText('Report Date');
-      sheet.getRangeByName('E1').setText('Fault Type');
-      sheet.getRangeByName('F1').setText('Fault Description');
-      sheet.getRangeByName('G1').setText('Fault Handler');
-      sheet.getRangeByName('H1').setText('Fault Stage');
-      sheet.getRangeByName('I1').setText('Resolve Status');
-      sheet.getRangeByName('J1').setText('Reporters Phone Number');
-      sheet.getRangeByName('K1').setText('Department Admin Comment 1');
-      sheet.getRangeByName('L1').setText('Handler Comment 1');
-      sheet.getRangeByName('M1').setText('Department Admin Comment 2');
-      sheet.getRangeByName('N1').setText('Handler Comment 2');
-      sheet.getRangeByName('O1').setText('Department Admin Comment 3');
+    sheet.getRangeByName('A1').setText('Ref #');
+    sheet.getRangeByName('B1').setText('Resolve Status');
+    sheet.getRangeByName('C1').setText('Fault Type');
+    sheet.getRangeByName('D1').setText('Account #');
+    sheet.getRangeByName('E1').setText('Address');
+    sheet.getRangeByName('F1').setText('Report Date');
+    sheet.getRangeByName('G1').setText('Department Allocated');
+    sheet.getRangeByName('H1').setText('Fault Description');
+    sheet.getRangeByName('I1').setText('Fault Stage');
+    sheet.getRangeByName('J1').setText('Reporters Phone Number');
+    sheet.getRangeByName('K1').setText('Attendee Allocated');
+    sheet.getRangeByName('L1').setText('Manager Allocated');
+    sheet.getRangeByName('M1').setText('Admin Comment');
+    sheet.getRangeByName('N1').setText('Attendee Com1');
+    sheet.getRangeByName('O1').setText('Manager Com1');
+    sheet.getRangeByName('P1').setText('Attendee Com2');
+    sheet.getRangeByName('Q1').setText('Manager Com2');
+    sheet.getRangeByName('R1').setText('Attendee Com3');
+    sheet.getRangeByName('S1').setText('Manager Com3');
+    sheet.getRangeByName('T1').setText('Department SwitchComment');
+    sheet.getRangeByName('U1').setText('Reallocation Comment');
+    sheet.getRangeByName('V1').setText('Manager ReturnCom');
+    sheet.getRangeByName('W1').setText('Attendee ReturnCom');
 
       for (var reportSnapshot in _allFaultReport) {
         ///Need to build a property model that retrieves property data entirely from the db
@@ -912,43 +960,59 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
 
             print('Report Lists:::: ${_allFaultReport[listRow]['address']}');
 
-            String referenceNum     = _allFaultReport[listRow]['ref'].toString();
-            String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();
-            String address          = _allFaultReport[listRow]['address'].toString();
-            String faultDate        = _allFaultReport[listRow]['dateReported'].toString();
-            String faultType        = _allFaultReport[listRow]['faultType'].toString();
-            String faultDescription = _allFaultReport[listRow]['faultDescription'].toString();
-            String faultHandler     = _allFaultReport[listRow]['deptHandler'].toString();
-            String faultStage       = _allFaultReport[listRow]['faultStage'].toString();
-            String resolveStatus    = _allFaultReport[listRow]['faultResolved'].toString();
-            String phoneNumber      = _allFaultReport[listRow]['reporterContact'].toString();
-            String depCom1          = _allFaultReport[listRow]['depComment1'].toString();
-            String handlerCom1      = _allFaultReport[listRow]['handlerCom1'].toString();
-            String depCom2          = _allFaultReport[listRow]['depComment2'].toString();
-            String handlerCom2      = _allFaultReport[listRow]['handlerCom2'].toString();
-            String depCom3          = _allFaultReport[listRow]['depComment3'].toString();
+            String referenceNum      = _allFaultReport[listRow]['ref'].toString();
+            String resolveStatus     = _allFaultReport[listRow]['faultResolved'].toString();
+            String faultType         = _allFaultReport[listRow]['faultType'].toString();
+            String accountNum        = _allFaultReport[listRow]['accountNumber'].toString();
+            String address           = _allFaultReport[listRow]['address'].toString();
+            String faultDate         = _allFaultReport[listRow]['dateReported'].toString();
+            String depAllocated      = _allFaultReport[listRow]['depAllocated'].toString();
+            String faultDescription  = _allFaultReport[listRow]['faultDescription'].toString();
+            String faultStage        = _allFaultReport[listRow]['faultStage'].toString();
+            String phoneNumber       = _allFaultReport[listRow]['reporterContact'].toString();
+            String attendeeAlloc     = _allFaultReport[listRow]['attendeeAllocated'].toString();
+            String managerAlloc      = _allFaultReport[listRow]['managerAllocated'].toString();
+            String adminCom          = _allFaultReport[listRow]['adminComment'].toString();
+            String attendeeCom1      = _allFaultReport[listRow]['attendeeCom1'].toString();
+            String managerCom1       = _allFaultReport[listRow]['managerCom1'].toString();
+            String attendeeCom2      = _allFaultReport[listRow]['attendeeCom2'].toString();
+            String managerCom2       = _allFaultReport[listRow]['managerCom2'].toString();
+            String attendeeCom3      = _allFaultReport[listRow]['attendeeCom3'].toString();
+            String managerCom3       = _allFaultReport[listRow]['managerCom3'].toString();
+            String deptSwitchCom     = _allFaultReport[listRow]['departmentSwitchComment'].toString();
+            String reallocCom        = _allFaultReport[listRow]['reallocationComment'].toString();
+            String managerReturnCom  = _allFaultReport[listRow]['managerReturnCom'].toString();
+            String attendeeReturnCom = _allFaultReport[listRow]['attendeeReturnCom'].toString();
 
             sheet.getRangeByName('A$excelRowFill').setText(referenceNum);
-            sheet.getRangeByName('B$excelRowFill').setText(accountNum);
-            sheet.getRangeByName('C$excelRowFill').setText(address);
-            sheet.getRangeByName('D$excelRowFill').setText(faultDate);
-            sheet.getRangeByName('E$excelRowFill').setText(faultType);
-            sheet.getRangeByName('F$excelRowFill').setText(faultDescription);
-            sheet.getRangeByName('G$excelRowFill').setText(faultHandler);
-            sheet.getRangeByName('H$excelRowFill').setText(faultStage);
-            sheet.getRangeByName('I$excelRowFill').setText(resolveStatus);
+            sheet.getRangeByName('B$excelRowFill').setText(resolveStatus);
+            sheet.getRangeByName('C$excelRowFill').setText(faultType);
+            sheet.getRangeByName('D$excelRowFill').setText(accountNum);
+            sheet.getRangeByName('E$excelRowFill').setText(address);
+            sheet.getRangeByName('F$excelRowFill').setText(faultDate);
+            sheet.getRangeByName('G$excelRowFill').setText(depAllocated);
+            sheet.getRangeByName('H$excelRowFill').setText(faultDescription);
+            sheet.getRangeByName('I$excelRowFill').setText(faultStage);
             sheet.getRangeByName('J$excelRowFill').setText(phoneNumber);
-            sheet.getRangeByName('K$excelRowFill').setText(depCom1);
-            sheet.getRangeByName('L$excelRowFill').setText(handlerCom1);
-            sheet.getRangeByName('M$excelRowFill').setText(depCom2);
-            sheet.getRangeByName('N$excelRowFill').setText(handlerCom2);
-            sheet.getRangeByName('O$excelRowFill').setText(depCom3);
+            sheet.getRangeByName('K$excelRowFill').setText(attendeeAlloc);
+            sheet.getRangeByName('L$excelRowFill').setText(managerAlloc);
+            sheet.getRangeByName('M$excelRowFill').setText(adminCom);
+            sheet.getRangeByName('N$excelRowFill').setText(attendeeCom1);
+            sheet.getRangeByName('O$excelRowFill').setText(managerCom1);
+            sheet.getRangeByName('P$excelRowFill').setText(attendeeCom2);
+            sheet.getRangeByName('Q$excelRowFill').setText(managerCom2);
+            sheet.getRangeByName('R$excelRowFill').setText(attendeeCom3);
+            sheet.getRangeByName('S$excelRowFill').setText(managerCom3);
+            sheet.getRangeByName('T$excelRowFill').setText(deptSwitchCom);
+            sheet.getRangeByName('U$excelRowFill').setText(reallocCom);
+            sheet.getRangeByName('V$excelRowFill').setText(managerReturnCom);
+            sheet.getRangeByName('W$excelRowFill').setText(attendeeReturnCom);
 
             excelRowFill += 1;
             excelRow += 1;
             listRow += 1;
           } else {
-            excelRow += 1;
+            // excelRow += 1;
             listRow += 1;
           }
       }
@@ -988,20 +1052,28 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
     int listRow = 0;
 
     sheet.getRangeByName('A1').setText('Ref #');
-    sheet.getRangeByName('B1').setText('Account #');
-    sheet.getRangeByName('C1').setText('Address');
-    sheet.getRangeByName('D1').setText('Report Date');
-    sheet.getRangeByName('E1').setText('Fault Type');
-    sheet.getRangeByName('F1').setText('Fault Description');
-    sheet.getRangeByName('G1').setText('Fault Handler');
-    sheet.getRangeByName('H1').setText('Fault Stage');
-    sheet.getRangeByName('I1').setText('Resolve Status');
+    sheet.getRangeByName('B1').setText('Resolve Status');
+    sheet.getRangeByName('C1').setText('Fault Type');
+    sheet.getRangeByName('D1').setText('Account #');
+    sheet.getRangeByName('E1').setText('Address');
+    sheet.getRangeByName('F1').setText('Report Date');
+    sheet.getRangeByName('G1').setText('Department Allocated');
+    sheet.getRangeByName('H1').setText('Fault Description');
+    sheet.getRangeByName('I1').setText('Fault Stage');
     sheet.getRangeByName('J1').setText('Reporters Phone Number');
-    sheet.getRangeByName('K1').setText('Department Admin Comment 1');
-    sheet.getRangeByName('L1').setText('Handler Comment 1');
-    sheet.getRangeByName('M1').setText('Department Admin Comment 2');
-    sheet.getRangeByName('N1').setText('Handler Comment 2');
-    sheet.getRangeByName('O1').setText('Department Admin Comment 3');
+    sheet.getRangeByName('K1').setText('Attendee Allocated');
+    sheet.getRangeByName('L1').setText('Manager Allocated');
+    sheet.getRangeByName('M1').setText('Admin Comment');
+    sheet.getRangeByName('N1').setText('Attendee Com1');
+    sheet.getRangeByName('O1').setText('Manager Com1');
+    sheet.getRangeByName('P1').setText('Attendee Com2');
+    sheet.getRangeByName('Q1').setText('Manager Com2');
+    sheet.getRangeByName('R1').setText('Attendee Com3');
+    sheet.getRangeByName('S1').setText('Manager Com3');
+    sheet.getRangeByName('T1').setText('Department SwitchComment');
+    sheet.getRangeByName('U1').setText('Reallocation Comment');
+    sheet.getRangeByName('V1').setText('Manager ReturnCom');
+    sheet.getRangeByName('W1').setText('Attendee ReturnCom');
 
     for (var reportSnapshot in _allFaultReport) {
       ///Need to build a property model that retrieves property data entirely from the db
@@ -1010,37 +1082,53 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
 
             print('Report Lists:::: ${_allFaultReport[listRow]['address']}');
 
-            String referenceNum     = _allFaultReport[listRow]['ref'].toString();
-            String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();
-            String address          = _allFaultReport[listRow]['address'].toString();
-            String faultDate        = _allFaultReport[listRow]['dateReported'].toString();
-            String faultType        = _allFaultReport[listRow]['faultType'].toString();
-            String faultDescription = _allFaultReport[listRow]['faultDescription'].toString();
-            String faultHandler     = _allFaultReport[listRow]['deptHandler'].toString();
-            String faultStage       = _allFaultReport[listRow]['faultStage'].toString();
-            String resolveStatus    = _allFaultReport[listRow]['faultResolved'].toString();
-            String phoneNumber      = _allFaultReport[listRow]['reporterContact'].toString();
-            String depCom1          = _allFaultReport[listRow]['depComment1'].toString();
-            String handlerCom1      = _allFaultReport[listRow]['handlerCom1'].toString();
-            String depCom2          = _allFaultReport[listRow]['depComment2'].toString();
-            String handlerCom2      = _allFaultReport[listRow]['handlerCom2'].toString();
-            String depCom3          = _allFaultReport[listRow]['depComment3'].toString();
+            String referenceNum      = _allFaultReport[listRow]['ref'].toString();
+            String resolveStatus     = _allFaultReport[listRow]['faultResolved'].toString();
+            String faultType         = _allFaultReport[listRow]['faultType'].toString();
+            String accountNum        = _allFaultReport[listRow]['accountNumber'].toString();
+            String address           = _allFaultReport[listRow]['address'].toString();
+            String faultDate         = _allFaultReport[listRow]['dateReported'].toString();
+            String depAllocated      = _allFaultReport[listRow]['depAllocated'].toString();
+            String faultDescription  = _allFaultReport[listRow]['faultDescription'].toString();
+            String faultStage        = _allFaultReport[listRow]['faultStage'].toString();
+            String phoneNumber       = _allFaultReport[listRow]['reporterContact'].toString();
+            String attendeeAlloc     = _allFaultReport[listRow]['attendeeAllocated'].toString();
+            String managerAlloc      = _allFaultReport[listRow]['managerAllocated'].toString();
+            String adminCom          = _allFaultReport[listRow]['adminComment'].toString();
+            String attendeeCom1      = _allFaultReport[listRow]['attendeeCom1'].toString();
+            String managerCom1       = _allFaultReport[listRow]['managerCom1'].toString();
+            String attendeeCom2      = _allFaultReport[listRow]['attendeeCom2'].toString();
+            String managerCom2       = _allFaultReport[listRow]['managerCom2'].toString();
+            String attendeeCom3      = _allFaultReport[listRow]['attendeeCom3'].toString();
+            String managerCom3       = _allFaultReport[listRow]['managerCom3'].toString();
+            String deptSwitchCom     = _allFaultReport[listRow]['departmentSwitchComment'].toString();
+            String reallocCom        = _allFaultReport[listRow]['reallocationComment'].toString();
+            String managerReturnCom  = _allFaultReport[listRow]['managerReturnCom'].toString();
+            String attendeeReturnCom = _allFaultReport[listRow]['attendeeReturnCom'].toString();
 
             sheet.getRangeByName('A$excelRowFill').setText(referenceNum);
-            sheet.getRangeByName('B$excelRowFill').setText(accountNum);
-            sheet.getRangeByName('C$excelRowFill').setText(address);
-            sheet.getRangeByName('D$excelRowFill').setText(faultDate);
-            sheet.getRangeByName('E$excelRowFill').setText(faultType);
-            sheet.getRangeByName('F$excelRowFill').setText(faultDescription);
-            sheet.getRangeByName('G$excelRowFill').setText(faultHandler);
-            sheet.getRangeByName('H$excelRowFill').setText(faultStage);
-            sheet.getRangeByName('I$excelRowFill').setText(resolveStatus);
+            sheet.getRangeByName('B$excelRowFill').setText(resolveStatus);
+            sheet.getRangeByName('C$excelRowFill').setText(faultType);
+            sheet.getRangeByName('D$excelRowFill').setText(accountNum);
+            sheet.getRangeByName('E$excelRowFill').setText(address);
+            sheet.getRangeByName('F$excelRowFill').setText(faultDate);
+            sheet.getRangeByName('G$excelRowFill').setText(depAllocated);
+            sheet.getRangeByName('H$excelRowFill').setText(faultDescription);
+            sheet.getRangeByName('I$excelRowFill').setText(faultStage);
             sheet.getRangeByName('J$excelRowFill').setText(phoneNumber);
-            sheet.getRangeByName('K$excelRowFill').setText(depCom1);
-            sheet.getRangeByName('L$excelRowFill').setText(handlerCom1);
-            sheet.getRangeByName('M$excelRowFill').setText(depCom2);
-            sheet.getRangeByName('N$excelRowFill').setText(handlerCom2);
-            sheet.getRangeByName('O$excelRowFill').setText(depCom3);
+            sheet.getRangeByName('K$excelRowFill').setText(attendeeAlloc);
+            sheet.getRangeByName('L$excelRowFill').setText(managerAlloc);
+            sheet.getRangeByName('M$excelRowFill').setText(adminCom);
+            sheet.getRangeByName('N$excelRowFill').setText(attendeeCom1);
+            sheet.getRangeByName('O$excelRowFill').setText(managerCom1);
+            sheet.getRangeByName('P$excelRowFill').setText(attendeeCom2);
+            sheet.getRangeByName('Q$excelRowFill').setText(managerCom2);
+            sheet.getRangeByName('R$excelRowFill').setText(attendeeCom3);
+            sheet.getRangeByName('S$excelRowFill').setText(managerCom3);
+            sheet.getRangeByName('T$excelRowFill').setText(deptSwitchCom);
+            sheet.getRangeByName('U$excelRowFill').setText(reallocCom);
+            sheet.getRangeByName('V$excelRowFill').setText(managerReturnCom);
+            sheet.getRangeByName('W$excelRowFill').setText(attendeeReturnCom);
 
             excelRowFill += 1;
             excelRow += 1;
@@ -1086,20 +1174,28 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
     int listRow = 0;
 
     sheet.getRangeByName('A1').setText('Ref #');
-    sheet.getRangeByName('B1').setText('Account #');
-    sheet.getRangeByName('C1').setText('Address');
-    sheet.getRangeByName('D1').setText('Report Date');
-    sheet.getRangeByName('E1').setText('Fault Type');
-    sheet.getRangeByName('F1').setText('Fault Description');
-    sheet.getRangeByName('G1').setText('Fault Handler');
-    sheet.getRangeByName('H1').setText('Fault Stage');
-    sheet.getRangeByName('I1').setText('Resolve Status');
+    sheet.getRangeByName('B1').setText('Resolve Status');
+    sheet.getRangeByName('C1').setText('Fault Type');
+    sheet.getRangeByName('D1').setText('Account #');
+    sheet.getRangeByName('E1').setText('Address');
+    sheet.getRangeByName('F1').setText('Report Date');
+    sheet.getRangeByName('G1').setText('Department Allocated');
+    sheet.getRangeByName('H1').setText('Fault Description');
+    sheet.getRangeByName('I1').setText('Fault Stage');
     sheet.getRangeByName('J1').setText('Reporters Phone Number');
-    sheet.getRangeByName('K1').setText('Department Admin Comment 1');
-    sheet.getRangeByName('L1').setText('Handler Comment 1');
-    sheet.getRangeByName('M1').setText('Department Admin Comment 2');
-    sheet.getRangeByName('N1').setText('Handler Comment 2');
-    sheet.getRangeByName('O1').setText('Department Admin Comment 3');
+    sheet.getRangeByName('K1').setText('Attendee Allocated');
+    sheet.getRangeByName('L1').setText('Manager Allocated');
+    sheet.getRangeByName('M1').setText('Admin Comment');
+    sheet.getRangeByName('N1').setText('Attendee Com1');
+    sheet.getRangeByName('O1').setText('Manager Com1');
+    sheet.getRangeByName('P1').setText('Attendee Com2');
+    sheet.getRangeByName('Q1').setText('Manager Com2');
+    sheet.getRangeByName('R1').setText('Attendee Com3');
+    sheet.getRangeByName('S1').setText('Manager Com3');
+    sheet.getRangeByName('T1').setText('Department SwitchComment');
+    sheet.getRangeByName('U1').setText('Reallocation Comment');
+    sheet.getRangeByName('V1').setText('Manager ReturnCom');
+    sheet.getRangeByName('W1').setText('Attendee ReturnCom');
 
     for (var reportSnapshot in _allFaultReport) {
       ///Need to build a property model that retrieves property data entirely from the db
@@ -1108,37 +1204,53 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
 
           print('Report Lists:::: ${_allFaultReport[listRow]['address']}');
 
-          String referenceNum     = _allFaultReport[listRow]['ref'].toString();
-          String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();
-          String address          = _allFaultReport[listRow]['address'].toString();
-          String faultDate        = _allFaultReport[listRow]['dateReported'].toString();
-          String faultType        = _allFaultReport[listRow]['faultType'].toString();
-          String faultDescription = _allFaultReport[listRow]['faultDescription'].toString();
-          String faultHandler     = _allFaultReport[listRow]['deptHandler'].toString();
-          String faultStage       = _allFaultReport[listRow]['faultStage'].toString();
-          String resolveStatus    = _allFaultReport[listRow]['faultResolved'].toString();
-          String phoneNumber      = _allFaultReport[listRow]['reporterContact'].toString();
-          String depCom1          = _allFaultReport[listRow]['depComment1'].toString();
-          String handlerCom1      = _allFaultReport[listRow]['handlerCom1'].toString();
-          String depCom2          = _allFaultReport[listRow]['depComment2'].toString();
-          String handlerCom2      = _allFaultReport[listRow]['handlerCom2'].toString();
-          String depCom3          = _allFaultReport[listRow]['depComment3'].toString();
+          String referenceNum      = _allFaultReport[listRow]['ref'].toString();
+          String resolveStatus     = _allFaultReport[listRow]['faultResolved'].toString();
+          String faultType         = _allFaultReport[listRow]['faultType'].toString();
+          String accountNum        = _allFaultReport[listRow]['accountNumber'].toString();
+          String address           = _allFaultReport[listRow]['address'].toString();
+          String faultDate         = _allFaultReport[listRow]['dateReported'].toString();
+          String depAllocated      = _allFaultReport[listRow]['depAllocated'].toString();
+          String faultDescription  = _allFaultReport[listRow]['faultDescription'].toString();
+          String faultStage        = _allFaultReport[listRow]['faultStage'].toString();
+          String phoneNumber       = _allFaultReport[listRow]['reporterContact'].toString();
+          String attendeeAlloc     = _allFaultReport[listRow]['attendeeAllocated'].toString();
+          String managerAlloc      = _allFaultReport[listRow]['managerAllocated'].toString();
+          String adminCom          = _allFaultReport[listRow]['adminComment'].toString();
+          String attendeeCom1      = _allFaultReport[listRow]['attendeeCom1'].toString();
+          String managerCom1       = _allFaultReport[listRow]['managerCom1'].toString();
+          String attendeeCom2      = _allFaultReport[listRow]['attendeeCom2'].toString();
+          String managerCom2       = _allFaultReport[listRow]['managerCom2'].toString();
+          String attendeeCom3      = _allFaultReport[listRow]['attendeeCom3'].toString();
+          String managerCom3       = _allFaultReport[listRow]['managerCom3'].toString();
+          String deptSwitchCom     = _allFaultReport[listRow]['departmentSwitchComment'].toString();
+          String reallocCom        = _allFaultReport[listRow]['reallocationComment'].toString();
+          String managerReturnCom  = _allFaultReport[listRow]['managerReturnCom'].toString();
+          String attendeeReturnCom = _allFaultReport[listRow]['attendeeReturnCom'].toString();
 
           sheet.getRangeByName('A$excelRowFill').setText(referenceNum);
-          sheet.getRangeByName('B$excelRowFill').setText(accountNum);
-          sheet.getRangeByName('C$excelRowFill').setText(address);
-          sheet.getRangeByName('D$excelRowFill').setText(faultDate);
-          sheet.getRangeByName('E$excelRowFill').setText(faultType);
-          sheet.getRangeByName('F$excelRowFill').setText(faultDescription);
-          sheet.getRangeByName('G$excelRowFill').setText(faultHandler);
-          sheet.getRangeByName('H$excelRowFill').setText(faultStage);
-          sheet.getRangeByName('I$excelRowFill').setText(resolveStatus);
+          sheet.getRangeByName('B$excelRowFill').setText(resolveStatus);
+          sheet.getRangeByName('C$excelRowFill').setText(faultType);
+          sheet.getRangeByName('D$excelRowFill').setText(accountNum);
+          sheet.getRangeByName('E$excelRowFill').setText(address);
+          sheet.getRangeByName('F$excelRowFill').setText(faultDate);
+          sheet.getRangeByName('G$excelRowFill').setText(depAllocated);
+          sheet.getRangeByName('H$excelRowFill').setText(faultDescription);
+          sheet.getRangeByName('I$excelRowFill').setText(faultStage);
           sheet.getRangeByName('J$excelRowFill').setText(phoneNumber);
-          sheet.getRangeByName('K$excelRowFill').setText(depCom1);
-          sheet.getRangeByName('L$excelRowFill').setText(handlerCom1);
-          sheet.getRangeByName('M$excelRowFill').setText(depCom2);
-          sheet.getRangeByName('N$excelRowFill').setText(handlerCom2);
-          sheet.getRangeByName('O$excelRowFill').setText(depCom3);
+          sheet.getRangeByName('K$excelRowFill').setText(attendeeAlloc);
+          sheet.getRangeByName('L$excelRowFill').setText(managerAlloc);
+          sheet.getRangeByName('M$excelRowFill').setText(adminCom);
+          sheet.getRangeByName('N$excelRowFill').setText(attendeeCom1);
+          sheet.getRangeByName('O$excelRowFill').setText(managerCom1);
+          sheet.getRangeByName('P$excelRowFill').setText(attendeeCom2);
+          sheet.getRangeByName('Q$excelRowFill').setText(managerCom2);
+          sheet.getRangeByName('R$excelRowFill').setText(attendeeCom3);
+          sheet.getRangeByName('S$excelRowFill').setText(managerCom3);
+          sheet.getRangeByName('T$excelRowFill').setText(deptSwitchCom);
+          sheet.getRangeByName('U$excelRowFill').setText(reallocCom);
+          sheet.getRangeByName('V$excelRowFill').setText(managerReturnCom);
+          sheet.getRangeByName('W$excelRowFill').setText(attendeeReturnCom);
 
           excelRowFill += 1;
           excelRow += 1;
@@ -1184,20 +1296,28 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
     int listRow = 0;
 
     sheet.getRangeByName('A1').setText('Ref #');
-    sheet.getRangeByName('B1').setText('Account #');
-    sheet.getRangeByName('C1').setText('Address');
-    sheet.getRangeByName('D1').setText('Report Date');
-    sheet.getRangeByName('E1').setText('Fault Type');
-    sheet.getRangeByName('F1').setText('Fault Description');
-    sheet.getRangeByName('G1').setText('Fault Handler');
-    sheet.getRangeByName('H1').setText('Fault Stage');
-    sheet.getRangeByName('I1').setText('Resolve Status');
+    sheet.getRangeByName('B1').setText('Resolve Status');
+    sheet.getRangeByName('C1').setText('Fault Type');
+    sheet.getRangeByName('D1').setText('Account #');
+    sheet.getRangeByName('E1').setText('Address');
+    sheet.getRangeByName('F1').setText('Report Date');
+    sheet.getRangeByName('G1').setText('Department Allocated');
+    sheet.getRangeByName('H1').setText('Fault Description');
+    sheet.getRangeByName('I1').setText('Fault Stage');
     sheet.getRangeByName('J1').setText('Reporters Phone Number');
-    sheet.getRangeByName('K1').setText('Department Admin Comment 1');
-    sheet.getRangeByName('L1').setText('Handler Comment 1');
-    sheet.getRangeByName('M1').setText('Department Admin Comment 2');
-    sheet.getRangeByName('N1').setText('Handler Comment 2');
-    sheet.getRangeByName('O1').setText('Department Admin Comment 3');
+    sheet.getRangeByName('K1').setText('Attendee Allocated');
+    sheet.getRangeByName('L1').setText('Manager Allocated');
+    sheet.getRangeByName('M1').setText('Admin Comment');
+    sheet.getRangeByName('N1').setText('Attendee Com1');
+    sheet.getRangeByName('O1').setText('Manager Com1');
+    sheet.getRangeByName('P1').setText('Attendee Com2');
+    sheet.getRangeByName('Q1').setText('Manager Com2');
+    sheet.getRangeByName('R1').setText('Attendee Com3');
+    sheet.getRangeByName('S1').setText('Manager Com3');
+    sheet.getRangeByName('T1').setText('Department SwitchComment');
+    sheet.getRangeByName('U1').setText('Reallocation Comment');
+    sheet.getRangeByName('V1').setText('Manager ReturnCom');
+    sheet.getRangeByName('W1').setText('Attendee ReturnCom');
 
     for (var reportSnapshot in _allFaultReport) {
       ///Need to build a property model that retrieves property data entirely from the db
@@ -1206,37 +1326,53 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
 
           print('Report Lists:::: ${_allFaultReport[listRow]['address']}');
 
-          String referenceNum     = _allFaultReport[listRow]['ref'].toString();
-          String accountNum       = _allFaultReport[listRow]['accountNumber'].toString();
-          String address          = _allFaultReport[listRow]['address'].toString();
-          String faultDate        = _allFaultReport[listRow]['dateReported'].toString();
-          String faultType        = _allFaultReport[listRow]['faultType'].toString();
-          String faultDescription = _allFaultReport[listRow]['faultDescription'].toString();
-          String faultHandler     = _allFaultReport[listRow]['deptHandler'].toString();
-          String faultStage       = _allFaultReport[listRow]['faultStage'].toString();
-          String resolveStatus    = _allFaultReport[listRow]['faultResolved'].toString();
-          String phoneNumber      = _allFaultReport[listRow]['reporterContact'].toString();
-          String depCom1          = _allFaultReport[listRow]['depComment1'].toString();
-          String handlerCom1      = _allFaultReport[listRow]['handlerCom1'].toString();
-          String depCom2          = _allFaultReport[listRow]['depComment2'].toString();
-          String handlerCom2      = _allFaultReport[listRow]['handlerCom2'].toString();
-          String depCom3          = _allFaultReport[listRow]['depComment3'].toString();
+          String referenceNum      = _allFaultReport[listRow]['ref'].toString();
+          String resolveStatus     = _allFaultReport[listRow]['faultResolved'].toString();
+          String faultType         = _allFaultReport[listRow]['faultType'].toString();
+          String accountNum        = _allFaultReport[listRow]['accountNumber'].toString();
+          String address           = _allFaultReport[listRow]['address'].toString();
+          String faultDate         = _allFaultReport[listRow]['dateReported'].toString();
+          String depAllocated      = _allFaultReport[listRow]['depAllocated'].toString();
+          String faultDescription  = _allFaultReport[listRow]['faultDescription'].toString();
+          String faultStage        = _allFaultReport[listRow]['faultStage'].toString();
+          String phoneNumber       = _allFaultReport[listRow]['reporterContact'].toString();
+          String attendeeAlloc     = _allFaultReport[listRow]['attendeeAllocated'].toString();
+          String managerAlloc      = _allFaultReport[listRow]['managerAllocated'].toString();
+          String adminCom          = _allFaultReport[listRow]['adminComment'].toString();
+          String attendeeCom1      = _allFaultReport[listRow]['attendeeCom1'].toString();
+          String managerCom1       = _allFaultReport[listRow]['managerCom1'].toString();
+          String attendeeCom2      = _allFaultReport[listRow]['attendeeCom2'].toString();
+          String managerCom2       = _allFaultReport[listRow]['managerCom2'].toString();
+          String attendeeCom3      = _allFaultReport[listRow]['attendeeCom3'].toString();
+          String managerCom3       = _allFaultReport[listRow]['managerCom3'].toString();
+          String deptSwitchCom     = _allFaultReport[listRow]['departmentSwitchComment'].toString();
+          String reallocCom        = _allFaultReport[listRow]['reallocationComment'].toString();
+          String managerReturnCom  = _allFaultReport[listRow]['managerReturnCom'].toString();
+          String attendeeReturnCom = _allFaultReport[listRow]['attendeeReturnCom'].toString();
 
           sheet.getRangeByName('A$excelRowFill').setText(referenceNum);
-          sheet.getRangeByName('B$excelRowFill').setText(accountNum);
-          sheet.getRangeByName('C$excelRowFill').setText(address);
-          sheet.getRangeByName('D$excelRowFill').setText(faultDate);
-          sheet.getRangeByName('E$excelRowFill').setText(faultType);
-          sheet.getRangeByName('F$excelRowFill').setText(faultDescription);
-          sheet.getRangeByName('G$excelRowFill').setText(faultHandler);
-          sheet.getRangeByName('H$excelRowFill').setText(faultStage);
-          sheet.getRangeByName('I$excelRowFill').setText(resolveStatus);
+          sheet.getRangeByName('B$excelRowFill').setText(resolveStatus);
+          sheet.getRangeByName('C$excelRowFill').setText(faultType);
+          sheet.getRangeByName('D$excelRowFill').setText(accountNum);
+          sheet.getRangeByName('E$excelRowFill').setText(address);
+          sheet.getRangeByName('F$excelRowFill').setText(faultDate);
+          sheet.getRangeByName('G$excelRowFill').setText(depAllocated);
+          sheet.getRangeByName('H$excelRowFill').setText(faultDescription);
+          sheet.getRangeByName('I$excelRowFill').setText(faultStage);
           sheet.getRangeByName('J$excelRowFill').setText(phoneNumber);
-          sheet.getRangeByName('K$excelRowFill').setText(depCom1);
-          sheet.getRangeByName('L$excelRowFill').setText(handlerCom1);
-          sheet.getRangeByName('M$excelRowFill').setText(depCom2);
-          sheet.getRangeByName('N$excelRowFill').setText(handlerCom2);
-          sheet.getRangeByName('O$excelRowFill').setText(depCom3);
+          sheet.getRangeByName('K$excelRowFill').setText(attendeeAlloc);
+          sheet.getRangeByName('L$excelRowFill').setText(managerAlloc);
+          sheet.getRangeByName('M$excelRowFill').setText(adminCom);
+          sheet.getRangeByName('N$excelRowFill').setText(attendeeCom1);
+          sheet.getRangeByName('O$excelRowFill').setText(managerCom1);
+          sheet.getRangeByName('P$excelRowFill').setText(attendeeCom2);
+          sheet.getRangeByName('Q$excelRowFill').setText(managerCom2);
+          sheet.getRangeByName('R$excelRowFill').setText(attendeeCom3);
+          sheet.getRangeByName('S$excelRowFill').setText(managerCom3);
+          sheet.getRangeByName('T$excelRowFill').setText(deptSwitchCom);
+          sheet.getRangeByName('U$excelRowFill').setText(reallocCom);
+          sheet.getRangeByName('V$excelRowFill').setText(managerReturnCom);
+          sheet.getRangeByName('W$excelRowFill').setText(attendeeReturnCom);
 
           excelRowFill += 1;
           excelRow += 1;
@@ -1348,15 +1484,22 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
               _allFaultReport[allReportRow]['address'].toString(),
               _allFaultReport[allReportRow]['dateReported'].toString(),
               _allFaultReport[allReportRow]['depAllocated'].toString(),
-              _allFaultReport[allReportRow]['deptHandler'].toString(),
               _allFaultReport[allReportRow]['faultDescription'].toString(),
               _allFaultReport[allReportRow]['faultStage'].toString(),
               _allFaultReport[allReportRow]['reporterContact'].toString(),
-              _allFaultReport[allReportRow]['depComment1'].toString(),
-              _allFaultReport[allReportRow]['depComment2'].toString(),
-              _allFaultReport[allReportRow]['depComment3'].toString(),
-              _allFaultReport[allReportRow]['handlerCom1'].toString(),
-              _allFaultReport[allReportRow]['handlerCom2'].toString(),
+              _allFaultReport[allReportRow]['attendeeAllocated'].toString(),
+              _allFaultReport[allReportRow]['managerAllocated'].toString(),
+              _allFaultReport[allReportRow]['adminComment'].toString(),
+              _allFaultReport[allReportRow]['attendeeCom1'].toString(),
+              _allFaultReport[allReportRow]['managerCom1'].toString(),
+              _allFaultReport[allReportRow]['attendeeCom2'].toString(),
+              _allFaultReport[allReportRow]['managerCom2'].toString(),
+              _allFaultReport[allReportRow]['attendeeCom3'].toString(),
+              _allFaultReport[allReportRow]['managerCom3'].toString(),
+              _allFaultReport[allReportRow]['departmentSwitchComment'].toString(),
+              _allFaultReport[allReportRow]['reallocationComment'].toString(),
+              _allFaultReport[allReportRow]['managerReturnCom'].toString(),
+              _allFaultReport[allReportRow]['attendeeReturnCom'].toString(),
             )
         );
         allReportRow += 1;
@@ -1368,7 +1511,7 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
 }
 
 class ReportData{
-  ReportData(this.ref, this.faultResolved, this.faultType, this.accountNumber, this.address, this.dateReported, this.depAllocated, this.depHandler, this.faultDescription, this.faultStage, this.reporterContact, this.depCom1, this.depCom2, this.depCom3, this.handlerCom1, this.handlerCom2);
+  ReportData(this.ref, this.faultResolved, this.faultType, this.accountNumber, this.address, this.dateReported, this.depAllocated, this.faultDescription, this.faultStage, this.reporterContact, this.attendeeAllocated, this.managerAllocated, this.adminComment, this.attendeeCom1, this.managerCom1, this.attendeeCom2, this.managerCom2, this.attendeeCom3, this.managerCom3, this.departmentSwitchComment, this.reallocationComment, this.managerReturnCom, this.attendeeReturnCom);
 
   final String ref;
   final bool faultResolved;
@@ -1377,14 +1520,21 @@ class ReportData{
   final String address;
   final String dateReported;
   final String depAllocated;
-  final String depHandler;
   final String faultDescription;
   final String faultStage;
   final String reporterContact;
-  final String depCom1;
-  final String depCom2;
-  final String depCom3;
-  final String handlerCom1;
-  final String handlerCom2;
+  final String attendeeAllocated;
+  final String managerAllocated;
+  final String adminComment;
+  final String attendeeCom1;
+  final String managerCom1;
+  final String attendeeCom2;
+  final String managerCom2;
+  final String attendeeCom3;
+  final String managerCom3;
+  final String departmentSwitchComment;
+  final String reallocationComment;
+  final String managerReturnCom;
+  final String attendeeReturnCom;
 
 }

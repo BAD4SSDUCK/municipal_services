@@ -358,6 +358,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                           if(defaultTargetPlatform == TargetPlatform.android){
                                             FirebaseAuth.instance.signOut();
                                             Navigator.pop(context);
+                                            SystemNavigator.pop();
                                           } else {
                                             FirebaseAuth.instance.signOut();
                                             // html.window.location.reload();

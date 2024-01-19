@@ -912,8 +912,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                                           }
                                                           if (snapshot.connectionState ==
                                                               ConnectionState.waiting) {
-                                                            return Container(
-                                                              child: const CircularProgressIndicator(),);
+                                                            return const CircularProgressIndicator();
                                                           }
                                                           return Container();
                                                         }

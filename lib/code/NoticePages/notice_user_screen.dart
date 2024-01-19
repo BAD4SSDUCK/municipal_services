@@ -76,7 +76,6 @@ class _NoticeScreenState extends State<NoticeScreen> {
   bool visHide = false;
   bool adminAcc = false;
 
-  List _resultsList =[];
   List _allNoticesResults = [];
 
   getNoticeStream() async{
@@ -329,7 +328,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                 final DocumentSnapshot documentSnapshot =
                 streamSnapshot.data!.docs[index];
 
-                if(documentSnapshot['user'] == user?.phoneNumber.toString()){
+                if(documentSnapshot['user'] == user.phoneNumber.toString()){
                   if(documentSnapshot['user'].contains('+27') && documentSnapshot['read'] != true && documentSnapshot['level'] == 'general' ){
                     return Card(
                       margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
