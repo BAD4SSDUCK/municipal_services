@@ -110,9 +110,8 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
   getFaultStream() async{
     var data = await FirebaseFirestore.instance.collection('faultReporting').orderBy('dateReported', descending: true).get();
 
-    setState(() {
-     _allFaultResults = data.docs;
-    });
+    _allFaultResults = data.docs;
+
     searchResultsList();
   }
 

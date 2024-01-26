@@ -519,225 +519,351 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
       return ListView.builder(
         itemCount: _allFaultResults.length,
         itemBuilder: (context, index) {
-          return Card(margin: const EdgeInsets.fromLTRB(10.0, 0.0, 10.0, 10.0),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Center(
-                    child: Text(
-                      'Fault Information',
-                      style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  const SizedBox(height: 10,),
+          String status;
+          if (_allFaultResults[index]['faultResolved'] == false) {
+            status = "Pending";
+          } else {
+            status = "Completed";
+          }
 
-                  Text(
-                    'Reference Number: ${_allFaultResults[index]['ref']}',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w400),
-                  ),
-                  const SizedBox(height: 5,),
-
-                  Column(
-                    children: [
-                      if(_allFaultResults[index]['accountNumber'] !=
-                          "")...[
-                        Text(
-                          'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400),
-                        ),
-                        const SizedBox(height: 5,),
-                      ] else
-                        ...[
-                        ],
-                    ],
-                  ),
-                  Text(
-                    'Street Address of Fault: ${_allFaultResults[index]['address']}',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w400),
-                  ),
-                  const SizedBox(height: 5,),
-                  Text(
-                    'Fault Type: ${_allFaultResults[index]['faultType']}',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w400),
-                  ),
-                  const SizedBox(height: 5,),
-                  Column(
-                    children: [
-                      if(_allFaultResults[index]['faultDescription'] != "")...[
-                        Text(
-                          'Fault Description: ${_allFaultResults[index]['faultDescription']}',
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400),
-                        ),
-                        const SizedBox(height: 5,),
-                      ] else
-                        ...[
-                        ],
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      if(_allFaultResults[index]['handlerCom1'] != "")...[
-                        Text(
-                          'Handler Comment: ${_allFaultResults[index]['handlerCom1']}',
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400),
-                        ),
-                        const SizedBox(height: 5,),
-                      ] else
-                        ...[
-                        ],
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      if(_allFaultResults[index]['adminComment'] != "")...[
-                        Text(
-                          'Admin Comment: ${_allFaultResults[index]['adminComment']}',
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400),
-                        ),
-                        const SizedBox(height: 5,),
-                      ] else
-                        ...[
-                        ],
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      if(_allFaultResults[index]['handlerCom2'] != "")...[
-                        Text(
-                          'Handler Final Comment: ${_allFaultResults[index]['handlerCom2']}',
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400),
-                        ),
-                        const SizedBox(height: 5,),
-                      ] else
-                        ...[
-                        ],
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      if(_allFaultResults[index]['depComment2'] != "")...[
-                        Text(
-                          'Department Final Comment: ${_allFaultResults[index]['depComment2']}',
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400),
-                        ),
-                        const SizedBox(height: 5,),
-                      ] else
-                        ...[
-                        ],
-                    ],
-                  ),
-                  Text(
-                    'Resolve State: ${_allFaultResults[index]['faultResolved'].toString()}',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w400),
-                  ),
-                  const SizedBox(height: 5,),
-                  Text(
-                    'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w400),
-                  ),
-                  const SizedBox(height: 20,),
-                  Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              accountNumberRep = _allFaultResults[index]['accountNumber'];
-                              locationGivenRep = _allFaultResults[index]['address'];
-
-                              Navigator.push(context, MaterialPageRoute(builder: (context) =>
-                                          MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                              ));
-                            },
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(140, 10),),
-                            child: Row(
-                              children: [
-                                Icon(Icons.map, color: Colors.green[700],),
-                                const SizedBox(width: 2,),
-                                const Text(
-                                  'Location', style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,),),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 5,),
-                          ElevatedButton(
-                            onPressed: () {
-                              showDialog(
-                                  barrierDismissible: false,
-                                  context: context,
-                                  builder: (context) {
-                                    return
-                                      AlertDialog(
-                                        shape: const RoundedRectangleBorder(borderRadius:BorderRadius.all(Radius.circular(16))),
-                                        title: const Text("Call Reporter!"),
-                                        content: const Text("Would you like to call the individual who logged the fault?"),
-                                        actions: [
-                                          IconButton(
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                            icon: const Icon(Icons.cancel, color: Colors.red,
-                                            ),
-                                          ),
-                                          IconButton(
-                                            onPressed: () {
-                                              reporterCellGiven = _allFaultResults[index]['reporterContact'];
-
-                                              final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                              launchUrl(_tel);
-
-                                              Navigator.of(context).pop();
-                                            },
-                                            icon: const Icon(Icons.done, color: Colors.green,),
-                                          ),
-                                        ],
-                                      );
-                                  });
-                            },
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[350], fixedSize: const Size(140, 10),),
-                            child: Row(
-                              children: [
-                                Icon(Icons.call, color: Colors.orange[700],),
-                                const SizedBox(width: 2,),
-                                const Text('Call User', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black,),),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 5,),
-                        ],
+          return Card(
+              margin: const EdgeInsets.fromLTRB(10.0, 0.0, 10.0, 10.0),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Center(
+                      child: Text(
+                        'Fault Information',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 10,),
+                    Text(
+                      'Reference Number: ${_allFaultResults[index]['ref']}',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['accountNumber'] != "")...[
+                          Text(
+                            'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Text(
+                      'Street Address of Fault: ${_allFaultResults[index]['address']}',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Text(
+                      'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['faultStage'] == 1)...[
+                          Text(
+                            'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          if(_allFaultResults[index]['faultStage'] == 2) ...[
+                            Text(
+                              'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            if(_allFaultResults[index]['faultStage'] == 3) ...[
+                              Text(
+                                'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              if(_allFaultResults[index]['faultStage'] == 4) ...[
+                                Text(
+                                  'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.greenAccent),
+                                ),
+                                const SizedBox(height: 5,),
+                              ] else
+                                if(_allFaultResults[index]['faultStage'] == 5) ...[
+                                  Text(
+                                    'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else
+                                  ...[
+                                  ],
+                      ],
+                    ),
+                    Text(
+                      'Fault Type: ${_allFaultResults[index]['faultType']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['faultDescription'] != "")...[
+                          Text(
+                            'Fault Description: ${_allFaultResults[index]['faultDescription']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['adminComment'] != "")...[
+                          Text(
+                            'Admin Comment: ${_allFaultResults[index]['adminComment']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['reallocationComment'] != "")...[
+                          Text(
+                            'Reason fault reallocated: ${_allFaultResults[index]['reallocationComment']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['managerAllocated'] != "")...[
+                          Text(
+                            'Manager of fault: ${_allFaultResults[index]['managerAllocated']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['attendeeAllocated'] != "")...[
+                          Text(
+                            'Attendee Allocated: ${_allFaultResults[index]['attendeeAllocated']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['attendeeCom1'] != "")...[
+                          Text(
+                            'Attendee Comment: ${_allFaultResults[index]['attendeeCom1']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['managerCom1'] != "")...[
+                          Text(
+                            'Manager Comment: ${_allFaultResults[index]['managerCom1']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['attendeeCom2'] != "")...[
+                          Text(
+                            'Attendee Followup Comment: ${_allFaultResults[index]['attendeeCom2']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['managerCom2'] != "")...[
+                          Text(
+                            'Manager Final/Additional Comment: ${_allFaultResults[index]['managerCom2']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['attendeeCom3'] != "")...[
+                          Text(
+                            'Attendee Final Comment: ${_allFaultResults[index]['attendeeCom3']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        if(_allFaultResults[index]['managerCom3'] != "")...[
+                          Text(
+                            'Manager Final Comment: ${_allFaultResults[index]['managerCom3']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(height: 5,),
+                        ] else
+                          ...[
+                          ],
+                      ],
+                    ),
+                    Text(
+                      'Resolve State: $status',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 20,),
+                    Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                accountNumberRep =
+                                _allFaultResults[index]['accountNumber'];
+                                locationGivenRep =
+                                _allFaultResults[index]['address'];
+
+                                Navigator.push(context,
+                                    MaterialPageRoute(builder: (context) =>
+                                        MapScreenProp(
+                                          propAddress: locationGivenRep,
+                                          propAccNumber: accountNumberRep,)
+                                    ));
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey[350],
+                                fixedSize: const Size(140, 10),),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.map, color: Colors.green[700],),
+                                  const SizedBox(width: 2,),
+                                  const Text(
+                                    'Location', style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black,),),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 5,),
+                            ElevatedButton(
+                              onPressed: () {
+                                showDialog(
+                                    barrierDismissible: false,
+                                    context: context,
+                                    builder: (context) {
+                                      return
+                                        AlertDialog(
+                                          shape: const RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.all(
+                                                  Radius.circular(16))),
+                                          title: const Text("Call Reporter!"),
+                                          content: const Text(
+                                              "Would you like to call the individual who logged the fault?"),
+                                          actions: [
+                                            IconButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                              icon: const Icon(
+                                                Icons.cancel, color: Colors.red,
+                                              ),
+                                            ),
+                                            IconButton(
+                                              onPressed: () {
+                                                reporterCellGiven =
+                                                _allFaultResults[index]['reporterContact'];
+
+                                                final Uri _tel = Uri.parse(
+                                                    'tel:${reporterCellGiven
+                                                        .toString()}');
+                                                launchUrl(_tel);
+
+                                                Navigator.of(context).pop();
+                                              },
+                                              icon: const Icon(Icons.done,
+                                                color: Colors.green,),
+                                            ),
+                                          ],
+                                        );
+                                    });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey[350],
+                                fixedSize: const Size(140, 10),),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.call, color: Colors.orange[700],),
+                                  const SizedBox(width: 2,),
+                                  const Text('Call User', style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black,),),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 5,),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
+            );
         },
       );
     }
@@ -790,58 +916,58 @@ class _ReportBuilderFaultsState extends State<ReportBuilderFaults> {
       while(excelRow <= _allFaultReport.length+1) {
         print('Report Lists:::: ${_allFaultReport[listRow]['address']}');
         
-        if(_allFaultReport[listRow]['dateReported'].toString().contains(dateRange1)){
-          String referenceNum      = _allFaultReport[listRow]['ref'].toString();
-          String resolveStatus     = _allFaultReport[listRow]['faultResolved'].toString();
-          String faultType         = _allFaultReport[listRow]['faultType'].toString();
-          String accountNum        = _allFaultReport[listRow]['accountNumber'].toString();
-          String address           = _allFaultReport[listRow]['address'].toString();
-          String faultDate         = _allFaultReport[listRow]['dateReported'].toString();
-          String depAllocated      = _allFaultReport[listRow]['depAllocated'].toString();
-          String faultDescription  = _allFaultReport[listRow]['faultDescription'].toString();
-          String faultStage        = _allFaultReport[listRow]['faultStage'].toString();
-          String phoneNumber       = _allFaultReport[listRow]['reporterContact'].toString();
-          String attendeeAlloc     = _allFaultReport[listRow]['attendeeAllocated'].toString();
-          String managerAlloc      = _allFaultReport[listRow]['managerAllocated'].toString();
-          String adminCom          = _allFaultReport[listRow]['adminComment'].toString();
-          String attendeeCom1      = _allFaultReport[listRow]['attendeeCom1'].toString();
-          String managerCom1       = _allFaultReport[listRow]['managerCom1'].toString();
-          String attendeeCom2      = _allFaultReport[listRow]['attendeeCom2'].toString();
-          String managerCom2       = _allFaultReport[listRow]['managerCom2'].toString();
-          String attendeeCom3      = _allFaultReport[listRow]['attendeeCom3'].toString();
-          String managerCom3       = _allFaultReport[listRow]['managerCom3'].toString();
-          String deptSwitchCom     = _allFaultReport[listRow]['departmentSwitchComment'].toString();
-          String reallocCom        = _allFaultReport[listRow]['reallocationComment'].toString();
-          String managerReturnCom  = _allFaultReport[listRow]['managerReturnCom'].toString();
-          String attendeeReturnCom = _allFaultReport[listRow]['attendeeReturnCom'].toString();
-
-          sheet.getRangeByName('A$excelRow').setText(referenceNum);
-          sheet.getRangeByName('B$excelRow').setText(resolveStatus);
-          sheet.getRangeByName('C$excelRow').setText(faultType);
-          sheet.getRangeByName('D$excelRow').setText(accountNum);
-          sheet.getRangeByName('E$excelRow').setText(address);
-          sheet.getRangeByName('F$excelRow').setText(faultDate);
-          sheet.getRangeByName('G$excelRow').setText(depAllocated);
-          sheet.getRangeByName('H$excelRow').setText(faultDescription);
-          sheet.getRangeByName('I$excelRow').setText(faultStage);
-          sheet.getRangeByName('J$excelRow').setText(phoneNumber);
-          sheet.getRangeByName('K$excelRow').setText(attendeeAlloc);
-          sheet.getRangeByName('L$excelRow').setText(managerAlloc);
-          sheet.getRangeByName('M$excelRow').setText(adminCom);
-          sheet.getRangeByName('N$excelRow').setText(attendeeCom1);
-          sheet.getRangeByName('O$excelRow').setText(managerCom1);
-          sheet.getRangeByName('P$excelRow').setText(attendeeCom2);
-          sheet.getRangeByName('Q$excelRow').setText(managerCom2);
-          sheet.getRangeByName('R$excelRow').setText(attendeeCom3);
-          sheet.getRangeByName('S$excelRow').setText(managerCom3);
-          sheet.getRangeByName('T$excelRow').setText(deptSwitchCom);
-          sheet.getRangeByName('U$excelRow').setText(reallocCom);
-          sheet.getRangeByName('V$excelRow').setText(managerReturnCom);
-          sheet.getRangeByName('W$excelRow').setText(attendeeReturnCom);
-
-          excelRow+=1;
-          listRow+=1;
-        }
+        // if(_allFaultReport[listRow]['dateReported'].toString().contains(dateRange1)){
+        //   String referenceNum      = _allFaultReport[listRow]['ref'].toString();
+        //   String resolveStatus     = _allFaultReport[listRow]['faultResolved'].toString();
+        //   String faultType         = _allFaultReport[listRow]['faultType'].toString();
+        //   String accountNum        = _allFaultReport[listRow]['accountNumber'].toString();
+        //   String address           = _allFaultReport[listRow]['address'].toString();
+        //   String faultDate         = _allFaultReport[listRow]['dateReported'].toString();
+        //   String depAllocated      = _allFaultReport[listRow]['depAllocated'].toString();
+        //   String faultDescription  = _allFaultReport[listRow]['faultDescription'].toString();
+        //   String faultStage        = _allFaultReport[listRow]['faultStage'].toString();
+        //   String phoneNumber       = _allFaultReport[listRow]['reporterContact'].toString();
+        //   String attendeeAlloc     = _allFaultReport[listRow]['attendeeAllocated'].toString();
+        //   String managerAlloc      = _allFaultReport[listRow]['managerAllocated'].toString();
+        //   String adminCom          = _allFaultReport[listRow]['adminComment'].toString();
+        //   String attendeeCom1      = _allFaultReport[listRow]['attendeeCom1'].toString();
+        //   String managerCom1       = _allFaultReport[listRow]['managerCom1'].toString();
+        //   String attendeeCom2      = _allFaultReport[listRow]['attendeeCom2'].toString();
+        //   String managerCom2       = _allFaultReport[listRow]['managerCom2'].toString();
+        //   String attendeeCom3      = _allFaultReport[listRow]['attendeeCom3'].toString();
+        //   String managerCom3       = _allFaultReport[listRow]['managerCom3'].toString();
+        //   String deptSwitchCom     = _allFaultReport[listRow]['departmentSwitchComment'].toString();
+        //   String reallocCom        = _allFaultReport[listRow]['reallocationComment'].toString();
+        //   String managerReturnCom  = _allFaultReport[listRow]['managerReturnCom'].toString();
+        //   String attendeeReturnCom = _allFaultReport[listRow]['attendeeReturnCom'].toString();
+        //
+        //   sheet.getRangeByName('A$excelRow').setText(referenceNum);
+        //   sheet.getRangeByName('B$excelRow').setText(resolveStatus);
+        //   sheet.getRangeByName('C$excelRow').setText(faultType);
+        //   sheet.getRangeByName('D$excelRow').setText(accountNum);
+        //   sheet.getRangeByName('E$excelRow').setText(address);
+        //   sheet.getRangeByName('F$excelRow').setText(faultDate);
+        //   sheet.getRangeByName('G$excelRow').setText(depAllocated);
+        //   sheet.getRangeByName('H$excelRow').setText(faultDescription);
+        //   sheet.getRangeByName('I$excelRow').setText(faultStage);
+        //   sheet.getRangeByName('J$excelRow').setText(phoneNumber);
+        //   sheet.getRangeByName('K$excelRow').setText(attendeeAlloc);
+        //   sheet.getRangeByName('L$excelRow').setText(managerAlloc);
+        //   sheet.getRangeByName('M$excelRow').setText(adminCom);
+        //   sheet.getRangeByName('N$excelRow').setText(attendeeCom1);
+        //   sheet.getRangeByName('O$excelRow').setText(managerCom1);
+        //   sheet.getRangeByName('P$excelRow').setText(attendeeCom2);
+        //   sheet.getRangeByName('Q$excelRow').setText(managerCom2);
+        //   sheet.getRangeByName('R$excelRow').setText(attendeeCom3);
+        //   sheet.getRangeByName('S$excelRow').setText(managerCom3);
+        //   sheet.getRangeByName('T$excelRow').setText(deptSwitchCom);
+        //   sheet.getRangeByName('U$excelRow').setText(reallocCom);
+        //   sheet.getRangeByName('V$excelRow').setText(managerReturnCom);
+        //   sheet.getRangeByName('W$excelRow').setText(attendeeReturnCom);
+        //
+        //   excelRow+=1;
+        //   listRow+=1;
+        // }
 
         String referenceNum      = _allFaultReport[listRow]['ref'].toString();
         String resolveStatus     = _allFaultReport[listRow]['faultResolved'].toString();

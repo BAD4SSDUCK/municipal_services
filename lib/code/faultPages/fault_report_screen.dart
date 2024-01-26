@@ -8,6 +8,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -19,6 +20,12 @@ import 'package:municipal_tracker_msunduzi/code/faultPages/fault_viewing_screen.
 import 'package:path/path.dart' as pathing;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
+import 'package:uuid/uuid.dart';
+
+import '../MapTools/address_search.dart';
+import '../MapTools/location_controller.dart';
+import '../MapTools/location_search_dialogue.dart';
+import '../MapTools/place_service.dart';
 
 class ReportPropertyMenu extends StatefulWidget {
   const ReportPropertyMenu({Key? key}) : super(key: key);
@@ -39,11 +46,18 @@ String userPhone = phone as String;
 
 DateTime now = DateTime.now();
 
+late GoogleMapController _mapController;
+
 class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
   final _faultDescriptionController = TextEditingController();
   final _addressController = TextEditingController();
   final _reporterPhoneController = TextEditingController();
+
+  String _streetNumber = '';
+  String _street = '';
+  String _city = '';
+  String _zipCode = '';
 
   final String _currentUser = userID;
 
@@ -75,7 +89,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
   TextEditingController nameController = TextEditingController();
 
   bool buttonEnabled = true;
-  String location ='Null, Press Button';
+  String location = 'Null, Press Button';
   String Address = '';
 
   @override
@@ -86,7 +100,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
   }
 
   ///Form text field decoration style
-  InputDecoration formItemDecoration(String hintTextString, Icon iconItem){
+  InputDecoration formItemDecoration(String hintTextString, Icon iconItem) {
     return InputDecoration(
       prefixIcon: iconItem,
       hintText: hintTextString,
@@ -127,10 +141,10 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
     );
   }
 
-  Future<Widget> _getImage(BuildContext context, String imageName) async{
+  Future<Widget> _getImage(BuildContext context, String imageName) async {
     Image image;
     final value = await FireStorageService.loadImage(context, imageName);
-    image =Image.network(
+    image = Image.network(
       value.toString(),
       fit: BoxFit.fill,
     );
@@ -139,12 +153,14 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
+    return GetBuilder<LocationController>(
+        builder: (locationController) {
+      return DefaultTabController(
       length: 3,
       child: Scaffold(
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
-          title: const Text('Report Fault',style: TextStyle(color: Colors.white),),
+          title: const Text('Report Fault', style: TextStyle(color: Colors.white),),
           backgroundColor: Colors.green,
           iconTheme: const IconThemeData(color: Colors.white),
           bottom: const TabBar(
@@ -159,6 +175,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
         ),
         body: TabBarView(
           children: [
+
             ///Tab for public fault reporting
             SingleChildScrollView(
               child: Column(
@@ -179,17 +196,17 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                             ),
                           ),
                           const SizedBox(height: 20,),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 0.0,horizontal: 15.0),
+                          Center(
                             child: Column(
                                 children: [
                                   SizedBox(
-                                    width: 400,
+                                    width: 450,
                                     height: 50,
                                     child: Padding(
                                       padding: const EdgeInsets.only(left: 10, right: 10),
                                       child: Center(
                                         child: TextField(
+
                                           ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
                                           decoration: InputDecoration(
                                             border: OutlineInputBorder(
@@ -228,8 +245,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                             filled: true,
                                             suffixIcon: DropdownButtonFormField <String>(
                                               value: dropdownValue,
-                                              items: <String>['Select Fault Type', 'Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
-                                                  .map<DropdownMenuItem<String>>((String value) {
+                                              items: <String>['Select Fault Type', 'Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management'].map<DropdownMenuItem<String>>((String value) {
                                                 return DropdownMenuItem<String>(
                                                   value: value,
                                                   child: Padding(
@@ -245,7 +261,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                                 setState(() {
                                                   dropdownValue = newValue!;
                                                   _addressController.text = Address;
-                                                  if(dropdownValue == 'Select Fault Type'){
+                                                  if (dropdownValue == 'Select Fault Type') {
                                                     _addressController.text = '';
                                                   }
                                                 });
@@ -287,9 +303,97 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                             ),
                           ),
                           const SizedBox(height: 20,),
+
+                          // Column(
+                          //   crossAxisAlignment: CrossAxisAlignment.start,
+                          //   children: <Widget>[
+                          //     TextField(
+                          //       controller: _addressController,
+                          //       readOnly: true,
+                          //       onTap: () async {
+                          //         // generate a new token here
+                          //         final sessionToken = Uuid().v4();
+                          //         final Suggestion? result = await showSearch(
+                          //           context: context,
+                          //           delegate: AddressSearch(sessionToken),
+                          //         );
+                          //         // This will change the text displayed in the TextField
+                          //         if (result != null) {
+                          //           final placeDetails = await PlaceApiProvider(sessionToken)
+                          //               .getPlaceDetailFromId(result.placeId);
+                          //           setState(() {
+                          //             _addressController.text = result.description;
+                          //             _streetNumber = placeDetails.streetNumber;
+                          //             _street = placeDetails.street;
+                          //             _city = placeDetails.city;
+                          //             _zipCode = placeDetails.zipCode;
+                          //             _addressController.text = '$_streetNumber $_street $_city $_zipCode';
+                          //           });
+                          //         }
+                          //       },
+                          //       decoration: const InputDecoration(
+                          //         icon: SizedBox(
+                          //           width: 10,
+                          //           height: 10,
+                          //           child: Icon(
+                          //             Icons.home,
+                          //             color: Colors.black,
+                          //           ),
+                          //         ),
+                          //         hintText: "Enter your shipping address",
+                          //         border: InputBorder.none,
+                          //         contentPadding: EdgeInsets.only(left: 8.0, top: 16.0),
+                          //       ),
+                          //     ),
+                          //     const SizedBox(height: 20.0),
+                          //     Text('Street Number: $_streetNumber'),
+                          //     Text('Street: $_street'),
+                          //     Text('City: $_city'),
+                          //     Text('ZIP Code: $_zipCode'),
+                          //   ],
+                          // ),
+
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                            child: TextFormField(
+                            child:
+                            // Positioned(
+                            //     top: 60,
+                            //     left: 25, right: 25,
+                            //     child: GestureDetector(
+                            //       onTap: () {
+                            //         Get.dialog(LocationSearchDialogue(mapController: _mapController));
+                            //         Fluttertoast.showToast(msg: "Select address from the search list!", gravity: ToastGravity.CENTER);
+                            //       },
+                            //       child: Container(
+                            //         height: 50,
+                            //         padding: const EdgeInsets.symmetric(horizontal: 5),
+                            //         decoration: BoxDecoration(color: Theme
+                            //             .of(context)
+                            //             .highlightColor,
+                            //         ),
+                            //
+                            //         child: Row(children: [
+                            //           Icon(Icons.location_on, size: 25, color: Colors.green[700],
+                            //           ),
+                            //           const SizedBox(width: 5,),
+                            //           Expanded(
+                            //             child: Text(
+                            //               '${locationController.pickPlaceMark.name ?? ''}'
+                            //                   '${locationController.pickPlaceMark.locality ?? ''}'
+                            //                   '${locationController.pickPlaceMark.postalCode ?? ''}'
+                            //                   '${locationController.pickPlaceMark.country ?? ''}',
+                            //               style: TextStyle(fontSize: 20),
+                            //               maxLines: 1, overflow: TextOverflow.ellipsis,
+                            //             ),
+                            //           ),
+                            //           const SizedBox(width: 10),
+                            //           Icon(Icons.search, size: 25, color: Theme.of(context).textTheme.bodyLarge!.color),
+                            //         ],),
+                            //       ),
+                            //     )
+                            // ),
+
+                            TextFormField(
                               controller: _addressController,
                               validator: (val) =>
                               val == ""
@@ -323,7 +427,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                 padding: EdgeInsets.symmetric(horizontal: 50.0),
                                 child: Text(
                                   'Add Photo?',
-                                  style: TextStyle(fontSize: 16, ),//fontWeight: FontWeight.w700),
+                                  style: TextStyle(fontSize: 16,), //fontWeight: FontWeight.w700),
                                 ),
                               ),
                               Padding(
@@ -353,10 +457,10 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                             padding: const EdgeInsets.symmetric(horizontal: 30.0),
                             child:
                             BasicIconButtonGreen(
-                              onPress: buttonEnabled? () {
+                              onPress: buttonEnabled ? () {
                                 if (_photo != null) {
-                                  if(dropdownValue !='Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty){
-                                    if(_reporterPhoneController.text.contains('+27')){
+                                  if (dropdownValue != 'Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty) {
+                                    if (_reporterPhoneController.text.contains('+27')) {
                                       uploadFaultFile();
                                       Fluttertoast.showToast(msg: "Fault has been Reported with Image!", gravity: ToastGravity.CENTER);
                                       navigator?.pop();
@@ -367,7 +471,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                     Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
                                   }
                                 } else if (_photo == null) {
-                                  if(dropdownValue !='Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty) {
+                                  if (dropdownValue != 'Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty) {
                                     showDialog(
                                         barrierDismissible: false,
                                         context: context,
@@ -434,7 +538,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                 } else {
                                   Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
                                 }
-                              } : (){
+                              } : () {
                                 Fluttertoast.showToast(msg: "Please allow location access!", gravity: ToastGravity.CENTER);
                               },
                               labelText: 'Report Fault',
@@ -615,7 +719,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
             ///TAB for viewing all current reports ordered latest to oldest and not completed
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(0,0,0,10),
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
                 child: StreamBuilder<QuerySnapshot>(
                   stream: _faultData.orderBy('dateReported', descending: true).snapshots(),
                   builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
@@ -626,12 +730,12 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           final DocumentSnapshot documentSnapshot =
                           streamSnapshot.data!.docs[index];
                           String status;
-                          if(documentSnapshot['faultResolved'] == false){
+                          if (documentSnapshot['faultResolved'] == false) {
                             status = "Pending";
                           } else {
                             status = "Completed";
                           }
-                          if(streamSnapshot.data!.docs[index]['faultResolved'] == false && streamSnapshot.data!.docs[index]['reporterContact'] == userPhone){
+                          if (streamSnapshot.data!.docs[index]['faultResolved'] == false && streamSnapshot.data!.docs[index]['reporterContact'] == userPhone) {
                             return Card(
                               margin: const EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 5),
                               child: Padding(
@@ -791,9 +895,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                               ),
                                             ),
                                           ),
-                                        ] else ...[
-
-                                        ],
+                                        ] else ...[],
                                       ],
                                     ),
                                     const SizedBox(height: 0,),
@@ -927,7 +1029,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                 'No Faults Reported Yet',
                                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                                 textAlign: TextAlign.center,
-                              ),                      ),
+                              ),),
                           ),
                         ),
                       ),
@@ -940,7 +1042,8 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
         ),
       ),
     );
-  }
+  });
+}
 
   ///All code bellow for geolocation and adding fault with and without an image
   Future<void> locationAllow() async {
@@ -1258,25 +1361,30 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                               if (faultDescription != '') {
                                                 if (uid == _currentUser) {
                                                   await _faultData.add({
-                                                    "uid": uid,
+                                                    "ref": refNum,
+                                                    "uid": _currentUser,
                                                     "accountNumber": accountNumber,
                                                     "address": addressFault,
-                                                    "reporterContact": userPhone,
-                                                    "deptHandler": '',
-                                                    "depComment1": '',
-                                                    "depComment2": '',
-                                                    "depComment3": '',
-                                                    "handlerCom1": '',
-                                                    "handlerCom2": '',
-                                                    "managerReturnCom": '',
-                                                    "employeeReturnCom": '',
                                                     "faultType": faultType,
+                                                    "reporterContact": userPhone,
+                                                    "departmentSwitchComment": '',
+                                                    "reallocationComment": '',
+                                                    "attendeeAllocated": '',
+                                                    "managerAllocated": '',
+                                                    "adminComment": '',
+                                                    "attendeeCom1": '',
+                                                    "attendeeCom2": '',
+                                                    "attendeeCom3": '',
+                                                    "managerCom1": '',
+                                                    "managerCom2": '',
+                                                    "managerCom3": '',
+                                                    "managerReturnCom": '',
+                                                    "attendeeReturnCom": '',
                                                     "faultDescription": faultDescription,
-                                                    "dateReported": formattedDate,
                                                     "depAllocated": '',
                                                     "faultResolved": false,
+                                                    "dateReported": formattedDate,
                                                     "faultStage": 1,
-                                                    "ref": refNum,
                                                   });
                                                 }
                                                 _addressController.text = '';

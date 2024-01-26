@@ -447,7 +447,8 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                             Icon(Icons.search, size: 25, color: Theme.of(context).textTheme.bodyLarge!.color),
                           ],),
                         ),
-                      )),
+                      )
+                  ),
 
                   const SizedBox(height: 10,),
 

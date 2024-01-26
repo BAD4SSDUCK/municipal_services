@@ -259,9 +259,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
   getUsersStream() async{
     var data = await FirebaseFirestore.instance.collection('users').get();
-    setState(() {
-      _allUserRolesResults = data.docs;
-    });
+    _allUserRolesResults = data.docs;
     getUserDetails();
   }
 
@@ -477,7 +475,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 if(_allFaultResults[index]['faultStage'] == 4) ...[
                                   Text(
                                     'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.greenAccent),
                                   ),
                                   const SizedBox(height: 5,),
                                 ] else
@@ -528,7 +526,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                         children: [
                           if(_allFaultResults[index]['reallocationComment'] != "")...[
                             Text(
-                              'Reason fault reallocated: ${_allFaultResults[index]['reAllocationComment']}',
+                              'Reason fault reallocated: ${_allFaultResults[index]['reallocationComment']}',
                               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
@@ -735,7 +733,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                     onPress: () async {
                                       _reassignDept(_allFaultResults[index]);
                                     },
-                                    labelText: 'Department Correction',
+                                    labelText: 'Reallocate Department',
                                     fSize: 14,
                                     faIcon: const FaIcon(Icons.compare_arrows,),
                                     fgColor: Colors.blue,
@@ -1125,7 +1123,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                     onPress: () async {
                                       _reassignDept(_allFaultResults[index]);
                                     },
-                                    labelText: 'Department Correction',
+                                    labelText: 'Department Reallocation',
                                     fSize: 14,
                                     faIcon: const FaIcon(Icons.compare_arrows,),
                                     fgColor: Colors.blue,
@@ -1206,6 +1204,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     dropdownValue = documentSnapshot?['faultType'];
     String dropdownValue2 = 'Assign User...';
     String dropdownValue3 = 'Assign User...';
+    print('Default manager pulled ::::${_managerUserNames[0]}');
 
     // if(documentSnapshot?['managerAllocated'] != "" && documentSnapshot?['managerAllocated'] != "Service Provider" && documentSnapshot?['managerAllocated'] != "Developer" ){
     //   dropdownValue2 = documentSnapshot?['managerAllocated'];
@@ -1284,32 +1283,32 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                               visible: (visStage2 || visStage3 ||visStage4 ||visStage5) && adminAcc,
                               child: const Text('Awaiting Attendee & Manager processing.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700 ),),
                             ),
-                            Visibility(
-                              visible: visStage1 && adminAcc,
-                              child: const Text('Department Allocation'),
-                            ),
-                            Visibility(
-                              visible: visStage1 && adminAcc,
-                              child: DropdownButtonFormField <String>(
-                                value: dropdownValue,
-                                items: _deptName.toSet()
-                                    .map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value, style: const TextStyle(fontSize: 16),),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    dropdownValue = newValue!;
-                                  });
-                                },
-                              ),
-                            ),
+                            // Visibility(
+                            //   visible: visStage1 && adminAcc,
+                            //   child: const Text('Department Allocation'),
+                            // ),
+                            // Visibility(
+                            //   visible: visStage1 && adminAcc,
+                            //   child: DropdownButtonFormField <String>(
+                            //     value: dropdownValue,
+                            //     items: _deptName.toSet()
+                            //         .map<DropdownMenuItem<String>>((String value) {
+                            //       return DropdownMenuItem<String>(
+                            //         value: value,
+                            //         child: Text(value, style: const TextStyle(fontSize: 16),),
+                            //       );
+                            //     }).toList(),
+                            //     onChanged: (String? newValue) {
+                            //       setState(() {
+                            //         dropdownValue = newValue!;
+                            //       });
+                            //     },
+                            //   ),
+                            // ),
 
                             Visibility(
                               visible: visStage1 && adminAcc,
-                              child: const Text('Attendee Allocation'),
+                              child: const Text('Assign To'),
                             ),
                             Visibility(
                               visible: visStage1 && adminAcc,
@@ -1420,7 +1419,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                     onPressed: () async {
                                       final String depSelected = dropdownValue;
                                       final String attendeeAllocated = dropdownValue3;
-                                      String managerAllocated = dropdownValue2;
+                                      // String managerAllocated = dropdownValue2;
+                                      String managerAllocated = _managerUserNames[0];
                                       final String userComment = _commentController.text;
                                       final bool faultResolved = _faultResolvedController;
 
@@ -1455,8 +1455,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
                                         } else if (dropdownValue == 'Select Department...'){
                                           Fluttertoast.showToast(msg: 'Please allocate the fault to the correct department before continuing', gravity: ToastGravity.CENTER);
-                                        } else {
-                                          Fluttertoast.showToast(msg: 'Please comment to the attendee, assign attendee and manager to the fault before continuing', gravity: ToastGravity.CENTER);
+                                        } else  if (dropdownValue3 == 'Assign User...'){
+                                          Fluttertoast.showToast(msg: 'Please assign attendee to the fault and comment to the attendee before continuing', gravity: ToastGravity.CENTER);
                                         }
 
                                       } else if (faultStage == 2) {
@@ -1708,55 +1708,55 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Visibility(
-                              visible: adminAcc,
-                              child: const Text('Department Allocation'),
-                            ),
-                            Visibility(
-                              visible: adminAcc,
-                              child: DropdownButtonFormField <String>(
-                                value: dropdownValue,
-                                items: _deptName.toSet()
-                                    .map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value, style: const TextStyle(fontSize: 16),),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    dropdownValue = newValue!;
-                                  });
-                                },
-                              ),
-                            ),
+                            // Visibility(
+                            //   visible: adminAcc,
+                            //   child: const Text('Department Allocation'),
+                            // ),
+                            // Visibility(
+                            //   visible: adminAcc,
+                            //   child: DropdownButtonFormField <String>(
+                            //     value: dropdownValue,
+                            //     items: _deptName.toSet()
+                            //         .map<DropdownMenuItem<String>>((String value) {
+                            //       return DropdownMenuItem<String>(
+                            //         value: value,
+                            //         child: Text(value, style: const TextStyle(fontSize: 16),),
+                            //       );
+                            //     }).toList(),
+                            //     onChanged: (String? newValue) {
+                            //       setState(() {
+                            //         dropdownValue = newValue!;
+                            //       });
+                            //     },
+                            //   ),
+                            // ),
+
+                            // Visibility(
+                            //   visible: adminAcc,
+                            //   child: const Text('Manager Allocation'),
+                            // ),
+                            // Visibility(
+                            //   visible: adminAcc,
+                            //   child: DropdownButtonFormField <String>(
+                            //     value: dropdownValue2,
+                            //     items: _managerUserNames.toSet()
+                            //         .map<DropdownMenuItem<String>>((String value) {
+                            //       return DropdownMenuItem<String>(
+                            //         value: value,
+                            //         child: Text(value, style: const TextStyle(fontSize: 16),),
+                            //       );
+                            //     }).toList(),
+                            //     onChanged: (String? newValue) {
+                            //       setState(() {
+                            //         dropdownValue2 = newValue!;
+                            //       });
+                            //     },
+                            //   ),
+                            // ),
 
                             Visibility(
                               visible: adminAcc,
-                              child: const Text('Manager Allocation'),
-                            ),
-                            Visibility(
-                              visible: adminAcc,
-                              child: DropdownButtonFormField <String>(
-                                value: dropdownValue2,
-                                items: _managerUserNames.toSet()
-                                    .map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value, style: const TextStyle(fontSize: 16),),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    dropdownValue2 = newValue!;
-                                  });
-                                },
-                              ),
-                            ),
-
-                            Visibility(
-                              visible: adminAcc,
-                              child: const Text('Attendee Allocation'),
+                              child: const Text('Reassign To'),
                             ),
                             Visibility(
                               visible: adminAcc,
@@ -1792,8 +1792,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                               child: const Text('Reassign'),
                               onPressed: () async {
                                 final String userComment = _commentController.text;
-                                final String depSelected = dropdownValue;
-                                final String managerAllocated = dropdownValue2;
+                                // final String depSelected = dropdownValue;
+                                // final String managerAllocated = dropdownValue2;
                                 final String attendeeAllocated = dropdownValue3;
 
                                 if (_deptHandlerController.text != '' ||
@@ -1802,24 +1802,24 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                       .doc(documentSnapshot.id)
                                       .update({
                                     "reallocationComment": userComment,
-                                    "depAllocated": depSelected,
-                                    "managerAllocated": managerAllocated,
+                                    // "depAllocated": depSelected,
+                                    // "managerAllocated": managerAllocated,
                                     "attendeeAllocated": attendeeAllocated,
                                     "faultResolved": false,
                                     "faultStage": 2,
                                   });
-                                } else
-                                if (dropdownValue2 == 'Assign User...') {
-                                  Fluttertoast.showToast(
-                                      msg: 'Please allocate the fault to a new manager if necessary!',
-                                      gravity: ToastGravity.CENTER);
-                                } else
-                                if (dropdownValue3 == 'Assign User...') {
+                                }
+                                // else if (dropdownValue2 == 'Assign User...') {
+                                //   Fluttertoast.showToast(
+                                //       msg: 'Please allocate the fault to a new manager if necessary!',
+                                //       gravity: ToastGravity.CENTER);
+                                // }
+                                else if (dropdownValue3 == 'Assign User...') {
                                   Fluttertoast.showToast(
                                       msg: 'Please allocate the fault to a new fault attendee!',
                                       gravity: ToastGravity.CENTER);
-                                } else
-                                if (_commentController.text != '' ||
+                                }
+                                else if (_commentController.text != '' ||
                                     _commentController.text.isNotEmpty) {
                                   Fluttertoast.showToast(
                                       msg: 'Please provide reasoning for your reallocation!',
@@ -2328,7 +2328,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 keyboardType: TextInputType.text,
                                 controller: _commentController,
                                 decoration: const InputDecoration(
-                                  labelText: 'Reason for swapping fault department...',),
+                                  labelText: 'Reason for changing department...',),
                               ),
                             ),
 
