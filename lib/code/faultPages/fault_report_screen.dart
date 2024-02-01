@@ -22,10 +22,10 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 import 'package:uuid/uuid.dart';
 
-import '../MapTools/address_search.dart';
-import '../MapTools/location_controller.dart';
-import '../MapTools/location_search_dialogue.dart';
-import '../MapTools/place_service.dart';
+import 'package:municipal_tracker_msunduzi/code/MapTools/address_search.dart';
+import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
+import 'package:municipal_tracker_msunduzi/code/MapTools/location_search_dialogue.dart';
+import 'package:municipal_tracker_msunduzi/code/MapTools/place_service.dart';
 
 class ReportPropertyMenu extends StatefulWidget {
   const ReportPropertyMenu({Key? key}) : super(key: key);
@@ -81,6 +81,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
   String accountNumberRep = '';
   String locationGivenRep = '';
   bool imageVisibility = true;
+  bool addressExists = false;
 
   File? _photo;
   final ImagePicker _picker = ImagePicker();
@@ -289,7 +290,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           ),
                           const SizedBox(height: 20,),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                            padding: const EdgeInsets.symmetric(horizontal: 10.0),
                             child: TextFormField(
                               controller: _faultDescriptionController,
                               validator: (val) =>
@@ -304,94 +305,63 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           ),
                           const SizedBox(height: 20,),
 
-                          // Column(
-                          //   crossAxisAlignment: CrossAxisAlignment.start,
-                          //   children: <Widget>[
-                          //     TextField(
-                          //       controller: _addressController,
-                          //       readOnly: true,
-                          //       onTap: () async {
-                          //         // generate a new token here
-                          //         final sessionToken = Uuid().v4();
-                          //         final Suggestion? result = await showSearch(
-                          //           context: context,
-                          //           delegate: AddressSearch(sessionToken),
-                          //         );
-                          //         // This will change the text displayed in the TextField
-                          //         if (result != null) {
-                          //           final placeDetails = await PlaceApiProvider(sessionToken)
-                          //               .getPlaceDetailFromId(result.placeId);
-                          //           setState(() {
-                          //             _addressController.text = result.description;
-                          //             _streetNumber = placeDetails.streetNumber;
-                          //             _street = placeDetails.street;
-                          //             _city = placeDetails.city;
-                          //             _zipCode = placeDetails.zipCode;
-                          //             _addressController.text = '$_streetNumber $_street $_city $_zipCode';
-                          //           });
-                          //         }
-                          //       },
-                          //       decoration: const InputDecoration(
-                          //         icon: SizedBox(
-                          //           width: 10,
-                          //           height: 10,
-                          //           child: Icon(
-                          //             Icons.home,
-                          //             color: Colors.black,
+                          // Padding(
+                          //   padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                          //   child:
+                          //   ///https://medium.com/@yshean/location-search-autocomplete-in-flutter-84f155d44721
+                          //   Column(
+                          //     crossAxisAlignment: CrossAxisAlignment.start,
+                          //     children: <Widget>[
+                          //       TextField(
+                          //         controller: _addressController,
+                          //         readOnly: true,
+                          //         onTap: () async {
+                          //           // generate a new token here
+                          //           final sessionToken = Uuid().v4();
+                          //           final Suggestion? result = await showSearch(
+                          //             context: context,
+                          //             delegate: AddressSearch(),//sessionToken
+                          //           );
+                          //           // This will change the text displayed in the TextField
+                          //           if (result != null) {
+                          //             final placeDetails = await PlaceApiProvider(sessionToken)
+                          //                 .getPlaceDetailFromId(result.placeId);
+                          //             setState(() {
+                          //               _addressController.text = result.description;
+                          //               _streetNumber = placeDetails.streetNumber;
+                          //               _street = placeDetails.street;
+                          //               _city = placeDetails.city;
+                          //               _zipCode = placeDetails.zipCode;
+                          //               _addressController.text = '$_streetNumber $_street $_city $_zipCode';
+                          //             });
+                          //           }
+                          //         },
+                          //         decoration: const InputDecoration(
+                          //           icon: SizedBox(
+                          //             width: 10,
+                          //             height: 10,
+                          //             child: Icon(
+                          //               Icons.home,
+                          //               color: Colors.black,
+                          //             ),
                           //           ),
+                          //           hintText: "Report Address...",
+                          //           border: InputBorder.none,
+                          //           contentPadding: EdgeInsets.only(left: 8.0, top: 16.0),
                           //         ),
-                          //         hintText: "Enter your shipping address",
-                          //         border: InputBorder.none,
-                          //         contentPadding: EdgeInsets.only(left: 8.0, top: 16.0),
                           //       ),
-                          //     ),
-                          //     const SizedBox(height: 20.0),
-                          //     Text('Street Number: $_streetNumber'),
-                          //     Text('Street: $_street'),
-                          //     Text('City: $_city'),
-                          //     Text('ZIP Code: $_zipCode'),
-                          //   ],
+                          //       const SizedBox(height: 20.0),
+                          //       Text('Street Number: $_streetNumber'),
+                          //       Text('Street: $_street'),
+                          //       Text('City: $_city'),
+                          //       Text('ZIP Code: $_zipCode'),
+                          //     ],
+                          //   ),
                           // ),
 
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                            padding: const EdgeInsets.symmetric(horizontal: 10.0),
                             child:
-                            // Positioned(
-                            //     top: 60,
-                            //     left: 25, right: 25,
-                            //     child: GestureDetector(
-                            //       onTap: () {
-                            //         Get.dialog(LocationSearchDialogue(mapController: _mapController));
-                            //         Fluttertoast.showToast(msg: "Select address from the search list!", gravity: ToastGravity.CENTER);
-                            //       },
-                            //       child: Container(
-                            //         height: 50,
-                            //         padding: const EdgeInsets.symmetric(horizontal: 5),
-                            //         decoration: BoxDecoration(color: Theme
-                            //             .of(context)
-                            //             .highlightColor,
-                            //         ),
-                            //
-                            //         child: Row(children: [
-                            //           Icon(Icons.location_on, size: 25, color: Colors.green[700],
-                            //           ),
-                            //           const SizedBox(width: 5,),
-                            //           Expanded(
-                            //             child: Text(
-                            //               '${locationController.pickPlaceMark.name ?? ''}'
-                            //                   '${locationController.pickPlaceMark.locality ?? ''}'
-                            //                   '${locationController.pickPlaceMark.postalCode ?? ''}'
-                            //                   '${locationController.pickPlaceMark.country ?? ''}',
-                            //               style: TextStyle(fontSize: 20),
-                            //               maxLines: 1, overflow: TextOverflow.ellipsis,
-                            //             ),
-                            //           ),
-                            //           const SizedBox(width: 10),
-                            //           Icon(Icons.search, size: 25, color: Theme.of(context).textTheme.bodyLarge!.color),
-                            //         ],),
-                            //       ),
-                            //     )
-                            // ),
 
                             TextFormField(
                               controller: _addressController,
@@ -407,7 +377,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                           ),
                           const SizedBox(height: 20,),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                            padding: const EdgeInsets.symmetric(horizontal: 10.0),
                             child: TextFormField(
                               controller: _reporterPhoneController,
                               validator: (val) =>
@@ -453,99 +423,109 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                             ],
                           ),
                           const SizedBox(height: 20,),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 30.0),
-                            child:
-                            BasicIconButtonGreen(
-                              onPress: buttonEnabled ? () {
-                                if (_photo != null) {
-                                  if (dropdownValue != 'Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty) {
-                                    if (_reporterPhoneController.text.contains('+27')) {
-                                      uploadFaultFile();
-                                      Fluttertoast.showToast(msg: "Fault has been Reported with Image!", gravity: ToastGravity.CENTER);
-                                      navigator?.pop();
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                              child:
+                              BasicIconButtonGreen(
+                                onPress: buttonEnabled ? () {
+                                  if (_photo != null) {
+                                    if (dropdownValue != 'Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty) {
+                                      if (_reporterPhoneController.text.contains('+27')) {
+                                        verifyAddress();
+                                        if(addressExists){
+                                          uploadFaultFile();
+                                          Fluttertoast.showToast(msg: "Fault has been Reported with Image!", gravity: ToastGravity.CENTER);
+                                          navigator?.pop();
+                                        } else {
+                                          Fluttertoast.showToast(msg: "Please input a valid address!", gravity: ToastGravity.CENTER);
+                                        }
+                                      } else {
+                                        Fluttertoast.showToast(msg: "Contact number must have +27 country code!", gravity: ToastGravity.CENTER);
+                                      }
                                     } else {
-                                      Fluttertoast.showToast(msg: "Contact number must have +27 country code!", gravity: ToastGravity.CENTER);
+                                      Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
                                     }
-                                  } else {
-                                    Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
-                                  }
-                                } else if (_photo == null) {
-                                  if (dropdownValue != 'Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty) {
-                                    showDialog(
-                                        barrierDismissible: false,
-                                        context: context,
-                                        builder: (context) {
-                                          return
-                                            AlertDialog(
-                                              shape: const RoundedRectangleBorder(
-                                                  borderRadius:
-                                                  BorderRadius.all(
-                                                      Radius.circular(16))),
-                                              title: const Text("Report Fault Without Image!"),
-                                              content: const Text("Reporting a fault without a photo is possible. A photo can be added later on if necessary,\n\nare you sure you want to leave out a photo?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Fluttertoast.showToast(
-                                                        msg: "Please tap on the image area and select the image to upload!",
-                                                        gravity: ToastGravity.CENTER);
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
+                                  } else if (_photo == null) {
+                                    if (dropdownValue != 'Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty) {
+                                      showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return
+                                              AlertDialog(
+                                                shape: const RoundedRectangleBorder(
+                                                    borderRadius:
+                                                    BorderRadius.all(
+                                                        Radius.circular(16))),
+                                                title: const Text("Report Fault Without Image!"),
+                                                content: const Text("Reporting a fault without a photo is possible. A photo can be added later on if necessary,\n\nare you sure you want to leave out a photo?"),
+                                                actions: [
+                                                  IconButton(
+                                                    onPressed: () {
+                                                      Fluttertoast.showToast(
+                                                          msg: "Please tap on the image area and select the image to upload!",
+                                                          gravity: ToastGravity.CENTER);
+                                                      Navigator.of(context).pop();
+                                                    },
+                                                    icon: const Icon(
+                                                      Icons.cancel,
+                                                      color: Colors.red,
+                                                    ),
                                                   ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () {
-                                                    if (dropdownValue != 'Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty) {
-                                                      if (_reporterPhoneController.text.contains('+27')) {
-                                                        uploadFault();
+                                                  IconButton(
+                                                    onPressed: () {
+                                                      if (dropdownValue != 'Select Fault Type' && _addressController.text.isNotEmpty && _faultDescriptionController.text.isNotEmpty && _reporterPhoneController.text.isNotEmpty) {
+                                                        if (_reporterPhoneController.text.contains('+27')) {
+                                                          verifyAddress();
+                                                          if(addressExists){
+                                                            uploadFault();
+                                                            Fluttertoast.showToast(msg: "Fault has been Reported!", gravity: ToastGravity.CENTER);
+                                                          } else {
+                                                            Fluttertoast.showToast(msg: "Please input a valid address!", gravity: ToastGravity.CENTER);
+                                                          }
+                                                          Navigator.of(context).pop();
+                                                        } else {
+                                                          Fluttertoast.showToast(
+                                                              msg: "Contact number must have +27 country code!",
+                                                              gravity: ToastGravity.CENTER);
+                                                        }
+                                                      } else {
                                                         Fluttertoast.showToast(
-                                                            msg: "Fault has been Reported!",
+                                                            msg: "Please fill all fields to report!",
                                                             gravity: ToastGravity.CENTER);
-                                                        Navigator.of(context).pop();
+                                                      }
+                                                      if (_reporterPhoneController.text.contains('+27')) {
+
                                                       } else {
                                                         Fluttertoast.showToast(
                                                             msg: "Contact number must have +27 country code!",
                                                             gravity: ToastGravity.CENTER);
                                                       }
-                                                    } else {
-                                                      Fluttertoast.showToast(
-                                                          msg: "Please fill all fields to report!",
-                                                          gravity: ToastGravity.CENTER);
-                                                    }
-                                                    if (_reporterPhoneController.text.contains('+27')) {
-
-                                                    } else {
-                                                      Fluttertoast.showToast(
-                                                          msg: "Contact number must have +27 country code!",
-                                                          gravity: ToastGravity.CENTER);
-                                                    }
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.done,
-                                                    color: Colors.green,
+                                                    },
+                                                    icon: const Icon(
+                                                      Icons.done,
+                                                      color: Colors.green,
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
-                                            );
-                                        });
+                                                ],
+                                              );
+                                          });
+                                    } else {
+                                      Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
+                                    }
                                   } else {
                                     Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
                                   }
-                                } else {
-                                  Fluttertoast.showToast(msg: "Please fill all fields to report!", gravity: ToastGravity.CENTER);
-                                }
-                              } : () {
-                                Fluttertoast.showToast(msg: "Please allow location access!", gravity: ToastGravity.CENTER);
-                              },
-                              labelText: 'Report Fault',
-                              fSize: 20,
-                              faIcon: const FaIcon(Icons.report),
-                              fgColor: Colors.orangeAccent,
-                              btSize: const Size(500, 60),
+                                } : () {
+                                  Fluttertoast.showToast(msg: "Please allow location access!", gravity: ToastGravity.CENTER);
+                                },
+                                labelText: 'Report Fault',
+                                fSize: 20,
+                                faIcon: const FaIcon(Icons.report),
+                                fgColor: Colors.orangeAccent,
+                                btSize: const Size(300, 40),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 10,),
@@ -641,7 +621,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                         ///Check for only user information, this displays only for the users details and not all users in the database.
                         if (streamSnapshot.data!.docs[index]['cell number'] == userPhone) {
                           return Card(
-                            margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
+                            margin: const EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 0),
                             child: Padding(
                               padding: const EdgeInsets.all(20.0),
                               child: Column(
@@ -694,7 +674,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                         fSize: 16,
                                         faIcon: const FaIcon(Icons.report),
                                         fgColor: Colors.orangeAccent,
-                                        btSize: const Size(200, 50),
+                                        btSize: const Size(150, 40),
                                       )
                                   ),
                                 ],
@@ -920,10 +900,10 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                                       ));
                                                 },
                                                 labelText: 'Location',
-                                                fSize: 15,
+                                                fSize: 14,
                                                 faIcon: const FaIcon(Icons.map),
                                                 fgColor: Colors.purple,
-                                                btSize: const Size(50, 50),
+                                                btSize: const Size(40, 40),
                                               ),
                                               BasicIconButtonGreen(
                                                 onPress: () {
@@ -936,10 +916,10 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                                                       ));
                                                 },
                                                 labelText: 'Image +',
-                                                fSize: 15,
+                                                fSize: 14,
                                                 faIcon: const FaIcon(Icons.photo_camera),
                                                 fgColor: Colors.blueGrey,
-                                                btSize: const Size(50, 50),
+                                                btSize: const Size(40, 40),
                                               ),
                                             ],
                                           ),
@@ -1088,7 +1068,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
     List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
     print(placemarks);
     Placemark place = placemarks[0];
-    Address = '${place.street} ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+    Address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
   }
 
   //Used to set the _photo file as image from gallery
@@ -1213,6 +1193,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
       _addressController.text = '';
       _faultDescriptionController.text = '';
+      addressExists = false;
       setState(() {
         dropdownValue = 'Select Fault Type';
       });
@@ -1262,6 +1243,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
 
       _addressController.text = '';
       _faultDescriptionController.text = '';
+      addressExists = false;
       setState(() {
         dropdownValue = 'Select Fault Type';
       });
@@ -1427,4 +1409,46 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
           );
         });
   }
+
+  Future<void> verifyAddress() async {
+    final apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
+    final address = _addressController.text;
+
+    if (address.isNotEmpty) {
+      final response = await http.get(
+        Uri.parse('https://maps.googleapis.com/maps/api/geocode/json?address=$address&key=$apiKey'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        if (data['status'] == 'OK' && data['results'].isNotEmpty) {
+          // Address is valid, and you can get the coordinates
+          final location = data['results'][0]['geometry']['location'];
+          final double latitude = location['lat'];
+          final double longitude = location['lng'];
+
+          addressExists = true;
+
+          print('Address exists at: $latitude, $longitude');
+        } else {
+          // Address is not valid
+          addressExists = false;
+          Fluttertoast.showToast(msg: "Address does not exist!", gravity: ToastGravity.CENTER,);
+          print('Address does not exist');
+        }
+      } else {
+        // Handle error
+        addressExists = false;
+        Fluttertoast.showToast(msg: "Error verifying address", gravity: ToastGravity.CENTER,);
+        print('Error verifying address');
+      }
+    } else {
+      // Address is empty
+      addressExists = false;
+      Fluttertoast.showToast(msg: "Please enter an address", gravity: ToastGravity.CENTER,);
+      print('Please enter an address');
+    }
+  }
+
 }

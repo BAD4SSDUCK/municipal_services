@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -11,6 +15,7 @@ import 'package:firebase_database/ui/firebase_animated_list.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:http/http.dart' as http;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -49,6 +54,8 @@ class FireStorageService extends ChangeNotifier{
 String imageName = '';
 String dateReported = '';
 
+late LatLng addressLocation;
+
 class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
   @override
@@ -56,6 +63,14 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     if(_searchController.text == ""){
       getFaultStream();
     }
+
+    _isLoading = true;
+    Future.delayed(const Duration(seconds: 3),(){
+      setState(() {
+        _isLoading = false;
+      });
+    });
+
     _searchController.addListener(_onSearchChanged);
     checkRole();
     // getUserDepartmentDetails();
@@ -85,6 +100,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     super.dispose();
   }
 
+  late bool _isLoading;
+
   final _accountNumberController = TextEditingController();
   final _addressController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -110,6 +127,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
   TextEditingController _searchController = TextEditingController();
   List _allFaultResults = [];
+  List _similarFaultResults = [];
+  List _closeFaultResults = [];
   List<String> _allUserNames = ["Assign User..."];
   List<String> _allUserByNames = ["Assign User..."];
   List<String> _managerUserNames = ["Assign User..."];
@@ -123,6 +142,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   List _allUserResults = [];
   bool visShow = true;
   bool visHide = false;
+
+  bool visCloseBy = false;
 
   bool adminAcc = false;
   bool managerAcc = false;
@@ -145,6 +166,14 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: <Widget>[
+          // Visibility(
+          //   visible: adminAcc || managerAcc,
+          //   child: IconButton(
+          //     onPressed: (){
+          //
+          //     },
+          //     icon: const Icon(Icons.details, color: Colors.white,),),
+          // ),
           Visibility(
             visible: adminAcc || managerAcc,
             child: IconButton(
@@ -187,7 +216,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           ),
           /// Search bar end
 
-          Expanded(child: faultCard(),),
+          Expanded(child: _isLoading
+              ? const Center(child: CircularProgressIndicator(),)
+              : faultCard(),),
 
           const SizedBox(height: 5,),
 
@@ -214,6 +245,304 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     });
     searchResultsList();
   }
+
+  getSimilarFaultStreamWater() async{
+    var data = await FirebaseFirestore.instance.collection('faultReporting').orderBy('dateReported', descending: true).get();
+
+    _similarFaultResults = data.docs;
+
+    /// Example query to get faults of the water & sanitation type
+    var queryWater = FirebaseFirestore.instance
+        .collection('faultReporting')
+        .where('faultType', isEqualTo: 'Water & Sanitation');
+
+    var queryWaterSnapshot = await queryWater.get();
+
+    // Iterate through the documents and compare distances
+    for (var i = 0; i < queryWaterSnapshot.docs.length; i++) {
+
+      var address1 = queryWaterSnapshot.docs[i]['address'];
+      addressConvert(address1);
+
+      var fault1 = addressLocation;
+      var fault1Coordinates = addressLocation;
+      // GeoPoint(
+      //   fault1['latitude'] as double,
+      //   fault1['longitude'] as double,
+      // );
+
+      // Compare distances using geolocator
+      for (var j = i + 1; j < queryWaterSnapshot.docs.length; j++) {
+
+        var address2 = queryWaterSnapshot.docs[i]['address'];
+        addressConvert(address2);
+
+        var fault2 = addressLocation;
+        var fault2Coordinates = addressLocation;
+        // GeoPoint(
+        //   fault2['latitude'] as double,
+        //   fault2['longitude'] as double,
+        // );
+
+        // Calculate distance
+        double distance = await calculateDistance(
+          fault1Coordinates.latitude,
+          fault1Coordinates.longitude,
+          fault2Coordinates.latitude,
+          fault2Coordinates.longitude,
+        );
+
+        // Check if distance is within 5 meters
+        if (distance <= 5.0) {
+          // Flag or process the faults as needed
+
+          _closeFaultResults.add(address1);
+          _closeFaultResults.add(address2);
+
+          print('Fault at $address1 is within 5 meters of ''Fault at $address2');
+          /// To Add your logic here to flag or process the faults
+
+
+        }
+      }
+    }
+  }
+
+  getSimilarFaultStreamWaste() async{
+    var data = await FirebaseFirestore.instance.collection('faultReporting').orderBy('dateReported', descending: true).get();
+
+    _similarFaultResults = data.docs;
+
+    /// Example query to get faults of the water & sanitation type
+    var queryWaste = FirebaseFirestore.instance
+        .collection('faultReporting')
+        .where('faultType', isEqualTo: 'Waste Management');
+
+    var queryWasteSnapshot = await queryWaste.get();
+
+    // Iterate through the documents and compare distances
+    for (var i = 0; i < queryWasteSnapshot.docs.length; i++) {
+
+      var address1 = queryWasteSnapshot.docs[i]['address'];
+      addressConvert(address1);
+
+      var fault1 = queryWasteSnapshot.docs[i];
+      var fault1Coordinates = addressLocation;
+      // GeoPoint(
+      //   fault1['latitude'] as double,
+      //   fault1['longitude'] as double,
+      // );
+
+      // Compare distances using geolocator
+      for (var j = i + 1; j < queryWasteSnapshot.docs.length; j++) {
+
+        var address2 = queryWasteSnapshot.docs[i]['address'];
+        addressConvert(address2);
+
+        var fault2 = queryWasteSnapshot.docs[j];
+        var fault2Coordinates = addressLocation;
+        // GeoPoint(
+        //   fault2['latitude'] as double,
+        //   fault2['longitude'] as double,
+        // );
+
+        // Calculate distance
+        double distance = await calculateDistance(
+          fault1Coordinates.latitude,
+          fault1Coordinates.longitude,
+          fault2Coordinates.latitude,
+          fault2Coordinates.longitude,
+        );
+
+        // Check if distance is within 5 meters
+        if (distance <= 5.0) {
+          // Flag or process the faults as needed
+
+          _closeFaultResults.add(address2);
+
+          print('Fault at $address1 is within 5 meters of ''Fault at $address2');
+        }
+      }
+    }
+  }
+
+  getSimilarFaultStreamElectricity() async{
+    var data = await FirebaseFirestore.instance.collection('faultReporting').orderBy('dateReported', descending: true).get();
+
+    _similarFaultResults = data.docs;
+
+    /// Example query to get faults of the water & sanitation type
+    var queryElectricity = FirebaseFirestore.instance
+        .collection('faultReporting')
+        .where('faultType', isEqualTo: 'Electricity');
+
+    var queryElectricitySnapshot = await queryElectricity.get();
+
+    // Iterate through the documents and compare distances
+    for (var i = 0; i < queryElectricitySnapshot.docs.length; i++) {
+
+      var address1 = queryElectricitySnapshot.docs[i]['address'];
+      addressConvert(address1);
+
+      var fault1 = queryElectricitySnapshot.docs[i];
+      var fault1Coordinates = addressLocation;
+      // GeoPoint(
+      //   fault1['latitude'] as double,
+      //   fault1['longitude'] as double,
+      // );
+
+      // Compare distances using geolocator
+      for (var j = i + 1; j < queryElectricitySnapshot.docs.length; j++) {
+
+        var address2 = queryElectricitySnapshot.docs[i]['address'];
+        addressConvert(address2);
+
+        var fault2 = queryElectricitySnapshot.docs[j];
+        var fault2Coordinates = addressLocation;
+        // GeoPoint(
+        //   fault2['latitude'] as double,
+        //   fault2['longitude'] as double,
+        // );
+
+        // Calculate distance
+        double distance = await calculateDistance(
+          fault1Coordinates.latitude,
+          fault1Coordinates.longitude,
+          fault2Coordinates.latitude,
+          fault2Coordinates.longitude,
+        );
+
+        // Check if distance is within 5 meters
+        if (distance <= 5.0) {
+          // Flag or process the faults as needed
+
+          _closeFaultResults.add(address2);
+
+          print('Fault at $address1 is within 5 meters of ''Fault at $address2');
+        }
+      }
+    }
+  }
+
+  getSimilarFaultStreamRoad() async{
+    var data = await FirebaseFirestore.instance.collection('faultReporting').orderBy('dateReported', descending: true).get();
+
+    _similarFaultResults = data.docs;
+
+    /// Example query to get faults of the water & sanitation type
+    var queryRoadworks = FirebaseFirestore.instance
+        .collection('faultReporting')
+        .where('faultType', isEqualTo: 'Roadworks');
+
+    var queryRoadworksSnapshot = await queryRoadworks.get();
+
+    // Iterate through the documents and compare distances
+    for (var i = 0; i < queryRoadworksSnapshot.docs.length; i++) {
+
+      var address1 = queryRoadworksSnapshot.docs[i]['address'];
+      addressConvert(address1);
+
+      var fault1 = queryRoadworksSnapshot.docs[i];
+      var fault1Coordinates = addressLocation;
+      // GeoPoint(
+      //   fault1['latitude'] as double,
+      //   fault1['longitude'] as double,
+      // );
+
+      // Compare distances using geolocator
+      for (var j = i + 1; j < queryRoadworksSnapshot.docs.length; j++) {
+
+        var address2 = queryRoadworksSnapshot.docs[i]['address'];
+        addressConvert(address2);
+
+        var fault2 = queryRoadworksSnapshot.docs[j];
+        var fault2Coordinates = addressLocation;
+        // GeoPoint(
+        //   fault2['latitude'] as double,
+        //   fault2['longitude'] as double,
+        // );
+
+        // Calculate distance
+        double distance = await calculateDistance(
+          fault1Coordinates.latitude,
+          fault1Coordinates.longitude,
+          fault2Coordinates.latitude,
+          fault2Coordinates.longitude,
+        );
+
+        // Check if distance is within 5 meters
+        if (distance <= 5.0) {
+          // Flag or process the faults as needed
+
+          _closeFaultResults.add(address2);
+
+          print('Fault at $address1 is within 5 meters of ''Fault at $address2');
+        }
+      }
+    }
+  }
+
+  Future<double> calculateDistance(
+      double lat1,
+      double lon1,
+      double lat2,
+      double lon2,
+      ) async {
+    double distanceInMeters = await Geolocator.distanceBetween(
+      lat1,
+      lon1,
+      lat2,
+      lon2,
+    );
+
+    return distanceInMeters;
+  }
+
+  void addressConvert(String address) async {
+    ///Location change here for address conversion into lat long
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        List<Location> locations = await locationFromAddress(address);
+
+        if (locations.isNotEmpty) {
+          Location location = locations.first;
+
+          double latitude = location.latitude;
+          double longitude = location.longitude;
+
+          addressLocation = LatLng(latitude, longitude);
+          print('$addressLocation this is the change');
+        }
+
+      } catch (e) {
+        print('Address incorrect with no latlng to calculate');
+      }
+    } else {
+      ///for web version
+      final apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
+      final encodedAddress = Uri.encodeComponent(address);
+      final url = 'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey&libraries=maps,drawing,visualization,places,routes&callback=initMap';
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['results'] != null && data['results'].isNotEmpty) {
+          final location = data['results'][0]['geometry']['location'];
+
+          double latitude = location['lat'];
+          double longitude = location['lng'];
+
+          addressLocation = LatLng(latitude, longitude);
+          print('$addressLocation this is the change');
+        }
+
+      } else {
+        print('Address incorrect with no latlng to calculate');
+      }
+    }
+  }
+
 
   _onSearchChanged() async {
     searchResultsList();
@@ -255,6 +584,17 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
       managerAcc = false;
       employeeAcc = true;
     }
+
+    if(myDepartment=="Water & Sanitation"){
+      getSimilarFaultStreamWater();
+    } else if (myDepartment=="Waste Managment"){
+      getSimilarFaultStreamWaste();
+    } else if (myDepartment=="Electricity"){
+      getSimilarFaultStreamElectricity();
+    } else if (myDepartment=="Roadworks"){
+      getSimilarFaultStreamRoad();
+    }
+
   }
 
   getUsersStream() async{
@@ -299,6 +639,22 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           managerAcc = false;
           employeeAcc = true;
         }
+
+        if(myDepartment=="Water & Sanitation"){
+          getSimilarFaultStreamWater();
+        } else if (myDepartment=="Waste Managment"){
+          getSimilarFaultStreamWaste();
+        } else if (myDepartment=="Electricity"){
+          getSimilarFaultStreamElectricity();
+        } else if (myDepartment=="Roadworks"){
+          getSimilarFaultStreamRoad();
+        } else if (myDepartment=="Service Provider") {
+          getSimilarFaultStreamWater();
+          getSimilarFaultStreamWaste();
+          getSimilarFaultStreamElectricity();
+          getSimilarFaultStreamRoad();
+        }
+
       }
     }
     getUserDepartmentDetails();
@@ -404,6 +760,15 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
             status = "Completed";
           }
 
+          for(var faultSnapshot in _closeFaultResults){
+            if(_allFaultResults[index]['address'] == faultSnapshot){
+              visCloseBy = true;
+            }else{
+              visCloseBy = false;
+            }
+          }
+
+
           if (_allFaultResults[index]['faultResolved'] == false) {
             if(myDepartment == _allFaultResults[index]['faultType']){
               return Card(
@@ -414,10 +779,19 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Center(
-                        child: Text(
-                          'Fault Information',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      Center(
+                        child: Row(
+                          children: [
+                            const Text(
+                              'Fault Information',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                            ),
+                            Visibility(
+                                visible: visCloseBy,
+                                child: const Icon(
+                                  Icons.notification_important,
+                                  color: Colors.red,)),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 10,),

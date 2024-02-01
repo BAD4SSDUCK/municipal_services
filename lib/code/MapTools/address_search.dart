@@ -21,39 +21,45 @@ class AddressSearch extends SearchDelegate<Suggestion> {
       tooltip: 'Back',
       icon: Icon(Icons.arrow_back),
       onPressed: () {
-        // close(context, null);
+        if (query.isEmpty) {
+          close(context, Suggestion('','')); // or close the search without passing a value
+        } else {
+          // Close with a default suggestion or a specific behavior
+          close(context, Suggestion('ID','Default Suggestion'));
+        }
       },
     );
   }
 
   @override
   Widget buildResults(BuildContext context) {
-    return null;
+    return Container();
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
     return FutureBuilder(
-      // We will put the api call here
-      future: null,
-      builder: (context, snapshot) => query == ''
-          ? Container(
-        padding: EdgeInsets.all(16.0),
-        child: Text('Enter your address'),
-      )
-          : snapshot.hasData
-          ? ListView.builder(
-        itemBuilder: (context, index) => ListTile(
-          // we will display the data returned from our future here
-          title:
-          Text(snapshot.data[index]),
-          onTap: () {
-            close(context, snapshot.data[index]);
-          },
-        ),
-        itemCount: snapshot.data.length,
-      )
-          : Container(child: Text('Loading...')),
+      future: PlaceApiProvider.getSuggestions(query), // Replace null with your actual method
+      builder: (context, snapshot) {
+        if (query.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(16.0),
+            child: const Text('Enter Address...'),
+          );
+        } else if (snapshot.hasData) {
+          return ListView.builder(
+            itemBuilder: (context, index) => ListTile(
+              title: Text(snapshot.data![index].description),
+              onTap: () {
+                close(context, snapshot.data![index]);
+              },
+            ),
+            itemCount: snapshot.data?.length,
+          );
+        } else {
+          return Container(child: const Text('Loading...'));
+        }
+      },
     );
   }
 }

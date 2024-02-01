@@ -1087,20 +1087,20 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                             });
                                       },
                                       labelText: 'Electricity',
-                                      fSize: 16,
+                                      fSize: 15,
                                       faIcon: const FaIcon(Icons.camera_alt,),
                                       fgColor: Colors.black38,
-                                      btSize: const Size(100, 38),
+                                      btSize: const Size(50, 38),
                                     ),
                                     BasicIconButtonGrey(
                                       onPress: () async {
                                         _updateE(documentSnapshot);
                                       },
                                       labelText: 'Capture',
-                                      fSize: 16,
+                                      fSize: 15,
                                       faIcon: const FaIcon(Icons.edit,),
                                       fgColor: Theme.of(context).primaryColor,
-                                      btSize: const Size(100, 38),
+                                      btSize: const Size(50, 38),
                                     ),
                                   ],
                                 )
@@ -1254,7 +1254,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                             });
                                       },
                                       labelText: 'Water',
-                                      fSize: 16,
+                                      fSize: 15,
                                       faIcon: const FaIcon(Icons.camera_alt,),
                                       fgColor: Colors.black38,
                                       btSize: const Size(100, 38),
@@ -1264,7 +1264,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                         _updateW(documentSnapshot);
                                       },
                                       labelText: 'Capture',
-                                      fSize: 16,
+                                      fSize: 15,
                                       faIcon: const FaIcon(Icons.edit,),
                                       fgColor: Theme.of(context).primaryColor,
                                       btSize: const Size(100, 38),
