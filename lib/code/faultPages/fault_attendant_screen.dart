@@ -26,11 +26,11 @@ import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 
-class FaultTaskScreen extends StatefulWidget {
-  const FaultTaskScreen({Key? key}) : super(key: key);
+class FaultAttendantScreen extends StatefulWidget {
+  const FaultAttendantScreen({Key? key}) : super(key: key);
 
   @override
-  State<FaultTaskScreen> createState() => _FaultTaskScreenState();
+  State<FaultAttendantScreen> createState() => _FaultAttendantScreenState();
 }
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
@@ -57,7 +57,7 @@ String dateReported = '';
 late LatLng addressLocation;
 late LatLng addressLocation2;
 
-class _FaultTaskScreenState extends State<FaultTaskScreen> {
+class _FaultAttendantScreenState extends State<FaultAttendantScreen> {
 
   @override
   void initState() {
@@ -143,6 +143,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   List<String> _employeesUserNames = ["Assign User..."];
   List<String> _deptName = ["Select Department..."];
 
+  String myUserName = '';
   String myUserRole = '';
   String myDepartment = '';
   String autoManager = '';
@@ -167,68 +168,100 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[350],
-      appBar: AppBar(
-        title: const Text('Faults Reported',style: TextStyle(color: Colors.white),),
-        backgroundColor: Colors.green,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: <Widget>[
-          // Visibility(
-          //   visible: adminAcc || managerAcc,
-          //   child: IconButton(
-          //     onPressed: (){
-          //
-          //     },
-          //     icon: const Icon(Icons.details, color: Colors.white,),),
-          // ),
-          Visibility(
-            visible: adminAcc || managerAcc,
-            child: IconButton(
-              onPressed: (){
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => const ReportBuilderFaults()));
-              },
-              icon: const Icon(Icons.file_copy_outlined, color: Colors.white,),),
-          ),
-          Visibility(
-            visible: adminAcc,
-            child: IconButton(
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: Colors.grey[350],
+        appBar: AppBar(
+          title: const Text('Faults Reported',style: TextStyle(color: Colors.white),),
+          backgroundColor: Colors.green,
+          iconTheme: const IconThemeData(color: Colors.white),
+          actions: <Widget>[
+            Visibility(
+              visible: adminAcc || managerAcc,
+              child: IconButton(
                 onPressed: (){
                   Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => const FaultTaskScreenArchive()));
+                      MaterialPageRoute(builder: (context) => const ReportBuilderFaults()));
                 },
-                icon: const Icon(Icons.history_outlined, color: Colors.white,)),
-          ),
-        ],
-      ),
-
-      body: Column(
-        children: [
-          /// Search bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,5.0),
-            child: SearchBar(
-              controller: _searchController,
-              padding: const MaterialStatePropertyAll<EdgeInsets>(
-                  EdgeInsets.symmetric(horizontal: 16.0)),
-              leading: const Icon(Icons.search),
-              hintText: "Search by Address...",
-              onChanged: (value) async{
-                setState(() {
-                  searchText = value;
-                  print('this is the input text ::: $searchText');
-                });
-              },
+                icon: const Icon(Icons.file_copy_outlined, color: Colors.white,),),
             ),
+            Visibility(
+              visible: adminAcc,
+              child: IconButton(
+                  onPressed: (){
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => const FaultTaskScreenArchive()));
+                  },
+                  icon: const Icon(Icons.history_outlined, color: Colors.white,)),
+            ),
+          ],
+
+          bottom: const TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            tabs: [
+              Tab(text: 'My Assigned Faults', icon: FaIcon(Icons.handyman),),
+              Tab(text: 'All Department Faults', icon: FaIcon(Icons.bar_chart),),
+            ],
           ),
-          /// Search bar end
+        ),
 
-          Expanded(child: faultCard(),),
+        body: TabBarView(
+          children: [
 
-          const SizedBox(height: 5,),
+            ///Tab for my faults reported for work
+            Column(
+              children: [
+                /// Search bar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,5.0),
+                  child: SearchBar(
+                    controller: _searchController,
+                    padding: const MaterialStatePropertyAll<EdgeInsets>(
+                        EdgeInsets.symmetric(horizontal: 16.0)),
+                    leading: const Icon(Icons.search),
+                    hintText: "Search by Address...",
+                    onChanged: (value) async{
+                      setState(() {
+                        searchText = value;
+                        print('this is the input text ::: $searchText');
+                      });
+                    },
+                  ),
+                ),/// Search bar end
+                Expanded(child: myFaultCard(),),
+                const SizedBox(height: 5,),
+              ],
+            ),
 
-        ],
+            ///Tab for all faults reported to this department
+            Column(
+              children: [
+              /// Search bar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,5.0),
+                  child: SearchBar(
+                    controller: _searchController,
+                    padding: const MaterialStatePropertyAll<EdgeInsets>(
+                        EdgeInsets.symmetric(horizontal: 16.0)),
+                    leading: const Icon(Icons.search),
+                    hintText: "Search by Address...",
+                    onChanged: (value) async{
+                      setState(() {
+                        searchText = value;
+                        print('this is the input text ::: $searchText');
+                      });
+                      },
+                  ),
+                ),/// Search bar end
+                Expanded(child: faultCard(),),
+                const SizedBox(height: 5,),
+              ],
+            ),
+
+          ]
+        ),
       ),
     );
   }
@@ -681,6 +714,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
       _allUserByNames.add('$firstName $lastName');
 
       if (userEmail == myUserEmail) {
+        myUserName = userName;
         myUserRole = role;
         print('My Role is::: $myUserRole');
         myDepartment = userDepartment;
@@ -840,6 +874,730 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
 
           if (_allFaultResults[index]['faultResolved'] == false) {
             if(myDepartment == _allFaultResults[index]['faultType']){
+              return Card(
+                margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Row(
+                          children: [
+                            const Text(
+                              'Fault Information',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                            ),
+                            Visibility(
+                                visible: visNotification,
+                                child: const Icon(
+                                  Icons.notification_important,
+                                  color: Colors.red,)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10,),
+                      Text(
+                        'Reference Number: ${_allFaultResults[index]['ref']}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['accountNumber'] != "")...[
+                            Text(
+                              'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Text(
+                        'Street Address of Fault: ${_allFaultResults[index]['address']}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Text(
+                        'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['faultStage'] == 1)...[
+                            Text(
+                              'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            if(_allFaultResults[index]['faultStage'] == 2) ...[
+                              Text(
+                                'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              if(_allFaultResults[index]['faultStage'] == 3) ...[
+                                Text(
+                                  'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
+                                ),
+                                const SizedBox(height: 5,),
+                              ] else
+                                if(_allFaultResults[index]['faultStage'] == 4) ...[
+                                  Text(
+                                    'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.greenAccent),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else
+                                  if(_allFaultResults[index]['faultStage'] == 5) ...[
+                                    Text(
+                                      'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                    ),
+                                    const SizedBox(height: 5,),
+                                  ] else
+                                    ...[
+                                    ],
+                        ],
+                      ),
+                      Text(
+                        'Fault Type: ${_allFaultResults[index]['faultType']}',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['faultDescription'] != "")...[
+                            Text(
+                              'Fault Description: ${_allFaultResults[index]['faultDescription']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['adminComment'] != "")...[
+                            Text(
+                              'Admin Comment: ${_allFaultResults[index]['adminComment']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['reallocationComment'] != "")...[
+                            Text(
+                              'Reason fault reallocated: ${_allFaultResults[index]['reallocationComment']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerAllocated'] != "")...[
+                            Text(
+                              'Manager of fault: ${_allFaultResults[index]['managerAllocated']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeAllocated'] != "")...[
+                            Text(
+                              'Attendee Allocated: ${_allFaultResults[index]['attendeeAllocated']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeCom1'] != "")...[
+                            Text(
+                              'Attendee Comment: ${_allFaultResults[index]['attendeeCom1']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerCom1'] != "")...[
+                            Text(
+                              'Manager Comment: ${_allFaultResults[index]['managerCom1']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeCom2'] != "")...[
+                            Text(
+                              'Attendee Followup Comment: ${_allFaultResults[index]['attendeeCom2']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerCom2'] != "")...[
+                            Text(
+                              'Manager Final/Additional Comment: ${_allFaultResults[index]['managerCom2']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeCom3'] != "")...[
+                            Text(
+                              'Attendee Final Comment: ${_allFaultResults[index]['attendeeCom3']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerCom3'] != "")...[
+                            Text(
+                              'Manager Final Comment: ${_allFaultResults[index]['managerCom3']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Text(
+                        'Resolve State: $status',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+
+                      const SizedBox(height: 5,),
+                      Center(
+                        child: BasicIconButtonGrey(
+                          onPress: () async {
+                            imageName = 'files/faultImages/${_allFaultResults[index]['dateReported']}/${_allFaultResults[index]['address']}';
+                            dateReported = _allFaultResults[index]['dateReported'];
+
+                            Navigator.push(context, MaterialPageRoute(builder: (context) =>
+                                ImageZoomFaultPage(imageName: imageName, dateReported: dateReported)));
+                          },
+                          labelText: 'View Fault Image',
+                          fSize: 14,
+                          faIcon: const FaIcon(Icons.zoom_in,),
+                          fgColor: Colors.grey,
+                          btSize: const Size(100, 38),
+                        ),
+                      ),
+                      Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              BasicIconButtonGrey(
+                                onPress: () async {
+                                  accountNumberRep = _allFaultResults[index]['accountNumber'];
+                                  locationGivenRep = _allFaultResults[index]['address'];
+
+                                  Navigator.push(context, MaterialPageRoute(
+                                      builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
+                                  ));
+                                },
+                                labelText: 'Location',
+                                fSize: 14,
+                                faIcon: const FaIcon(Icons.map,),
+                                fgColor: Colors.green,
+                                btSize: const Size(50, 38),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            } else if(myDepartment == 'Service Provider' || myDepartment == 'Developer'){
+              return Card(
+                margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Center(
+                        child: Text(
+                          'Fault Information',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      const SizedBox(height: 10,),
+                      Text(
+                        'Reference Number: ${_allFaultResults[index]['ref']}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['accountNumber'] != "")...[
+                            Text(
+                              'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Text(
+                        'Street Address of Fault: ${_allFaultResults[index]['address']}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Text(
+                        'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['faultStage'] == 1)...[
+                            Text(
+                              'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            if(_allFaultResults[index]['faultStage'] == 2) ...[
+                              Text(
+                                'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              if(_allFaultResults[index]['faultStage'] == 3) ...[
+                                Text(
+                                  'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
+                                ),
+                                const SizedBox(height: 5,),
+                              ] else
+                                if(_allFaultResults[index]['faultStage'] == 4) ...[
+                                  Text(
+                                    'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                  ),
+                                  const SizedBox(height: 5,),
+                                ] else
+                                  if(_allFaultResults[index]['faultStage'] == 5) ...[
+                                    Text(
+                                      'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                    ),
+                                    const SizedBox(height: 5,),
+                                  ] else
+                                    ...[
+                                    ],
+                        ],
+                      ),
+                      Text(
+                        'Fault Type: ${_allFaultResults[index]['faultType']}',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5,),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['faultDescription'] != "")...[
+                            Text(
+                              'Fault Description: ${_allFaultResults[index]['faultDescription']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['adminComment'] != "")...[
+                            Text(
+                              'Admin Comment: ${_allFaultResults[index]['adminComment']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['reallocationComment'] != "")...[
+                            Text(
+                              'Reason fault reallocated: ${_allFaultResults[index]['reAllocationComment']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerAllocated'] != "")...[
+                            Text(
+                              'Manager of fault: ${_allFaultResults[index]['managerAllocated']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeAllocated'] != "")...[
+                            Text(
+                              'Attendee Allocated: ${_allFaultResults[index]['attendeeAllocated']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeCom1'] != "")...[
+                            Text(
+                              'Attendee Comment: ${_allFaultResults[index]['attendeeCom1']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerCom1'] != "")...[
+                            Text(
+                              'Manager Comment: ${_allFaultResults[index]['managerCom1']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeCom2'] != "")...[
+                            Text(
+                              'Attendee Followup Comment: ${_allFaultResults[index]['attendeeCom2']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerCom2'] != "")...[
+                            Text(
+                              'Manager Final/Additional Comment: ${_allFaultResults[index]['managerCom2']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['attendeeCom3'] != "")...[
+                            Text(
+                              'Attendee Final Comment: ${_allFaultResults[index]['attendeeCom3']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          if(_allFaultResults[index]['managerCom3'] != "")...[
+                            Text(
+                              'Manager Final Comment: ${_allFaultResults[index]['managerCom3']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                          ] else
+                            ...[
+                            ],
+                        ],
+                      ),
+                      Text(
+                        'Resolve State: $status',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+
+                      const SizedBox(height: 5,),
+                      Center(
+                        child: BasicIconButtonGrey(
+                          onPress: () async {
+                            imageName = 'files/faultImages/${_allFaultResults[index]['dateReported']}/${_allFaultResults[index]['address']}';
+                            dateReported = _allFaultResults[index]['dateReported'];
+
+                            Navigator.push(context, MaterialPageRoute(builder: (context) =>
+                                ImageZoomFaultPage(imageName: imageName, dateReported: dateReported)));
+                          },
+                          labelText: 'View Fault Image',
+                          fSize: 14,
+                          faIcon: const FaIcon(Icons.zoom_in,),
+                          fgColor: Colors.grey,
+                          btSize: const Size(100, 38),
+                        ),
+                      ),
+                      Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              BasicIconButtonGrey(
+                                onPress: () async {
+                                  accountNumberRep = _allFaultResults[index]['accountNumber'];
+                                  locationGivenRep = _allFaultResults[index]['address'];
+
+                                  Navigator.push(context, MaterialPageRoute(
+                                      builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
+                                  ));
+                                },
+                                labelText: 'Location',
+                                fSize: 14,
+                                faIcon: const FaIcon(Icons.map,),
+                                fgColor: Colors.green,
+                                btSize: const Size(50, 38),
+                              ),
+                              BasicIconButtonGrey(
+                                onPress: () async {
+                                  showDialog(
+                                      barrierDismissible: false,
+                                      context: context,
+                                      builder: (context) {
+                                        return
+                                          AlertDialog(
+                                            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+                                            title: const Text("Call Reporter!"),
+                                            content: const Text("Would you like to call the individual who logged the fault?"),
+                                            actions: [
+                                              IconButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop();
+                                                },
+                                                icon: const Icon(Icons.cancel, color: Colors.red,),
+                                              ),
+                                              IconButton(
+                                                onPressed: () {
+                                                  reporterCellGiven = _allFaultResults[index]['reporterContact'];
+
+                                                  final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
+                                                  launchUrl(_tel);
+
+                                                  Navigator.of(context).pop();
+                                                },
+                                                icon: const Icon(Icons.done, color: Colors.green,),
+                                              ),
+                                            ],
+                                          );
+                                      });
+                                },
+                                labelText: 'Call User',
+                                fSize: 14,
+                                faIcon: const FaIcon(Icons.call,),
+                                fgColor: Colors.orange,
+                                btSize: const Size(50, 38),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              Visibility(
+                                visible: adminAcc,
+                                child: Center(
+                                  child: BasicIconButtonGrey(
+                                    onPress: () async {
+                                      _reassignDept(_allFaultResults[index]);
+                                    },
+                                    labelText: 'Department Reallocation',
+                                    fSize: 14,
+                                    faIcon: const FaIcon(Icons.compare_arrows,),
+                                    fgColor: Colors.blue,
+                                    btSize: const Size(50, 38),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          // const SizedBox(height: 5,),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Visibility(
+                                visible: (_allFaultResults[index]['faultStage'] == 2 || _allFaultResults[index]['faultStage'] == 3) && (managerAcc || employeeAcc),
+                                child: BasicIconButtonGrey(
+                                  onPress: () async {
+                                    faultStage = _allFaultResults[index]['faultStage'];
+                                    ///working on
+                                    _returnFaultToAdmin(_allFaultResults[index]);
+                                  },
+                                  labelText: 'Return',
+                                  fSize: 14,
+                                  faIcon: const FaIcon(Icons.error_outline,),
+                                  fgColor: Colors.orangeAccent,
+                                  btSize: const Size(50, 38),
+                                ),
+                              ),
+                              Visibility(
+                                visible: adminAcc,
+                                child: BasicIconButtonGrey(
+                                  onPress: () async {
+                                    _reassignFault(_allFaultResults[index]);
+                                  },
+                                  labelText: 'Reassign',
+                                  fSize: 14,
+                                  faIcon: const FaIcon(Icons.update,),
+                                  fgColor: Theme.of(context).primaryColor,
+                                  btSize: const Size(50, 38),
+                                ),
+                              ),
+                              BasicIconButtonGrey(
+                                onPress: () async {
+                                  faultStage = _allFaultResults[index]['faultStage'];
+                                  _updateReport(_allFaultResults[index]);
+                                },
+                                labelText: 'Update',
+                                fSize: 14,
+                                faIcon: const FaIcon(Icons.edit,),
+                                fgColor: Colors.blue,
+                                btSize: const Size(50, 38),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            } else {
+              return const SizedBox();
+            }
+          }
+        },
+      );
+    }
+    return const Center(
+      child: CircularProgressIndicator(),
+    );
+  }
+
+  Widget myFaultCard() {
+    if (_allFaultResults.isNotEmpty) {
+      return _isLoading
+          ? const Center(child: CircularProgressIndicator(),)
+          : ListView.builder(
+        itemCount: _allFaultResults.length,
+        itemBuilder: (context, index) {
+          String status;
+          if (_allFaultResults[index]['faultResolved'] == false) {
+            status = "Pending";
+          } else {
+            status = "Completed";
+          }
+
+          if(_closeFaultResults.isNotEmpty){
+            for(int i = 0; i <= _closeFaultResults.length; i++){
+              if(_allFaultResults[index]['address'] == _closeFaultResults[i]){
+                print('Should display notif on ::: ${_allFaultResults[index]['address']}');
+                toggleVisibilityNotification();
+              }else{
+                visNotification = false;
+              }
+            }
+          }
+
+
+          if (_allFaultResults[index]['faultResolved'] == false) {
+            if(myDepartment == _allFaultResults[index]['faultType'] && myUserName == _allFaultResults[index]['attendeeAllocated'] ){
               return Card(
                 margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
                 child: Padding(

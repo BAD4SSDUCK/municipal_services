@@ -1,7 +1,8 @@
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
-// import 'dart:html' as html;
+// import 'dart:html' as html
+//     if(dart.library.html)'dart:html';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +26,7 @@ import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/menu_reusable_elevated_button.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/nav_drawer.dart';
+import 'package:municipal_tracker_msunduzi/code/faultPages/fault_attendant_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/faultPages/fault_task_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/faultPages/fault_report_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/Chat/chat_list.dart';
@@ -68,7 +70,6 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
     visAdmin;
     visManager;
     visEmployee;
-    adminCheck();
     super.dispose();
   }
 
@@ -278,16 +279,33 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   btSize: const Size(130, 120),
                                 ),
                                 const SizedBox(width: 40,),
-                                ElevatedIconButton(
-                                  onPress: () async {
-                                    Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => const FaultTaskScreen()));
-                                  },
-                                  labelText: 'Report\nList',
-                                  fSize: 15,
-                                  faIcon: const FaIcon(Icons.report_problem),
-                                  fgColor: Colors.orange,
-                                  btSize: const Size(130, 120),
+                                Visibility(
+                                  visible: visAdmin || visManager,
+                                  child: ElevatedIconButton(
+                                    onPress: () async {
+                                      Navigator.push(context,
+                                          MaterialPageRoute(builder: (context) => const FaultTaskScreen()));
+                                    },
+                                    labelText: 'Report\nList',
+                                    fSize: 15,
+                                    faIcon: const FaIcon(Icons.report_problem),
+                                    fgColor: Colors.orange,
+                                    btSize: const Size(130, 120),
+                                  ),
+                                ),
+                                Visibility(
+                                  visible: visEmployee,
+                                  child: ElevatedIconButton(
+                                    onPress: () async {
+                                      Navigator.push(context,
+                                          MaterialPageRoute(builder: (context) => const FaultAttendantScreen()));
+                                    },
+                                    labelText: 'Report\nList',
+                                    fSize: 15,
+                                    faIcon: const FaIcon(Icons.report_problem),
+                                    fgColor: Colors.orange,
+                                    btSize: const Size(130, 120),
+                                  ),
                                 ),
                               ],
                             ),
@@ -361,6 +379,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                             SystemNavigator.pop();
                                           } else {
                                             FirebaseAuth.instance.signOut();
+                                            SystemNavigator.pop();
                                             // html.window.location.reload();
                                           }
 
