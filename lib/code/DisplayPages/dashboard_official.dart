@@ -117,7 +117,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
           visAdmin = false;
           visManager = true;
           visEmployee = false;
-        } else {
+        } else if(userRole == 'Employee'){
           visAdmin = false;
           visManager = false;
           visEmployee = true;
@@ -210,7 +210,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   labelText: 'Reading\nCapture',
                                   fSize: 14,
                                   faIcon: const FaIcon(Icons.holiday_village),
-                                  fgColor: Colors.black54,
+                                  fgColor: Colors.green,
                                   btSize: const Size(130, 120),
                                 ),
                               ],
@@ -219,7 +219,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                         ),
                         const SizedBox(height: 5,),
                         Visibility(
-                          visible: visShow,
+                          visible: visAdmin,
                           child: Center(
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -233,7 +233,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   labelText: 'Chat \nList',
                                   fSize: 18,
                                   faIcon: const FaIcon(Icons.mark_chat_unread),
-                                  fgColor: Colors.green,
+                                  fgColor: Colors.blue,
                                   btSize: const Size(130, 120),
                                 ),
                                 Visibility(
@@ -249,7 +249,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                     labelText: 'Admin\nConfig',
                                     fSize: 16,
                                     faIcon: const FaIcon(Icons.people),
-                                    fgColor: Colors.blue,
+                                    fgColor: Colors.black54,
                                     btSize: const Size(130, 120),
                                   ),
                                 ),
@@ -260,7 +260,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                         ),
                         const SizedBox(height: 5,),
                         Visibility(
-                          visible: visShow,
+                          visible: visAdmin || visManager,
                           child: Center(
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -278,27 +278,13 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   fgColor: Colors.red,
                                   btSize: const Size(130, 120),
                                 ),
-                                const SizedBox(width: 40,),
+                                Visibility(visible: visAdmin || visManager , child: const SizedBox(width: 40,)),
                                 Visibility(
                                   visible: visAdmin || visManager,
                                   child: ElevatedIconButton(
                                     onPress: () async {
                                       Navigator.push(context,
                                           MaterialPageRoute(builder: (context) => const FaultTaskScreen()));
-                                    },
-                                    labelText: 'Report\nList',
-                                    fSize: 15,
-                                    faIcon: const FaIcon(Icons.report_problem),
-                                    fgColor: Colors.orange,
-                                    btSize: const Size(130, 120),
-                                  ),
-                                ),
-                                Visibility(
-                                  visible: visEmployee,
-                                  child: ElevatedIconButton(
-                                    onPress: () async {
-                                      Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) => const FaultAttendantScreen()));
                                     },
                                     labelText: 'Report\nList',
                                     fSize: 15,
@@ -348,64 +334,89 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                           ),
                         ),
 
-                        ElevatedIconButton(
-                          onPress: (){
-                            showDialog(
-                                barrierDismissible: false,
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    shape: const RoundedRectangleBorder(borderRadius:
-                                    BorderRadius.all(Radius.circular(18))),
-                                    title: const Text("Logout"),
-                                    content: const Text("Are you sure you want to logout?"),
-                                    actions: [
-                                      IconButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        icon: const Icon(
-                                          Icons.cancel,
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        onPressed: () async {
-                                          FirebaseAuth.instance.signOut();
+                        Visibility(
+                          visible: visShow,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                ElevatedIconButton(
+                                  onPress: (){
+                                    showDialog(
+                                        barrierDismissible: false,
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            shape: const RoundedRectangleBorder(borderRadius:
+                                            BorderRadius.all(Radius.circular(18))),
+                                            title: const Text("Logout"),
+                                            content: const Text("Are you sure you want to logout?"),
+                                            actions: [
+                                              IconButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                },
+                                                icon: const Icon(
+                                                  Icons.cancel,
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                onPressed: () async {
+                                                  FirebaseAuth.instance.signOut();
 
-                                          if(defaultTargetPlatform == TargetPlatform.android){
-                                            FirebaseAuth.instance.signOut();
-                                            Navigator.pop(context);
-                                            SystemNavigator.pop();
-                                          } else {
-                                            FirebaseAuth.instance.signOut();
-                                            SystemNavigator.pop();
-                                            // html.window.location.reload();
-                                          }
+                                                  if(defaultTargetPlatform == TargetPlatform.android){
+                                                    FirebaseAuth.instance.signOut();
+                                                    Navigator.pop(context);
+                                                    SystemNavigator.pop();
+                                                  } else {
+                                                    FirebaseAuth.instance.signOut();
+                                                    SystemNavigator.pop();
+                                                    // html.window.location.reload();
+                                                  }
 
-                                          Navigator.pop(context);
+                                                  Navigator.pop(context);
 
-                                          // Navigator.popAndPushNamed(context, const MainPage() as String);
-                                          ///SystemNavigator.pop() closes the entire app
-                                          // SystemNavigator.pop();
-                                        },
-                                        icon: const Icon(
-                                          Icons.done,
-                                          color: Colors.green,
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                });
+                                                  // Navigator.popAndPushNamed(context, const MainPage() as String);
+                                                  ///SystemNavigator.pop() closes the entire app
+                                                  // SystemNavigator.pop();
+                                                },
+                                                icon: const Icon(
+                                                  Icons.done,
+                                                  color: Colors.green,
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        });
 
-                            ///commented out old sql sign out method
-                            // ProfileFragmentScreen().signOutUser();
-                          },
-                          labelText: 'Logout',
-                          fSize: 15,
-                          faIcon: const FaIcon(Icons.logout),
-                          fgColor: Colors.red,
-                          btSize: const Size(130, 120),
+                                    ///commented out old sql sign out method
+                                    // ProfileFragmentScreen().signOutUser();
+                                  },
+                                  labelText: 'Logout',
+                                  fSize: 15,
+                                  faIcon: const FaIcon(Icons.logout),
+                                  fgColor: Colors.red,
+                                  btSize: const Size(130, 120),
+                                ),
+
+                                Visibility(visible: visEmployee , child: const SizedBox(width: 40,)),
+                                Visibility(
+                                  visible: visEmployee,
+                                  child: ElevatedIconButton(
+                                    onPress: () async {
+                                      Navigator.push(context,
+                                          MaterialPageRoute(builder: (context) => const FaultAttendantScreen()));
+                                    },
+                                    labelText: 'Report\nList',
+                                    fSize: 15,
+                                    faIcon: const FaIcon(Icons.report_problem),
+                                    fgColor: Colors.orange,
+                                    btSize: const Size(130, 120),
+                                  ),
+                                ),
+                              ],
+                            ),
                         ),
 
                       ],

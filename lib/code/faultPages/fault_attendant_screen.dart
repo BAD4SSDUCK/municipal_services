@@ -860,17 +860,16 @@ class _FaultAttendantScreenState extends State<FaultAttendantScreen> {
             status = "Completed";
           }
 
-          if(_closeFaultResults.isNotEmpty){
-            for(int i = 0; i <= _closeFaultResults.length; i++){
-              if(_allFaultResults[index]['address'] == _closeFaultResults[i]){
-                print('Should display notif on ::: ${_allFaultResults[index]['address']}');
-                toggleVisibilityNotification();
-              }else{
-                visNotification = false;
-              }
-            }
-          }
-
+          // if(_closeFaultResults.isNotEmpty){
+          //   for(int i = 0; i <= _closeFaultResults.length; i++){
+          //     if(_allFaultResults[index]['address'] == _closeFaultResults[i]){
+          //       print('Should display notif on ::: ${_allFaultResults[index]['address']}');
+          //       toggleVisibilityNotification();
+          //     }else{
+          //       visNotification = false;
+          //     }
+          //   }
+          // }
 
           if (_allFaultResults[index]['faultResolved'] == false) {
             if(myDepartment == _allFaultResults[index]['faultType']){
