@@ -14,6 +14,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/admin_details.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_all_capture.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_all_meters.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_connections_all_users.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info_all_users.dart';
@@ -78,6 +79,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
   bool visAdmin = false;
   bool visManager = false;
   bool visEmployee = false;
+  bool visCapture = false;
 
   String userRole = '';
   List _allUserRolesResults = [];
@@ -113,14 +115,22 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
           visAdmin = true;
           visManager = false;
           visEmployee = false;
+          visCapture = false;
         } else if(userRole == 'Manager'){
           visAdmin = false;
           visManager = true;
           visEmployee = false;
+          visCapture = false;
         } else if(userRole == 'Employee'){
           visAdmin = false;
           visManager = false;
           visEmployee = true;
+          visCapture = false;
+        } else if(userRole == 'Capturer'){
+          visAdmin = false;
+          visManager = false;
+          visEmployee = false;
+          visCapture = true;
         }
 
       }
@@ -201,17 +211,34 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   fgColor: Colors.purple,
                                   btSize: const Size(130, 120),
                                 ),
-                                const SizedBox(width: 33,),
-                                ElevatedIconButton(
-                                  onPress: () async {
-                                    Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => const UsersPropsAll()));
-                                  },
-                                  labelText: 'Reading\nCapture',
-                                  fSize: 14,
-                                  faIcon: const FaIcon(Icons.holiday_village),
-                                  fgColor: Colors.green,
-                                  btSize: const Size(130, 120),
+                                Visibility(visible: visAdmin || visManager || visEmployee || visCapture, child: const SizedBox(width: 33,)),
+                                Visibility(
+                                  visible: visAdmin || visManager,
+                                  child: ElevatedIconButton(
+                                    onPress: () async {
+                                      Navigator.push(context,
+                                          MaterialPageRoute(builder: (context) => const UsersPropsAll()));
+                                    },
+                                    labelText: 'Reading\nDetails',
+                                    fSize: 14,
+                                    faIcon: const FaIcon(Icons.holiday_village),
+                                    fgColor: Colors.green,
+                                    btSize: const Size(130, 120),
+                                  ),
+                                ),
+                                Visibility(
+                                  visible: visEmployee || visCapture,
+                                  child: ElevatedIconButton(
+                                    onPress: () async {
+                                      Navigator.push(context,
+                                          MaterialPageRoute(builder: (context) => const AllPropCapture()));
+                                    },
+                                    labelText: 'Capture\nReading',
+                                    fSize: 14,
+                                    faIcon: const FaIcon(Icons.holiday_village),
+                                    fgColor: Colors.green,
+                                    btSize: const Size(130, 120),
+                                  ),
                                 ),
                               ],
                             ),

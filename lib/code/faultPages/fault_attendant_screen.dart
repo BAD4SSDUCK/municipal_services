@@ -114,7 +114,7 @@ class _FaultAttendantScreenState extends State<FaultAttendantScreen> {
   final _addressController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _commentController = TextEditingController();
-  final _deptHandlerController = TextEditingController();
+  final _deptManagerController = TextEditingController();
   final _depAllocationController = TextEditingController();
   late bool _faultResolvedController;
   final _dateReportedController = TextEditingController();
@@ -178,7 +178,7 @@ class _FaultAttendantScreenState extends State<FaultAttendantScreen> {
           iconTheme: const IconThemeData(color: Colors.white),
           actions: <Widget>[
             Visibility(
-              visible: adminAcc || managerAcc,
+              visible: adminAcc,
               child: IconButton(
                 onPressed: (){
                   Navigator.push(context,
@@ -187,7 +187,7 @@ class _FaultAttendantScreenState extends State<FaultAttendantScreen> {
                 icon: const Icon(Icons.file_copy_outlined, color: Colors.white,),),
             ),
             Visibility(
-              visible: adminAcc,
+              visible: adminAcc || managerAcc,
               child: IconButton(
                   onPressed: (){
                     Navigator.push(context,
@@ -1596,7 +1596,7 @@ class _FaultAttendantScreenState extends State<FaultAttendantScreen> {
 
 
           if (_allFaultResults[index]['faultResolved'] == false) {
-            if(myDepartment == _allFaultResults[index]['faultType'] && myUserName == _allFaultResults[index]['attendeeAllocated'] ){
+            if(myDepartment == _allFaultResults[index]['faultType'] && myUserName == _allFaultResults[index]['attendeeAllocated'] && _allFaultResults[index]['faultStage'] != 5 ){
               return Card(
                 margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
                 child: Padding(
@@ -2573,8 +2573,14 @@ class _FaultAttendantScreenState extends State<FaultAttendantScreen> {
                                   labelText: 'Comment...',),
                               ),
                             ),
+
                             Visibility(
-                              visible: (visStage2 || visStage3 || visStage5) && employeeAcc,
+                              visible: (visStage3 ||visStage5) && employeeAcc,
+                              child: const Text('Awaiting Manager processing & feedback.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700 ),),
+                            ),
+
+                            Visibility(
+                              visible: (visStage2 || visStage4) && employeeAcc,
                               child: TextField(
                                 keyboardType: TextInputType.text,
                                 controller: _commentController,
@@ -2996,8 +3002,8 @@ class _FaultAttendantScreenState extends State<FaultAttendantScreen> {
                                 // final String managerAllocated = dropdownValue2;
                                 final String attendeeAllocated = dropdownValue3;
 
-                                if (_deptHandlerController.text != '' ||
-                                    _deptHandlerController.text.isNotEmpty) {
+                                if (_deptManagerController.text != '' ||
+                                    _deptManagerController.text.isNotEmpty) {
                                   await _faultData
                                       .doc(documentSnapshot.id)
                                       .update({
@@ -3102,7 +3108,7 @@ class _FaultAttendantScreenState extends State<FaultAttendantScreen> {
     _accountNumberController.text = documentSnapshot['accountNumber'];
     _addressController.text = documentSnapshot['address'];
     _descriptionController.text = documentSnapshot['faultDescription'];
-    _deptHandlerController.text = documentSnapshot['deptHandler'];
+    _deptManagerController.text = documentSnapshot['managerAllocated'];
     _commentController.text = '';
     _depAllocationController.text = documentSnapshot['depAllocated'];
     _faultResolvedController = documentSnapshot['faultResolved'];
@@ -3303,7 +3309,7 @@ class _FaultAttendantScreenState extends State<FaultAttendantScreen> {
     _accountNumberController.text = documentSnapshot['accountNumber'];
     _addressController.text = documentSnapshot['address'];
     _descriptionController.text = documentSnapshot['faultDescription'];
-    _deptHandlerController.text = documentSnapshot['deptHandler'];
+    _deptManagerController.text = documentSnapshot['managerAllocated'];
     _commentController.text = '';
     _depAllocationController.text = documentSnapshot['depAllocated'];
     _faultResolvedController = documentSnapshot['faultResolved'];
@@ -3391,7 +3397,7 @@ class _FaultAttendantScreenState extends State<FaultAttendantScreen> {
                             ),//button for managers to return a fault if it cannot be handled
 
                             Visibility(
-                              visible: (visStage3 || visStage4 ) && employeeAcc,
+                              visible: (visStage2 || visStage3 || visStage4 ) && employeeAcc,
                               child: ElevatedButton(
                                 child: const Text('Return to manager'),
                                 onPressed: () async {
@@ -3403,7 +3409,8 @@ class _FaultAttendantScreenState extends State<FaultAttendantScreen> {
                                         .doc(documentSnapshot.id)
                                         .update({
                                       "attendeeReturnCom": userComment,
-                                      "faultStage": 2,
+                                      "attendeeAllocated": '',
+                                      "faultStage": 1,
                                     });
                                   } else {
                                     Fluttertoast.showToast(

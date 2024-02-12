@@ -115,7 +115,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   final _addressController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _commentController = TextEditingController();
-  final _deptHandlerController = TextEditingController();
+  final _deptManagerController = TextEditingController();
   final _depAllocationController = TextEditingController();
   late bool _faultResolvedController;
   final _dateReportedController = TextEditingController();
@@ -3430,8 +3430,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
                                 // final String managerAllocated = dropdownValue2;
                                 final String attendeeAllocated = dropdownValue3;
 
-                                if (_deptHandlerController.text != '' ||
-                                    _deptHandlerController.text.isNotEmpty) {
+                                if (_deptManagerController.text != '' ||
+                                    _deptManagerController.text.isNotEmpty) {
                                   await _faultData
                                       .doc(documentSnapshot.id)
                                       .update({
@@ -3536,7 +3536,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     _accountNumberController.text = documentSnapshot['accountNumber'];
     _addressController.text = documentSnapshot['address'];
     _descriptionController.text = documentSnapshot['faultDescription'];
-    _deptHandlerController.text = documentSnapshot['deptHandler'];
+    _deptManagerController.text = documentSnapshot['managerAllocated'];
     _commentController.text = '';
     _depAllocationController.text = documentSnapshot['depAllocated'];
     _faultResolvedController = documentSnapshot['faultResolved'];
@@ -3737,7 +3737,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     _accountNumberController.text = documentSnapshot['accountNumber'];
     _addressController.text = documentSnapshot['address'];
     _descriptionController.text = documentSnapshot['faultDescription'];
-    _deptHandlerController.text = documentSnapshot['deptHandler'];
+    _deptManagerController.text = documentSnapshot['managerAllocated'];
     _commentController.text = '';
     _depAllocationController.text = documentSnapshot['depAllocated'];
     _faultResolvedController = documentSnapshot['faultResolved'];
