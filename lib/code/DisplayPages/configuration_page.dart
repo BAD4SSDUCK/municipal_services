@@ -10,6 +10,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:municipal_tracker_msunduzi/code/AuthGoogle/auth_page_google.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
+import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 
 class ConfigPage extends StatefulWidget{
   const ConfigPage({super.key});
@@ -45,6 +46,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
     getDBDept(_deptInfo);
     getDBRoles(_roles);
     getDBDeptRoles(_deptRoles);
+    getDBAppVersion(_version);
     super.initState();
   }
 
@@ -57,10 +59,11 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
   final _userEmailController = TextEditingController();
   final _cellNumberController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _versionController = TextEditingController();
 
-  late final _tabController = TabController(length: 3, vsync: this);
+  late final _tabController = TabController(length: 4, vsync: this);
   int _tabIndex = 0;
-  final int _tabLength = 3;
+  final int _tabLength = 4;
   void _toggleTab(){
     _tabIndex = _tabController!.index+1 ;
     _tabController?.animateTo(_tabIndex);
@@ -78,6 +81,9 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
   List<String> deptRole =["Select Role..."];
   String dropdownValue2 = 'Select Role...';
   int numRoles = 0;
+  List<String> versionList =["Select Version..."];
+  String dropdownValue3 = 'Select Version...';
+  int numVersion = 0;
 
   final CollectionReference _usersList =
   FirebaseFirestore.instance.collection('users');
@@ -90,6 +96,9 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
 
   final CollectionReference _deptRoles =
   FirebaseFirestore.instance.collection('departmentRoles');
+
+  final CollectionReference _version =
+  FirebaseFirestore.instance.collection('version');
 
   String selectedDept = "0";
   String selectedRole = "0";
@@ -379,6 +388,8 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                           _lastNameController.text = '';
                           _cellNumberController.text = '';
                           _userEmailController.text = '';
+                          dropdownValue = 'Select Department...';
+                          dropdownValue2 = 'Select Role...';
 
                           if(context.mounted)Navigator.of(context).pop();
                         }
@@ -613,7 +624,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                 children: [
                   const Center(
                     child: Text(
-                      'Create Department',
+                      'Link Department to Role',
                       style: TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w700),
                     ),
@@ -652,6 +663,28 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
 
                   Visibility(
                     visible: visShow,
+                    child: DropdownButtonFormField <String>(
+                      value: dropdownValue2,
+                      items: deptRole
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        );
+                      }).toSet().toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          dropdownValue2 = newValue!;
+                        });
+                      },
+                    ),
+                  ),
+
+                  Visibility(
+                    visible: visHide,
                     child: TextField(
                       controller: _userRoleController,
                       decoration: const InputDecoration(
@@ -678,6 +711,8 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
 
                           _deptNameController.text = '';
                           _userRoleController.text = '';
+                          dropdownValue = 'Select Department...';
+                          dropdownValue2 = 'Select Role...';
 
                           if(context.mounted)Navigator.of(context).pop();
                         }
@@ -944,6 +979,280 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
     Fluttertoast.showToast(msg: "You have successfully deleted a department & role!");
   }
 
+  Future<void> _createRole([DocumentSnapshot? documentSnapshot]) async {
+    _deptNameController.text = '';
+
+    await showModalBottomSheet(
+        isScrollControlled: true,
+        context: context,
+        builder: (BuildContext ctx) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: 20,
+                  left: 20,
+                  right: 20,
+                  bottom: MediaQuery
+                      .of(ctx)
+                      .viewInsets
+                      .bottom + 20
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(
+                    child: Text(
+                      'Create Role',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visShow,
+                    child: TextField(
+                      controller: _userRoleController,
+                      decoration: const InputDecoration(
+                          labelText: 'Role'),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  ElevatedButton(
+                      child: const Text('Create'),
+                      onPressed: () async {
+                        final String roleName = _userRoleController.text;
+                        const bool official = true;
+
+                        if (deptName != null) {
+                          await _deptInfo.add({
+                            "role": roleName,
+                          });
+
+                          _userRoleController.text = '';
+                          deptName =["Select Department..."];
+
+                          if(context.mounted)Navigator.of(context).pop();
+                        }
+                      }
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+  }///Creation method for departments
+
+  Future<void> _updateRole([DocumentSnapshot? documentSnapshot]) async {
+    if (documentSnapshot != null) {
+      _userRoleController.text = documentSnapshot['role'];
+    }
+
+    await showModalBottomSheet(
+        isScrollControlled: true,
+        context: context,
+        builder: (BuildContext ctx) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: 20,
+                  left: 20,
+                  right: 20,
+                  bottom: MediaQuery
+                      .of(ctx)
+                      .viewInsets
+                      .bottom + 20
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(
+                    child: Text(
+                      'Edit Role Information',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visShow,
+                    child: TextField(
+                      controller: _userRoleController,
+                      decoration: const InputDecoration(
+                          labelText: 'Role'),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  ElevatedButton(
+                      child: const Text('Update'),
+                      onPressed: () async {
+                        final String roleName = _userRoleController.text;
+                        const bool official = true;
+
+                        if (deptName != null) {
+                          await _roles
+                              .doc(documentSnapshot!.id)
+                              .update({
+                            "role": roleName,
+                          });
+
+                          _userRoleController.text = '';
+
+                          if(context.mounted)Navigator.of(context).pop();
+                        }
+                      }
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
+  Future<void> _deleteRole(String roleID) async {
+    await _roles.doc(roleID).delete();
+    Fluttertoast.showToast(msg: "You have successfully deleted a role!");
+  }
+
+  Future<void> _createVersion([DocumentSnapshot? documentSnapshot]) async {
+    _versionController.text = '';
+
+    await showModalBottomSheet(
+        isScrollControlled: true,
+        context: context,
+        builder: (BuildContext ctx) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: 20,
+                  left: 20,
+                  right: 20,
+                  bottom: MediaQuery
+                      .of(ctx)
+                      .viewInsets
+                      .bottom + 20
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(
+                    child: Text(
+                      'Create Version',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visShow,
+                    child: TextField(
+                      controller: _versionController,
+                      decoration: const InputDecoration(
+                          labelText: 'Version Name'),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  ElevatedButton(
+                      child: const Text('Create'),
+                      onPressed: () async {
+                        final String versionName = _versionController.text;
+
+                        if (deptName != null) {
+                          await _deptInfo.add({
+                            "version": versionName,
+                          });
+
+                          _versionController.text = '';
+                          deptName =["Select Department..."];
+
+                          if(context.mounted)Navigator.of(context).pop();
+                        }
+                      }
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+  }///Creation method for versions
+
+  Future<void> _updateVersion([DocumentSnapshot? documentSnapshot]) async {
+    if (documentSnapshot != null) {
+      _userRoleController.text = documentSnapshot['version'];
+    }
+
+    await showModalBottomSheet(
+        isScrollControlled: true,
+        context: context,
+        builder: (BuildContext ctx) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: 20,
+                  left: 20,
+                  right: 20,
+                  bottom: MediaQuery
+                      .of(ctx)
+                      .viewInsets
+                      .bottom + 20
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(
+                    child: Text(
+                      'Edit Version Information',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visShow,
+                    child: TextField(
+                      controller: _versionController,
+                      decoration: const InputDecoration(
+                          labelText: 'Version'),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  ElevatedButton(
+                      child: const Text('Update'),
+                      onPressed: () async {
+                        final String versionName = _versionController.text;
+
+                        if (deptName != null) {
+                          await _roles
+                              .doc(documentSnapshot!.id)
+                              .update({
+                            "version": versionName,
+                          });
+
+                          _versionController.text = '';
+
+                          if(context.mounted)Navigator.of(context).pop();
+                        }
+                      }
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
+  Future<void> _deleteVersion(String versionID) async {
+    await _version.doc(versionID).delete();
+    Fluttertoast.showToast(msg: "You have successfully deleted a role!");
+  }
+
   void countUsersResult() async{
     var query = _usersList.where("email");
     var snapshot = await query.get();
@@ -984,9 +1293,9 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
   void getDBRoles(CollectionReference roles) async {
     roles.get().then((querySnapshot) async {
       for (var result in querySnapshot.docs) {
-        print('The department is::: ${result['deptName']}');
+        print('The role is::: ${result['role']}');
         if(role.length-1<querySnapshot.docs.length) {
-          role.add(result['deptName']);
+          role.add(result['role']);
         }
         print(role);
         print(role.length);
@@ -1018,11 +1327,26 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
     });
   }///Looping users collection
 
+  void getDBAppVersion(CollectionReference versions) async {
+    versions.get().then((querySnapshot) async {
+      for (var result in querySnapshot.docs) {
+        print('The version is::: ${result['version']}');
+        if(versionList.length-1<querySnapshot.docs.length) {
+          versionList.add(result['version']);
+        }
+      }
+    });
+
+    versionList.toSet();
+    print(versionList);
+
+  }///Looping version collection
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       initialIndex: 0,
-      length: 3,
+      length: 4,
       child: Scaffold(
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
@@ -1035,14 +1359,159 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
             controller: _tabController,
             tabs: const [
               Tab(text: 'Departments', icon: FaIcon(Icons.corporate_fare),),
-              Tab(text: 'Roles List', icon: FaIcon(Icons.work_history),),
-              Tab(text: 'Official User List', icon: FaIcon(Icons.person_2_outlined),),
+              Tab(text: 'Roles', icon: FaIcon(Icons.work_history),),
+              Tab(text: 'User List', icon: FaIcon(Icons.person_2_outlined),),
+              Tab(text: 'Version', icon: FaIcon(Icons.lock_open_outlined),),
             ],
           ),
         ),
         body: TabBarView(
           controller: _tabController,
           children: <Widget>[
+            StreamBuilder(
+              stream: _roles.snapshots(),
+              builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+                if (streamSnapshot.hasData) {
+                  return ListView.builder(
+                    itemCount: streamSnapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      final DocumentSnapshot userDocumentSnapshot = streamSnapshot.data!.docs[index];
+
+                      return Card(
+                        margin: const EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 5),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Center(
+                                child: Text(
+                                  'Staff Roles List',
+                                  style: TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                              const SizedBox(height: 20,),
+                              adminUserField(
+                                  Icons.business_center_outlined,
+                                  "Role: ${userDocumentSnapshot['role']}"),
+
+                              const SizedBox(height: 20,),
+                              Visibility(
+                                visible: visShow,
+                                child: Center(
+                                  child: Column(
+                                    children: [
+                                      Center(
+                                          child: Material(
+                                            color: Colors.red,
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: InkWell(
+                                              onTap: () {
+                                                showDialog(
+                                                    barrierDismissible: false,
+                                                    context: context,
+                                                    builder: (context) {
+                                                      return
+                                                        AlertDialog(
+                                                          shape: const RoundedRectangleBorder(
+                                                              borderRadius:
+                                                              BorderRadius.all(Radius.circular(16))),
+                                                          title: const Text("Delete this role!"),
+                                                          content: const Text(
+                                                              "Are you sure about deleting this role?"),
+                                                          actions: [
+                                                            IconButton(
+                                                              onPressed: () {
+                                                                Navigator.of(context).pop();
+                                                              },
+                                                              icon: const Icon(
+                                                                Icons.cancel,
+                                                                color: Colors.red,
+                                                              ),
+                                                            ),
+                                                            IconButton(
+                                                              onPressed: () {
+                                                                String deleteRole = userDocumentSnapshot.id;
+                                                                _deleteRole(deleteRole);
+                                                                Navigator.of(context).pop();
+                                                                // Navigator.of(context).pop();
+                                                              },
+                                                              icon: const Icon(
+                                                                Icons.done,
+                                                                color: Colors.green,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        );
+                                                    });
+                                              },
+                                              borderRadius: BorderRadius.circular(
+                                                  32),
+                                              child: const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: 20,
+                                                  vertical: 10,
+                                                ),
+                                                child: Text(
+                                                  "  Delete User  ",
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                      ),
+                                      const SizedBox(height: 10,),
+                                      Center(
+                                          child: Material(
+                                            color: Colors.green,
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: InkWell(
+                                              onTap: () {
+                                                _updateRole(userDocumentSnapshot);
+                                              },
+                                              borderRadius: BorderRadius.circular(
+                                                  32),
+                                              child: const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: 20,
+                                                  vertical: 10,
+                                                ),
+                                                child: Text(
+                                                  "Edit Role",
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 0,),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                } else {
+                  return const Padding(
+                    padding: EdgeInsets.all(50.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+              },
+            ),///Tab for role control
+
             StreamBuilder(
               stream: _deptInfo.snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
@@ -1193,159 +1662,6 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                 }
               },
             ),///Tab for department list view
-
-            StreamBuilder(
-              stream: _deptRoles.orderBy('userRole', descending: false).snapshots(),
-              builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-                if (streamSnapshot.hasData) {
-                  return ListView.builder(
-                    itemCount: streamSnapshot.data!.docs.length,
-                    itemBuilder: (context, index) {
-                      final DocumentSnapshot deptRoleDocumentSnapshot = streamSnapshot.data!.docs[index];
-
-                      if (streamSnapshot.data!.docs[index]['official'] == true) {
-                        return Card(
-                          margin: const EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 5),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Center(
-                                  child: Text(
-                                    'Departments Information',
-                                    style: TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w700),
-                                  ),
-                                ),
-                                const SizedBox(height: 20,),
-                                departmentField(
-                                  Icons.business,
-                                  "Department: ${deptRoleDocumentSnapshot['deptName']}",),
-                                departmentField(
-                                  Icons.account_circle_outlined,
-                                  "Role: ${deptRoleDocumentSnapshot['userRole']}",),
-                                const SizedBox(height: 20,),
-                                Visibility(
-                                  visible: visShow,
-                                  child: Center(
-                                    child: Column(
-                                      children: [
-                                        Center(
-                                            child: Material(
-                                              color: Colors.red,
-                                              borderRadius: BorderRadius.circular(8),
-                                              child: InkWell(
-                                                onTap: () {
-                                                  showDialog(
-                                                      barrierDismissible: false,
-                                                      context: context,
-                                                      builder: (context) {
-                                                        return
-                                                          AlertDialog(
-                                                            shape: const RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                BorderRadius.all(Radius.circular(16))),
-                                                            title: const Text("Delete this Role & Department!"),
-                                                            content: const Text(
-                                                                "Are you sure about deleting this Role linked to the Department associated with it?"),
-                                                            actions: [
-                                                              IconButton(
-                                                                onPressed: () {
-                                                                  Navigator.of(context).pop();
-                                                                },
-                                                                icon: const Icon(
-                                                                  Icons.cancel,
-                                                                  color: Colors.red,
-                                                                ),
-                                                              ),
-                                                              IconButton(
-                                                                onPressed: () {
-                                                                  String deleteDept = deptRoleDocumentSnapshot.id;
-                                                                  deptRole.remove(deptRoleDocumentSnapshot['userRole']);
-                                                                  _deleteDeptRole(deleteDept);
-                                                                  Navigator.of(context).pop();
-                                                                  // Navigator.of(context).pop();
-                                                                },
-                                                                icon: const Icon(
-                                                                  Icons.done,
-                                                                  color: Colors.green,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          );
-                                                      });
-                                                },
-                                                borderRadius: BorderRadius.circular(
-                                                    32),
-                                                child: const Padding(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 20,
-                                                    vertical: 10,
-                                                  ),
-                                                  child: Text(
-                                                    "  Delete Role  ",
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                        ),
-                                        const SizedBox(height: 10,),
-                                        Center(
-                                            child: Material(
-                                              color: Colors.green,
-                                              borderRadius: BorderRadius.circular(8),
-                                              child: InkWell(
-                                                onTap: () {
-                                                  _updateDeptRoles(deptRoleDocumentSnapshot);
-                                                },
-                                                borderRadius: BorderRadius.circular(
-                                                    32),
-                                                child: const Padding(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 20,
-                                                    vertical: 10,
-                                                  ),
-                                                  child: Text(
-                                                    "Edit Role Info",
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      } else {
-                        return const Padding(
-                          padding: EdgeInsets.all(50.0),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-                    },
-                  );
-                } else {
-                  return const Padding(
-                    padding: EdgeInsets.all(50.0),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-              },
-            ),///Tab for department roles
 
             StreamBuilder(
               stream: _usersList.orderBy('deptName', descending: false).snapshots(),
@@ -1514,11 +1830,278 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                 }
               },
             ),///Tab for users list view
+
+            Column(
+              children: [
+                Visibility(
+                  visible: visShow,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 20,),
+                        const Center(
+                          child: Text(
+                            'Set Application Version State',
+                            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        const SizedBox(height: 20,),
+                        Center(
+                          child: Column(
+                              children: [
+                                SizedBox(
+                                  width: 450,
+                                  height: 50,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(left: 10, right: 10),
+                                    child: Center(
+                                      child: TextField(
+
+                                        ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
+                                        decoration: InputDecoration(
+                                          border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(
+                                                  30),
+                                              borderSide: const BorderSide(
+                                                color: Colors.grey,
+                                              )
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(
+                                                  30),
+                                              borderSide: const BorderSide(
+                                                color: Colors.grey,
+                                              )
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(
+                                                  30),
+                                              borderSide: const BorderSide(
+                                                color: Colors.grey,
+                                              )
+                                          ),
+                                          disabledBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(
+                                                  30),
+                                              borderSide: const BorderSide(
+                                                color: Colors.grey,
+                                              )
+                                          ),
+                                          contentPadding: const EdgeInsets.symmetric(
+                                              horizontal: 14,
+                                              vertical: 6
+                                          ),
+                                          fillColor: Colors.white,
+                                          filled: true,
+                                          suffixIcon: DropdownButtonFormField <String>(
+                                            value: dropdownValue3,
+                                            items: versionList.map<DropdownMenuItem<String>>((String value) {
+                                              return DropdownMenuItem<String>(
+                                                value: value,
+                                                child: Padding(
+                                                  padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 20.0),
+                                                  child: Text(
+                                                    value,
+                                                    style: const TextStyle(fontSize: 16),
+                                                  ),
+                                                ),
+                                              );
+                                            }).toSet().toList(),
+                                            onChanged: (String? newValue) {
+                                              setState(() {
+                                                dropdownValue3 = newValue!;
+                                              });
+                                            },
+                                            icon: const Padding(
+                                              padding: EdgeInsets.only(left: 10, right: 10),
+                                              child: Icon(Icons.arrow_circle_down_sharp),
+                                            ),
+                                            iconEnabledColor: Colors.green,
+                                            style: const TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 18
+                                            ),
+                                            dropdownColor: Colors.grey[50],
+                                            isExpanded: true,
+
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                //
+                                // StreamBuilder(
+                                //   stream: _version.snapshots(),
+                                //   builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+                                //     if (streamSnapshot.hasData) {
+                                //       return ListView.builder(
+                                //         itemCount: streamSnapshot.data!.docs.length,
+                                //         itemBuilder: (context, index) {
+                                //           final DocumentSnapshot versionDocumentSnapshot = streamSnapshot.data!.docs[index];
+                                //
+                                //           if (streamSnapshot.data!.docs[2].exists) {
+                                //             return Card(
+                                //               margin: const EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 5),
+                                //               child: Padding(
+                                //                 padding: const EdgeInsets.all(20.0),
+                                //                 child: Column(
+                                //                   mainAxisAlignment: MainAxisAlignment.center,
+                                //                   crossAxisAlignment: CrossAxisAlignment.start,
+                                //                   children: [
+                                //                     const Center(
+                                //                       child: Text(
+                                //                         'Current Version',
+                                //                         style: TextStyle(
+                                //                             fontSize: 16, fontWeight: FontWeight.w700),
+                                //                       ),
+                                //                     ),
+                                //                     const SizedBox(height: 20,),
+                                //                     adminUserField(
+                                //                         Icons.switch_account,
+                                //                         "Active version: ${versionDocumentSnapshot['version']}"),
+                                //                     const SizedBox(height: 20,),
+                                //                     Visibility(
+                                //                       visible: visShow,
+                                //                       child: Center(
+                                //                         child: Column(
+                                //                           children: [
+                                //                             Center(
+                                //                                 child: Material(
+                                //                                   color: Colors.red,
+                                //                                   borderRadius: BorderRadius.circular(8),
+                                //                                   child: InkWell(
+                                //                                     onTap: () {
+                                //                                       showDialog(
+                                //                                           barrierDismissible: false,
+                                //                                           context: context,
+                                //                                           builder: (context) {
+                                //                                             return
+                                //                                               AlertDialog(
+                                //                                                 shape: const RoundedRectangleBorder(
+                                //                                                     borderRadius:
+                                //                                                     BorderRadius.all(Radius.circular(16))),
+                                //                                                 title: const Text("Delete this Version!"),
+                                //                                                 content: const Text(
+                                //                                                     "Are you sure about deleting this Version?"),
+                                //                                                 actions: [
+                                //                                                   IconButton(
+                                //                                                     onPressed: () {
+                                //                                                       Navigator.of(context).pop();
+                                //                                                     },
+                                //                                                     icon: const Icon(
+                                //                                                       Icons.cancel,
+                                //                                                       color: Colors.red,
+                                //                                                     ),
+                                //                                                   ),
+                                //                                                   IconButton(
+                                //                                                     onPressed: () {
+                                //                                                       String deleteUser = versionDocumentSnapshot.id;
+                                //                                                       _delete(deleteUser);
+                                //                                                       Navigator.of(context).pop();
+                                //                                                       // Navigator.of(context).pop();
+                                //                                                     },
+                                //                                                     icon: const Icon(
+                                //                                                       Icons.done,
+                                //                                                       color: Colors.green,
+                                //                                                     ),
+                                //                                                   ),
+                                //                                                 ],
+                                //                                               );
+                                //                                           });
+                                //                                     },
+                                //                                     borderRadius: BorderRadius.circular(
+                                //                                         32),
+                                //                                     child: const Padding(
+                                //                                       padding: EdgeInsets.symmetric(
+                                //                                         horizontal: 20,
+                                //                                         vertical: 10,
+                                //                                       ),
+                                //                                       child: Text(
+                                //                                         "  Delete User  ",
+                                //                                         style: TextStyle(
+                                //                                           color: Colors.white,
+                                //                                           fontSize: 14,
+                                //                                         ),
+                                //                                       ),
+                                //                                     ),
+                                //                                   ),
+                                //                                 )
+                                //                             ),
+                                //                             const SizedBox(height: 10,),
+                                //                             Center(
+                                //                               child: Padding(
+                                //                                 padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                                //                                 child:
+                                //                                 BasicIconButtonGrey(
+                                //                                   onPress: () {
+                                //                                     String versionSet = dropdownValue3;
+                                //
+                                //                                     _updateVersion(versionDocumentSnapshot);
+                                //
+                                //                                   } ,
+                                //                                   labelText: 'Set Application Version',
+                                //                                   fSize: 12,
+                                //                                   faIcon: const FaIcon(Icons.monetization_on),
+                                //                                   fgColor: Colors.orangeAccent,
+                                //                                   btSize: const Size(150, 50),
+                                //                                 ),
+                                //                               ),
+                                //                             ),
+                                //                             const SizedBox(height: 10,),
+                                //                           ],
+                                //                         ),
+                                //                       ),
+                                //                     ),
+                                //                     const SizedBox(height: 0,),
+                                //                   ],
+                                //                 ),
+                                //               ),
+                                //             );
+                                //           } else {
+                                //             return const Padding(
+                                //               padding: EdgeInsets.all(50.0),
+                                //               child: Center(child: CircularProgressIndicator()),
+                                //             );
+                                //           }
+                                //         },
+                                //       );
+                                //     } else {
+                                //       return const Padding(
+                                //         padding: EdgeInsets.all(50.0),
+                                //         child: Center(child: CircularProgressIndicator()),
+                                //       );
+                                //     }
+                                //   },
+                                // ),
+
+                                const SizedBox(height: 20,),
+
+                              ]
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),///Tab for version control
+
+
           ],
         ),
 
         floatingActionButton: Row(
           children: [
+            const SizedBox(width: 10,),
+            Visibility(
+              visible: visShow,
+              child: FloatingActionButton(
+                onPressed: () => _createRole(),
+                backgroundColor: Colors.green,
+                child: const Icon(Icons.add_moderator),
+              ),
+            ),
             const SizedBox(width: 10,),
             FloatingActionButton(
               onPressed: () => _createDept(),

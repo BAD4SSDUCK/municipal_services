@@ -65,6 +65,7 @@ class MainMenu extends StatefulWidget {
     requestPermission();
     getToken();
     initInfo();
+    getVersionStream();
     ///checking chat login status
     // getUserLoggedInStatus();
     addChatCustomId();
@@ -182,6 +183,11 @@ class MainMenu extends StatefulWidget {
 
   bool visShow = true;
   bool visHide = false;
+  bool visLocked = true;
+  bool visFeatureMode = false;
+  bool visPremium = false;
+
+  List _allVersionResults = [];
 
   final CollectionReference _chatRoom =
   FirebaseFirestore.instance.collection('chatRoom');
@@ -193,6 +199,45 @@ class MainMenu extends StatefulWidget {
     if(chatSnapshot.isBlank!){
     } else {
       _chatRoom.add(addChatID);
+    }
+  }
+
+  getVersionStream() async{
+    var data = await FirebaseFirestore.instance.collection('version').get();
+    setState(() {
+      _allVersionResults = data.docs;
+    });
+    getVersionDetails();
+  }
+
+  getVersionDetails() async {
+
+    String activeVersion =  _allVersionResults[2]['version'].toString();
+    print('The active version is::: $activeVersion');
+
+    for (var versionSnapshot in _allVersionResults) {
+
+      var version = versionSnapshot['version'].toString();
+
+      print('The available versions are::: $version');
+
+      if (activeVersion == version) {
+
+        if(activeVersion == 'Unpaid'){
+          visLocked = true;
+          visFeatureMode = true;
+          visPremium = true;
+        } else if(activeVersion == 'Paid'){
+          visLocked = false;
+          visFeatureMode = false;
+          visPremium = true;
+        } else if(activeVersion == 'Premium'){
+          visLocked = false;
+          visFeatureMode = false;
+          visPremium = false;
+        }
+
+      }
     }
   }
 
@@ -255,6 +300,9 @@ class MainMenu extends StatefulWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
+                              Stack(
+                                  alignment:Alignment.center,
+                                  children:[
                               ElevatedIconButton(
                                 onPress: () {
                                   String passedID = user.phoneNumber!;
@@ -273,7 +321,24 @@ class MainMenu extends StatefulWidget {
                                 fgColor: Colors.blue,
                                 btSize: const Size(130, 120),
                               ),
+                              Visibility(
+                                visible: visLocked || visFeatureMode || visPremium,
+                                child: InkWell(
+                                    onTap: (){
+                                      Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                    },
+                                    child: ClipRect(
+                                        child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
+                                    )
+                                ),
+                              ),
+                            ]
+                          ),
+
                               const SizedBox(width: 40),
+                          Stack(
+                            alignment:Alignment.center,
+                            children:[
                               ElevatedIconButton(
                                 onPress: (){
                                   Navigator.push(context,
@@ -285,6 +350,20 @@ class MainMenu extends StatefulWidget {
                                 fgColor: Colors.green,
                                 btSize: const Size(130, 120),
                               ),
+                              Visibility(
+                                visible: visLocked || visFeatureMode || visPremium,
+                                child: InkWell(
+                                    onTap: (){
+                                      Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                    },
+                                    child: ClipRect(
+                                        child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
+                                    )
+                                ),
+                              ),
+                            ]
+                          ),
+
                             ],
                           ),
                         ),
@@ -296,6 +375,9 @@ class MainMenu extends StatefulWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
+                              Stack(
+                                  alignment:Alignment.center,
+                                  children:[
                               ElevatedIconButton(
                                 onPress: () async {
                                   Navigator.push(context,
@@ -307,6 +389,19 @@ class MainMenu extends StatefulWidget {
                                 fgColor: Colors.red,
                                 btSize: const Size(130, 120),
                               ),
+                              Visibility(
+                                visible: visLocked || visFeatureMode || visPremium,
+                                child: InkWell(
+                                    onTap: (){
+                                      Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                    },
+                                    child: ClipRect(
+                                        child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
+                                    )
+                                ),
+                              ),
+                            ]
+                          ),
                               const SizedBox(width: 40,),
                               ElevatedIconButton(
                                 onPress: () async {
@@ -386,6 +481,9 @@ class MainMenu extends StatefulWidget {
                               //   btSize: const Size(130, 120),
                               // ),
                               const SizedBox(width: 40),
+                        Stack(
+                          alignment:Alignment.center,
+                          children:[
                               ElevatedIconButton(
                                 onPress: (){
                                   Navigator.push(context,
@@ -397,6 +495,19 @@ class MainMenu extends StatefulWidget {
                                 fgColor: Colors.orangeAccent,
                                 btSize: const Size(130, 120),
                               ),
+                            Visibility(
+                              visible: visLocked || visFeatureMode || visPremium,
+                              child: InkWell(
+                                  onTap: (){
+                                    Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                  },
+                                  child: ClipRect(
+                                      child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
+                                  )
+                              ),
+                            ),
+                          ],
+                        ),
                             ],
                           ),
                         ),

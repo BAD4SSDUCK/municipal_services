@@ -56,8 +56,8 @@ String wMeterNumber = ' ';
 
 String propPhoneNum = ' ';
 
-bool visibilityState1 = true;
-bool visibilityState2 = false;
+bool visShow = true;
+bool visHide = false;
 bool adminAcc = false;
 
 
@@ -193,8 +193,6 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
 
   String userRole = '';
   List _allUserRolesResults = [];
-  bool visShow = true;
-  bool visHide = false;
   bool adminAcc = false;
 
   int numTokens=0;
@@ -699,32 +697,35 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                                                   Center(
                                                     child: Column(
                                                       children: [
-                                                        Row(
-                                                          children: [
-                                                            BasicIconButtonGrey(
-                                                              onPress: () async {
-                                                                Fluttertoast.showToast(
-                                                                    msg: "Now directing to application for service document!");
+                                                        Center(
+                                                          child: Row(
+                                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                            children: [
+                                                              BasicIconButtonGrey(
+                                                                onPress: () async {
+                                                                  Fluttertoast.showToast(
+                                                                      msg: "Entering contact number for Infrastructure, Planning & Survey!");
+                                                                  final Uri _tel = Uri.parse('tel:+27${0333923000}');
+                                                                  launchUrl(_tel);
+                                                                  Navigator.pop(context);
+                                                                },
+                                                                labelText: "Call", fSize: 12, faIcon: const FaIcon(Icons.phone), fgColor: Colors.green, btSize: const Size(50,30),
+                                                              ),
+                                                              BasicIconButtonGrey(
+                                                                onPress: () async {
+                                                                  Fluttertoast.showToast(
+                                                                      msg: "Now directing to application for service document!");
 
-                                                                final Uri _url = Uri.parse('http://www.msunduzi.gov.za/site/search/downloadencode/APPLICATION%20FOR%20SERVICES%20-%20INDIVIDUALS.pdf');
-                                                                // _launchURL(_url);
-                                                                _launchURLExternal(_url);
+                                                                  final Uri _url = Uri.parse('http://www.msunduzi.gov.za/site/search/downloadencode/APPLICATION%20FOR%20SERVICES%20-%20INDIVIDUALS.pdf');
+                                                                  // _launchURL(_url);
+                                                                  _launchURLExternal(_url);
 
-                                                                Navigator.pop(context);
-                                                              },
-                                                              labelText: "Apply", fSize: 12, faIcon: const FaIcon(Icons.picture_as_pdf), fgColor: Colors.grey, btSize: const Size(50,30),
-                                                            ),
-                                                            BasicIconButtonGrey(
-                                                              onPress: () async {
-                                                                Fluttertoast.showToast(
-                                                                    msg: "Entering contact number for Infrastructure, Planning & Survey!");
-                                                                final Uri _tel = Uri.parse('tel:+27${0333923000}');
-                                                                launchUrl(_tel);
-                                                                Navigator.pop(context);
-                                                              },
-                                                              labelText: "Call", fSize: 12, faIcon: const FaIcon(Icons.phone), fgColor: Colors.green, btSize: const Size(50,30),
-                                                            ),
-                                                          ],
+                                                                  Navigator.pop(context);
+                                                                },
+                                                                labelText: "Apply", fSize: 12, faIcon: const FaIcon(Icons.picture_as_pdf), fgColor: Colors.grey, btSize: const Size(50,30),
+                                                              ),
+                                                            ],
+                                                          ),
                                                         ),
                                                         BasicIconButtonGrey(
                                                           onPress: () {
@@ -753,6 +754,7 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                                 const SizedBox(height: 5,),
                                 BasicIconButtonGrey(
                                   onPress: () async {
+                                    _update(documentSnapshot);
                                   },
                                   labelText: 'Update Meter Info',
                                   fSize: 16,
@@ -766,12 +768,8 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                                     accountNumberAll = documentSnapshot['account number'];
                                     locationGivenAll = documentSnapshot['address'];
 
-                                    // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                    //     content: Text('$accountNumber $locationGiven ')));
-
                                     Navigator.push(context,
                                         MaterialPageRoute(builder: (context) => MapScreenProp(propAddress: locationGivenAll, propAccNumber: accountNumberAll,)
-                                          //MapPage()
                                         ));
                                   },
                                   labelText: 'Map',
@@ -780,7 +778,6 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                                   fgColor: Colors.green,
                                   btSize: const Size(100, 38),
                                 ),
-
                               ],
                             ),
                           ],
@@ -832,21 +829,21 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Visibility(
-                    visible: visibilityState1,
+                    visible: visHide,
                     child: TextField(
                       controller: _accountNumberController,
                       decoration: const InputDecoration(labelText: 'Account Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState1,
+                    visible: visHide,
                     child: TextField(
                       controller: _addressController,
                       decoration: const InputDecoration(labelText: 'Street Address'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState1,
+                    visible: visHide,
                     child: TextField(
                       keyboardType:
                       const TextInputType.numberWithOptions(),
@@ -855,56 +852,56 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState1,
+                    visible: visHide,
                     child: TextField(
                       controller: _meterNumberController,
                       decoration: const InputDecoration(labelText: 'Meter Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState1,
+                    visible: visHide,
                     child: TextField(
                       controller: _meterReadingController,
                       decoration: const InputDecoration(labelText: 'Meter Reading'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _waterMeterController,
                       decoration: const InputDecoration(labelText: 'Water Meter Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState1,
+                    visible: visHide,
                     child: TextField(
                       controller: _waterMeterReadingController,
                       decoration: const InputDecoration(labelText: 'Water Meter Reading'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState1,
+                    visible: visHide,
                     child: TextField(
                       controller: _cellNumberController,
                       decoration: const InputDecoration(labelText: 'Phone Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState1,
+                    visible: visHide,
                     child: TextField(
                       controller: _firstNameController,
                       decoration: const InputDecoration(labelText: 'First Name'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState1,
+                    visible: visHide,
                     child: TextField(
                       controller: _lastNameController,
                       decoration: const InputDecoration(labelText: 'Last Name'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState1,
+                    visible: visHide,
                     child: TextField(
                       controller: _idNumberController,
                       decoration: const InputDecoration(labelText: 'ID Number'),
@@ -999,22 +996,40 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Meter at ${documentSnapshot?['address']}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        Visibility(
+                            visible: visShow,
+                            child: const Icon(
+                              Icons.notification_important,
+                              color: Colors.red,)),
+                      ],
+                    ),
+                  ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _accountNumberController,
                       decoration: const InputDecoration(labelText: 'Account Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _addressController,
                       decoration: const InputDecoration(labelText: 'Street Address'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       keyboardType:
                       const TextInputType.numberWithOptions(),
@@ -1023,64 +1038,62 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visShow,
                     child: TextField(
                       controller: _meterNumberController,
                       decoration: const InputDecoration(labelText: 'Electricity Meter Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState1,
+                    visible: visShow,
                     child: TextField(
                       controller: _meterReadingController,
                       decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visShow,
                     child: TextField(
                       controller: _waterMeterController,
                       decoration: const InputDecoration(labelText: 'Water Meter Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState1,
+                    visible: visShow,
                     child: TextField(
                       controller: _waterMeterReadingController,
                       decoration: const InputDecoration(labelText: 'Water Meter Reading'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _cellNumberController,
                       decoration: const InputDecoration(labelText: 'Phone Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _firstNameController,
                       decoration: const InputDecoration(labelText: 'First Name'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _lastNameController,
                       decoration: const InputDecoration(labelText: 'Last Name'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _idNumberController,
                       decoration: const InputDecoration(labelText: 'ID Number'),
                     ),
                   ),
-                  const SizedBox(
-                    height: 20,
-                  ),
+                  const SizedBox(height: 20,),
                   ElevatedButton(
                     child: const Text('Update'),
                     onPressed: () async {
@@ -1127,11 +1140,6 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                         _idNumberController.text = '';
 
                         if(context.mounted)Navigator.of(context).pop();
-                        ///Added open the image upload straight after inputting the meter reading
-                        // if(context.mounted) {
-                        //   Navigator.push(context,
-                        //       MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: cellNumber, meterNumber: meterNumber,)));
-                        // }
 
                       }
                     },
@@ -1178,21 +1186,21 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _accountNumberController,
                       decoration: const InputDecoration(labelText: 'Account Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _addressController,
                       decoration: const InputDecoration(labelText: 'Street Address'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       keyboardType:
                       const TextInputType.numberWithOptions(),
@@ -1201,14 +1209,14 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visShow,
                     child: TextField(
                       controller: _meterNumberController,
                       decoration: const InputDecoration(labelText: 'Electricity Meter Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState1,
+                    visible: visShow,
                     child: TextField(
                       keyboardType: TextInputType.number,
                       controller: _meterReadingController,
@@ -1216,14 +1224,14 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _waterMeterController,
                       decoration: const InputDecoration(labelText: 'Water Meter Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       keyboardType: TextInputType.number,
                       controller: _waterMeterReadingController,
@@ -1231,28 +1239,28 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _cellNumberController,
                       decoration: const InputDecoration(labelText: 'Phone Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _firstNameController,
                       decoration: const InputDecoration(labelText: 'First Name'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _lastNameController,
                       decoration: const InputDecoration(labelText: 'Last Name'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _idNumberController,
                       decoration: const InputDecoration(labelText: 'ID Number'),
@@ -1307,11 +1315,6 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                         _idNumberController.text = '';
 
                         if(context.mounted)Navigator.of(context).pop();
-                        ///Added open the image upload straight after inputting the meter reading
-                        // if(context.mounted) {
-                        //   Navigator.push(context,
-                        //       MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: cellNumber, meterNumber: meterNumber,)));
-                        // }
 
                       }
                     },
@@ -1358,21 +1361,21 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _accountNumberController,
                       decoration: const InputDecoration(labelText: 'Account Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _addressController,
                       decoration: const InputDecoration(labelText: 'Street Address'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       keyboardType:
                       const TextInputType.numberWithOptions(),
@@ -1381,14 +1384,14 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _meterNumberController,
                       decoration: const InputDecoration(labelText: 'Electricity Meter Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       keyboardType: TextInputType.number,
                       controller: _meterReadingController,
@@ -1396,14 +1399,14 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visShow,
                     child: TextField(
                       controller: _waterMeterController,
                       decoration: const InputDecoration(labelText: 'Water Meter Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState1,
+                    visible: visShow,
                     child: TextField(
                       keyboardType: TextInputType.number,
                       controller: _waterMeterReadingController,
@@ -1411,28 +1414,28 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _cellNumberController,
                       decoration: const InputDecoration(labelText: 'Phone Number'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _firstNameController,
                       decoration: const InputDecoration(labelText: 'First Name'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _lastNameController,
                       decoration: const InputDecoration(labelText: 'Last Name'),
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visHide,
                     child: TextField(
                       controller: _idNumberController,
                       decoration: const InputDecoration(labelText: 'ID Number'),
@@ -1487,11 +1490,7 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                         _idNumberController.text = '';
 
                         if(context.mounted)Navigator.of(context).pop();
-                        ///Added open the image upload straight after inputting the meter reading
-                        // if(context.mounted) {
-                        //   Navigator.push(context,
-                        //       MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: cellNumber, meterNumber: waterMeterNumber,)));
-                        // }
+
                       }
                     },
                   )
@@ -1553,7 +1552,6 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
           /// Search bar end
 
           firebasePropertyCard(_propList),
-
 
         ],
       ),
