@@ -257,10 +257,11 @@ class MainMenu extends StatefulWidget {
             fit: BoxFit.cover),
       ),
       child: Scaffold(
-        backgroundColor: Colors.transparent,//grey[350],
+        backgroundColor: Colors.transparent, //grey[350],
         appBar: AppBar(
           title:
-          Text('Signed in from: ${user.phoneNumber!}',style: const TextStyle(color: Colors.white,fontSize: 19 ),),///${user.email!}
+          Text('Signed in from: ${user.phoneNumber!}', style: const TextStyle(color: Colors.white, fontSize: 19),),
+
           backgroundColor: Colors.black87,
           iconTheme: const IconThemeData(color: Colors.white),
         ),
@@ -301,68 +302,69 @@ class MainMenu extends StatefulWidget {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Stack(
-                                  alignment:Alignment.center,
-                                  children:[
-                              ElevatedIconButton(
-                                onPress: () {
-                                  String passedID = user.phoneNumber!;
-                                  String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
-                                  print('The user name of the logged in person is $userName}');
-                                  String id = passedID;
-                                  saveChatPhoneNumber(id);
-                                  ///Directly to the chatapp page that creates a chat id that will be saved on the DB. for an admin to access the chat I will have to
-                                  ///make a new page that lists all DB chats for the admin to select and connect to for responding to users
-                                  Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) => Chat(chatRoomId: id,)));
-                                  },
-                                labelText: 'Admin \nChat',
-                                fSize: 18,
-                                faIcon: const FaIcon(FontAwesomeIcons.message),
-                                fgColor: Colors.blue,
-                                btSize: const Size(130, 120),
+                                  alignment: Alignment.center,
+                                  children: [
+                                    ElevatedIconButton(
+                                      onPress: () {
+                                        String passedID = user.phoneNumber!;
+                                        String? userName = FirebaseAuth.instance.currentUser!.phoneNumber;
+                                        print('The user name of the logged in person is $userName}');
+                                        String id = passedID;
+                                        saveChatPhoneNumber(id);
+
+                                        ///Directly to the chatapp page that creates a chat id that will be saved on the DB. for an admin to access the chat I will have to
+                                        ///make a new page that lists all DB chats for the admin to select and connect to for responding to users
+                                        Navigator.push(context,
+                                            MaterialPageRoute(builder: (context) => Chat(chatRoomId: id,)));
+                                      },
+                                      labelText: 'Admin \nChat',
+                                      fSize: 18,
+                                      faIcon: const FaIcon(FontAwesomeIcons.message),
+                                      fgColor: Colors.blue,
+                                      btSize: const Size(130, 120),
+                                    ),
+                                    Visibility(
+                                      visible: visLocked || visFeatureMode || visPremium,
+                                      child: InkWell(
+                                          onTap: () {
+                                            Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                          },
+                                          child: ClipRect(
+                                              child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
+                                          )
+                                      ),
+                                    ),
+                                  ]
                               ),
-                              Visibility(
-                                visible: visLocked || visFeatureMode || visPremium,
-                                child: InkWell(
-                                    onTap: (){
-                                      Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
-                                    },
-                                    child: ClipRect(
-                                        child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
-                                    )
-                                ),
-                              ),
-                            ]
-                          ),
 
                               const SizedBox(width: 40),
-                          Stack(
-                            alignment:Alignment.center,
-                            children:[
-                              ElevatedIconButton(
-                                onPress: (){
-                                  Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) => const UsersTableViewPage()));
-                                  },
-                                labelText: 'View \nDetails',
-                                fSize: 18,
-                                faIcon: const FaIcon(FontAwesomeIcons.houseCircleExclamation),
-                                fgColor: Colors.green,
-                                btSize: const Size(130, 120),
+                              Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    ElevatedIconButton(
+                                      onPress: () {
+                                        Navigator.push(context,
+                                            MaterialPageRoute(builder: (context) => const UsersTableViewPage()));
+                                      },
+                                      labelText: 'View \nDetails',
+                                      fSize: 18,
+                                      faIcon: const FaIcon(FontAwesomeIcons.houseCircleExclamation),
+                                      fgColor: Colors.green,
+                                      btSize: const Size(130, 120),
+                                    ),
+                                    Visibility(
+                                      visible: visLocked || visFeatureMode || visPremium,
+                                      child: InkWell(
+                                          onTap: () {
+                                            Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                          },
+                                          child: ClipRect(
+                                              child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
+                                          )
+                                      ),
+                                    ),
+                                  ]
                               ),
-                              Visibility(
-                                visible: visLocked || visFeatureMode || visPremium,
-                                child: InkWell(
-                                    onTap: (){
-                                      Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
-                                    },
-                                    child: ClipRect(
-                                        child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
-                                    )
-                                ),
-                              ),
-                            ]
-                          ),
 
                             ],
                           ),
@@ -376,32 +378,34 @@ class MainMenu extends StatefulWidget {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Stack(
-                                  alignment:Alignment.center,
-                                  children:[
-                              ElevatedIconButton(
-                                onPress: () async {
-                                  Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) => const NoticeScreen()));///add page for users to see
-                                },
-                                labelText: 'Notices',
-                                fSize: 17,
-                                faIcon: const FaIcon(Icons.notifications_on),
-                                fgColor: Colors.red,
-                                btSize: const Size(130, 120),
+                                  alignment: Alignment.center,
+                                  children: [
+                                    ElevatedIconButton(
+                                      onPress: () async {
+                                        Navigator.push(context,
+                                            MaterialPageRoute(builder: (context) => const NoticeScreen()));
+
+                                        ///add page for users to see
+                                      },
+                                      labelText: 'Notices',
+                                      fSize: 17,
+                                      faIcon: const FaIcon(Icons.notifications_on),
+                                      fgColor: Colors.red,
+                                      btSize: const Size(130, 120),
+                                    ),
+                                    Visibility(
+                                      visible: visLocked || visFeatureMode || visPremium,
+                                      child: InkWell(
+                                          onTap: () {
+                                            Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                          },
+                                          child: ClipRect(
+                                              child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
+                                          )
+                                      ),
+                                    ),
+                                  ]
                               ),
-                              Visibility(
-                                visible: visLocked || visFeatureMode || visPremium,
-                                child: InkWell(
-                                    onTap: (){
-                                      Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
-                                    },
-                                    child: ClipRect(
-                                        child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
-                                    )
-                                ),
-                              ),
-                            ]
-                          ),
                               const SizedBox(width: 40,),
                               ElevatedIconButton(
                                 onPress: () async {
@@ -426,14 +430,13 @@ class MainMenu extends StatefulWidget {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               ElevatedIconButton(
-                                onPress: (){
+                                onPress: () {
                                   showDialog(
                                       barrierDismissible: false,
                                       context: context,
                                       builder: (context) {
                                         return AlertDialog(
-                                          shape: const RoundedRectangleBorder(borderRadius:
-                                          BorderRadius.all(Radius.circular(18))),
+                                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
                                           title: const Text("Logout"),
                                           content: const Text("Are you sure you want to logout?"),
                                           actions: [
@@ -469,45 +472,35 @@ class MainMenu extends StatefulWidget {
                                 fgColor: Colors.red,
                                 btSize: const Size(130, 120),
                               ),
-                              // ElevatedIconButton(
-                              //   onPress: () async {
-                              //     Navigator.push(context,
-                              //         MaterialPageRoute(builder: (context) => const NoticeScreen()));///add page for users to see
-                              //   },
-                              //   labelText: 'Dispute\nDisconnect',
-                              //   fSize: 14,
-                              //   faIcon: const FaIcon(Icons.cable_outlined),
-                              //   fgColor: Colors.red,
-                              //   btSize: const Size(130, 120),
-                              // ),
                               const SizedBox(width: 40),
-                        Stack(
-                          alignment:Alignment.center,
-                          children:[
-                              ElevatedIconButton(
-                                onPress: (){
-                                  Navigator.push(context,
-                                      MaterialPageRoute(builder: (context) => const ReportPropertyMenu()));
-                                },
-                                labelText: 'Report \nFaults',
-                                fSize: 18,
-                                faIcon: const FaIcon(Icons.report_problem),
-                                fgColor: Colors.orangeAccent,
-                                btSize: const Size(130, 120),
+                              Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  ElevatedIconButton(
+                                    onPress: () {
+                                      Navigator.push(context,
+                                          MaterialPageRoute(builder: (context) => const ReportPropertyMenu()));
+                                    },
+                                    labelText: 'Report \nFaults',
+                                    fSize: 18,
+                                    faIcon: const FaIcon(Icons.report_problem),
+                                    fgColor: Colors.orangeAccent,
+                                    btSize: const Size(130, 120),
+                                  ),
+                                  Visibility(
+                                    visible: visLocked || visFeatureMode ||
+                                        visPremium,
+                                    child: InkWell(
+                                        onTap: () {
+                                          Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                        },
+                                        child: ClipRect(
+                                            child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
+                                        )
+                                    ),
+                                  ),
+                                ],
                               ),
-                            Visibility(
-                              visible: visLocked || visFeatureMode || visPremium,
-                              child: InkWell(
-                                  onTap: (){
-                                    Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
-                                  },
-                                  child: ClipRect(
-                                      child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
-                                  )
-                              ),
-                            ),
-                          ],
-                        ),
                             ],
                           ),
                         ),
@@ -515,14 +508,13 @@ class MainMenu extends StatefulWidget {
                       Visibility(
                         visible: visHide,
                         child: ElevatedIconButton(
-                          onPress: (){
+                          onPress: () {
                             showDialog(
                                 barrierDismissible: false,
                                 context: context,
                                 builder: (context) {
                                   return AlertDialog(
-                                    shape: const RoundedRectangleBorder(borderRadius:
-                                    BorderRadius.all(Radius.circular(18))),
+                                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
                                     title: const Text("Logout"),
                                     content: const Text("Are you sure you want to logout?"),
                                     actions: [
@@ -562,37 +554,9 @@ class MainMenu extends StatefulWidget {
                     ],
                   ),
 
-                  ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
-                  ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
-                  // Visibility(
-                  //     visible: false,
-                  //     child: const SizedBox(height: 20)),
-                  // Visibility(
-                  //   visible: false,
-                  //   child: ReusableElevatedButton(
-                  //     onPress: () async {
-                  //
-                  //       ///It can be changed to the firebase notification
-                  //       String titleText = title.text;
-                  //       String bodyText = body.text;
-                  //
-                  //       ///gets users phone token to send notification to this phone
-                  //       if(user.phoneNumber! != ""){
-                  //         DocumentSnapshot snap =
-                  //         await FirebaseFirestore.instance.collection("UserToken").doc(user.phoneNumber!).get();
-                  //
-                  //         String token = snap['token'];
-                  //
-                  //         sendPushMessage(token, titleText, bodyText);
-                  //       }
-                  //     },
-                  //     buttonText: 'Notification Checker',fSize: fontSize,
-                  //   ),
-                  // ),
-
                   const SizedBox(height: 30),
                   const Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: <Widget>[
                         Text('Copyright Cyberfox ',
                           //textAlign: TextAlign.end,

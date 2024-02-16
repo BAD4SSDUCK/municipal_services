@@ -188,15 +188,16 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
       DeviceOrientation.portraitDown,
     ]);
     return Container(
+
       ///When a background image is created this section will display it on the dashboard instead of just a grey colour with no background
       decoration: const BoxDecoration(
         image: DecorationImage(
-            // image: AssetImage("assets/images/hall1.png"),
+          // image: AssetImage("assets/images/hall1.png"),
             image: AssetImage("assets/images/greyscale.jpg"),
             fit: BoxFit.cover),
       ),
       child: Scaffold(
-        backgroundColor: Colors.transparent,//Colors.grey,
+        backgroundColor: Colors.transparent, //Colors.grey,
         ///App bar text removed for aesthetic
         appBar: AppBar(
           title: const Text(''),
@@ -216,19 +217,19 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                   children: <Widget>[
                     const SizedBox(height: 20),
                     Stack(
-                      alignment:Alignment.topCenter,
-                      children:[
-                        // Container(
-                        //     child: Image.asset('assets/images/hall2.png', width: double.infinity, height: 180,  fit: BoxFit.cover,  )
-                        // ),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(40.0),
-                              child: Image.asset('assets/images/logo.png', width: 160, height: 160,)
+                        alignment: Alignment.topCenter,
+                        children: [
+                          // Container(
+                          //     child: Image.asset('assets/images/hall2.png', width: double.infinity, height: 180,  fit: BoxFit.cover,  )
+                          // ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: ClipRRect(
+                                borderRadius: BorderRadius.circular(40.0),
+                                child: Image.asset('assets/images/logo.png', width: 160, height: 160,)
+                            ),
                           ),
-                        ),
-                      ]
+                        ]
                     ),
 
                     // Image.asset('assets/images/municipal_services.png', height: 150, width: 300,),
@@ -242,34 +243,36 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                              Stack(
-                              alignment:Alignment.center,
-                              children:[
-                                ElevatedIconButton(
-                                  onPress: () async {
-                                    Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => const MapScreenMulti()));
-                                  },
-                                  labelText: ' Map ',
-                                  fSize: 18,
-                                  faIcon: const FaIcon(FontAwesomeIcons.map),
-                                  fgColor: Colors.purple,
-                                  btSize: const Size(130, 120),
+                                Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      ElevatedIconButton(
+                                        onPress: () async {
+                                          Navigator.push(context,
+                                              MaterialPageRoute(builder: (context) => const MapScreenMulti()));
+                                        },
+                                        labelText: ' Map ',
+                                        fSize: 18,
+                                        faIcon: const FaIcon(FontAwesomeIcons.map),
+                                        fgColor: Colors.purple,
+                                        btSize: const Size(130, 120),
+                                      ),
+                                      Visibility(
+                                        visible: visLocked || visFeatureMode || visPremium,
+                                        child: InkWell(
+                                            onTap: () {
+                                              Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                            },
+                                            child: ClipRect(
+                                                child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
+                                            )
+                                        ),
+                                      ),
+                                    ]
                                 ),
                                 Visibility(
-                                  visible: visLocked || visFeatureMode || visPremium,
-                                  child: InkWell(
-                                      onTap: (){
-                                        Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
-                                      },
-                                      child: ClipRect(
-                                          child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
-                                      )
-                                  ),
-                                ),
-                              ]
-                              ),
-                                Visibility(visible: visAdmin || visManager || visEmployee || visCapture, child: const SizedBox(width: 33,)),
+                                    visible: visAdmin || visManager || visEmployee || visCapture,
+                                    child: const SizedBox(width: 33,)),
                                 Visibility(
                                   visible: visAdmin || visManager,
                                   child: ElevatedIconButton(
@@ -287,32 +290,32 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                 Visibility(
                                   visible: visEmployee || visCapture,
                                   child: Stack(
-                                      alignment:Alignment.center,
-                                      children:[
-                                  ElevatedIconButton(
-                                    onPress: () async {
-                                      Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) => const AllPropCapture()));
-                                    },
-                                    labelText: 'Capture\nReading',
-                                    fSize: 14,
-                                    faIcon: const FaIcon(Icons.holiday_village),
-                                    fgColor: Colors.green,
-                                    btSize: const Size(130, 120),
-                                  ),
-                                    Visibility(
-                                      visible: visLocked || visFeatureMode,
-                                      child: InkWell(
-                                          onTap: (){
-                                            Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                      alignment: Alignment.center,
+                                      children: [
+                                        ElevatedIconButton(
+                                          onPress: () async {
+                                            Navigator.push(context,
+                                                MaterialPageRoute(builder: (context) => const AllPropCapture()));
                                           },
-                                          child: ClipRect(
-                                              child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
-                                          )
-                                      ),
-                                    ),
-                                    ]
-                                ),
+                                          labelText: 'Capture\nReading',
+                                          fSize: 14,
+                                          faIcon: const FaIcon(Icons.holiday_village),
+                                          fgColor: Colors.green,
+                                          btSize: const Size(130, 120),
+                                        ),
+                                        Visibility(
+                                          visible: visLocked || visFeatureMode,
+                                          child: InkWell(
+                                              onTap: () {
+                                                Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                              },
+                                              child: ClipRect(
+                                                  child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
+                                              )
+                                          ),
+                                        ),
+                                      ]
+                                  ),
                                 ),
                               ],
                             ),
@@ -327,64 +330,64 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Stack(
-                                  alignment:Alignment.center,
-                                  children:[
-                                    ElevatedIconButton(
-                                      onPress: () async {
-                                        Navigator.push(context,
-                                            MaterialPageRoute(builder: (context) => const ChatList()));
-                                      },
-                                      labelText: 'Chat \nList',
-                                      fSize: 18,
-                                      faIcon: const FaIcon(Icons.mark_chat_unread),
-                                      fgColor: Colors.blue,
-                                      btSize: const Size(130, 120),
-                                    ),
-                                    Visibility(
-                                      visible: visLocked || visFeatureMode || visPremium,
-                                      child: InkWell(
-                                        onTap: (){
-                                          Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                    alignment: Alignment.center,
+                                    children: [
+                                      ElevatedIconButton(
+                                        onPress: () async {
+                                          Navigator.push(context,
+                                              MaterialPageRoute(builder: (context) => const ChatList()));
                                         },
-                                          child: ClipRect(
-                                              child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
-                                          )
+                                        labelText: 'Chat \nList',
+                                        fSize: 18,
+                                        faIcon: const FaIcon(Icons.mark_chat_unread),
+                                        fgColor: Colors.blue,
+                                        btSize: const Size(130, 120),
                                       ),
-                                    ),
-                                  ]
+                                      Visibility(
+                                        visible: visLocked || visFeatureMode || visPremium,
+                                        child: InkWell(
+                                            onTap: () {
+                                              Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                            },
+                                            child: ClipRect(
+                                                child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
+                                            )
+                                        ),
+                                      ),
+                                    ]
                                 ),
                                 Visibility(
                                     visible: visAdmin,
                                     child: const SizedBox(width: 40,)),
                                 Stack(
-                                    alignment:Alignment.center,
-                                  children:[
-                                    Visibility(
-                                      visible: visAdmin,
-                                      child: ElevatedIconButton(
-                                        onPress: () async {
-                                          Navigator.push(context,
-                                              MaterialPageRoute(builder: (context) => const ConfigPage()));
-                                        },
-                                        labelText: 'Admin\nConfig',
-                                        fSize: 16,
-                                        faIcon: const FaIcon(Icons.people),
-                                        fgColor: Colors.black54,
-                                        btSize: const Size(130, 120),
-                                      ),
-                                    ),
-                                    Visibility(
-                                      visible: visLocked || visFeatureMode || visPremium,
-                                      child: InkWell(
-                                          onTap: (){
-                                            Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                    alignment: Alignment.center,
+                                    children: [
+                                      Visibility(
+                                        visible: visAdmin,
+                                        child: ElevatedIconButton(
+                                          onPress: () async {
+                                            Navigator.push(context,
+                                                MaterialPageRoute(builder: (context) => const ConfigPage()));
                                           },
-                                          child: ClipRect(
-                                              child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
-                                          )
+                                          labelText: 'Admin\nConfig',
+                                          fSize: 16,
+                                          faIcon: const FaIcon(Icons.people),
+                                          fgColor: Colors.black54,
+                                          btSize: const Size(130, 120),
+                                        ),
                                       ),
-                                    ),
-                                  ]
+                                      Visibility(
+                                        visible: visLocked || visFeatureMode || visPremium,
+                                        child: InkWell(
+                                            onTap: () {
+                                              Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                            },
+                                            child: ClipRect(
+                                                child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
+                                            )
+                                        ),
+                                      ),
+                                    ]
                                 ),
 
                               ],
@@ -399,64 +402,65 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                              Stack(
-                              alignment:Alignment.center,
-                              children:[
-                                ElevatedIconButton(
-                                  onPress: () async {
-                                    Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => const NoticeConfigScreen(userNumber: '',)));
-                                  },
-                                  labelText: 'Broad\n-cast',
-                                  fSize: 16,
-                                  faIcon: const FaIcon(Icons.notifications_on),
-                                  fgColor: Colors.red,
-                                  btSize: const Size(130, 120),
-                                ),
-                                Visibility(
-                                  visible: visLocked || visFeatureMode || visPremium,
-                                  child: InkWell(
-                                      onTap: (){
-                                        Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    ElevatedIconButton(
+                                      onPress: () async {
+                                        Navigator.push(context,
+                                            MaterialPageRoute(builder: (context) => const NoticeConfigScreen(userNumber: '',)));
                                       },
-                                      child: ClipRect(
-                                          child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
-                                      )
-                                  ),
+                                      labelText: 'Broad\n-cast',
+                                      fSize: 16,
+                                      faIcon: const FaIcon(Icons.notifications_on),
+                                      fgColor: Colors.red,
+                                      btSize: const Size(130, 120),
+                                    ),
+                                    Visibility(
+                                      visible: visLocked || visFeatureMode || visPremium,
+                                      child: InkWell(
+                                          onTap: () {
+                                            Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                          },
+                                          child: ClipRect(
+                                              child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
+                                          )
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                ],
-                              ),
-                                Visibility(visible: visAdmin || visManager , child: const SizedBox(width: 40,)),
-                            Stack(
-                              alignment:Alignment.center,
-                              children:[
-                                Visibility(
-                                  visible: visAdmin || visManager,
-                                  child: ElevatedIconButton(
-                                    onPress: () async {
-                                      Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) => const FaultTaskScreen()));
-                                    },
-                                    labelText: 'Report\nList',
-                                    fSize: 15,
-                                    faIcon: const FaIcon(Icons.report_problem),
-                                    fgColor: Colors.orange,
-                                    btSize: const Size(130, 120),
-                                  ),
+                                Visibility(visible: visAdmin || visManager,
+                                    child: const SizedBox(width: 40,)),
+                                Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Visibility(
+                                      visible: visAdmin || visManager,
+                                      child: ElevatedIconButton(
+                                        onPress: () async {
+                                          Navigator.push(context, MaterialPageRoute(builder: (
+                                                  context) => const FaultTaskScreen()));
+                                        },
+                                        labelText: 'Report\nList',
+                                        fSize: 15,
+                                        faIcon: const FaIcon(Icons.report_problem),
+                                        fgColor: Colors.orange,
+                                        btSize: const Size(130, 120),
+                                      ),
+                                    ),
+                                    Visibility(
+                                      visible: visLocked || visFeatureMode || visPremium,
+                                      child: InkWell(
+                                          onTap: () {
+                                            Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                          },
+                                          child: ClipRect(
+                                              child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
+                                          )
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Visibility(
-                                  visible: visLocked || visFeatureMode || visPremium,
-                                  child: InkWell(
-                                      onTap: (){
-                                        Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
-                                      },
-                                      child: ClipRect(
-                                          child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
-                                      )
-                                  ),
-                                ),
-                              ],
-                            ),
                               ],
                             ),
                           ),
@@ -469,61 +473,61 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                              Stack(
-                              alignment:Alignment.center,
-                              children:[
-                                ElevatedIconButton(
-                                  onPress: (){
-                                    Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => const UsersConnectionsAll()));
-                                  },
-                                  labelText: 'Connect',
-                                  fSize: 12,
-                                  faIcon: const FaIcon(Icons.power_settings_new),
-                                  fgColor: Colors.orangeAccent,
-                                  btSize: const Size(130, 120),
-                                ),
-                                Visibility(
-                                  visible: visLocked || visFeatureMode || visPremium,
-                                  child: InkWell(
-                                      onTap: (){
-                                        Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    ElevatedIconButton(
+                                      onPress: () {
+                                        Navigator.push(context,
+                                            MaterialPageRoute(builder: (context) => const UsersConnectionsAll()));
                                       },
-                                      child: ClipRect(
-                                          child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
-                                      )
-                                  ),
+                                      labelText: 'Connect',
+                                      fSize: 12,
+                                      faIcon: const FaIcon(Icons.power_settings_new),
+                                      fgColor: Colors.orangeAccent,
+                                      btSize: const Size(130, 120),
+                                    ),
+                                    Visibility(
+                                      visible: visLocked || visFeatureMode || visPremium,
+                                      child: InkWell(
+                                          onTap: () {
+                                            Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                          },
+                                          child: ClipRect(
+                                              child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
+                                          )
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                              ),
                                 const SizedBox(width: 30,),
                                 Stack(
-                                  alignment:Alignment.center,
-                                  children:[
-                                ElevatedIconButton(
-                                  onPress: (){
-                                    Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => const PropertyMetersAll()));
-                                  },
-                                  labelText: 'Meter\nUpdate',
-                                  fSize: 14,
-                                  faIcon: const FaIcon(Icons.build),
-                                  fgColor: Colors.brown,
-                                  btSize: const Size(130, 120),
-                                ),
-                                Visibility(
-                                  visible: visLocked || visFeatureMode || visPremium,
-                                  child: InkWell(
-                                      onTap: (){
-                                        Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                  alignment: Alignment.center,
+                                  children: [
+                                    ElevatedIconButton(
+                                      onPress: () {
+                                        Navigator.push(context,
+                                            MaterialPageRoute(builder: (context) => const PropertyMetersAll()));
                                       },
-                                      child: ClipRect(
-                                          child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
-                                      )
-                                  ),
+                                      labelText: 'Meter\nUpdate',
+                                      fSize: 14,
+                                      faIcon: const FaIcon(Icons.build),
+                                      fgColor: Colors.brown,
+                                      btSize: const Size(130, 120),
+                                    ),
+                                    Visibility(
+                                      visible: visLocked || visFeatureMode || visPremium,
+                                      child: InkWell(
+                                          onTap: () {
+                                            Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                          },
+                                          child: ClipRect(
+                                              child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
+                                          )
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
 
                               ],
                             ),
@@ -532,105 +536,100 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
 
                         Visibility(
                           visible: visShow,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                ElevatedIconButton(
-                                  onPress: (){
-                                    showDialog(
-                                        barrierDismissible: false,
-                                        context: context,
-                                        builder: (context) {
-                                          return AlertDialog(
-                                            shape: const RoundedRectangleBorder(borderRadius:
-                                            BorderRadius.all(Radius.circular(18))),
-                                            title: const Text("Logout"),
-                                            content: const Text("Are you sure you want to logout?"),
-                                            actions: [
-                                              IconButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                },
-                                                icon: const Icon(
-                                                  Icons.cancel,
-                                                  color: Colors.red,
-                                                ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              ElevatedIconButton(
+                                onPress: () {
+                                  showDialog(
+                                      barrierDismissible: false,
+                                      context: context,
+                                      builder: (context) {
+                                        return AlertDialog(
+                                          shape: const RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.all(Radius.circular(18))),
+                                          title: const Text("Logout"),
+                                          content: const Text("Are you sure you want to logout?"),
+                                          actions: [
+                                            IconButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              icon: const Icon(Icons.cancel, color: Colors.red,
                                               ),
-                                              IconButton(
-                                                onPressed: () async {
+                                            ),
+                                            IconButton(
+                                              onPressed: () async {
+                                                FirebaseAuth.instance.signOut();
+
+                                                if (defaultTargetPlatform == TargetPlatform.android) {
                                                   FirebaseAuth.instance.signOut();
-
-                                                  if(defaultTargetPlatform == TargetPlatform.android){
-                                                    FirebaseAuth.instance.signOut();
-                                                    Navigator.pop(context);
-                                                    SystemNavigator.pop();
-                                                  } else {
-                                                    FirebaseAuth.instance.signOut();
-                                                    SystemNavigator.pop();
-                                                    // html.window.location.reload();
-                                                  }
-
                                                   Navigator.pop(context);
+                                                  SystemNavigator.pop();
+                                                } else {
+                                                  FirebaseAuth.instance.signOut();
+                                                  SystemNavigator.pop();
+                                                  // html.window.location.reload();
+                                                }
 
-                                                  // Navigator.popAndPushNamed(context, const MainPage() as String);
-                                                  ///SystemNavigator.pop() closes the entire app
-                                                  // SystemNavigator.pop();
-                                                },
-                                                icon: const Icon(
-                                                  Icons.done,
-                                                  color: Colors.green,
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        });
+                                                Navigator.pop(context);
 
-                                    ///commented out old sql sign out method
-                                    // ProfileFragmentScreen().signOutUser();
-                                  },
-                                  labelText: 'Logout',
-                                  fSize: 15,
-                                  faIcon: const FaIcon(Icons.logout),
-                                  fgColor: Colors.red,
-                                  btSize: const Size(130, 120),
-                                ),
+                                                // Navigator.popAndPushNamed(context, const MainPage() as String);
+                                                ///SystemNavigator.pop() closes the entire app
+                                                // SystemNavigator.pop();
+                                              },
+                                              icon: const Icon(Icons.done, color: Colors.green,),
+                                            ),
+                                          ],
+                                        );
+                                      });
 
-                                Visibility(visible: visEmployee , child: const SizedBox(width: 40,)),
-                                Stack(
-                                  alignment:Alignment.center,
-                                  children:[
-                                Visibility(
-                                  visible: visEmployee,
-                                  child: ElevatedIconButton(
-                                    onPress: () async {
-                                      Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) => const FaultAttendantScreen()));
-                                    },
-                                    labelText: 'Report\nList',
-                                    fSize: 15,
-                                    faIcon: const FaIcon(Icons.report_problem),
-                                    fgColor: Colors.orange,
-                                    btSize: const Size(130, 120),
-                                  ),
-                                ),
-                                Visibility(
-                                  visible: (visLocked || visFeatureMode || visPremium) && visEmployee,
-                                  child: InkWell(
-                                      onTap: (){
-                                        Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                  ///commented out old sql sign out method
+                                  // ProfileFragmentScreen().signOutUser();
+                                },
+                                labelText: 'Logout',
+                                fSize: 15,
+                                faIcon: const FaIcon(Icons.logout),
+                                fgColor: Colors.red,
+                                btSize: const Size(130, 120),
+                              ),
+
+                              Visibility(visible: visEmployee,
+                                  child: const SizedBox(width: 40,)),
+                              Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Visibility(
+                                    visible: visEmployee,
+                                    child: ElevatedIconButton(
+                                      onPress: () async {
+                                        Navigator.push(context,
+                                            MaterialPageRoute(builder: (context) => const FaultAttendantScreen()));
                                       },
-                                      child: ClipRect(
-                                          child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120,  fit: BoxFit.cover, color: Colors.black45, )
-                                      )
+                                      labelText: 'Report\nList',
+                                      fSize: 15,
+                                      faIcon: const FaIcon(Icons.report_problem),
+                                      fgColor: Colors.orange,
+                                      btSize: const Size(130, 120),
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                              ],
-                            ),
+                                  Visibility(
+                                    visible: (visLocked || visFeatureMode || visPremium) && visEmployee,
+                                    child: InkWell(
+                                        onTap: () {
+                                          Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                        },
+                                        child: ClipRect(
+                                            child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
+                                        )
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-
                       ],
                     ),
                     const SizedBox(height: 20),
