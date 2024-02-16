@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_user_screen.dart';
 import 'package:path/path.dart';
 import 'package:http/http.dart' as http;
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -19,20 +18,18 @@ import 'package:get/get.dart';
 import 'package:municipal_tracker_msunduzi/main.dart';
 import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_pdf_list.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
 import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_fault.dart';
-import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/main_menu_reusable_button.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/nav_drawer.dart';
+import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_tracker_msunduzi/code/Reusable/menu_reusable_elevated_button.dart';
 import 'package:municipal_tracker_msunduzi/code/faultPages/fault_report_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/Chat/chat_list.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/menu_reusable_elevated_button.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info_all_users.dart';
-
 
 class MainMenu extends StatefulWidget {
   const MainMenu({Key? key}) : super(key: key);
@@ -71,8 +68,6 @@ class MainMenu extends StatefulWidget {
     addChatCustomId();
   }
 
-  ///added login status for chat
-  bool _isSignedIn = false;
 
 
   void requestPermission() async {
@@ -244,7 +239,6 @@ class MainMenu extends StatefulWidget {
   @override
   Widget build(BuildContext context) {
     Get.put(LocationController());
-    const double fontSize = 28.0;
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -261,7 +255,6 @@ class MainMenu extends StatefulWidget {
         appBar: AppBar(
           title:
           Text('Signed in from: ${user.phoneNumber!}', style: const TextStyle(color: Colors.white, fontSize: 19),),
-
           backgroundColor: Colors.black87,
           iconTheme: const IconThemeData(color: Colors.white),
         ),

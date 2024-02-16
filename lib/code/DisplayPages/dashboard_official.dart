@@ -182,7 +182,6 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
   @override
   Widget build(BuildContext context) {
     Get.put(LocationController());
-    const double fontSize = 28.0;
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
