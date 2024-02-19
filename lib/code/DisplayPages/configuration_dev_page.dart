@@ -12,11 +12,11 @@ import 'package:municipal_tracker_msunduzi/code/AuthGoogle/auth_page_google.dart
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 
-class ConfigPage extends StatefulWidget{
-  const ConfigPage({super.key});
+class DevConfigPage extends StatefulWidget{
+  const DevConfigPage({super.key});
 
   @override
-  State<ConfigPage> createState() => _ConfigPageState();
+  State<DevConfigPage> createState() => _DevConfigPageState();
 }
 
 final FirebaseAuth auth = FirebaseAuth.instance;
@@ -35,7 +35,7 @@ class FireStorageService extends ChangeNotifier{
   }
 }
 
-class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
+class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateMixin{
 
   @override
   void initState() {
@@ -61,7 +61,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
   final _passwordController = TextEditingController();
   final _versionController = TextEditingController();
 
-  late final _tabController = TabController(length: 3, vsync: this);
+  late final _tabController = TabController(length: 4, vsync: this);
   int _tabIndex = 0;
   final int _tabLength = 4;
   void _toggleTab(){
@@ -1331,7 +1331,8 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
     versions.get().then((querySnapshot) async {
       for (var result in querySnapshot.docs) {
         print('The version is::: ${result['version']}');
-        if(versionList.length-1<querySnapshot.docs.length) {
+
+        if(versionList.length-1<querySnapshot.docs.length && querySnapshot.docs != result[2]['version']) {
           versionList.add(result['version']);
         }
       }
@@ -1346,7 +1347,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
   Widget build(BuildContext context) {
     return DefaultTabController(
       initialIndex: 0,
-      length: 3,
+      length: 4,
       child: Scaffold(
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
@@ -1361,7 +1362,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
               Tab(text: 'Roles', icon: FaIcon(Icons.work_history),),
               Tab(text: 'Departments', icon: FaIcon(Icons.corporate_fare),),
               Tab(text: 'User List', icon: FaIcon(Icons.person_2_outlined),),
-              // Tab(text: 'Version', icon: FaIcon(Icons.lock_open_outlined),),
+              Tab(text: 'Version', icon: FaIcon(Icons.lock_open_outlined),),
             ],
           ),
         ),
@@ -1446,8 +1447,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                                                         );
                                                     });
                                               },
-                                              borderRadius: BorderRadius.circular(
-                                                  32),
+                                              borderRadius: BorderRadius.circular(32),
                                               child: const Padding(
                                                 padding: EdgeInsets.symmetric(
                                                   horizontal: 20,
@@ -1473,8 +1473,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                                               onTap: () {
                                                 _updateRole(userDocumentSnapshot);
                                               },
-                                              borderRadius: BorderRadius.circular(
-                                                  32),
+                                              borderRadius: BorderRadius.circular(32),
                                               child: const Padding(
                                                 padding: EdgeInsets.symmetric(
                                                   horizontal: 20,
@@ -1731,8 +1730,7 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
                                                                 borderRadius:
                                                                 BorderRadius.all(Radius.circular(16))),
                                                             title: const Text("Delete this User!"),
-                                                            content: const Text(
-                                                                "Are you sure about deleting this user?"),
+                                                            content: const Text("Are you sure about deleting this user?"),
                                                             actions: [
                                                               IconButton(
                                                                 onPressed: () {
@@ -1830,261 +1828,257 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
               },
             ),///Tab for users list view
 
-            // Column(
-            //   children: [
-            //     Visibility(
-            //       visible: visShow,
-            //       child: SingleChildScrollView(
-            //         child: Column(
-            //           children: [
-            //             const SizedBox(height: 20,),
-            //             const Center(
-            //               child: Text(
-            //                 'Set Application Version State',
-            //                 style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
-            //               ),
-            //             ),
-            //             const SizedBox(height: 20,),
-            //             Center(
-            //               child: Column(
-            //                   children: [
-            //                     SizedBox(
-            //                       width: 450,
-            //                       height: 50,
-            //                       child: Padding(
-            //                         padding: const EdgeInsets.only(left: 10, right: 10),
-            //                         child: Center(
-            //                           child: TextField(
-            //
-            //                             ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
-            //                             decoration: InputDecoration(
-            //                               border: OutlineInputBorder(
-            //                                   borderRadius: BorderRadius.circular(
-            //                                       30),
-            //                                   borderSide: const BorderSide(
-            //                                     color: Colors.grey,
-            //                                   )
-            //                               ),
-            //                               enabledBorder: OutlineInputBorder(
-            //                                   borderRadius: BorderRadius.circular(
-            //                                       30),
-            //                                   borderSide: const BorderSide(
-            //                                     color: Colors.grey,
-            //                                   )
-            //                               ),
-            //                               focusedBorder: OutlineInputBorder(
-            //                                   borderRadius: BorderRadius.circular(
-            //                                       30),
-            //                                   borderSide: const BorderSide(
-            //                                     color: Colors.grey,
-            //                                   )
-            //                               ),
-            //                               disabledBorder: OutlineInputBorder(
-            //                                   borderRadius: BorderRadius.circular(
-            //                                       30),
-            //                                   borderSide: const BorderSide(
-            //                                     color: Colors.grey,
-            //                                   )
-            //                               ),
-            //                               contentPadding: const EdgeInsets.symmetric(
-            //                                   horizontal: 14,
-            //                                   vertical: 6
-            //                               ),
-            //                               fillColor: Colors.white,
-            //                               filled: true,
-            //                               suffixIcon: DropdownButtonFormField <String>(
-            //                                 value: dropdownValue3,
-            //                                 items: versionList.map<DropdownMenuItem<String>>((String value) {
-            //                                   return DropdownMenuItem<String>(
-            //                                     value: value,
-            //                                     child: Padding(
-            //                                       padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 20.0),
-            //                                       child: Text(
-            //                                         value,
-            //                                         style: const TextStyle(fontSize: 16),
-            //                                       ),
-            //                                     ),
-            //                                   );
-            //                                 }).toSet().toList(),
-            //                                 onChanged: (String? newValue) {
-            //                                   setState(() {
-            //                                     dropdownValue3 = newValue!;
-            //                                   });
-            //                                 },
-            //                                 icon: const Padding(
-            //                                   padding: EdgeInsets.only(left: 10, right: 10),
-            //                                   child: Icon(Icons.arrow_circle_down_sharp),
-            //                                 ),
-            //                                 iconEnabledColor: Colors.green,
-            //                                 style: const TextStyle(
-            //                                     color: Colors.black,
-            //                                     fontSize: 18
-            //                                 ),
-            //                                 dropdownColor: Colors.grey[50],
-            //                                 isExpanded: true,
-            //
-            //                               ),
-            //                             ),
-            //                           ),
-            //                         ),
-            //                       ),
-            //                     ),
-            //                     //
-            //                     // StreamBuilder(
-            //                     //   stream: _version.snapshots(),
-            //                     //   builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-            //                     //     if (streamSnapshot.hasData) {
-            //                     //       return ListView.builder(
-            //                     //         itemCount: streamSnapshot.data!.docs.length,
-            //                     //         itemBuilder: (context, index) {
-            //                     //           final DocumentSnapshot versionDocumentSnapshot = streamSnapshot.data!.docs[index];
-            //                     //
-            //                     //           if (streamSnapshot.data!.docs[2].exists) {
-            //                     //             return Card(
-            //                     //               margin: const EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 5),
-            //                     //               child: Padding(
-            //                     //                 padding: const EdgeInsets.all(20.0),
-            //                     //                 child: Column(
-            //                     //                   mainAxisAlignment: MainAxisAlignment.center,
-            //                     //                   crossAxisAlignment: CrossAxisAlignment.start,
-            //                     //                   children: [
-            //                     //                     const Center(
-            //                     //                       child: Text(
-            //                     //                         'Current Version',
-            //                     //                         style: TextStyle(
-            //                     //                             fontSize: 16, fontWeight: FontWeight.w700),
-            //                     //                       ),
-            //                     //                     ),
-            //                     //                     const SizedBox(height: 20,),
-            //                     //                     adminUserField(
-            //                     //                         Icons.switch_account,
-            //                     //                         "Active version: ${versionDocumentSnapshot['version']}"),
-            //                     //                     const SizedBox(height: 20,),
-            //                     //                     Visibility(
-            //                     //                       visible: visShow,
-            //                     //                       child: Center(
-            //                     //                         child: Column(
-            //                     //                           children: [
-            //                     //                             Center(
-            //                     //                                 child: Material(
-            //                     //                                   color: Colors.red,
-            //                     //                                   borderRadius: BorderRadius.circular(8),
-            //                     //                                   child: InkWell(
-            //                     //                                     onTap: () {
-            //                     //                                       showDialog(
-            //                     //                                           barrierDismissible: false,
-            //                     //                                           context: context,
-            //                     //                                           builder: (context) {
-            //                     //                                             return
-            //                     //                                               AlertDialog(
-            //                     //                                                 shape: const RoundedRectangleBorder(
-            //                     //                                                     borderRadius:
-            //                     //                                                     BorderRadius.all(Radius.circular(16))),
-            //                     //                                                 title: const Text("Delete this Version!"),
-            //                     //                                                 content: const Text(
-            //                     //                                                     "Are you sure about deleting this Version?"),
-            //                     //                                                 actions: [
-            //                     //                                                   IconButton(
-            //                     //                                                     onPressed: () {
-            //                     //                                                       Navigator.of(context).pop();
-            //                     //                                                     },
-            //                     //                                                     icon: const Icon(
-            //                     //                                                       Icons.cancel,
-            //                     //                                                       color: Colors.red,
-            //                     //                                                     ),
-            //                     //                                                   ),
-            //                     //                                                   IconButton(
-            //                     //                                                     onPressed: () {
-            //                     //                                                       String deleteUser = versionDocumentSnapshot.id;
-            //                     //                                                       _delete(deleteUser);
-            //                     //                                                       Navigator.of(context).pop();
-            //                     //                                                       // Navigator.of(context).pop();
-            //                     //                                                     },
-            //                     //                                                     icon: const Icon(
-            //                     //                                                       Icons.done,
-            //                     //                                                       color: Colors.green,
-            //                     //                                                     ),
-            //                     //                                                   ),
-            //                     //                                                 ],
-            //                     //                                               );
-            //                     //                                           });
-            //                     //                                     },
-            //                     //                                     borderRadius: BorderRadius.circular(
-            //                     //                                         32),
-            //                     //                                     child: const Padding(
-            //                     //                                       padding: EdgeInsets.symmetric(
-            //                     //                                         horizontal: 20,
-            //                     //                                         vertical: 10,
-            //                     //                                       ),
-            //                     //                                       child: Text(
-            //                     //                                         "  Delete User  ",
-            //                     //                                         style: TextStyle(
-            //                     //                                           color: Colors.white,
-            //                     //                                           fontSize: 14,
-            //                     //                                         ),
-            //                     //                                       ),
-            //                     //                                     ),
-            //                     //                                   ),
-            //                     //                                 )
-            //                     //                             ),
-            //                     //                             const SizedBox(height: 10,),
-            //                     //                             Center(
-            //                     //                               child: Padding(
-            //                     //                                 padding: const EdgeInsets.symmetric(horizontal: 30.0),
-            //                     //                                 child:
-            //                     //                                 BasicIconButtonGrey(
-            //                     //                                   onPress: () {
-            //                     //                                     String versionSet = dropdownValue3;
-            //                     //
-            //                     //                                     _updateVersion(versionDocumentSnapshot);
-            //                     //
-            //                     //                                   } ,
-            //                     //                                   labelText: 'Set Application Version',
-            //                     //                                   fSize: 12,
-            //                     //                                   faIcon: const FaIcon(Icons.monetization_on),
-            //                     //                                   fgColor: Colors.orangeAccent,
-            //                     //                                   btSize: const Size(150, 50),
-            //                     //                                 ),
-            //                     //                               ),
-            //                     //                             ),
-            //                     //                             const SizedBox(height: 10,),
-            //                     //                           ],
-            //                     //                         ),
-            //                     //                       ),
-            //                     //                     ),
-            //                     //                     const SizedBox(height: 0,),
-            //                     //                   ],
-            //                     //                 ),
-            //                     //               ),
-            //                     //             );
-            //                     //           } else {
-            //                     //             return const Padding(
-            //                     //               padding: EdgeInsets.all(50.0),
-            //                     //               child: Center(child: CircularProgressIndicator()),
-            //                     //             );
-            //                     //           }
-            //                     //         },
-            //                     //       );
-            //                     //     } else {
-            //                     //       return const Padding(
-            //                     //         padding: EdgeInsets.all(50.0),
-            //                     //         child: Center(child: CircularProgressIndicator()),
-            //                     //       );
-            //                     //     }
-            //                     //   },
-            //                     // ),
-            //
-            //                     const SizedBox(height: 20,),
-            //
-            //                   ]
-            //               ),
-            //             ),
-            //           ],
-            //         ),
-            //       ),
-            //     ),
-            //   ],
-            // ),///Tab for version control
+            Column(
+              children: [
+                Visibility(
+                  visible: visShow,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 20,),
+                        const Center(
+                          child: Text(
+                            'Set Application Version State',
+                            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        const SizedBox(height: 20,),
+                        Center(
+                          child: Column(
+                              children: [
+                                SizedBox(
+                                  width: 450,
+                                  height: 50,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(left: 10, right: 10),
+                                    child: Center(
+                                      child: TextField(
+
+                                        ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
+                                        decoration: InputDecoration(
+                                          border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(30),
+                                              borderSide: const BorderSide(
+                                                color: Colors.grey,
+                                              )
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(30),
+                                              borderSide: const BorderSide(
+                                                color: Colors.grey,
+                                              )
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(30),
+                                              borderSide: const BorderSide(
+                                                color: Colors.grey,
+                                              )
+                                          ),
+                                          disabledBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(30),
+                                              borderSide: const BorderSide(
+                                                color: Colors.grey,
+                                              )
+                                          ),
+                                          contentPadding: const EdgeInsets.symmetric(
+                                              horizontal: 14,
+                                              vertical: 6
+                                          ),
+                                          fillColor: Colors.white,
+                                          filled: true,
+                                          suffixIcon: DropdownButtonFormField <String>(
+                                            value: dropdownValue3,
+                                            items: versionList.map<DropdownMenuItem<String>>((String value) {
+                                              return DropdownMenuItem<String>(
+                                                value: value,
+                                                child: Padding(
+                                                  padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 20.0),
+                                                  child: Text(
+                                                    value,
+                                                    style: const TextStyle(fontSize: 16),
+                                                  ),
+                                                ),
+                                              );
+                                            }).toSet().toList(),
+                                            onChanged: (String? newValue) {
+                                              setState(() {
+                                                dropdownValue3 = newValue!;
+                                              });
+                                            },
+                                            icon: const Padding(
+                                              padding: EdgeInsets.only(left: 10, right: 10),
+                                              child: Icon(Icons.arrow_circle_down_sharp),
+                                            ),
+                                            iconEnabledColor: Colors.green,
+                                            style: const TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 18
+                                            ),
+                                            dropdownColor: Colors.grey[50],
+                                            isExpanded: true,
+
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                //
+                                // StreamBuilder(
+                                //   stream: _version.snapshots(),
+                                //   builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+                                //     if (streamSnapshot.hasData) {
+                                //       return ListView.builder(
+                                //         itemCount: streamSnapshot.data!.docs.length,
+                                //         itemBuilder: (context, index) {
+                                //           final DocumentSnapshot versionDocumentSnapshot = streamSnapshot.data!.docs[index];
+                                //
+                                //           if (streamSnapshot.data!.docs[2].exists) {
+                                //             return Card(
+                                //               margin: const EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 5),
+                                //               child: Padding(
+                                //                 padding: const EdgeInsets.all(20.0),
+                                //                 child: Column(
+                                //                   mainAxisAlignment: MainAxisAlignment.center,
+                                //                   crossAxisAlignment: CrossAxisAlignment.start,
+                                //                   children: [
+                                //                     const Center(
+                                //                       child: Text(
+                                //                         'Current Version',
+                                //                         style: TextStyle(
+                                //                             fontSize: 16, fontWeight: FontWeight.w700),
+                                //                       ),
+                                //                     ),
+                                //                     const SizedBox(height: 20,),
+                                //                     adminUserField(
+                                //                         Icons.switch_account,
+                                //                         "Active version: ${versionDocumentSnapshot['version']}"),
+                                //                     const SizedBox(height: 20,),
+                                //                     Visibility(
+                                //                       visible: visShow,
+                                //                       child: Center(
+                                //                         child: Column(
+                                //                           children: [
+                                //                             Center(
+                                //                                 child: Material(
+                                //                                   color: Colors.red,
+                                //                                   borderRadius: BorderRadius.circular(8),
+                                //                                   child: InkWell(
+                                //                                     onTap: () {
+                                //                                       showDialog(
+                                //                                           barrierDismissible: false,
+                                //                                           context: context,
+                                //                                           builder: (context) {
+                                //                                             return
+                                //                                               AlertDialog(
+                                //                                                 shape: const RoundedRectangleBorder(
+                                //                                                     borderRadius:
+                                //                                                     BorderRadius.all(Radius.circular(16))),
+                                //                                                 title: const Text("Delete this Version!"),
+                                //                                                 content: const Text(
+                                //                                                     "Are you sure about deleting this Version?"),
+                                //                                                 actions: [
+                                //                                                   IconButton(
+                                //                                                     onPressed: () {
+                                //                                                       Navigator.of(context).pop();
+                                //                                                     },
+                                //                                                     icon: const Icon(
+                                //                                                       Icons.cancel,
+                                //                                                       color: Colors.red,
+                                //                                                     ),
+                                //                                                   ),
+                                //                                                   IconButton(
+                                //                                                     onPressed: () {
+                                //                                                       String deleteUser = versionDocumentSnapshot.id;
+                                //                                                       _delete(deleteUser);
+                                //                                                       Navigator.of(context).pop();
+                                //                                                       // Navigator.of(context).pop();
+                                //                                                     },
+                                //                                                     icon: const Icon(
+                                //                                                       Icons.done,
+                                //                                                       color: Colors.green,
+                                //                                                     ),
+                                //                                                   ),
+                                //                                                 ],
+                                //                                               );
+                                //                                           });
+                                //                                     },
+                                //                                     borderRadius: BorderRadius.circular(
+                                //                                         32),
+                                //                                     child: const Padding(
+                                //                                       padding: EdgeInsets.symmetric(
+                                //                                         horizontal: 20,
+                                //                                         vertical: 10,
+                                //                                       ),
+                                //                                       child: Text(
+                                //                                         "  Delete User  ",
+                                //                                         style: TextStyle(
+                                //                                           color: Colors.white,
+                                //                                           fontSize: 14,
+                                //                                         ),
+                                //                                       ),
+                                //                                     ),
+                                //                                   ),
+                                //                                 )
+                                //                             ),
+                                //                             const SizedBox(height: 10,),
+                                //                             Center(
+                                //                               child: Padding(
+                                //                                 padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                                //                                 child:
+                                //                                 BasicIconButtonGrey(
+                                //                                   onPress: () {
+                                //                                     String versionSet = dropdownValue3;
+                                //
+                                //                                     _updateVersion(versionDocumentSnapshot);
+                                //
+                                //                                   } ,
+                                //                                   labelText: 'Set Application Version',
+                                //                                   fSize: 12,
+                                //                                   faIcon: const FaIcon(Icons.monetization_on),
+                                //                                   fgColor: Colors.orangeAccent,
+                                //                                   btSize: const Size(150, 50),
+                                //                                 ),
+                                //                               ),
+                                //                             ),
+                                //                             const SizedBox(height: 10,),
+                                //                           ],
+                                //                         ),
+                                //                       ),
+                                //                     ),
+                                //                     const SizedBox(height: 0,),
+                                //                   ],
+                                //                 ),
+                                //               ),
+                                //             );
+                                //           } else {
+                                //             return const Padding(
+                                //               padding: EdgeInsets.all(50.0),
+                                //               child: Center(child: CircularProgressIndicator()),
+                                //             );
+                                //           }
+                                //         },
+                                //       );
+                                //     } else {
+                                //       return const Padding(
+                                //         padding: EdgeInsets.all(50.0),
+                                //         child: Center(child: CircularProgressIndicator()),
+                                //       );
+                                //     }
+                                //   },
+                                // ),
+
+                                const SizedBox(height: 20,),
+
+                              ]
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),///Tab for version control
 
 
           ],

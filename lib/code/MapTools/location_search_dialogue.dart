@@ -54,27 +54,7 @@ class LocationSearchDialogue extends StatelessWidget {
       child: Material(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         child: SizedBox(width: 320, height: 50, child: TypeAheadField(
-          textFieldConfiguration: TextFieldConfiguration(
-            controller: _controller,
-            textInputAction: TextInputAction.search,
-            autofocus: true,
-            textCapitalization: TextCapitalization.words,
-            keyboardType: TextInputType.streetAddress,
-            decoration: InputDecoration(
-              hintText: 'Search Location',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(style: BorderStyle.none, width: 0),
-              ),
-              hintStyle: Theme.of(context).textTheme.displayMedium?.copyWith(
-                fontSize: 16, color: Theme.of(context).disabledColor,
-              ),
-              filled: true, fillColor: Theme.of(context).cardColor,
-            ),
-            style: Theme.of(context).textTheme.displayMedium?.copyWith(
-              color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 20,
-            ),
-          ),
+
           suggestionsCallback: (pattern) async {
             return await Get.find<LocationController>().searchLocation(context, pattern);
           },
@@ -91,7 +71,8 @@ class LocationSearchDialogue extends StatelessWidget {
               ]),
             );
           },
-          onSuggestionSelected: (Prediction suggestion) async{
+
+          onSelected: (Prediction suggestion) {
             print("Location selected is "+suggestion.description!);
 
             addressConvert(suggestion.description!);

@@ -14,6 +14,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/admin_details.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/configuration_dev_page.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_all_capture.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_all_meters.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_connections_all_users.dart';
@@ -499,7 +500,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                     ),
                                   ],
                                 ),
-                                const SizedBox(width: 30,),
+                                const SizedBox(width: 40,),
                                 Stack(
                                   alignment: Alignment.center,
                                   children: [
@@ -593,6 +594,41 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                 fgColor: Colors.red,
                                 btSize: const Size(130, 120),
                               ),
+
+                              Visibility(
+                                  visible: visHide, //visAdmin,
+                                  child: const SizedBox(width: 40,)),
+                              Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Visibility(
+                                      visible: visHide, //visAdmin,
+                                      child: ElevatedIconButton(
+                                        onPress: () async {
+                                          Navigator.push(context,
+                                              MaterialPageRoute(builder: (context) => const DevConfigPage()));
+                                        },
+                                        labelText: 'Dev\nConfig',
+                                        fSize: 16,
+                                        faIcon: const FaIcon(Icons.people),
+                                        fgColor: Colors.black54,
+                                        btSize: const Size(130, 120),
+                                      ),
+                                    ),
+                                    Visibility(
+                                      visible: (visLocked || visFeatureMode || visPremium) && visHide, //visAdmin,
+                                      child: InkWell(
+                                          onTap: () {
+                                            Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                          },
+                                          child: ClipRect(
+                                              child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
+                                          )
+                                      ),
+                                    ),
+                                  ]
+                              ),
+
 
                               Visibility(visible: visEmployee,
                                   child: const SizedBox(width: 40,)),

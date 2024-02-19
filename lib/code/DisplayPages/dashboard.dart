@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
@@ -30,6 +31,21 @@ import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dar
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info_all_users.dart';
+
+final StreamController<String?> selectNotificationStream = StreamController<String?>.broadcast();
+const String navigationActionId = 'id_3';
+
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse notificationResponse) {
+  // ignore: avoid_print
+  print('notification(${notificationResponse.id}) action tapped: '
+      '${notificationResponse.actionId} with'
+      ' payload: ${notificationResponse.payload}');
+  if (notificationResponse.input?.isNotEmpty ?? false) {
+    // ignore: avoid_print
+    print('notification action tapped with input: ${notificationResponse.input}');
+  }
+}
 
 class MainMenu extends StatefulWidget {
   const MainMenu({Key? key}) : super(key: key);
@@ -115,7 +131,7 @@ class MainMenu extends StatefulWidget {
     _propList.get().then((querySnapshot) async {
       for (var result in querySnapshot.docs) {
 
-        print('The phone number from property is::: ${result['cell number']}');
+        print('Property linked to phone number::: ${result['cell number']}');
 
         if (_tokenList.where(_tokenList.id).toString() == user.phoneNumber || result['cell number'] == user.phoneNumber) {
           await _propList.doc(result.id)
@@ -137,22 +153,19 @@ class MainMenu extends StatefulWidget {
     var androidInitialize = const AndroidInitializationSettings('@mipmap/ic_launcher');
     //var iOSInitialize = const IOSInitializationSettings();
     var initializationSettings = InitializationSettings(android: androidInitialize,);
-    flutterLocalNotificationsPlugin.initialize(initializationSettings, onSelectNotification:(String? payload) async {
-      try {
-        if (payload != null && payload.isNotEmpty) {
-          Navigator.push(
-              context as BuildContext, MaterialPageRoute(builder: (BuildContext context) {
-            return const UsersTableViewPage();
+    flutterLocalNotificationsPlugin.initialize(initializationSettings, onDidReceiveNotificationResponse:(NotificationResponse notificationResponse) {
+      switch (notificationResponse.notificationResponseType) {
+        case NotificationResponseType.selectedNotification:
+          selectNotificationStream.add(notificationResponse.payload);
+          break;
+        case NotificationResponseType.selectedNotificationAction:
+          if (notificationResponse.actionId == navigationActionId) {
+            selectNotificationStream.add(notificationResponse.payload);
           }
-          ));
-        } else {
-
-        }
-      } catch (e) {
-        print(e);
+          break;
       }
-      return;
-    }
+    },
+      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async{
@@ -346,7 +359,7 @@ class MainMenu extends StatefulWidget {
                                       btSize: const Size(130, 120),
                                     ),
                                     Visibility(
-                                      visible: visLocked || visFeatureMode || visPremium,
+                                      visible: visLocked || visFeatureMode,
                                       child: InkWell(
                                           onTap: () {
                                             Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
