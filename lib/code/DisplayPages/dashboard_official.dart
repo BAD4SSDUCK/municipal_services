@@ -85,8 +85,10 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
   bool visManager = false;
   bool visEmployee = false;
   bool visCapture = false;
+  bool visDev = false;
 
   String userRole = '';
+  String userDept = '';
   List _allUserRolesResults = [];
   List _allVersionResults = [];
 
@@ -112,9 +114,14 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
       ///Need to build a property model that retrieves property data entirely from the db
       var user = userSnapshot['email'].toString();
       var role = userSnapshot['userRole'].toString();
+      var userName = userSnapshot['userName'].toString();
+      var firstName = userSnapshot['firstName'].toString();
+      var lastName = userSnapshot['lastName'].toString();
+      var userDepartment = userSnapshot['deptName'].toString();
 
       if (user == userEmail) {
         userRole = role;
+        userDept = userDepartment;
         print('My Role is::: $userRole');
 
         if(userRole == 'Admin'|| userRole == 'Administrator'){
@@ -137,6 +144,12 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
           visManager = false;
           visEmployee = false;
           visCapture = true;
+        }
+
+        if(userDept == 'Developer'
+            // || userDept == 'Service Provider'
+        ){
+          visDev = true;
         }
 
       }
@@ -596,13 +609,13 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               ),
 
                               Visibility(
-                                  visible: visHide, //visAdmin,
+                                  visible: visDev, //visAdmin,
                                   child: const SizedBox(width: 40,)),
                               Stack(
                                   alignment: Alignment.center,
                                   children: [
                                     Visibility(
-                                      visible: visHide, //visAdmin,
+                                      visible: visDev, //visAdmin,
                                       child: ElevatedIconButton(
                                         onPress: () async {
                                           Navigator.push(context,
@@ -616,7 +629,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                       ),
                                     ),
                                     Visibility(
-                                      visible: (visLocked || visFeatureMode || visPremium) && visHide, //visAdmin,
+                                      visible: (visLocked || visFeatureMode || visPremium) && visDev, //visAdmin,
                                       child: InkWell(
                                           onTap: () {
                                             Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
