@@ -72,9 +72,10 @@ class MainMenu extends StatefulWidget {
   String body2 = "Make sure you pay utilities before the end of this month or your services will be disconnected";
   String? mtoken = " ";
 
+  Timer? timer;
+
   @override
   void initState() {
-    super.initState();
     requestPermission();
     getToken();
     initInfo();
@@ -82,9 +83,15 @@ class MainMenu extends StatefulWidget {
     ///checking chat login status
     // getUserLoggedInStatus();
     addChatCustomId();
+    timer = Timer.periodic(const Duration(seconds: 5), (Timer t) => getVersionStream());
+    super.initState();
   }
 
-
+  @override
+  void dispose(){
+    timer?.cancel();
+    super.dispose();
+  }
 
   void requestPermission() async {
     FirebaseMessaging messaging = FirebaseMessaging.instance;
@@ -227,7 +234,7 @@ class MainMenu extends StatefulWidget {
 
       var version = versionSnapshot['version'].toString();
 
-      print('The available versions are::: $version');
+      // print('The available versions are::: $version');
 
       if (activeVersion == version) {
 

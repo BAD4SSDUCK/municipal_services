@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
@@ -53,6 +54,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
 
   bool loading = true;
   late FToast fToast;
+  Timer? timer;
 
   @override
   void initState() {
@@ -60,6 +62,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
     fToast.init(context);
     adminCheck();
     getVersionStream();
+    timer = Timer.periodic(const Duration(seconds: 5), (Timer t) => getVersionStream());
     super.initState();
   }
 
@@ -73,6 +76,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
     visAdmin;
     visManager;
     visEmployee;
+    timer?.cancel();
     super.dispose();
   }
 
@@ -91,6 +95,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
   String userDept = '';
   List _allUserRolesResults = [];
   List _allVersionResults = [];
+  List _currentVersionResult = [];
 
   void adminCheck() {
     getUsersStream();
@@ -158,11 +163,19 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
 
   getVersionStream() async{
     var data = await FirebaseFirestore.instance.collection('version').get();
-    _allVersionResults = data.docs;
+    setState(() {
+      _allVersionResults = data.docs;
+    });
     getVersionDetails();
   }
 
   getVersionDetails() async {
+
+    var versionData = await FirebaseFirestore.instance.collection('version').doc('current').collection('current-version').doc('version').get();
+
+    // _currentVersionResult = versionData.data()?['current'];
+
+    print('The testing active version::: $_currentVersionResult');
 
     String activeVersion =  _allVersionResults[2]['version'].toString();
     print('The active version is::: $activeVersion');
@@ -171,7 +184,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
 
       var version = versionSnapshot['version'].toString();
 
-      print('The available versions are::: $version');
+      // print('The available versions are::: $version');
 
       if (activeVersion == version) {
 
@@ -628,17 +641,17 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                         btSize: const Size(130, 120),
                                       ),
                                     ),
-                                    Visibility(
-                                      visible: (visLocked || visFeatureMode || visPremium) && visDev, //visAdmin,
-                                      child: InkWell(
-                                          onTap: () {
-                                            Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
-                                          },
-                                          child: ClipRect(
-                                              child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
-                                          )
-                                      ),
-                                    ),
+                                    // Visibility(
+                                    //   visible: visHide && visDev, //visAdmin,
+                                    //   child: InkWell(
+                                    //       onTap: () {
+                                    //         Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
+                                    //       },
+                                    //       child: ClipRect(
+                                    //           child: Image.asset('assets/images/feature_lock.gif', width: 140, height: 120, fit: BoxFit.cover, color: Colors.black45,)
+                                    //       )
+                                    //   ),
+                                    // ),
                                   ]
                               ),
 

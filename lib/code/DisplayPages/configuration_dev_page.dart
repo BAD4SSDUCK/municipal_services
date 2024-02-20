@@ -81,7 +81,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
   List<String> deptRole =["Select Role..."];
   String dropdownValue2 = 'Select Role...';
   int numRoles = 0;
-  List<String> versionList =["Select Version..."];
+  List<String> versionList =["Select Version...","Unpaid","Paid","Premium"];
   String dropdownValue3 = 'Select Version...';
   int numVersion = 0;
 
@@ -111,7 +111,6 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
 
   //this widget is for displaying a user information with an icon next to it, NB. the icon is to make it look good
   Widget adminUserField(IconData iconImg, String dbData) {
-    double c_width = MediaQuery.of(context).size.width*0.8;
 
     return Container(
       decoration: BoxDecoration(
@@ -1181,71 +1180,29 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
         });
   }///Creation method for versions
 
-  Future<void> _updateVersion([DocumentSnapshot? documentSnapshot]) async {
-    if (documentSnapshot != null) {
-      _userRoleController.text = documentSnapshot['version'];
+    Future<void> _updateVersion(String newVersion) async {
+
+    final CollectionReference _currentvVersion =
+    FirebaseFirestore.instance.collection('version').doc('current').collection('current-version');
+
+    if (_currentvVersion != null) {
+      await _currentvVersion
+          .doc('current')
+          .update({
+        "version": newVersion,
+      });
+
+      await _version
+          .doc('current')
+          .update({
+        "version": newVersion,
+      });
+
+      Fluttertoast.showToast(msg: "The app version has been set to $newVersion!", gravity: ToastGravity.CENTER);
+
     }
+    dropdownValue3 = 'Select Version...';
 
-    await showModalBottomSheet(
-        isScrollControlled: true,
-        context: context,
-        builder: (BuildContext ctx) {
-          return SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.only(
-                  top: 20,
-                  left: 20,
-                  right: 20,
-                  bottom: MediaQuery
-                      .of(ctx)
-                      .viewInsets
-                      .bottom + 20
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Center(
-                    child: Text(
-                      'Edit Version Information',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visShow,
-                    child: TextField(
-                      controller: _versionController,
-                      decoration: const InputDecoration(
-                          labelText: 'Version'),
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  ElevatedButton(
-                      child: const Text('Update'),
-                      onPressed: () async {
-                        final String versionName = _versionController.text;
-
-                        if (deptName != null) {
-                          await _roles
-                              .doc(documentSnapshot!.id)
-                              .update({
-                            "version": versionName,
-                          });
-
-                          _versionController.text = '';
-
-                          if(context.mounted)Navigator.of(context).pop();
-                        }
-                      }
-                  ),
-                ],
-              ),
-            ),
-          );
-        });
   }
 
   Future<void> _deleteVersion(String versionID) async {
@@ -1332,7 +1289,9 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
       for (var result in querySnapshot.docs) {
         print('The version is::: ${result['version']}');
 
-        if(versionList.length-1<querySnapshot.docs.length && querySnapshot.docs != result[2]['version']) {
+        versions.add(result['version']);
+
+        if(versionList.length-1<querySnapshot.docs.length && result != result[2]['version']) {
           versionList.add(result['version']);
         }
       }
@@ -1833,7 +1792,8 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
                 Visibility(
                   visible: visShow,
                   child: SingleChildScrollView(
-                    child: Column(
+                    child: Card(
+                      child: Column(
                       children: [
                         const SizedBox(height: 20,),
                         const Center(
@@ -1923,150 +1883,30 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
                                     ),
                                   ),
                                 ),
-                                //
-                                // StreamBuilder(
-                                //   stream: _version.snapshots(),
-                                //   builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-                                //     if (streamSnapshot.hasData) {
-                                //       return ListView.builder(
-                                //         itemCount: streamSnapshot.data!.docs.length,
-                                //         itemBuilder: (context, index) {
-                                //           final DocumentSnapshot versionDocumentSnapshot = streamSnapshot.data!.docs[index];
-                                //
-                                //           if (streamSnapshot.data!.docs[2].exists) {
-                                //             return Card(
-                                //               margin: const EdgeInsets.only(left: 10, right: 10, top: 5, bottom: 5),
-                                //               child: Padding(
-                                //                 padding: const EdgeInsets.all(20.0),
-                                //                 child: Column(
-                                //                   mainAxisAlignment: MainAxisAlignment.center,
-                                //                   crossAxisAlignment: CrossAxisAlignment.start,
-                                //                   children: [
-                                //                     const Center(
-                                //                       child: Text(
-                                //                         'Current Version',
-                                //                         style: TextStyle(
-                                //                             fontSize: 16, fontWeight: FontWeight.w700),
-                                //                       ),
-                                //                     ),
-                                //                     const SizedBox(height: 20,),
-                                //                     adminUserField(
-                                //                         Icons.switch_account,
-                                //                         "Active version: ${versionDocumentSnapshot['version']}"),
-                                //                     const SizedBox(height: 20,),
-                                //                     Visibility(
-                                //                       visible: visShow,
-                                //                       child: Center(
-                                //                         child: Column(
-                                //                           children: [
-                                //                             Center(
-                                //                                 child: Material(
-                                //                                   color: Colors.red,
-                                //                                   borderRadius: BorderRadius.circular(8),
-                                //                                   child: InkWell(
-                                //                                     onTap: () {
-                                //                                       showDialog(
-                                //                                           barrierDismissible: false,
-                                //                                           context: context,
-                                //                                           builder: (context) {
-                                //                                             return
-                                //                                               AlertDialog(
-                                //                                                 shape: const RoundedRectangleBorder(
-                                //                                                     borderRadius:
-                                //                                                     BorderRadius.all(Radius.circular(16))),
-                                //                                                 title: const Text("Delete this Version!"),
-                                //                                                 content: const Text(
-                                //                                                     "Are you sure about deleting this Version?"),
-                                //                                                 actions: [
-                                //                                                   IconButton(
-                                //                                                     onPressed: () {
-                                //                                                       Navigator.of(context).pop();
-                                //                                                     },
-                                //                                                     icon: const Icon(
-                                //                                                       Icons.cancel,
-                                //                                                       color: Colors.red,
-                                //                                                     ),
-                                //                                                   ),
-                                //                                                   IconButton(
-                                //                                                     onPressed: () {
-                                //                                                       String deleteUser = versionDocumentSnapshot.id;
-                                //                                                       _delete(deleteUser);
-                                //                                                       Navigator.of(context).pop();
-                                //                                                       // Navigator.of(context).pop();
-                                //                                                     },
-                                //                                                     icon: const Icon(
-                                //                                                       Icons.done,
-                                //                                                       color: Colors.green,
-                                //                                                     ),
-                                //                                                   ),
-                                //                                                 ],
-                                //                                               );
-                                //                                           });
-                                //                                     },
-                                //                                     borderRadius: BorderRadius.circular(
-                                //                                         32),
-                                //                                     child: const Padding(
-                                //                                       padding: EdgeInsets.symmetric(
-                                //                                         horizontal: 20,
-                                //                                         vertical: 10,
-                                //                                       ),
-                                //                                       child: Text(
-                                //                                         "  Delete User  ",
-                                //                                         style: TextStyle(
-                                //                                           color: Colors.white,
-                                //                                           fontSize: 14,
-                                //                                         ),
-                                //                                       ),
-                                //                                     ),
-                                //                                   ),
-                                //                                 )
-                                //                             ),
-                                //                             const SizedBox(height: 10,),
-                                //                             Center(
-                                //                               child: Padding(
-                                //                                 padding: const EdgeInsets.symmetric(horizontal: 30.0),
-                                //                                 child:
-                                //                                 BasicIconButtonGrey(
-                                //                                   onPress: () {
-                                //                                     String versionSet = dropdownValue3;
-                                //
-                                //                                     _updateVersion(versionDocumentSnapshot);
-                                //
-                                //                                   } ,
-                                //                                   labelText: 'Set Application Version',
-                                //                                   fSize: 12,
-                                //                                   faIcon: const FaIcon(Icons.monetization_on),
-                                //                                   fgColor: Colors.orangeAccent,
-                                //                                   btSize: const Size(150, 50),
-                                //                                 ),
-                                //                               ),
-                                //                             ),
-                                //                             const SizedBox(height: 10,),
-                                //                           ],
-                                //                         ),
-                                //                       ),
-                                //                     ),
-                                //                     const SizedBox(height: 0,),
-                                //                   ],
-                                //                 ),
-                                //               ),
-                                //             );
-                                //           } else {
-                                //             return const Padding(
-                                //               padding: EdgeInsets.all(50.0),
-                                //               child: Center(child: CircularProgressIndicator()),
-                                //             );
-                                //           }
-                                //         },
-                                //       );
-                                //     } else {
-                                //       return const Padding(
-                                //         padding: EdgeInsets.all(50.0),
-                                //         child: Center(child: CircularProgressIndicator()),
-                                //       );
-                                //     }
-                                //   },
+                                const SizedBox(height: 20,),
+
+                                // Text(
+                                //   'Current App Version: ${versions[2]}',
+                                //   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                                 // ),
+
+                                const SizedBox(height: 20,),
+                                Center(
+                                    child: BasicIconButtonGrey(
+                                      onPress: () {
+                                        String selectedVersionChange;
+                                        if(dropdownValue3 != 'Select Version...') {
+                                          selectedVersionChange = dropdownValue3;
+                                          _updateVersion(selectedVersionChange);
+                                        }
+                                      },
+                                      labelText: 'Set App Version',
+                                      fSize: 16,
+                                      faIcon: const FaIcon(Icons.monetization_on),
+                                      fgColor: Colors.green,
+                                      btSize: const Size(100, 50),
+                                    )
+                                ),
 
                                 const SizedBox(height: 20,),
 
@@ -2074,6 +1914,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
                           ),
                         ),
                       ],
+                    ),
                     ),
                   ),
                 ),
