@@ -174,6 +174,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
     String activeVersion =  _allVersionResults[2]['version'].toString();
     // print('The active version is::: $activeVersion');
 
+    ///This is reference to get sub-collection data
     var versionData = await FirebaseFirestore.instance
         .collection('version')
         .doc('current')
@@ -184,6 +185,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
     // print('The testing group collection::: ${versionData.docs[0].data()['version']}');
     // print('The testing active version::: $versionData');
 
+    ///This is setting specific items in the sub collection to an object for use elsewhere iterate .doc[int] to cycle through all sub-collection in a table
     String currentVersion = versionData.docs[0].data()['version'];
 
     for (var versionSnapshot in _allVersionResults) {
