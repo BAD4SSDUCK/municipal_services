@@ -61,7 +61,8 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
     //Set camera position based on db address given
     addressConvert('Chief Albert Luthuli St, Pietermaritzburg, 3200');
     //Set multiple markers
-    // multiMarkerInit();
+    multiMarkerInit();
+
     getPropertyStream();
     //Set up initial locations
     setInitialLocation();
@@ -244,10 +245,7 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
               } catch (e) {
                 addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
               }
-
-            }
-          }else{
-            if (result['imgStateE'] == false || result['imgStateW'] == false){
+            } else if (result['imgStateE'].isBlank || result['imgStateW'].isBlank){
               try {
                 List<Location> locations = await locationFromAddress(address);
 
@@ -265,6 +263,44 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                 addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
               }
             }
+
+          } else{
+            if (result['imgStateE'] == false || result['imgStateW'] == false){
+              try {
+                List<Location> locations = await locationFromAddress(address);
+
+                if (locations.isNotEmpty) {
+                  Location location = locations.first;
+
+                  double latitude = location.latitude;
+                  double longitude = location.longitude;
+
+                  addressLocation = LatLng(latitude, longitude);
+
+                  showPinOnMap();
+                }
+              } catch (e) {
+                addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
+              }
+            } else if (result['imgStateE'].isBlank || result['imgStateW'].isBlank){
+              try {
+                List<Location> locations = await locationFromAddress(address);
+
+                if (locations.isNotEmpty) {
+                  Location location = locations.first;
+
+                  double latitude = location.latitude;
+                  double longitude = location.longitude;
+
+                  addressLocation = LatLng(latitude, longitude);
+
+                  showPinOnMap();
+                }
+              } catch (e) {
+                addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
+              }
+            }
+
           }
 
           ///A check for if payment is outstanding or not and add the address of the outstanding payments to the map marker
@@ -289,8 +325,6 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
           //
           // }
           print('Property listed::: $addressLocation');
-
-        } else {
 
         }
       }

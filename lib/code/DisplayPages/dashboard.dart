@@ -228,7 +228,19 @@ class MainMenu extends StatefulWidget {
   getVersionDetails() async {
 
     String activeVersion =  _allVersionResults[2]['version'].toString();
-    print('The active version is::: $activeVersion');
+    // print('The active version is::: $activeVersion');
+
+    var versionData = await FirebaseFirestore.instance
+        .collection('version')
+        .doc('current')
+        .collection('current-version')
+        .where('version', isEqualTo: activeVersion)
+        .get();
+
+    // print('The testing group collection::: ${versionData.docs[0].data()['version']}');
+    // print('The testing active version::: $versionData');
+
+    String currentVersion = versionData.docs[0].data()['version'];
 
     for (var versionSnapshot in _allVersionResults) {
 
@@ -236,17 +248,17 @@ class MainMenu extends StatefulWidget {
 
       // print('The available versions are::: $version');
 
-      if (activeVersion == version) {
+      if (currentVersion == version) {
 
-        if(activeVersion == 'Unpaid'){
+        if(currentVersion == 'Unpaid'){
           visLocked = true;
           visFeatureMode = true;
           visPremium = true;
-        } else if(activeVersion == 'Paid'){
+        } else if(currentVersion == 'Paid'){
           visLocked = false;
           visFeatureMode = false;
           visPremium = true;
-        } else if(activeVersion == 'Premium'){
+        } else if(currentVersion == 'Premium'){
           visLocked = false;
           visFeatureMode = false;
           visPremium = false;

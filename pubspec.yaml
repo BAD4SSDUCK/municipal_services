@@ -89,7 +89,7 @@ dependencies:
   google_maps_flutter_web: ^0.5.4+2
   flutter_google_places: ^0.3.0
   geolocator: ^11.0.0
-  geocoding: ^2.1.1
+  geocoding: ^2.2.0
   map_box_geocoder: ^0.0.12
   location: ^5.0.3
 

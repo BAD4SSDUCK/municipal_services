@@ -171,14 +171,20 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
 
   getVersionDetails() async {
 
-    var versionData = await FirebaseFirestore.instance.collection('version').doc('current').collection('current-version').doc('version').get();
-
-    // _currentVersionResult = versionData.data()?['current'];
-
-    print('The testing active version::: $_currentVersionResult');
-
     String activeVersion =  _allVersionResults[2]['version'].toString();
-    print('The active version is::: $activeVersion');
+    // print('The active version is::: $activeVersion');
+
+    var versionData = await FirebaseFirestore.instance
+        .collection('version')
+        .doc('current')
+        .collection('current-version')
+        .where('version', isEqualTo: activeVersion)
+        .get();
+
+    // print('The testing group collection::: ${versionData.docs[0].data()['version']}');
+    // print('The testing active version::: $versionData');
+
+    String currentVersion = versionData.docs[0].data()['version'];
 
     for (var versionSnapshot in _allVersionResults) {
 
@@ -186,17 +192,17 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
 
       // print('The available versions are::: $version');
 
-      if (activeVersion == version) {
+      if (currentVersion == version) {
 
-        if(activeVersion == 'Unpaid'){
+        if(currentVersion == 'Unpaid'){
           visLocked = true;
           visFeatureMode = true;
           visPremium = true;
-        } else if(activeVersion == 'Paid'){
+        } else if(currentVersion == 'Paid'){
           visLocked = false;
           visFeatureMode = false;
           visPremium = true;
-        } else if(activeVersion == 'Premium'){
+        } else if(currentVersion == 'Premium'){
           visLocked = false;
           visFeatureMode = false;
           visPremium = false;
