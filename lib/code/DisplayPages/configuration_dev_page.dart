@@ -1319,7 +1319,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
             controller: _tabController,
             tabs: const [
               Tab(text: 'Roles', icon: FaIcon(Icons.work_history),),
-              Tab(text: 'Departments', icon: FaIcon(Icons.corporate_fare),),
+              Tab(text: 'Depts', icon: FaIcon(Icons.corporate_fare),),
               Tab(text: 'User List', icon: FaIcon(Icons.person_2_outlined),),
               Tab(text: 'Version', icon: FaIcon(Icons.lock_open_outlined),),
             ],

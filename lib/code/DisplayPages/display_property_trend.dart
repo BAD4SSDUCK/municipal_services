@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -67,26 +68,20 @@ class _PropertyTrendState extends State<PropertyTrend> {
   FirebaseFirestore.instance.collection('properties');
 
   String formattedDate = DateFormat.MMMM().format(now);
+  Timer? timer;
 
   String dropdownValue = 'Select Month';
   List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
-  List<String> consumptionMonthRetrieve =[];
-  List<String> consumptionElectricityReadings =[];
-  List<String> consumptionWaterReadings =[];
+  List<String> electricityReadings =[];
+  List<String> waterReadings =[];
+  List<String> monthCaptured =[];
   late String consumptionProp;
-  List<String> consumptionPropRetrieve =[];
-  List _allPropertyConsumption = [];
 
   @override
   void initState() {
-    if(defaultTargetPlatform == TargetPlatform.android){
-      String userPhone = phone as String;
-    } else {
-      String userEmail = email as String;
-    }
     setMonthLimits(formattedDate);
     getCollectionData();
-    loadConsumptionData();
+    timer = Timer.periodic(const Duration(seconds: 5), (Timer t) => build(context));
     super.initState();
   }
 
@@ -103,107 +98,129 @@ class _PropertyTrendState extends State<PropertyTrend> {
       Column(
         children: [
           const SizedBox(height: 10,),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 0.0,horizontal: 15.0),
-            child: Column(
-                children: [
-                  SizedBox(
-                    width: 400,
-                    height: 50,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 10, right: 10),
-                      child: Center(
-                        child: TextField(
-                          ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                    30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                    30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                    30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )
-                            ),
-                            disabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                    30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 6
-                            ),
-                            fillColor: Colors.white,
-                            filled: true,
-                            suffixIcon: DropdownButtonFormField <String>(
-                              value: dropdownValue,
-                              items: dropdownMonths
-                                  .map<DropdownMenuItem<String>>((String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 20.0),
-                                    child: Text(
-                                      value,
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                  dropdownValue = newValue!;
-                                });
-                              },
-                              icon: const Padding(
-                                padding: EdgeInsets.only(left: 10, right: 10),
-                                child: Icon(Icons.arrow_circle_down_sharp),
-                              ),
-                              iconEnabledColor: Colors.green,
-                              style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 18
-                              ),
-                              dropdownColor: Colors.grey[50],
-                              isExpanded: true,
 
-                            ),
-                          ),
-                        ),
+          ///month selector disabled
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(vertical: 0.0,horizontal: 15.0),
+          //   child: Column(
+          //       children: [
+          //         SizedBox(
+          //           width: 400,
+          //           height: 50,
+          //           child: Padding(
+          //             padding: const EdgeInsets.only(left: 10, right: 10),
+          //             child: Center(
+          //               child: TextField(
+          //                 ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
+          //                 decoration: InputDecoration(
+          //                   border: OutlineInputBorder(
+          //                       borderRadius: BorderRadius.circular(
+          //                           30),
+          //                       borderSide: const BorderSide(
+          //                         color: Colors.grey,
+          //                       )
+          //                   ),
+          //                   enabledBorder: OutlineInputBorder(
+          //                       borderRadius: BorderRadius.circular(
+          //                           30),
+          //                       borderSide: const BorderSide(
+          //                         color: Colors.grey,
+          //                       )
+          //                   ),
+          //                   focusedBorder: OutlineInputBorder(
+          //                       borderRadius: BorderRadius.circular(
+          //                           30),
+          //                       borderSide: const BorderSide(
+          //                         color: Colors.grey,
+          //                       )
+          //                   ),
+          //                   disabledBorder: OutlineInputBorder(
+          //                       borderRadius: BorderRadius.circular(
+          //                           30),
+          //                       borderSide: const BorderSide(
+          //                         color: Colors.grey,
+          //                       )
+          //                   ),
+          //                   contentPadding: const EdgeInsets.symmetric(
+          //                       horizontal: 14,
+          //                       vertical: 6
+          //                   ),
+          //                   fillColor: Colors.white,
+          //                   filled: true,
+          //                   suffixIcon: DropdownButtonFormField <String>(
+          //                     value: dropdownValue,
+          //                     items: dropdownMonths
+          //                         .map<DropdownMenuItem<String>>((String value) {
+          //                       return DropdownMenuItem<String>(
+          //                         value: value,
+          //                         child: Padding(
+          //                           padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 20.0),
+          //                           child: Text(
+          //                             value,
+          //                             style: const TextStyle(fontSize: 16),
+          //                           ),
+          //                         ),
+          //                       );
+          //                     }).toList(),
+          //                     onChanged: (String? newValue) {
+          //                       setState(() {
+          //                         dropdownValue = newValue!;
+          //                       });
+          //                     },
+          //                     icon: const Padding(
+          //                       padding: EdgeInsets.only(left: 10, right: 10),
+          //                       child: Icon(Icons.arrow_circle_down_sharp),
+          //                     ),
+          //                     iconEnabledColor: Colors.green,
+          //                     style: const TextStyle(
+          //                         color: Colors.black,
+          //                         fontSize: 18
+          //                     ),
+          //                     dropdownColor: Colors.grey[50],
+          //                     isExpanded: true,
+          //
+          //                   ),
+          //                 ),
+          //               ),
+          //             ),
+          //           ),
+          //         ),
+          //       ]
+          //   ),
+          // ),
+
+          const Padding(
+            padding: EdgeInsets.fromLTRB(8.0, 0, 8.0, 0),
+            child: Card(
+                child: Column(
+                  children: [
+                    SizedBox(height: 10,),
+                    Center(
+                      child: Text(
+                        'Captured Consumption Trend',
+                        style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
                       ),
                     ),
-                  ),
-                ]
+                    SizedBox(height: 10,),
+                  ],
+                ),
             ),
           ),
 
-          const SizedBox(height: 5,),
+          // const SizedBox(height: 5,),
 
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Card(
                 child: SfCartesianChart(
-                  // series: <ChartSeries>[
-                  //   LineSeries<ConsumptionData, double>(dataSource: _allPropertyConsumption,
-                  //   xValueMapper: (ConsumptionData consumption, _) => consumption.address,
-                  //   yValueMapper: (ConsumptionData consumption, _) => consumption.meterReading)
-                  // ],
+                  primaryXAxis: CategoryAxis(),
+                  series: <CartesianSeries>[
+                    ColumnSeries(
+                        xValueMapper: (monthCaptured, _) => monthCaptured.month,
+                        yValueMapper: (electricityReadings, _) => electricityReadings.meterReading,
+                    ),
+                  ],
 
 
                 ),
@@ -293,11 +310,6 @@ class _PropertyTrendState extends State<PropertyTrend> {
   ///To add the card
   Widget propertyConsumptionCard(){
 
-    // final CollectionReference _propMonthReadings = FirebaseFirestore.instance
-    //     .collection('consumption').doc(formattedMonth)
-    //     .collection('address').doc(widget.addressTarget) as CollectionReference<Object?>;
-    // final propertyRef = FirebaseFirestore.instance.collectionGroup('consumption').get();
-
     return Expanded(
       child: FutureBuilder<QuerySnapshot>(
         future: FirebaseFirestore.instance
@@ -376,65 +388,65 @@ class _PropertyTrendState extends State<PropertyTrend> {
 
   Future getCollectionData() async {
 
-    loadConsumptionData();
+    for (int i=0; i<dropdownMonths.length; i++) {
 
-    for(var propSnapshot in _allPropertyConsumption){
+      dropdownMonths[i];
 
-      await FirebaseFirestore.instance
-          .collection('consumption')
-          .doc().collection('address')
-          .get()
-          .then((QuerySnapshot snapshot) {
-        final docs = snapshot.docs;
-        for (var data in docs) {
-          consumptionMonthRetrieve.add(data.id);
-          _allPropertyConsumption.add(docs.single);
+      try{
+        var propertyData = await FirebaseFirestore.instance
+            .collection('consumption')
+            .doc(dropdownMonths[i])
+            .collection('address')
+            .where('address', isEqualTo: widget.addressTarget)
+            .get();
 
-          print('Retrieved consumption test::: $consumptionMonthRetrieve');
-          print('Retrieved consumption test2::: $_allPropertyConsumption');
-          print('Retrieved month id test::: ${data.id}');
-        }
+        String meterReading = propertyData.docs[0].data()['meter reading'];
+        String waterMeterReading = propertyData.docs[0].data()['water meter reading'];
 
-      });
+        monthCaptured.add(dropdownMonths[i]);
+        electricityReadings.add(meterReading);
+        waterReadings.add(waterMeterReading);
 
-      ///Need to build a property model that retrieves property data entirely from the db
-      var electricity = propSnapshot['meter reading'].toString();
-      var water = propSnapshot['water meter reading'].toString();
 
-      print('Retrieved reading :::: $electricity');
 
-      consumptionElectricityReadings.add(electricity);
-      consumptionWaterReadings.add(water);
-
-    }
-
-    print('Retrieved consumption ID/month:::: $consumptionMonthRetrieve');
-    print('Retrieved consumption address:::: $consumptionPropRetrieve');
-    print('Retrieved consumption Electricity:::: $consumptionElectricityReadings');
-    print('Retrieved consumption Water:::: $consumptionWaterReadings');
-
-  }
-
-  loadConsumptionData() async {
-      List consumptionPropRetrieve = await FirebaseFirestore.instance.collection("consumption")
-          .get()
-          .then((val) => val.docs);
-      for (int i=0; i<dropdownMonths.length; i++)
-      {
-        FirebaseFirestore.instance.collection("consumption").doc(
-            consumptionPropRetrieve[i].toString()).collection(widget.addressTarget).snapshots().listen(CreateListofCconsumption);
+      } catch(e){
+        print(e);
+        electricityReadings.add('0');
+        waterReadings.add('0');
       }
-  }
-
-  CreateListofCconsumption(QuerySnapshot snapshot) async {
-    var docs = snapshot.docs;
-    for (var Doc in docs)
-    {
-      _allPropertyConsumption.add(ConsumptionData.fromFireStore(Doc));
+      print(monthCaptured);
+      print(electricityReadings);
+      print(waterReadings);
     }
 
-    print('hhi $_allPropertyConsumption');
+    for (int i=0; i<monthCaptured.length; i++) {
+      getChartData(i);
+
+      print(getChartData(i));
+    }
+
   }
+
+  List<ConsumptionData> getChartData(int i){
+    final List<ConsumptionData> chartData = [
+      ConsumptionData(month: monthCaptured[i], meterReading: electricityReadings[i], waterReading: waterReadings[i]),
+    ];
+    return chartData;
+  }
+
+  // List<EConsumptionData> getEChartData(int i){
+  //   final List<ConsumptionData> chartData = [
+  //     EConsumptionData(month: monthCaptured[i], meterReading: electricityReadings[i]),
+  //   ];
+  //   return chartData;
+  // }
+  //
+  // List<EConsumptionData> getWChartData(int i){
+  //   final List<ConsumptionData> chartData = [
+  //     WConsumptionData(month: monthCaptured[i], waterReading: waterReadings[i]),
+  //   ];
+  //   return chartData;
+  // }
 
   void setMonthLimits(String currentMonth) {
     String month1 = 'January';
@@ -516,19 +528,53 @@ class _PropertyTrendState extends State<PropertyTrend> {
 class ConsumptionData {
 
   final String month;
-  final String address;
   final String meterReading;
   final String waterReading;
 
-  ConsumptionData({required this.month, required this.address, required this.meterReading, required this.waterReading});
-  factory ConsumptionData.fromFireStore(DocumentSnapshot doc) {
+  ConsumptionData({required this.month, required this.meterReading, required this.waterReading});
+
+
+  // factory ConsumptionData.fromFireStore(DocumentSnapshot doc) {
+  //
+  //   Map data = doc.data as Map<String, dynamic> ;
+  //   return ConsumptionData(
+  //       month: doc.id,
+  //       meterReading: data['meter reading'],
+  //       waterReading: data['water meter reading'],
+  //   );
+  //
+  // }
+}
+
+class EConsumptionData {
+
+  final String month;
+  final String meterReading;
+
+  EConsumptionData({required this.month, required this.meterReading});
+  factory EConsumptionData.fromFireStore(DocumentSnapshot doc) {
 
     Map data = doc.data as Map<String, dynamic> ;
-    return ConsumptionData(
-        month: doc.id,
-        address: data['address'],
-        meterReading: data['meter reading'],
-        waterReading: data['water meter reading'],
+    return EConsumptionData(
+      month: doc.id,
+      meterReading: data['meter reading'],
+    );
+
+  }
+}
+
+class WConsumptionData {
+
+  final String month;
+  final String waterReading;
+
+  WConsumptionData({required this.month, required this.waterReading});
+  factory WConsumptionData.fromFireStore(DocumentSnapshot doc) {
+
+    Map data = doc.data as Map<String, dynamic> ;
+    return WConsumptionData(
+      month: doc.id,
+      waterReading: data['water meter reading'],
     );
 
   }
