@@ -411,6 +411,7 @@ class _PropertyTrendState extends State<PropertyTrend> {
 
       } catch(e){
         print(e);
+        monthCaptured.add(dropdownMonths[i]);
         electricityReadings.add('0');
         waterReadings.add('0');
       }
@@ -434,19 +435,6 @@ class _PropertyTrendState extends State<PropertyTrend> {
     return chartData;
   }
 
-  // List<EConsumptionData> getEChartData(int i){
-  //   final List<ConsumptionData> chartData = [
-  //     EConsumptionData(month: monthCaptured[i], meterReading: electricityReadings[i]),
-  //   ];
-  //   return chartData;
-  // }
-  //
-  // List<EConsumptionData> getWChartData(int i){
-  //   final List<ConsumptionData> chartData = [
-  //     WConsumptionData(month: monthCaptured[i], waterReading: waterReadings[i]),
-  //   ];
-  //   return chartData;
-  // }
 
   void setMonthLimits(String currentMonth) {
     String month1 = 'January';
@@ -544,38 +532,4 @@ class ConsumptionData {
   //   );
   //
   // }
-}
-
-class EConsumptionData {
-
-  final String month;
-  final String meterReading;
-
-  EConsumptionData({required this.month, required this.meterReading});
-  factory EConsumptionData.fromFireStore(DocumentSnapshot doc) {
-
-    Map data = doc.data as Map<String, dynamic> ;
-    return EConsumptionData(
-      month: doc.id,
-      meterReading: data['meter reading'],
-    );
-
-  }
-}
-
-class WConsumptionData {
-
-  final String month;
-  final String waterReading;
-
-  WConsumptionData({required this.month, required this.waterReading});
-  factory WConsumptionData.fromFireStore(DocumentSnapshot doc) {
-
-    Map data = doc.data as Map<String, dynamic> ;
-    return WConsumptionData(
-      month: doc.id,
-      waterReading: data['water meter reading'],
-    );
-
-  }
 }

@@ -499,7 +499,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                             ),
                           ),
                         ),
-
+                        const SizedBox(height: 5,),
                         Visibility(
                           visible: visShow,
                           child: Row(
