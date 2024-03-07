@@ -300,7 +300,8 @@ class MainMenu extends StatefulWidget {
                 //  crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
                   const SizedBox(height: 30),
-                  Image.asset('assets/images/logo.png', height: 180, width: 180,),
+                  // Image.asset('assets/images/logo.png', height: 180, width: 180,),
+                  Image.asset('assets/images/Coat_of_arms_South_Africa.png', height: 180, width: 180,),
                   // Stack(
                   //     alignment:Alignment.topCenter,
                   //     children:[

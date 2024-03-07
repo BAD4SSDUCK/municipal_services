@@ -50,6 +50,11 @@ bool visibilityState2 = false;
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
 
+List<String> months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+List<String> electricityReadings =[];
+List<String> waterReadings =[];
+List<String> monthCaptured =[];
+
 class FireStorageService extends ChangeNotifier{
   FireStorageService();
   static Future<String> loadImage(BuildContext context, String image) async{
@@ -72,16 +77,21 @@ class _PropertyTrendState extends State<PropertyTrend> {
 
   String dropdownValue = 'Select Month';
   List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
-  List<String> electricityReadings =[];
-  List<String> waterReadings =[];
-  List<String> monthCaptured =[];
+
   late String consumptionProp;
+
+  late bool _isLoading = true;
 
   @override
   void initState() {
-    setMonthLimits(formattedDate);
-    getCollectionData();
-    timer = Timer.periodic(const Duration(seconds: 5), (Timer t) => build(context));
+    // setMonthLimits(formattedDate);
+    if(context.mounted)getCollectionData();
+    // timer = Timer.periodic(const Duration(seconds: 5), (Timer t) => build(context));
+    Future.delayed(const Duration(seconds: 5),(){
+      setState(() {
+        _isLoading = false;
+      });
+    });
     super.initState();
   }
 
@@ -210,21 +220,23 @@ class _PropertyTrendState extends State<PropertyTrend> {
           // const SizedBox(height: 5,),
 
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Card(
-                child: SfCartesianChart(
-                  primaryXAxis: CategoryAxis(),
-                  series: <CartesianSeries>[
-                    ColumnSeries(
-                        xValueMapper: (monthCaptured, _) => monthCaptured.month,
+            child: Stack(
+              children: [_isLoading
+                  ? const Center(child: CircularProgressIndicator(),)
+                  : Padding(
+                padding: const EdgeInsets.all(8.0),
+                child:  Card(
+                  child: SfCartesianChart(
+                    primaryXAxis: CategoryAxis(arrangeByIndex: true,),
+                    series: <CartesianSeries>[
+                      ColumnSeries(
+                        xValueMapper: (monthCaptured, _) => monthCaptured.month.toString(),
                         yValueMapper: (electricityReadings, _) => electricityReadings.meterReading,
-                    ),
-                  ],
-
-
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              )]
             ),
           ),
 
@@ -388,14 +400,14 @@ class _PropertyTrendState extends State<PropertyTrend> {
 
   Future getCollectionData() async {
 
-    for (int i=0; i<dropdownMonths.length; i++) {
+    for (int i=0; i<months.length; i++) {
 
-      dropdownMonths[i];
+      months[i];
 
       try{
         var propertyData = await FirebaseFirestore.instance
             .collection('consumption')
-            .doc(dropdownMonths[i])
+            .doc(months[i])
             .collection('address')
             .where('address', isEqualTo: widget.addressTarget)
             .get();
@@ -403,27 +415,34 @@ class _PropertyTrendState extends State<PropertyTrend> {
         String meterReading = propertyData.docs[0].data()['meter reading'];
         String waterMeterReading = propertyData.docs[0].data()['water meter reading'];
 
-        monthCaptured.add(dropdownMonths[i]);
+        monthCaptured.add(months[i]);
         electricityReadings.add(meterReading);
         waterReadings.add(waterMeterReading);
 
-
-
       } catch(e){
         print(e);
-        monthCaptured.add(dropdownMonths[i]);
+        monthCaptured.add(months[i]);
         electricityReadings.add('0');
         waterReadings.add('0');
       }
       print(monthCaptured);
       print(electricityReadings);
       print(waterReadings);
+
+      setState(() {
+        monthCaptured;
+        electricityReadings;
+        waterReadings;
+      });
+
     }
 
     for (int i=0; i<monthCaptured.length; i++) {
       getChartData(i);
 
-      print(getChartData(i));
+      print(getChartData(i)[0].month);
+      print(getChartData(i)[0].meterReading);
+      print(getChartData(i)[0].waterReading);
     }
 
   }
@@ -432,6 +451,7 @@ class _PropertyTrendState extends State<PropertyTrend> {
     final List<ConsumptionData> chartData = [
       ConsumptionData(month: monthCaptured[i], meterReading: electricityReadings[i], waterReading: waterReadings[i]),
     ];
+    print(chartData);
     return chartData;
   }
 
@@ -514,22 +534,21 @@ class _PropertyTrendState extends State<PropertyTrend> {
 }
 
 class ConsumptionData {
+  ConsumptionData({required this.month, required this.meterReading, required this.waterReading});
 
   final String month;
   final String meterReading;
   final String waterReading;
 
-  ConsumptionData({required this.month, required this.meterReading, required this.waterReading});
 
+  factory ConsumptionData.fromFireStore(DocumentSnapshot doc) {
 
-  // factory ConsumptionData.fromFireStore(DocumentSnapshot doc) {
-  //
-  //   Map data = doc.data as Map<String, dynamic> ;
-  //   return ConsumptionData(
-  //       month: doc.id,
-  //       meterReading: data['meter reading'],
-  //       waterReading: data['water meter reading'],
-  //   );
-  //
-  // }
+    Map data = doc.data as Map<String, dynamic> ;
+    return ConsumptionData(
+        month: months[0],
+        meterReading: data['meter reading'],
+        waterReading: data['water meter reading'],
+    );
+
+  }
 }

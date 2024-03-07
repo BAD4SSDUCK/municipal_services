@@ -61,6 +61,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
     fToast =FToast();
     fToast.init(context);
     adminCheck();
+    timer = Timer.periodic(const Duration(seconds: 5), (Timer t) => adminCheck());
     getVersionStream();
     timer = Timer.periodic(const Duration(seconds: 5), (Timer t) => getVersionStream());
     super.initState();
@@ -127,7 +128,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
       if (user == userEmail) {
         userRole = role;
         userDept = userDepartment;
-        print('My Role is::: $userRole');
+        // print('My Role is::: $userRole');
 
         if(userRole == 'Admin'|| userRole == 'Administrator'){
           visAdmin = true;
@@ -260,7 +261,8 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                             padding: const EdgeInsets.all(8.0),
                             child: ClipRRect(
                                 borderRadius: BorderRadius.circular(40.0),
-                                child: Image.asset('assets/images/logo.png', width: 160, height: 160,)
+                                // child: Image.asset('assets/images/logo.png', width: 160, height: 160,)
+                                child: Image.asset('assets/images/Coat_of_arms_South_Africa.png', width: 160, height: 160,)
                             ),
                           ),
                         ]
@@ -357,7 +359,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                         ),
                         const SizedBox(height: 5,),
                         Visibility(
-                          visible: visAdmin,
+                          visible: visAdmin || visManager,
                           child: Center(
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
