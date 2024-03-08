@@ -155,6 +155,16 @@ FirebaseFirestore.instance.collection('properties');
 
 class _AllPropCaptureState extends State<AllPropCapture> {
 
+  var _isLoading = false;
+
+  void _onSubmit() {
+    setState(() => _isLoading = true);
+    Future.delayed(
+      const Duration(seconds: 5),
+          () => setState(() => _isLoading = false),
+    );
+  }
+
   @override
   void initState() {
     // if(_searchController.text == ""){
@@ -1126,45 +1136,71 @@ class _AllPropCaptureState extends State<AllPropCapture> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
-                                      BasicIconButtonGrey(
-                                        onPress: () async {
-                                          Fluttertoast.showToast(
-                                              msg: "Now downloading your statement!\nPlease wait a few seconds!");
+                                      Stack(
+                                        children:[
+                                        BasicIconButtonGrey(
+                                          onPress: () async {
+                                            Fluttertoast.showToast(
+                                                msg: "Now downloading your statement!\nPlease wait a few seconds!");
 
-                                          String accountNumberPDF = documentSnapshot['account number'];
-                                          print('The acc number is ::: $accountNumberPDF');
+                                            _onSubmit();
 
-                                          final storageRef = FirebaseStorage.instance.ref().child("pdfs/$formattedDate");
-                                          final listResult = await storageRef.listAll();
-                                          for (var prefix in listResult.prefixes) {
-                                            print('The ref is ::: $prefix');
-                                            // The prefixes under storageRef.
-                                            // You can call listAll() recursively on them.
-                                          }
-                                          for (var item in listResult.items) {
-                                            print('The item is ::: $item');
-                                            // The items under storageRef.
-                                            if (item.toString().contains(accountNumberPDF)) {
-                                              final url = item.fullPath;
-                                              print('The url is ::: $url');
-                                              final file = await PDFApi.loadFirebase(url);
-                                              try {
-                                                if (context.mounted) openPDF(context, file);
-                                                Fluttertoast.showToast(msg: "Download Successful!");
-                                              } catch (e) {
-                                                Fluttertoast.showToast(msg: "Unable to download statement.");
-                                              }
-                                            } else {
-                                              Fluttertoast.showToast(msg: "Unable to download statement.");
+                                            String accountNumberPDF = documentSnapshot['account number'];
+                                            print('The acc number is ::: $accountNumberPDF');
+
+                                            final storageRef = FirebaseStorage.instance.ref().child("pdfs/$formattedDate");
+                                            final listResult = await storageRef.listAll();
+                                            for (var prefix in listResult.prefixes) {
+                                              print('The ref is ::: $prefix');
+                                              // The prefixes under storageRef.
+                                              // You can call listAll() recursively on them.
                                             }
-                                          }
-                                        },
-                                        labelText: 'Invoice',
-                                        fSize: 16,
-                                        faIcon: const FaIcon(
-                                          Icons.picture_as_pdf,),
-                                        fgColor: Colors.orangeAccent,
-                                        btSize: const Size(100, 38),
+                                            for (var item in listResult.items) {
+                                              print('The item is ::: $item');
+                                              // The items under storageRef.
+                                              if (item.toString().contains(accountNumberPDF)) {
+                                                final url = item.fullPath;
+                                                print('The url is ::: $url');
+                                                final file = await PDFApi.loadFirebase(url);
+                                                try {
+                                                  if (context.mounted) openPDF(context, file);
+                                                  Fluttertoast.showToast(msg: "Download Successful!");
+                                                } catch (e) {
+                                                  Fluttertoast.showToast(msg: "Unable to download statement.");
+                                                }
+                                              }
+                                              // else {
+                                              //   Fluttertoast.showToast(msg: "Unable to download statement.");
+                                              // }
+                                            }
+                                          },
+                                          labelText: 'Invoice',
+                                          fSize: 16,
+                                          faIcon: const FaIcon(
+                                            Icons.picture_as_pdf,),
+                                          fgColor: Colors.orangeAccent,
+                                          btSize: const Size(100, 38),
+                                        ),
+                                          const SizedBox(width: 5,),
+                                          Visibility(
+                                              visible: _isLoading,
+                                              child: Column(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  const SizedBox(height: 15, width: 130,),
+                                                  Container(
+                                                    width: 24,
+                                                    height: 24,
+                                                    padding: const EdgeInsets.all(2.0),
+                                                    child: const CircularProgressIndicator(
+                                                      color: Colors.purple,
+                                                      strokeWidth: 3,
+                                                    ),
+                                                  ),
+                                                ],
+                                              )
+                                          )
+                                        ],
                                       ),
                                       BasicIconButtonGrey(
                                         onPress: () async {

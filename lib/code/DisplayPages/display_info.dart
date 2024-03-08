@@ -98,6 +98,17 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
 
   final _userIDController = userID;
 
+  var _isLoading = false;
+
+  void _onSubmit() {
+    setState(() => _isLoading = true);
+    Future.delayed(
+      const Duration(seconds: 5),
+          () => setState(() => _isLoading = false),
+    );
+  }
+
+
   String formattedMonth = DateFormat.MMMM().format(now);//format for full Month by name
   String formattedDateMonth = DateFormat.MMMMd().format(now);//format for Day Month only
 
@@ -1398,10 +1409,14 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
+                                    Stack(
+                                      children:[
                                     BasicIconButtonGrey(
                                       onPress: () async {
                                         Fluttertoast.showToast(
                                             msg: "Now downloading your statement!\nPlease wait a few seconds!");
+
+                                        _onSubmit();
 
                                         String accountNumberPDF = documentSnapshot['account number'];
                                         print('The acc number is ::: $accountNumberPDF');
@@ -1427,9 +1442,10 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                             } catch (e) {
                                               Fluttertoast.showToast(msg: "Unable to download statement.");
                                             }
-                                          } else {
-                                            Fluttertoast.showToast(msg: "Unable to download statement.");
                                           }
+                                          // else {
+                                          //   Fluttertoast.showToast(msg: "Unable to download statement.");
+                                          // }
                                         }
                                       },
                                       labelText: 'Invoice',
@@ -1438,6 +1454,29 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                       fgColor: Colors.orangeAccent,
                                       btSize: const Size(100, 38),
                                     ),
+
+                                    const SizedBox(width: 5,),
+                                    Visibility(
+                                        visible: _isLoading,
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            const SizedBox(height: 15, width: 130,),
+                                            Container(
+                                              width: 24,
+                                              height: 24,
+                                              padding: const EdgeInsets.all(2.0),
+                                              child: const CircularProgressIndicator(
+                                                color: Colors.purple,
+                                                strokeWidth: 3,
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                    )
+                                  ],
+                                ),
+
                                     BasicIconButtonGrey(
                                       onPress: () async {
                                         accountNumber = documentSnapshot['account number'];

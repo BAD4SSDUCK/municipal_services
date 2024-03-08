@@ -170,6 +170,7 @@ class _MapScreenState extends State<MapScreen> {
 
   }
 
+  var mapType = MapType.normal;
 
   @override
   Widget build(BuildContext context) {
@@ -194,7 +195,7 @@ class _MapScreenState extends State<MapScreen> {
                             compassEnabled: false,
                             tiltGesturesEnabled: false,
                             markers: _markers,
-                            mapType: MapType.normal,
+                            mapType: mapType,
 
                             onMapCreated: (GoogleMapController mapController) {
                               addressConvert();
@@ -246,7 +247,26 @@ class _MapScreenState extends State<MapScreen> {
                       top: 10, left: 0, right: 0,
                       child: MapUserBadge(locationGivenGet: locationGiven, accountNumberGet: accountNumber,)),
                 ],
-              )
+              ),
+            floatingActionButton: FloatingActionButton.small(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              child: const Icon(Icons.broken_image_rounded),
+              onPressed: () {
+                setState(() {
+                  if(mapType == MapType.normal){
+                    mapType=MapType.satellite;
+                  } else if(mapType == MapType.satellite){
+                    mapType=MapType.terrain;
+                  } else if(mapType == MapType.terrain){
+                    mapType=MapType.hybrid;
+                  } else if(mapType == MapType.hybrid){
+                    mapType=MapType.normal;
+                  }
+                });
+              },
+            ),
+            floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
           );
         });
   }

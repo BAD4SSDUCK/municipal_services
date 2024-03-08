@@ -371,6 +371,7 @@ class _MapScreenMultiInvertState extends State<MapScreenMultiInvert> {
     );
   }
 
+  var mapType = MapType.normal;
 
   @override
   Widget build(BuildContext context) {
@@ -403,7 +404,7 @@ class _MapScreenMultiInvertState extends State<MapScreenMultiInvert> {
                           compassEnabled: false,
                           tiltGesturesEnabled: false,
                           markers: _markers,
-                          mapType: MapType.normal,
+                          mapType: mapType,
 
                           onMapCreated: (GoogleMapController mapController) {
                             addressConvert(_propertiesData.properties.address);
@@ -462,7 +463,26 @@ class _MapScreenMultiInvertState extends State<MapScreenMultiInvert> {
                   //       accountNumber: accountNumber,)
                   // ),
                 ],
-              )
+              ),
+            floatingActionButton: FloatingActionButton.small(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              child: const Icon(Icons.broken_image_rounded),
+              onPressed: () {
+                setState(() {
+                  if(mapType == MapType.normal){
+                    mapType=MapType.satellite;
+                  } else if(mapType == MapType.satellite){
+                    mapType=MapType.terrain;
+                  } else if(mapType == MapType.terrain){
+                    mapType=MapType.hybrid;
+                  } else if(mapType == MapType.hybrid){
+                    mapType=MapType.normal;
+                  }
+                });
+              },
+            ),
+            floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
           );
         });
   }

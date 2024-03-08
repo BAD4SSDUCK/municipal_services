@@ -178,6 +178,17 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     super.dispose();
   }
 
+  var _isLoading = false;
+
+  void _onSubmit() {
+    setState(() => _isLoading = true);
+    Future.delayed(
+      const Duration(seconds: 5),
+          () => setState(() => _isLoading = false),
+    );
+  }
+
+
   void checkAdmin() {
     getUsersStream();
     if(userRole == 'Admin'|| userRole == 'Administrator'){
@@ -877,10 +888,14 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          Stack(
+                            children:[
                           BasicIconButtonGrey(
                             onPress: () async {
                               Fluttertoast.showToast(
                                   msg: "Now downloading your statement!\nPlease wait a few seconds!");
+
+                              _onSubmit();
 
                               String accountNumberPDF = _allPropertyResults[index]['account number'];
                               print('The acc number is ::: $accountNumberPDF');
@@ -906,9 +921,10 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                   } catch (e) {
                                     Fluttertoast.showToast(msg: "Unable to download statement.");
                                   }
-                                } else {
-                                  Fluttertoast.showToast(msg: "Unable to download statement.");
                                 }
+                                // else {
+                                //   Fluttertoast.showToast(msg: "Unable to download statement.");
+                                // }
                               }
                             },
                             labelText: 'Invoice',
@@ -916,6 +932,27 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                             faIcon: const FaIcon(Icons.picture_as_pdf,),
                             fgColor: Colors.orangeAccent,
                             btSize: const Size(100, 38),
+                          ),
+                          const SizedBox(width: 5,),
+                          Visibility(
+                              visible: _isLoading,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const SizedBox(height: 15, width: 130,),
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    padding: const EdgeInsets.all(2.0),
+                                    child: const CircularProgressIndicator(
+                                      color: Colors.purple,
+                                      strokeWidth: 3,
+                                    ),
+                                  ),
+                                ],
+                              )
+                          ),
+                            ],
                           ),
                           BasicIconButtonGrey(
                             onPress: () async {

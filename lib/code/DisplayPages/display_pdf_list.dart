@@ -1,13 +1,16 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen_finance.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -62,6 +65,17 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
 
   String dropdownValue = 'Select Month';
   List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  Timer? timer;
+  var _isLoading = false;
+
+  void _onSubmit() {
+    setState(() => _isLoading = true);
+    Future.delayed(
+      const Duration(seconds: 5),
+          () => setState(() => _isLoading = false),
+    );
+  }
 
   @override
   void initState() {
@@ -152,28 +166,54 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                               fgColor: Colors.red,
                                               btSize: const Size(100, 38),
                                             ),
-                                            BasicIconButtonGrey(
-                                              onPress: () async {
+                                            Stack(
+                                              children: [
+                                                BasicIconButtonGrey(
+                                                onPress: () async {
 
-                                                String accountNumberPDF = documentSnapshot['account number'];
-                                                print('The acc number is ::: $accountNumberPDF');
-                                                print('The month we are in is::: $formattedDate');
+                                                  _onSubmit();
 
-                                                // getPDFByAccMon(accountNumberPDF,formattedDate);
-                                                if(dropdownValue=='Select Month'){
-                                                  getPDFByAccMon(accountNumberPDF,formattedDate);
-                                                  print('The month selected is::: $dropdownValue');
-                                                } else {
-                                                  getPDFByAccMon(accountNumberPDF,dropdownValue);
-                                                  print('The month selected is::: $dropdownValue');
-                                                }
+                                                  String accountNumberPDF = documentSnapshot['account number'];
+                                                  print('The acc number is ::: $accountNumberPDF');
+                                                  print('The month we are in is::: $formattedDate');
 
-                                              },
-                                              labelText: 'Invoice',
-                                              fSize: 16,
-                                              faIcon: const FaIcon(Icons.download),
-                                              fgColor: Colors.green,
-                                              btSize: const Size(100, 38),
+                                                  // getPDFByAccMon(accountNumberPDF,formattedDate);
+                                                  if(dropdownValue=='Select Month'){
+                                                    getPDFByAccMon(accountNumberPDF,formattedDate);
+                                                    print('The month selected is::: $dropdownValue');
+                                                  } else {
+                                                    getPDFByAccMon(accountNumberPDF,dropdownValue);
+                                                    print('The month selected is::: $dropdownValue');
+                                                  }
+
+                                                },
+                                                labelText: 'Invoice',
+                                                fSize: 16,
+                                                faIcon: const FaIcon(Icons.download),
+                                                fgColor: Colors.green,
+                                                btSize: const Size(100, 38),
+                                              ),
+                                                const SizedBox(width: 5,),
+                                                Visibility(
+                                                  visible: _isLoading,
+                                                  child: Column(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      const SizedBox(height: 15, width: 130,),
+                                                      Container(
+                                                        width: 24,
+                                                        height: 24,
+                                                        padding: const EdgeInsets.all(2.0),
+                                                        child: const CircularProgressIndicator(
+                                                        color: Colors.purple,
+                                                        strokeWidth: 3,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  )
+                                                )
+
+                                              ]
                                             ),
 
                                             const SizedBox(width: 5,),
@@ -321,6 +361,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
 
     final storageRef = FirebaseStorage.instance.ref().child("pdfs/$month");
     final listResult = await storageRef.listAll();
+    int list = 0;
     for (var prefix in listResult.prefixes) {
       print('The ref is ::: $prefix');
       // The prefixes under storageRef.
@@ -328,15 +369,18 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
     }
     for (var item in listResult.items) {
       print('The item is ::: $item');
+      list++;
       // The items under storageRef.
+      try {
       if (item.toString().contains(accNum)) {
         final url = item.fullPath;
         print('The url is ::: $url');
         final file = await PDFApi.loadFirebase(url);
         try {
-          Fluttertoast.showToast(
-              msg: "Download Successful!");
+          if(item.toString().contains(accNum)){
+          Fluttertoast.showToast(msg: "Download Successful!");
           if(context.mounted)openPDF(context, file);
+          }
         } catch (e) {
           Fluttertoast.showToast(msg: "Unable to download statement.");
           if (context.mounted) {
@@ -379,6 +423,11 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
           }
         }
       }
+      } catch(e) {
+        print('error::: $e');
+        Fluttertoast.showToast(msg: "Unable to download statement.");
+      }
+
     }
   }
 
