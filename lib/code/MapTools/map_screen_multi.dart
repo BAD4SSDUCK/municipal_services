@@ -422,7 +422,7 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                           Navigator.push(context,
                               MaterialPageRoute(builder: (context) => const MapScreenMultiInvert()));
                         },
-                        icon: const Icon(Icons.add_photo_alternate_outlined, color: Colors.white,)),),
+                        icon: const Icon(Icons.credit_score, color: Colors.white,)),),
                 ],
               ),
               body: Stack(

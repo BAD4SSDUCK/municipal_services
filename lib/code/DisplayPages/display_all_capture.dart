@@ -1156,6 +1156,7 @@ class _AllPropCaptureState extends State<AllPropCapture> {
                                               // You can call listAll() recursively on them.
                                             }
                                             for (var item in listResult.items) {
+                                              int finalIndex = listResult.items.length;
                                               print('The item is ::: $item');
                                               // The items under storageRef.
                                               if (item.toString().contains(accountNumberPDF)) {
@@ -1169,9 +1170,9 @@ class _AllPropCaptureState extends State<AllPropCapture> {
                                                   Fluttertoast.showToast(msg: "Unable to download statement.");
                                                 }
                                               }
-                                              // else {
-                                              //   Fluttertoast.showToast(msg: "Unable to download statement.");
-                                              // }
+                                              else if (listResult.items.length == finalIndex) {
+                                                Fluttertoast.showToast(msg: "Unable to download statement.");
+                                              }
                                             }
                                           },
                                           labelText: 'Invoice',

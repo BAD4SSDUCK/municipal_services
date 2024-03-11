@@ -270,7 +270,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                                         String id = passedID;
 
                                         Navigator.push(context,
-                                            MaterialPageRoute(builder: (context) => ChatFinance(chatRoomId: id,)));
+                                            MaterialPageRoute(builder: (context) => ChatFinance(chatRoomId: id, userName: null,)));
                                         // final Uri _tel = Uri.parse('tel:+27${0333923000}');
                                         // launchUrl(_tel);
 
@@ -469,7 +469,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                                         String id = passedID;
 
                                         Navigator.push(context,
-                                            MaterialPageRoute(builder: (context) => ChatFinance(chatRoomId: id,)));
+                                            MaterialPageRoute(builder: (context) => ChatFinance(chatRoomId: id, userName: null,)));
                                         // final Uri _tel = Uri.parse('tel:+27${0333923000}');
                                         // launchUrl(_tel);
 

@@ -157,7 +157,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                                 String id = passedID;
 
                                                 Navigator.push(context,
-                                                    MaterialPageRoute(builder: (context) => ChatFinance(chatRoomId: id,)));
+                                                    MaterialPageRoute(builder: (context) => ChatFinance(chatRoomId: id, userName: null, )));
 
                                               },
                                               labelText: 'Dispute',

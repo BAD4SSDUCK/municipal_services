@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 
 class Chat extends StatefulWidget {
   String chatRoomId;
+  String? userName;
 
-  Chat({required this.chatRoomId});
+  Chat({super.key, required this.chatRoomId, required this.userName});
 
   @override
   _ChatState createState() => _ChatState();
@@ -18,6 +19,7 @@ class _ChatState extends State<Chat> {
   late Stream<QuerySnapshot> chats;
   TextEditingController messageEditingController = TextEditingController();
   final _navigatorKey = GlobalKey<NavigatorState>();
+  String chatTo = 'Administrator Chat';
 
   @override
   void initState() {
@@ -125,9 +127,14 @@ class _ChatState extends State<Chat> {
 
   @override
   Widget build(BuildContext context) {
+    if(widget.userName!=null){
+      chatTo = 'Chat with: ${widget.userName}';
+    } else {
+      chatTo = 'Administrator Chat';
+    }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Administrator Chat',style: TextStyle(color: Colors.white),),
+        title: Text(chatTo,style: const TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
       ),

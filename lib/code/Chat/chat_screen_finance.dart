@@ -9,8 +9,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 class ChatFinance extends StatefulWidget {
   String chatRoomId;
+  String? userName;
 
-  ChatFinance({required this.chatRoomId});
+  ChatFinance({super.key, required this.chatRoomId, required this.userName});
 
   @override
   _ChatFinanceState createState() => _ChatFinanceState();
@@ -22,6 +23,7 @@ class _ChatFinanceState extends State<ChatFinance> {
   late Stream<QuerySnapshot> chats;
   TextEditingController messageEditingController = TextEditingController();
   final _navigatorKey = GlobalKey<NavigatorState>();
+  String chatTo = 'Finance Chat';
 
   @override
   void initState() {
@@ -128,9 +130,14 @@ class _ChatFinanceState extends State<ChatFinance> {
 
   @override
   Widget build(BuildContext context) {
+    if(widget.userName!=null){
+      chatTo = 'Query from: ${widget.userName}';
+    } else {
+      chatTo = 'Finance Chat';
+    }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Finance Chat',style: TextStyle(color: Colors.white),),
+        title: Text(chatTo,style: const TextStyle(color: Colors.white),),
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: <Widget>[
