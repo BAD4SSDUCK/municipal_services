@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:firebase_storage/firebase_storage.dart';
@@ -16,8 +16,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
-import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen_finance.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 
@@ -50,10 +48,18 @@ bool visibilityState2 = false;
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
 
+String formattedMonth = DateFormat.MMMM().format(now);//format for full Month by name
+String formattedDateMonth = DateFormat.MMMMd().format(now);//format for Day Month only
+
+double currentMonth = 0;
+
 List<String> months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-List<String> electricityReadings =[];
-List<String> waterReadings =[];
+List<double> electricityReadings =[];
+List<double> waterReadings =[];
+List<double> xAxisIteration =[0,1,2,3,4,5,6,7,8,9,10,11];
 List<String> monthCaptured =[];
+List<FlSpot> eMeterSpots = [];
+List<FlSpot> invalidSpots = [];
 
 class FireStorageService extends ChangeNotifier{
   FireStorageService();
@@ -65,9 +71,6 @@ class FireStorageService extends ChangeNotifier{
 class _PropertyTrendState extends State<PropertyTrend> {
 
   final user = FirebaseAuth.instance.currentUser!;
-
-  String formattedMonth = DateFormat.MMMM().format(now);//format for full Month by name
-  String formattedDateMonth = DateFormat.MMMMd().format(now);//format for Day Month only
 
   final CollectionReference _propList =
   FirebaseFirestore.instance.collection('properties');
@@ -84,15 +87,30 @@ class _PropertyTrendState extends State<PropertyTrend> {
 
   @override
   void initState() {
+    Fluttertoast.showToast(msg: "Press and hold to see the line values!", gravity: ToastGravity.CENTER, toastLength: Toast.LENGTH_LONG);
     // setMonthLimits(formattedDate);
-    if(context.mounted)getCollectionData();
+    getCollectionData();
     // timer = Timer.periodic(const Duration(seconds: 5), (Timer t) => build(context));
-    Future.delayed(const Duration(seconds: 5),(){
+    Future.delayed(const Duration(seconds: 10),(){
       setState(() {
         _isLoading = false;
       });
+      Fluttertoast.showToast(msg: "Press and hold to see the line values!", gravity: ToastGravity.CENTER, toastLength: Toast.LENGTH_LONG);
+      // Fluttertoast.showToast(msg: "Reading values rounded!",gravity: ToastGravity.CENTER);
     });
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    // getCollectionData();
+    electricityReadings = [];
+    waterReadings = [];
+    monthCaptured = [];
+    months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    eMeterSpots = [];
+    // LineChartSample();
+    super.dispose();
   }
 
   @override
@@ -225,15 +243,17 @@ class _PropertyTrendState extends State<PropertyTrend> {
                   ? const Center(child: CircularProgressIndicator(),)
                   : Padding(
                 padding: const EdgeInsets.all(8.0),
-                child:  Card(
-                  child: SfCartesianChart(
-                    primaryXAxis: CategoryAxis(arrangeByIndex: true,),
-                    series: <CartesianSeries>[
-                      ColumnSeries(
-                        xValueMapper: (monthCaptured, _) => monthCaptured.month.toString(),
-                        yValueMapper: (electricityReadings, _) => electricityReadings.meterReading,
-                      ),
-                    ],
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Center(
+                      child: Container(
+                        color: Color(0xF9F2F7),
+                        child:
+                        LineChartEMeter(),
+                        // _LineChart(),
+                      )
+                    ),
                   ),
                 ),
               )]
@@ -343,8 +363,6 @@ class _PropertyTrendState extends State<PropertyTrend> {
                 ),
               );
             } else if (snapshot.hasData) {
-
-              // print(snapshot);
               return Card(
                 margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
                 child: Padding(
@@ -402,8 +420,6 @@ class _PropertyTrendState extends State<PropertyTrend> {
 
     for (int i=0; i<months.length; i++) {
 
-      months[i];
-
       try{
         var propertyData = await FirebaseFirestore.instance
             .collection('consumption')
@@ -416,43 +432,39 @@ class _PropertyTrendState extends State<PropertyTrend> {
         String waterMeterReading = propertyData.docs[0].data()['water meter reading'];
 
         monthCaptured.add(months[i]);
-        electricityReadings.add(meterReading);
-        waterReadings.add(waterMeterReading);
+        electricityReadings.add(double.parse(meterReading));
+        waterReadings.add(double.parse(waterMeterReading));
 
       } catch(e){
         print(e);
         monthCaptured.add(months[i]);
-        electricityReadings.add('0');
-        waterReadings.add('0');
+        print('test::: ${months[i]}');
+        electricityReadings.add(electricityReadings[i-1]);
+        waterReadings.add(waterReadings[i-1]);
       }
       print(monthCaptured);
       print(electricityReadings);
       print(waterReadings);
 
-      setState(() {
-        monthCaptured;
-        electricityReadings;
-        waterReadings;
-      });
-
     }
 
-    for (int i=0; i<monthCaptured.length; i++) {
-      getChartData(i);
-
-      print(getChartData(i)[0].month);
-      print(getChartData(i)[0].meterReading);
-      print(getChartData(i)[0].waterReading);
+    for (int i = 0; i < months.length; i++) {
+      if(months[i] == formattedMonth){
+        currentMonth = i.toDouble();
+      }
     }
 
-  }
+    xAxisIteration =[0,1,2,3,4,5,6,7,8,9,10,11,];
 
-  List<ConsumptionData> getChartData(int i){
-    final List<ConsumptionData> chartData = [
-      ConsumptionData(month: monthCaptured[i], meterReading: electricityReadings[i], waterReading: waterReadings[i]),
-    ];
-    print(chartData);
-    return chartData;
+    eMeterSpots = [for (int i = 0; i < months.length; i++)
+      FlSpot(xAxisIteration[i], double.parse(((electricityReadings[i] / 100000) * 10).toStringAsFixed(4)))];
+      // FlSpot(xAxisIteration[i], electricityReadings[i])];
+
+    invalidSpots = [for (int i = 1+currentMonth.toInt(); i < months.length; i++)
+      FlSpot(xAxisIteration[i], double.parse(((electricityReadings[i] / 100000) * 10).toStringAsFixed(4)))];
+
+    print('the chart spots are::: $eMeterSpots');
+
   }
 
 
@@ -533,22 +545,239 @@ class _PropertyTrendState extends State<PropertyTrend> {
 
 }
 
-class ConsumptionData {
-  ConsumptionData({required this.month, required this.meterReading, required this.waterReading});
 
-  final String month;
-  final String meterReading;
-  final String waterReading;
+class LineChartEMeter extends StatelessWidget {
+  LineChartEMeter({
+    super.key,
+    Color? mainLineColor,
+    Color? belowLineColor,
+    Color? aboveLineColor,
+  })  : mainLineColor = mainLineColor ?? AppColors.contentColorYellow.withOpacity(1),
+        belowLineColor = belowLineColor ?? AppColors.gridLinesColor.withOpacity(0.5),
+        aboveLineColor = aboveLineColor ?? AppColors.mainTextColor3.withOpacity(0.5);
 
+  final Color mainLineColor;
+  final Color belowLineColor;
+  final Color aboveLineColor;
+  static const cutOffYValue = 10.0;
 
-  factory ConsumptionData.fromFireStore(DocumentSnapshot doc) {
+  Widget bottomTitleWidgets(double value, TitleMeta meta) {
+    String text;
+    switch (value.toInt()) {
+      case 0:text = 'Jan'; break;
+      case 1:text = 'Feb'; break;
+      case 2:text = 'Mar'; break;
+      case 3:text = 'Apr'; break;
+      case 4:text = 'May'; break;
+      case 5:text = 'Jun'; break;
+      case 6:text = 'Jul'; break;
+      case 7:text = 'Aug'; break;
+      case 8:text = 'Sep'; break;
+      case 9:text = 'Oct'; break;
+      case 10:text = 'Nov'; break;
+      case 11:text = 'Dec'; break;
+      default: return Container();
+    }
 
-    Map data = doc.data as Map<String, dynamic> ;
-    return ConsumptionData(
-        month: months[0],
-        meterReading: data['meter reading'],
-        waterReading: data['water meter reading'],
+    return SideTitleWidget(
+      axisSide: meta.axisSide,
+      space: 4,
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 10,
+          color: mainLineColor,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
-
   }
+
+  Widget leftTitleWidgets(double value, TitleMeta meta) {
+    const style = TextStyle(
+      color: AppColors.contentColorBlack,
+      fontWeight: FontWeight.w600,
+      fontSize: 7,
+    );
+    return SideTitleWidget(
+      axisSide: meta.axisSide,
+      child: Text('${(value * 100000).toStringAsFixed(0)}', style: style),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const cutOffYValue = 10.0;
+
+    double startValue = double.parse(((electricityReadings[0] / 100000) * 10).toStringAsFixed(4)) - 2;
+    double endValue = double.parse(((electricityReadings[11] / 100000) * 10).toStringAsFixed(4)) + 2;
+
+    print(currentMonth);
+
+    return AspectRatio(
+      aspectRatio: 1.15,
+      child: Padding(
+        padding: const EdgeInsets.only(
+          left: 12,
+          right: 28,
+          top: 22,
+          bottom: 12,
+        ),
+        child: LineChart(
+          LineChartData(
+            lineTouchData: const LineTouchData(enabled: true),
+
+            extraLinesData: ExtraLinesData(
+              verticalLines: <VerticalLine>[
+                VerticalLine(x: currentMonth, color: Colors.greenAccent, dashArray: [4,4]),
+              ],
+            ),
+
+            lineBarsData: [
+              LineChartBarData(
+                spots: eMeterSpots,
+                // const [
+                //   FlSpot(0, 4),
+                //   FlSpot(1, 3.5),
+                //   FlSpot(2, 4.5),
+                //   FlSpot(3, 1),
+                //   FlSpot(4, 4),
+                //   FlSpot(5, 6),
+                //   FlSpot(6, 6.5),
+                //   FlSpot(7, 6),
+                //   FlSpot(8, 4),
+                //   FlSpot(9, 6),
+                //   FlSpot(10, 6),
+                //   FlSpot(11, 7),
+                // ],
+                isCurved: false,
+                barWidth: 4,
+                color: mainLineColor,
+                belowBarData: BarAreaData(
+                  show: true,
+                  color: belowLineColor,
+                  cutOffY: 0,
+                  applyCutOffY: true,
+                ),
+                aboveBarData: BarAreaData(
+                  show: true,
+                  color: aboveLineColor,
+                  cutOffY: endValue,
+                  applyCutOffY: true,
+                ),
+                dotData: const FlDotData(
+                  show: true ,
+                ),
+              ),
+
+              LineChartBarData(
+                spots: [
+                  FlSpot(0, startValue),
+                  // FlSpot(1, 0),
+                  // FlSpot(2, 0),
+                  // FlSpot(3, 0),
+                  // FlSpot(4, 0),
+                  // FlSpot(5, 0),
+                  // FlSpot(6, 0),
+                  // FlSpot(7, 0),
+                  // FlSpot(8, 0),
+                  // FlSpot(9, 0),
+                  // FlSpot(10, 0),
+                  FlSpot(11, endValue),
+                ],
+                color: Colors.transparent,
+              ),
+
+              LineChartBarData(
+                spots: invalidSpots,
+                color: Colors.redAccent,
+                barWidth: 4,
+              ),
+
+            ],
+            minY: 0,
+
+            titlesData: FlTitlesData(
+              show: true,
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              bottomTitles: AxisTitles(
+                // axisNameWidget: Text(
+                //   '2019',
+                //   style: TextStyle(
+                //     fontSize: 10,
+                //     color: mainLineColor,
+                //     fontWeight: FontWeight.bold,
+                //   ),
+                // ),
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 18,
+                  interval: 1,
+                  getTitlesWidget: bottomTitleWidgets,
+                ),
+              ),
+              leftTitles: AxisTitles(
+                axisNameSize: 20,
+                axisNameWidget: const Text(
+                  'kWh Readings',
+                  style: TextStyle(
+                    color: AppColors.contentColorBlack, fontWeight: FontWeight.w800
+                  ),
+                ),
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  interval: 1,
+                  reservedSize: 40,
+                  getTitlesWidget: leftTitleWidgets,
+                ),
+              ),
+            ),
+            borderData: FlBorderData(
+              show: true,
+              border: Border.all(
+                color: AppColors.itemsBackground,
+              ),
+            ),
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              horizontalInterval: 1,
+              checkToShowHorizontalLine: (double value) {
+                return value == 1 || value == 3 || value == 5 || value == 7;
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class AppColors {
+  static const Color primary = contentColorCyan;
+  static const Color menuBackground = Color(0xFF090912);
+  static const Color itemsBackground = Color(0xFF1B2339);
+  static const Color pageBackground = Color(0xFF282E45);
+  static const Color mainTextColor1 = Colors.white;
+  static const Color mainTextColor2 = Colors.white70;
+  static const Color mainTextColor3 = Colors.white38;
+  static const Color mainGridLineColor = Colors.white10;
+  static const Color borderColor = Colors.white54;
+  static const Color gridLinesColor = Color(0x11FFFFFF);
+
+  static const Color contentColorBlack = Colors.black;
+  static const Color contentColorWhite = Colors.white;
+  static const Color contentColorBlue = Color(0xFF2196F3);
+  static const Color contentColorYellow = Color(0xFFFFC300);
+  static const Color contentColorOrange = Color(0xFFFF683B);
+  static const Color contentColorGreen = Color(0xFF3BFF49);
+  static const Color contentColorPurple = Color(0xFF6E1BFF);
+  static const Color contentColorPink = Color(0xFFFF3AF2);
+  static const Color contentColorRed = Color(0xFFE80054);
+  static const Color contentColorCyan = Color(0xFF50E4FF);
 }

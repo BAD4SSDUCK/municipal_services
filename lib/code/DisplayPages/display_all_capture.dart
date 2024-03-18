@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_property_trend.dart';
@@ -1652,6 +1653,8 @@ class _AllPropCaptureState extends State<AllPropCapture> {
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
+                      maxLength: 5,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       keyboardType: TextInputType.number,
                       controller: _meterReadingController,
                       decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
@@ -1667,6 +1670,8 @@ class _AllPropCaptureState extends State<AllPropCapture> {
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
+                      maxLength: 8,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       keyboardType: TextInputType.number,
                       controller: _waterMeterReadingController,
                       decoration: const InputDecoration(labelText: 'Water Meter Reading'),
@@ -1850,6 +1855,8 @@ class _AllPropCaptureState extends State<AllPropCapture> {
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
+                      maxLength: 5,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       keyboardType: TextInputType.number,
                       controller: _meterReadingController,
                       decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
@@ -1865,6 +1872,8 @@ class _AllPropCaptureState extends State<AllPropCapture> {
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
+                      maxLength: 8,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       keyboardType: TextInputType.number,
                       controller: _waterMeterReadingController,
                       decoration: const InputDecoration(labelText: 'Water Meter Reading'),

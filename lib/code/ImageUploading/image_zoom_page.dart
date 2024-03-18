@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -355,6 +356,9 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
+                      maxLength: 5,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                      keyboardType: TextInputType.number,
                       controller: _meterReadingController,
                       decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
                     ),
@@ -369,6 +373,9 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
+                      maxLength: 8,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                      keyboardType: TextInputType.number,
                       controller: _waterMeterReadingController,
                       decoration: const InputDecoration(labelText: 'Water Meter Reading'),
                     ),
@@ -519,6 +526,8 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
+                      maxLength: 5,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       keyboardType: TextInputType.number,
                       controller: _meterReadingController,
                       decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
@@ -744,6 +753,8 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
+                      maxLength: 8,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       keyboardType: TextInputType.number,
                       controller: _waterMeterReadingController,
                       decoration: const InputDecoration(labelText: 'Water Meter Reading'),

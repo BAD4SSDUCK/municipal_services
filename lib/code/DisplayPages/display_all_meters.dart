@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -1047,6 +1048,9 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                   Visibility(
                     visible: visShow,
                     child: TextField(
+                      maxLength: 5,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                      keyboardType: TextInputType.number,
                       controller: _meterReadingController,
                       decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
                     ),
@@ -1061,6 +1065,9 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                   Visibility(
                     visible: visShow,
                     child: TextField(
+                      maxLength: 8,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                      keyboardType: TextInputType.number,
                       controller: _waterMeterReadingController,
                       decoration: const InputDecoration(labelText: 'Water Meter Reading'),
                     ),
@@ -1218,6 +1225,8 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                   Visibility(
                     visible: visShow,
                     child: TextField(
+                      maxLength: 5,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       keyboardType: TextInputType.number,
                       controller: _meterReadingController,
                       decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
@@ -1233,6 +1242,8 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                   Visibility(
                     visible: visHide,
                     child: TextField(
+                      maxLength: 8,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       keyboardType: TextInputType.number,
                       controller: _waterMeterReadingController,
                       decoration: const InputDecoration(labelText: 'Water Meter Reading'),
@@ -1393,6 +1404,8 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                   Visibility(
                     visible: visHide,
                     child: TextField(
+                      maxLength: 5,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       keyboardType: TextInputType.number,
                       controller: _meterReadingController,
                       decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
@@ -1408,6 +1421,8 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                   Visibility(
                     visible: visShow,
                     child: TextField(
+                      maxLength: 8,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       keyboardType: TextInputType.number,
                       controller: _waterMeterReadingController,
                       decoration: const InputDecoration(labelText: 'Water Meter Reading'),
