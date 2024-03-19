@@ -128,7 +128,8 @@ class _LoginPageState extends State<LoginPage>{
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('assets/images/logo.png',height: 200,width: 300,),
+                // Image.asset('assets/images/logo.png',height: 200,width: 300,),
+                Image.asset('assets/images/Coat_of_arms_South_Africa.png',height: 200,width: 300,),
                 const SizedBox(height: 10,),
                 Text(
                   'Welcome!',

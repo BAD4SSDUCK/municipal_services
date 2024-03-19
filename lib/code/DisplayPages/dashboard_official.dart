@@ -1,19 +1,20 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:io';
 // import 'dart:html' as html
 //     if(dart.library.html)'dart:html';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/admin_details.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/configuration_dev_page.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_all_capture.dart';
@@ -21,17 +22,17 @@ import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_all_meters.
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_connections_all_users.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info_all_users.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/configuration_page.dart';
-import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_config_screen.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_multi.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
+import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_multi.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
-import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/menu_reusable_elevated_button.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/nav_drawer.dart';
-import 'package:municipal_tracker_msunduzi/code/faultPages/fault_attendant_screen.dart';
+import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_tracker_msunduzi/code/Reusable/menu_reusable_elevated_button.dart';
 import 'package:municipal_tracker_msunduzi/code/faultPages/fault_task_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/faultPages/fault_report_screen.dart';
+import 'package:municipal_tracker_msunduzi/code/faultPages/fault_attendant_screen.dart';
+import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_config_screen.dart';
+import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_tracker_msunduzi/code/Chat/chat_list.dart';
 import 'package:municipal_tracker_msunduzi/code/main_page.dart';
 
@@ -268,7 +269,6 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                         ]
                     ),
 
-                    // Image.asset('assets/images/municipal_services.png', height: 150, width: 300,),
                     const SizedBox(height: 20),
                     Column(
                       children: [
@@ -317,7 +317,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                           MaterialPageRoute(builder: (context) => const UsersPropsAll()));
                                     },
                                     labelText: 'Reading\nDetails',
-                                    fSize: 14,
+                                    fSize: 16,
                                     faIcon: const FaIcon(Icons.holiday_village),
                                     fgColor: Colors.green,
                                     btSize: const Size(130, 120),
@@ -408,7 +408,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                               context) => const FaultTaskScreen()));
                                         },
                                         labelText: 'Report\nList',
-                                        fSize: 15,
+                                        fSize: 18,
                                         faIcon: const FaIcon(Icons.report_problem),
                                         fgColor: Colors.orange,
                                         btSize: const Size(130, 120),
@@ -427,7 +427,6 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                     ),
                                   ],
                                 ),
-
 
                               ],
                             ),
@@ -450,7 +449,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                             MaterialPageRoute(builder: (context) => const UsersConnectionsAll()));
                                       },
                                       labelText: 'Connect',
-                                      fSize: 12,
+                                      fSize: 14.5,
                                       faIcon: const FaIcon(Icons.power_settings_new),
                                       fgColor: Colors.orangeAccent,
                                       btSize: const Size(130, 120),
@@ -478,7 +477,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                             MaterialPageRoute(builder: (context) => const PropertyMetersAll()));
                                       },
                                       labelText: 'Meter\nUpdate',
-                                      fSize: 14,
+                                      fSize: 17,
                                       faIcon: const FaIcon(Icons.build),
                                       fgColor: Colors.brown,
                                       btSize: const Size(130, 120),
@@ -557,7 +556,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   // ProfileFragmentScreen().signOutUser();
                                 },
                                 labelText: 'Logout',
-                                fSize: 15,
+                                fSize: 18,
                                 faIcon: const FaIcon(Icons.logout),
                                 fgColor: Colors.red,
                                 btSize: const Size(130, 120),
@@ -582,7 +581,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                                   MaterialPageRoute(builder: (context) => const NoticeConfigScreen(userNumber: '',)));
                                             },
                                             labelText: 'Broad\n-cast',
-                                            fSize: 16,
+                                            fSize: 18,
                                             faIcon: const FaIcon(Icons.notifications_on),
                                             fgColor: Colors.red,
                                             btSize: const Size(130, 120),
@@ -618,7 +617,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                             MaterialPageRoute(builder: (context) => const FaultAttendantScreen()));
                                       },
                                       labelText: 'Report\nList',
-                                      fSize: 15,
+                                      fSize: 18,
                                       faIcon: const FaIcon(Icons.report_problem),
                                       fgColor: Colors.orange,
                                       btSize: const Size(130, 120),
@@ -655,7 +654,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                         MaterialPageRoute(builder: (context) => const DevConfigPage()));
                                   },
                                   labelText: 'Dev\nConfig',
-                                  fSize: 16,
+                                  fSize: 18,
                                   faIcon: const FaIcon(Icons.people),
                                   fgColor: Colors.black54,
                                   btSize: const Size(130, 120),
@@ -710,10 +709,11 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                       ],
                     ),
                     const SizedBox(height: 20),
-                    const Text('Copyright Cyberfox ',
-                      style: TextStyle(
+                    Text('Copyright Cyberfox ',
+                      style: GoogleFonts.saira(
                         color: Colors.white,
                         backgroundColor: Colors.white10,
+                        fontWeight: FontWeight.normal,
                         fontStyle: FontStyle.italic,
                         fontSize: 16,
                       ),

@@ -1,16 +1,16 @@
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:municipal_tracker_msunduzi/code/EventsPages/display_events_calendar.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:external_app_launcher/external_app_launcher.dart';
 import 'package:android_intent_plus/android_intent.dart';
+import 'package:external_app_launcher/external_app_launcher.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/menu_reusable_elevated_button.dart';
+import 'package:municipal_tracker_msunduzi/code/EventsPages/display_events_calendar.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/councillor_screen.dart';
-import 'dart:io';
-
 
 class NavDrawer extends StatelessWidget {
   const NavDrawer({Key? key}) : super(key: key);
@@ -24,13 +24,10 @@ class NavDrawer extends StatelessWidget {
           child:Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children:  <Widget>[
-
-              const SizedBox(height: 100,),
+              const SizedBox(height: 80,),
               Center(child: buildHeader(context)),
-
               const SizedBox(height: 50,),
               buildMenuItems(context),
-
             ],
           ),
         )
@@ -59,10 +56,13 @@ Widget buildMenuItems(BuildContext context) => Wrap(
     const SizedBox(height: 20,),
     ListTile(
       leading: const Icon(Icons.supervised_user_circle_outlined, size: 40,),
-      title: const Text('Contact Councillors',
-        style: TextStyle(
+      title: Text('Contact Councillors',
+        style: GoogleFonts.turretRoad(
+          color: Colors.black,
           fontWeight: FontWeight.bold,
-          fontSize: 18,),),
+          fontSize: 18.5,
+        ),
+      ),
       onTap: () {
         Navigator.push(context,
           MaterialPageRoute(builder: (context) => const CouncillorScreen()),
@@ -71,10 +71,13 @@ Widget buildMenuItems(BuildContext context) => Wrap(
     ),
     ListTile(
       leading: const Icon(Icons.lightbulb, size: 40,),
-      title: const Text('Load Shedding Schedule',
-        style: TextStyle(
+      title: Text('Load Shedding Schedule',
+        style: GoogleFonts.turretRoad(
+          color: Colors.black,
           fontWeight: FontWeight.bold,
-          fontSize: 18,),),
+          fontSize: 18,
+        ),
+      ),
       onTap: () async {
         final Uri _url = Uri.parse('http://www.msunduzi.gov.za/site/search/downloadencode/LOAD%20SHEDDING%20SCHEDULE%20WORD%20STAGE%201%20-%204%20%205%20-%208%20update.pdf');
         // _launchURL(_url);
@@ -94,14 +97,17 @@ Widget buildMenuItems(BuildContext context) => Wrap(
     ),
     ListTile(
       leading: const Icon(Icons.event_available, size: 40,),
-      title: const Text('Events',
-        style: TextStyle(
+      title: Text('Events',
+        style: GoogleFonts.turretRoad(
+          color: Colors.black,
           fontWeight: FontWeight.bold,
-          fontSize: 18,),),
+          fontSize: 18.5,
+        ),
+      ),
       onTap: () {
-            Navigator.push(context,
-              MaterialPageRoute(builder: (context) => const EventsCalendar()),
-            );
+        Navigator.push(context,
+          MaterialPageRoute(builder: (context) => const EventsCalendar()),
+        );
       },
     ),
     // ListTile(
@@ -123,7 +129,13 @@ Widget buildMenuItems(BuildContext context) => Wrap(
             height: 40,
             child: ListTile(
                 leading: const Icon(Icons.add_call, size: 20,),
-                title: const Text('Contact Municipality'),
+                title: Text('Contact Municipality',
+                  style: GoogleFonts.montserrat(
+                    color: Colors.black,
+                    fontWeight: FontWeight.normal,
+                    fontSize: 15,
+                  ),
+                ),
                 onTap: (){
                   final Uri _tel = Uri.parse('tel:+27${0333923000}');
                   launchUrl(_tel);
@@ -134,7 +146,13 @@ Widget buildMenuItems(BuildContext context) => Wrap(
             height: 40,
             child: ListTile(
                 leading: const Icon(Icons.error, size: 20,),
-                title: const Text('Report a bug'),
+                title: Text('Report a bug',
+                  style: GoogleFonts.montserrat(
+                    color: Colors.black,
+                    fontWeight: FontWeight.normal,
+                    fontSize: 15,
+                  ),
+                ),
                 onTap: (){
                   final Uri _tel = Uri.parse('tel:+27${0333871974}');
                   launchUrl(_tel);
@@ -219,18 +237,20 @@ Widget buildMenuItems(BuildContext context) => Wrap(
           // ),
         ]
     ),
-    const SizedBox(height: 100,),
-
+    const SizedBox(height: 90,),
 
     ListTile(
       leading: const Padding(
         padding: EdgeInsets.only(left: 8.0),
         child: Icon(Icons.label_important, size: 50,),
       ),
-      title: const Text('    Cyberfox',
-        style: TextStyle(
+      title: Text(' Cyberfox',
+        style: GoogleFonts.saira(
+          color: Colors.black,
           fontWeight: FontWeight.bold,
-          fontSize: 20,),),
+          fontSize: 24,
+        ),
+      ),
       trailing: const Padding(
         padding: EdgeInsets.only(right: 15.0),
         child: Icon(Icons.copyright, size: 30,),
@@ -254,8 +274,6 @@ Widget buildMenuItems(BuildContext context) => Wrap(
         )
       ],
     ),
-
-
   ],
 );
 

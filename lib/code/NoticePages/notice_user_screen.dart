@@ -1,25 +1,24 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_database/ui/firebase_animated_list.dart';
+import 'package:flutter/foundation.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart';
+import 'package:firebase_database/ui/firebase_animated_list.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
 import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen_finance.dart';
 import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_user_arc_screen.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import 'package:municipal_tracker_msunduzi/code/faultPages/fault_task_screen_archive.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
@@ -46,6 +45,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
     _headerController;
     _messageController;
     searchText;
+    getNoticeStream();
     super.dispose();
   }
 
@@ -287,6 +287,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                                         if((_allNoticesResults[index]['user'].toString()).contains('+27')){
                                           _notifyUpdate(_allNoticesResults[index]);
                                         }
+                                        getNoticeStream();
                                       },
                                       labelText: 'Mark Read',
                                       fSize: 14,
@@ -373,6 +374,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                                         if((documentSnapshot['user'].toString()).contains('+27')){
                                           _notifyUpdate(documentSnapshot);
                                         }
+                                        getNoticeStream();
                                       },
                                       labelText: 'Mark as Read',
                                       fSize: 14,

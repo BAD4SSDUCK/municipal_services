@@ -1,36 +1,37 @@
-import 'dart:async';
-import 'dart:collection';
-import 'dart:convert';
 import 'dart:io';
-import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_user_screen.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'dart:collection';
+import 'package:get/get.dart';
 import 'package:path/path.dart';
 import 'package:http/http.dart' as http;
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/foundation.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:get/get.dart';
 import 'package:municipal_tracker_msunduzi/main.dart';
 import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_pdf_list.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
-import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_fault.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/main_menu_reusable_button.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_pdf_list.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info_all_users.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/nav_drawer.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_tracker_msunduzi/code/Reusable/main_menu_reusable_button.dart';
 import 'package:municipal_tracker_msunduzi/code/Reusable/menu_reusable_elevated_button.dart';
+import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_fault.dart';
 import 'package:municipal_tracker_msunduzi/code/faultPages/fault_report_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/Chat/chat_list.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
+import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_user_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info_all_users.dart';
 
 final StreamController<String?> selectNotificationStream = StreamController<String?>.broadcast();
 const String navigationActionId = 'id_3';
@@ -286,7 +287,12 @@ class MainMenu extends StatefulWidget {
         backgroundColor: Colors.transparent, //grey[350],
         appBar: AppBar(
           title:
-          Text('Signed in from: ${user.phoneNumber!}', style: const TextStyle(color: Colors.white, fontSize: 19),),
+          Text('Signed in from: ${user.phoneNumber!}', style: GoogleFonts.turretRoad(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            fontSize: 19,),
+          // TextStyle(color: Colors.white, fontSize: 19),
+          ),
           backgroundColor: Colors.black87,
           iconTheme: const IconThemeData(color: Colors.white),
         ),
@@ -391,7 +397,6 @@ class MainMenu extends StatefulWidget {
                                     ),
                                   ]
                               ),
-
                             ],
                           ),
                         ),
@@ -414,7 +419,7 @@ class MainMenu extends StatefulWidget {
                                         ///add page for users to see
                                       },
                                       labelText: 'Notices',
-                                      fSize: 17,
+                                      fSize: 16.5,
                                       faIcon: const FaIcon(Icons.notifications_on),
                                       fgColor: Colors.red,
                                       btSize: const Size(130, 120),
@@ -508,14 +513,13 @@ class MainMenu extends StatefulWidget {
                                           MaterialPageRoute(builder: (context) => const ReportPropertyMenu()));
                                     },
                                     labelText: 'Report \nFaults',
-                                    fSize: 18,
+                                    fSize: 17,
                                     faIcon: const FaIcon(Icons.report_problem),
                                     fgColor: Colors.orangeAccent,
                                     btSize: const Size(130, 120),
                                   ),
                                   Visibility(
-                                    visible: visLocked || visFeatureMode ||
-                                        visPremium,
+                                    visible: visLocked || visFeatureMode || visPremium,
                                     child: InkWell(
                                         onTap: () {
                                           Fluttertoast.showToast(msg: "Feature Locked\nuntil paid for by Municipality!", gravity: ToastGravity.CENTER);
@@ -581,14 +585,15 @@ class MainMenu extends StatefulWidget {
                   ),
 
                   const SizedBox(height: 30),
-                  const Column(
+                  Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: <Widget>[
                         Text('Copyright Cyberfox ',
                           //textAlign: TextAlign.end,
-                          style: TextStyle(
+                          style: GoogleFonts.saira(
                             color: Colors.white,
                             backgroundColor: Colors.white10,
+                            fontWeight: FontWeight.normal,
                             fontStyle: FontStyle.italic,
                             fontSize: 16,
                           ),

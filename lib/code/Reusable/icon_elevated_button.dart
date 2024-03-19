@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ElevatedIconButton extends StatelessWidget {
@@ -20,11 +21,13 @@ class ElevatedIconButton extends StatelessWidget {
           onPress();
         },
         icon: faIcon,
-        label: Text(labelText, style: TextStyle(
-          color: Colors.black,
-            fontSize:fSize,
-            fontFamily: 'Gotham',
-            fontWeight: FontWeight.w900),
+        label: Text(labelText,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.tenorSans(
+            color: Colors.black,
+            fontWeight: FontWeight.w900,
+            fontSize: fSize,
+          ),
         ),
         style: IconButton.styleFrom(
           foregroundColor: fgColor,
@@ -63,11 +66,12 @@ class BasicIconButtonGreen extends StatelessWidget {
           onPress();
         },
         icon: faIcon,
-        label: Text(labelText, style: TextStyle(
+        label: Text(labelText,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.tenorSans(
             color: Colors.white,
-            fontSize:fSize,
-            fontFamily: 'Gotham',
-            fontWeight: FontWeight.w900),
+            fontWeight: FontWeight.bold,
+            fontSize: fSize,),
         ),
         style: IconButton.styleFrom(
           foregroundColor: fgColor,
@@ -106,11 +110,12 @@ class BasicIconButtonGrey extends StatelessWidget {
           onPress();
         },
         icon: faIcon,
-        label: Text(labelText, style: TextStyle(
+        label: Text(labelText,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.tenorSans(
             color: Colors.black,
-            fontSize:fSize,
-            fontFamily: 'Gotham',
-            fontWeight: FontWeight.w700),
+            fontWeight: FontWeight.bold,
+            fontSize: fSize,),
         ),
         style: IconButton.styleFrom(
           foregroundColor: fgColor,
