@@ -1,18 +1,18 @@
-import 'dart:convert';
 import 'dart:io';
-
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:convert';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart';
 
 import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_meter.dart';
 import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_water.dart';
+import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
@@ -1368,8 +1368,7 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                                         locationGiven = documentSnapshot['address'];
 
                                         Navigator.push(context,
-                                            MaterialPageRoute(builder: (context) => const MapScreen()
-                                              //MapPage()
+                                            MaterialPageRoute(builder: (context) => MapScreenProp(propAddress: locationGiven, propAccNumber: accountNumber,)
                                             ));
                                       },
                                       labelText: 'Map',

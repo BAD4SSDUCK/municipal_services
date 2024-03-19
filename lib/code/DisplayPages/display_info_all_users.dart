@@ -1,31 +1,30 @@
-import 'dart:convert';
 import 'dart:io';
-
-import 'package:easy_image_viewer/easy_image_viewer.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_property_trend.dart';
-import 'package:open_file/open_file.dart';
 import 'package:excel/excel.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:syncfusion_flutter_xlsio/xlsio.dart' as excel;
 import 'package:http/http.dart' as http;
-import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:open_file/open_file.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:syncfusion_flutter_xlsio/xlsio.dart' as excel;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 
 import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_meter.dart';
 import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_water.dart';
 import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_zoom_page.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_property_trend.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
@@ -53,7 +52,6 @@ String userEmail = email as String;
 DateTime now = DateTime.now();
 
 String phoneNum = '';
-
 String accountNumberAll = '';
 String locationGivenAll = '';
 String eMeterNumber = '';
@@ -61,7 +59,6 @@ String accountNumberW = '';
 String locationGivenW = '';
 String wMeterNumber = '';
 String addressForTrend = '';
-
 String propPhoneNum = '';
 String imageName = '';
 String addressSnap = '';
@@ -69,6 +66,11 @@ String addressSnap = '';
 bool visibilityState1 = true;
 bool visibilityState2 = false;
 bool adminAcc = false;
+bool visAdmin = false;
+bool visManager = false;
+bool visEmployee = false;
+bool visCapture = false;
+bool visDev = false;
 bool imgUploadCheck = false;
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
@@ -158,9 +160,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
   @override
   void initState() {
-    // if(_searchController.text == ""){
-    //   getPropertyStream();
-    // }
     getPropertyStream();
     checkAdmin();
     _searchController.addListener(_onSearchChanged);
@@ -212,15 +211,39 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
       ///Need to build a property model that retrieves property data entirely from the db
       var user = userSnapshot['email'].toString();
       var role = userSnapshot['userRole'].toString();
+      var userName = userSnapshot['userName'].toString();
+      var firstName = userSnapshot['firstName'].toString();
+      var lastName = userSnapshot['lastName'].toString();
+      var userDepartment = userSnapshot['deptName'].toString();
 
       if (user == userEmail) {
         userRole = role;
-        print('My Role is::: $userRole');
+        userDept = userDepartment;
+        // print('My Role is::: $userRole');
 
-        if (userRole == 'Admin' || userRole == 'Administrator') {
-          adminAcc = true;
-        } else {
-          adminAcc = false;
+        if(userRole == 'Admin'|| userRole == 'Administrator'){
+          visAdmin = true;
+          visManager = false;
+          visEmployee = false;
+          visCapture = false;
+        } else if(userRole == 'Manager'){
+          visAdmin = false;
+          visManager = true;
+          visEmployee = false;
+          visCapture = false;
+        } else if(userRole == 'Employee'){
+          visAdmin = false;
+          visManager = false;
+          visEmployee = true;
+          visCapture = false;
+        } else if(userRole == 'Capturer'){
+          visAdmin = false;
+          visManager = false;
+          visEmployee = false;
+          visCapture = true;
+        }
+        if(userDept == 'Developer'){
+          visDev = true;
         }
       }
     }
@@ -273,6 +296,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   String notifyToken = '';
 
   String userRole = '';
+  String userDept = '';
   List _allUserRolesResults = [];
   bool visShow = true;
   bool visHide = false;
@@ -324,7 +348,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -373,12 +396,15 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
         ],
       ),
       /// Add new account, removed because it was not necessary for non-staff users.
-      //   floatingActionButton: FloatingActionButton(
-      //     onPressed: () => _create(),
-      //     child: const Icon(Icons.add_home),
-      //     backgroundColor: Colors.green,
-      //   ),
-      //   floatingActionButtonLocation: FloatingActionButtonLocation.endFloat
+        floatingActionButton: Visibility(
+          visible: visDev,
+          child: FloatingActionButton(
+            onPressed: () => _create(),
+            backgroundColor: Colors.green,
+            child: const Icon(Icons.add_home, color: Colors.white,),
+          ),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.startFloat
 
     );
   }
@@ -488,13 +514,11 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   Center(
                     child: BasicIconButtonGrey(
                       onPress: () async {
-
                         imageName = 'files/meters/$formattedDate/${_allPropertyResults[index]['cell number']}/electricity/${_allPropertyResults[index]['meter number']}.jpg';
                         addressSnap = _allPropertyResults[index]['address'];
 
                         Navigator.push(context,
                             MaterialPageRoute(builder: (context) => ImageZoomPage(imageName: imageName, addressSnap: addressSnap)));
-
                       },
                       labelText: 'View Uploaded Image',
                       fSize: 16,
@@ -861,7 +885,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   //   ),
                   // ),
 
-
                   const SizedBox(height: 10,),
                   Text(
                     billMessage,
@@ -893,8 +916,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                             children:[
                           BasicIconButtonGrey(
                             onPress: () async {
-                              Fluttertoast.showToast(
-                                  msg: "Now downloading your statement!\nPlease wait a few seconds!");
+                              Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!");
 
                               _onSubmit();
 
@@ -917,8 +939,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                   final file = await PDFApi.loadFirebase(url);
                                   try {
                                     if(context.mounted)openPDF(context, file);
-                                    Fluttertoast.showToast(
-                                        msg: "Download Successful!");
+                                    Fluttertoast.showToast(msg: "Download Successful!");
                                   } catch (e) {
                                     Fluttertoast.showToast(msg: "Unable to download statement.");
                                   }
@@ -960,7 +981,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                               accountNumberAll = _allPropertyResults[index]['account number'];
                               locationGivenAll = _allPropertyResults[index]['address'];
 
-
                               Navigator.push(context,
                                   MaterialPageRoute(builder: (context) => MapScreenProp(propAddress: locationGivenAll, propAccNumber: accountNumberAll,)
                                   ));
@@ -988,8 +1008,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     );
   }
 
-
-
   Future<void> updateImgCheckE(bool imgCheck, [DocumentSnapshot? documentSnapshot]) async{
     if (documentSnapshot != null) {
       await _propList
@@ -1013,7 +1031,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   }
 
   Future<void> _notifyThisUser([DocumentSnapshot? documentSnapshot]) async {
-
     if (documentSnapshot != null) {
       username.text = documentSnapshot.id;
     }
@@ -1065,8 +1082,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
                                   DateTime now = DateTime.now();
                                   String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-
-
 
                                   final String tokenSelected = notifyToken;
                                   final String? userNumber = documentSnapshot?.id;
@@ -1123,11 +1138,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                 );
               }));
     }
-
     _createBottomSheet();
-
   }
-
 
   Widget firebasePropertyCard(CollectionReference<Object?> propertiesDataStream) {
     return Expanded(
@@ -1146,7 +1158,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                     eMeterNumber = documentSnapshot['meter number'];
                     wMeterNumber = documentSnapshot['water meter number'];
                     propPhoneNum = documentSnapshot['cell number'];
-
                     String billMessage;
 
                     ///A check for if payment is outstanding or not
@@ -1156,8 +1167,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                         documentSnapshot['eBill'] != 'R0' ||
                         documentSnapshot['eBill'] != '0'
                     ) {
-                      billMessage =
-                      'Utilities bill outstanding: ${documentSnapshot['eBill']}';
+                      billMessage = 'Utilities bill outstanding: ${documentSnapshot['eBill']}';
                     } else {
                       billMessage = 'No outstanding payments';
                     }
@@ -1410,7 +1420,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                 ),
                               ),
                               const SizedBox(height: 10,),
-
                               const Center(
                                 child: Text(
                                   'Water Meter Reading Photo',
@@ -1521,7 +1530,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                         );
                                       });
                                 },
-
                                 child: Center(
                                   child: Container(
                                     margin: const EdgeInsets.only(bottom: 5),
@@ -1558,8 +1566,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                                   ),
                                                 );
                                               }
-                                              if (snapshot.connectionState ==
-                                                  ConnectionState.done) {
+                                              if (snapshot.connectionState == ConnectionState.done) {
                                                 // imgUploadCheck = true;
                                                 updateImgCheckW(imgUploadCheck, documentSnapshot);
                                                 return Container(
@@ -1568,8 +1575,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                                   child: snapshot.data,
                                                 );
                                               }
-                                              if (snapshot.connectionState ==
-                                                  ConnectionState.waiting) {
+                                              if (snapshot.connectionState == ConnectionState.waiting) {
                                                 return Container(
                                                   child: const Padding(
                                                     padding: EdgeInsets.all(5.0),
@@ -1589,7 +1595,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                 billMessage,
                                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                               ),
-
                               const SizedBox(height: 10,),
                               Column(
                                 children: [
@@ -1599,8 +1604,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                     children: [
                                       BasicIconButtonGrey(
                                         onPress: () async {
-                                          Fluttertoast.showToast(
-                                              msg: "Now downloading your statement!\nPlease wait a few seconds!");
+                                          Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!");
 
                                           String accountNumberPDF = documentSnapshot['account number'];
                                           print('The acc number is ::: $accountNumberPDF');
@@ -1815,7 +1819,11 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                           "cell number": cellNumber,
                           "first name": firstName,
                           "last name": lastName,
-                          "id number": idNumber
+                          "id number": idNumber,
+                          "user id": 'TBA',
+                          "imgStateE": false,
+                          "imgStateW": false,
+                          "eBill": ''
                         });
                         _accountNumberController.text = '';
                         _addressController.text = '';
@@ -1863,14 +1871,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
         builder: (BuildContext ctx) {
           return SingleChildScrollView(
             child: Padding(
-              padding: EdgeInsets.only(
-                  top: 20,
-                  left: 20,
-                  right: 20,
-                  bottom: MediaQuery
-                      .of(ctx)
-                      .viewInsets
-                      .bottom + 20),
+              padding: EdgeInsets.only(top: 20, left: 20, right: 20,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2003,11 +2005,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                         _idNumberController.text = '';
 
                         if(context.mounted)Navigator.of(context).pop();
-                        ///Added open the image upload straight after inputting the meter reading
-                        // if(context.mounted) {
-                        //   Navigator.push(context,
-                        //       MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: cellNumber, meterNumber: meterNumber,)));
-                        // }
 
                       }
                     },
@@ -2041,14 +2038,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
         builder: (BuildContext ctx) {
           return SingleChildScrollView(
             child: Padding(
-              padding: EdgeInsets.only(
-                  top: 20,
-                  left: 20,
-                  right: 20,
-                  bottom: MediaQuery
-                      .of(ctx)
-                      .viewInsets
-                      .bottom + 20),
+              padding: EdgeInsets.only(top: 20, left: 20, right: 20,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2203,11 +2194,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                         _idNumberController.text = '';
 
                         if(context.mounted)Navigator.of(context).pop();
-                        ///Added open the image upload straight after inputting the meter reading
-                        // if(context.mounted) {
-                        //   Navigator.push(context,
-                        //       MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: cellNumber, meterNumber: meterNumber,)));
-                        // }
 
                       }
                     },
@@ -2385,11 +2371,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                         _idNumberController.text = '';
 
                         if(context.mounted)Navigator.of(context).pop();
-                        ///Added open the image upload straight after inputting the meter reading
-                        // if(context.mounted) {
-                        //   Navigator.push(context,
-                        //       MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: cellNumber, meterNumber: waterMeterNumber,)));
-                        // }
+
                       }
                     },
                   )
