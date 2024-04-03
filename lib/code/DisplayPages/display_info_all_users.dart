@@ -171,8 +171,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     searchText;
-    _allPropertyResults;
-    _allPropertyReport;
+    _allPropResults;
+    _allPropReport;
     getPropertyStream();
     searchResultsList();
     super.dispose();
@@ -311,14 +311,13 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
 
   TextEditingController _searchController = TextEditingController();
-  List _allPropertyResults = [];
-  List _allPropertyReport = [];
+  List _allPropResults = [];
+  List _allPropReport = [];
 
   getPropertyStream() async{
     var data = await FirebaseFirestore.instance.collection('properties').get();
-
     setState(() {
-      _allPropertyResults = data.docs;
+      _allPropResults = data.docs;
     });
     searchResultsList();
   }
@@ -331,7 +330,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     var showResults = [];
     if(_searchController.text != "") {
       getPropertyStream();
-      for(var propSnapshot in _allPropertyResults){
+      for(var propSnapshot in _allPropResults){
         ///Need to build a property model that retrieves property data entirely from the db
         var address = propSnapshot['address'].toString().toLowerCase();
 
@@ -341,10 +340,10 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
       }
     } else {
       getPropertyStream();
-      showResults = List.from(_allPropertyResults);
+      showResults = List.from(_allPropResults);
     }
     setState(() {
-      _allPropertyResults = showResults;
+      _allPropResults = showResults;
     });
   }
 
@@ -410,25 +409,25 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   }
 
   Widget propertyCard() {
-    if (_allPropertyResults.isNotEmpty) {
+    if (_allPropResults.isNotEmpty) {
     return ListView.builder(
       ///this call is to display all details for all users but is only displaying for the current user account.
       ///it can be changed to display all users for the staff to see if the role is set to all later on.
-      itemCount: _allPropertyResults.length,
+      itemCount: _allPropResults.length,
       itemBuilder: (context, index) {
 
-        eMeterNumber = _allPropertyResults[index]['meter number'];
-        wMeterNumber = _allPropertyResults[index]['water meter number'];
-        propPhoneNum = _allPropertyResults[index]['cell number'];
+        eMeterNumber = _allPropResults[index]['meter number'];
+        wMeterNumber = _allPropResults[index]['water meter number'];
+        propPhoneNum = _allPropResults[index]['cell number'];
 
         String billMessage;///A check for if payment is outstanding or not
-        if(_allPropertyResults[index]['eBill'] != '' ||
-            _allPropertyResults[index]['eBill'] != 'R0,000.00' ||
-            _allPropertyResults[index]['eBill'] != 'R0.00' ||
-            _allPropertyResults[index]['eBill'] != 'R0' ||
-            _allPropertyResults[index]['eBill'] != '0'
+        if(_allPropResults[index]['eBill'] != '' ||
+            _allPropResults[index]['eBill'] != 'R0,000.00' ||
+            _allPropResults[index]['eBill'] != 'R0.00' ||
+            _allPropResults[index]['eBill'] != 'R0' ||
+            _allPropResults[index]['eBill'] != '0'
         ){
-          billMessage = 'Utilities bill outstanding: ${_allPropertyResults[index]['eBill']}';
+          billMessage = 'Utilities bill outstanding: ${_allPropResults[index]['eBill']}';
         } else {
           billMessage = 'No outstanding payments';
         }
@@ -449,57 +448,57 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   ),
                   const SizedBox(height: 10,),
                   Text(
-                    'Account Number: ${_allPropertyResults[index]['account number']}',
+                    'Account Number: ${_allPropResults[index]['account number']}',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                   ),
                   const SizedBox(height: 5,),
                   Text(
-                    'Street Address: ${_allPropertyResults[index]['address']}',
+                    'Street Address: ${_allPropResults[index]['address']}',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                   ),
                   const SizedBox(height: 5,),
                   Text(
-                    'Area Code: ${_allPropertyResults[index]['area code']}',
+                    'Area Code: ${_allPropResults[index]['area code']}',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                   ),
                   const SizedBox(height: 5,),
                   Text(
-                    'Meter Number: ${_allPropertyResults[index]['meter number']}',
+                    'Meter Number: ${_allPropResults[index]['meter number']}',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                   ),
                   const SizedBox(height: 5,),
                   Text(
-                    'Meter Reading: ${_allPropertyResults[index]['meter reading']}',
+                    'Meter Reading: ${_allPropResults[index]['meter reading']}',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                   ),
                   const SizedBox(height: 5,),
                   Text(
-                    'Water Meter Number: ${_allPropertyResults[index]['water meter number']}',
+                    'Water Meter Number: ${_allPropResults[index]['water meter number']}',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                   ),
                   const SizedBox(height: 5,),
                   Text(
-                    'Water Meter Reading: ${_allPropertyResults[index]['water meter reading']}',
+                    'Water Meter Reading: ${_allPropResults[index]['water meter reading']}',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                   ),
                   const SizedBox(height: 5,),
                   Text(
-                    'Phone Number: ${_allPropertyResults[index]['cell number']}',
+                    'Phone Number: ${_allPropResults[index]['cell number']}',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                   ),
                   const SizedBox(height: 5,),
                   Text(
-                    'First Name: ${_allPropertyResults[index]['first name']}',
+                    'First Name: ${_allPropResults[index]['first name']}',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                   ),
                   const SizedBox(height: 5,),
                   Text(
-                    'Surname: ${_allPropertyResults[index]['last name']}',
+                    'Surname: ${_allPropResults[index]['last name']}',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                   ),
                   const SizedBox(height: 5,),
                   Text(
-                    'ID Number: ${_allPropertyResults[index]['id number']}',
+                    'ID Number: ${_allPropResults[index]['id number']}',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                   ),
                   const SizedBox(height: 20,),
@@ -514,8 +513,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   Center(
                     child: BasicIconButtonGrey(
                       onPress: () async {
-                        imageName = 'files/meters/$formattedDate/${_allPropertyResults[index]['cell number']}/electricity/${_allPropertyResults[index]['meter number']}.jpg';
-                        addressSnap = _allPropertyResults[index]['address'];
+                        imageName = 'files/meters/$formattedDate/${_allPropResults[index]['cell number']}/electricity/${_allPropResults[index]['meter number']}.jpg';
+                        addressSnap = _allPropResults[index]['address'];
 
                         Navigator.push(context,
                             MaterialPageRoute(builder: (context) => ImageZoomPage(imageName: imageName, addressSnap: addressSnap)));
@@ -896,7 +895,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                     children: [
                       BasicIconButtonGrey(
                         onPress: () async {
-                          addressForTrend = _allPropertyResults[index]['address'];
+                          addressForTrend = _allPropResults[index]['address'];
 
                           Navigator.push(context,
                               MaterialPageRoute(builder: (context) => PropertyTrend(addressTarget: addressForTrend)
@@ -920,7 +919,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
                               _onSubmit();
 
-                              String accountNumberPDF = _allPropertyResults[index]['account number'];
+                              String accountNumberPDF = _allPropResults[index]['account number'];
                               print('The acc number is ::: $accountNumberPDF');
 
                               final storageRef = FirebaseStorage.instance.ref().child("pdfs/$formattedDate");
@@ -978,8 +977,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                           ),
                           BasicIconButtonGrey(
                             onPress: () async {
-                              accountNumberAll = _allPropertyResults[index]['account number'];
-                              locationGivenAll = _allPropertyResults[index]['address'];
+                              accountNumberAll = _allPropResults[index]['account number'];
+                              locationGivenAll = _allPropResults[index]['address'];
 
                               Navigator.push(context,
                                   MaterialPageRoute(builder: (context) => MapScreenProp(propAddress: locationGivenAll, propAccNumber: accountNumberAll,)
