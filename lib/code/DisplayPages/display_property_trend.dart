@@ -86,15 +86,18 @@ class _PropertyTrendState extends State<PropertyTrend> {
 
   @override
   void initState() {
-    Fluttertoast.showToast(msg: "Press and hold to see the line values!", gravity: ToastGravity.CENTER, toastLength: Toast.LENGTH_LONG);
+    Fluttertoast.showToast(msg: "Press and hold line to see the values!", gravity: ToastGravity.CENTER, toastLength: Toast.LENGTH_LONG);
     // setMonthLimits(formattedDate);
     getCollectionData();
     // timer = Timer.periodic(const Duration(seconds: 5), (Timer t) => build(context));
+
+    timer = Timer.periodic(const Duration(seconds: 1), (Timer t) => checkDataLoad());
+
     Future.delayed(const Duration(seconds: 10),(){
-      setState(() {
-        _isLoading = false;
-      });
-      Fluttertoast.showToast(msg: "Press and hold to see the line values!", gravity: ToastGravity.CENTER, toastLength: Toast.LENGTH_LONG);
+      // setState(() {
+      //   _isLoading = false;
+      // });
+      Fluttertoast.showToast(msg: "Press and hold line to see the values!", gravity: ToastGravity.CENTER, toastLength: Toast.LENGTH_LONG);
       // Fluttertoast.showToast(msg: "Reading values rounded!",gravity: ToastGravity.CENTER);
     });
     super.initState();
@@ -414,6 +417,13 @@ class _PropertyTrendState extends State<PropertyTrend> {
     );
   }
 
+  void checkDataLoad() async {
+    if(electricityReadings.length == 12){
+      _isLoading = false;
+    } else {
+      _isLoading = true;
+    }
+  }
 
   Future getCollectionData() async {
 
