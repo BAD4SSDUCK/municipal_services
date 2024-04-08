@@ -316,9 +316,11 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
   getPropertyStream() async{
     var data = await FirebaseFirestore.instance.collection('properties').get();
-    setState(() {
+    if(context.mounted) {
+      setState(() {
       _allPropResults = data.docs;
     });
+    }
     searchResultsList();
   }
 

@@ -172,9 +172,11 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
       getUsersPropStream();
       showResults = List.from(_allUserPropResults);
     }
-    setState(() {
+    if(context.mounted) {
+      setState(() {
       _allUserPropResults = showResults;
     });
+    }
   }
 
   void countResult() async {
@@ -203,9 +205,11 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
   getUsersStream() async{
     var data = await FirebaseFirestore.instance.collection('users').get();
-    setState(() {
+    if(context.mounted) {
+      setState(() {
       _allUserResults = data.docs;
     });
+    }
     getUserDetails();
   }
 
@@ -230,11 +234,13 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
   getUsersPropStream() async{
     var data = await FirebaseFirestore.instance.collection('properties').get();
-    setState(() {
+    if(context.mounted) {
+      setState(() {
       _allPropResults = data.docs;
       _allUserPropResults = data.docs;
       _allUserWardResults = data.docs;
     });
+    }
     getUserDetails();
   }
 
@@ -254,9 +260,11 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
       getUsersPropStream();
       showResults = List.from(_allUserPropResults);
     }
-    setState(() {
+    if(context.mounted) {
+      setState(() {
       _allUserPropResults = showResults;
     });
+    }
   }
 
   _onWardChanged() async {
@@ -443,10 +451,12 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                       leading: const Icon(Icons.search),
                       hintText: "Search by Phone Number...",
                       onChanged: (value) async{
-                        setState(() {
+                        if(context.mounted) {
+                          setState(() {
                           searchText = value;
                           print('this is the input text ::: $searchText');
                         });
+                        }
                       },
                     ),
                   ),
@@ -516,12 +526,14 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                         );
                                       }).toList(),
                                       onChanged: (String? newValue) async{
-                                        setState(() {
+                                        if(context.mounted) {
+                                          setState(() {
                                           getUsersTokenStream();
                                           getUsersPropStream();
                                           dropdownValue = newValue!;
                                           _searchWardController.text = dropdownValue;
                                         });
+                                        }
                                       },
                                       icon: const Padding(
                                         padding: EdgeInsets.only(left: 10, right: 10),
@@ -1175,9 +1187,11 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                       fillColor: MaterialStateProperty.all<Color>(Colors.green),
                                       value: _noticeReadController,
                                       onChanged: (bool? value) async {
-                                        setState(() {
+                                        if(context.mounted) {
+                                          setState(() {
                                           _noticeReadController = value!;
                                         });
+                                        }
                                       },
                                     ),
                                   ],

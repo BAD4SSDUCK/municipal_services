@@ -95,7 +95,11 @@ class _PropertyTrendState extends State<PropertyTrend> {
 
     Future.delayed(const Duration(seconds: 10),(){
       // setState(() {
-      //   _isLoading = false;
+      //   if(electricityReadings.length == 12){
+      //     _isLoading = false;
+      //   } else {
+      //     _isLoading = true;
+      //   }
       // });
       Fluttertoast.showToast(msg: "Press and hold line to see the values!", gravity: ToastGravity.CENTER, toastLength: Toast.LENGTH_LONG);
       // Fluttertoast.showToast(msg: "Reading values rounded!",gravity: ToastGravity.CENTER);
@@ -112,6 +116,7 @@ class _PropertyTrendState extends State<PropertyTrend> {
     months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     eMeterSpots = [];
     // LineChartSample();
+    timer?.cancel();
     super.dispose();
   }
 
@@ -418,10 +423,14 @@ class _PropertyTrendState extends State<PropertyTrend> {
   }
 
   void checkDataLoad() async {
-    if(electricityReadings.length == 12){
-      _isLoading = false;
-    } else {
-      _isLoading = true;
+    if(context.mounted) {
+      setState(() {
+      if(electricityReadings.length == 12){
+        _isLoading = false;
+      } else {
+        _isLoading = true;
+      }
+    });
     }
   }
 
@@ -472,7 +481,7 @@ class _PropertyTrendState extends State<PropertyTrend> {
     invalidSpots = [for (int i = 1+currentMonth.toInt(); i < months.length; i++)
       FlSpot(xAxisIteration[i], double.parse(((electricityReadings[i] / 100000) * 10).toStringAsFixed(4)))];
 
-    print('the chart spots are::: $eMeterSpots');
+    // print('the chart spots are::: $eMeterSpots');
 
   }
 
@@ -621,7 +630,7 @@ class LineChartEMeter extends StatelessWidget {
     double startValue = double.parse(((electricityReadings[0] / 100000) * 10).toStringAsFixed(4)) - 2;
     double endValue = double.parse(((electricityReadings[11] / 100000) * 10).toStringAsFixed(4)) + 2;
 
-    print(currentMonth);
+    // print(currentMonth);
 
     return AspectRatio(
       aspectRatio: 1.15,
