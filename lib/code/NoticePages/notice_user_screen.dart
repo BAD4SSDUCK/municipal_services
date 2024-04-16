@@ -141,7 +141,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
               itemBuilder: (context, index) {
 
                 if(_allNoticesResults[index]['user'] == user.phoneNumber.toString()){
-                  if(_allNoticesResults[index]['user'].contains('+27') && _allNoticesResults[index]['read'] != true && _allNoticesResults[index]['level'] == 'general' ){
+                  if(_allNoticesResults[index]['read'] != true && _allNoticesResults[index]['level'] == 'general' ){
                     return Card(
                       margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
                       child: Padding(
@@ -220,7 +220,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
               itemBuilder: (context, index) {
 
                 if(_allNoticesResults[index]['user'] == user.phoneNumber.toString()){
-                  if(_allNoticesResults[index]['user'].contains('+27') && _allNoticesResults[index]['read'] != true && _allNoticesResults[index]['level'] == 'severe' ){
+                  if(_allNoticesResults[index]['read'] != true && _allNoticesResults[index]['level'] == 'severe' ){
                     return Card(
                       margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
                       child: Padding(
@@ -342,8 +342,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                             const Center(
                               child: Text(
                                 'Unread Notification',
-                                style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.w700),
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                               ),
                             ),
                             const SizedBox(height: 10,),
@@ -421,7 +420,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
                 streamSnapshot.data!.docs[index];
 
                 if(documentSnapshot['user'] == user.phoneNumber.toString()){
-                  if(documentSnapshot['user'].contains('+27') && documentSnapshot['read'] != true && documentSnapshot['level'] == 'severe' ){
+                  if(documentSnapshot['read'] != true && documentSnapshot['level'] == 'severe' ){
                     return Card(
                       margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
                       child: Padding(

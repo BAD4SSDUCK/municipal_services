@@ -59,7 +59,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         showSnackBarText("Auth Completed!");
       },
       verificationFailed: (FirebaseAuthException e) {
-        print(e);
+        print('error is ::: $e');
         showSnackBarText("Auth Failed!");
         showDialog(
             barrierDismissible: false,

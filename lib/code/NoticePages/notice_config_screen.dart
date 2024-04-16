@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -17,10 +19,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart';
-import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_config_arc_screen.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_config_arc_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/faultPages/fault_task_screen_archive.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
@@ -57,9 +57,11 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     checkAdmin();
     getUsersTokenStream();
     getUsersPropStream();
+    getPropSuburbStream();
     countResult();
     _searchWardController.addListener(_onWardChanged);
     _searchController.addListener(_onSearchChanged);
+    _searchSuburbController.addListener(_onSearchChanged);
     super.initState();
   }
 
@@ -81,6 +83,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     _searchWardController.removeListener(_onWardChanged);
     _searchController.dispose();
     _searchController.removeListener(_onSearchChanged);
+    _searchWardController.dispose();
+    _searchWardController.removeListener(_onSearchChanged);
     super.dispose();
   }
 
@@ -125,11 +129,14 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
   TextEditingController _searchController = TextEditingController();
   TextEditingController _searchWardController = TextEditingController();
+  TextEditingController _searchSuburbController = TextEditingController();
 
   final CollectionReference _propList =  FirebaseFirestore.instance.collection('properties');
 
   List<String> dropdownWards = ['Select Ward','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40',];
   String dropdownValue = 'Select Ward';
+  String dropdownSuburbValue = 'Select Suburb';
+  List<String> dropdownSuburbs = ['Select Suburb'];
   String userNameProp = '';
   String userAddress = '';
   String userWardProp = '';
@@ -142,7 +149,9 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
   List _allUserResults = [];
   List _allUserPropResults = [];
   List _allUserWardResults = [];
+  List _allUserSuburbResults = [];
   List _allPropResults = [];
+  List _allSuburbResults = [];
   List _resultsList =[];
   List _allUserTokenResults = [];
 
@@ -236,12 +245,31 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     var data = await FirebaseFirestore.instance.collection('properties').get();
     if(context.mounted) {
       setState(() {
-      _allPropResults = data.docs;
-      _allUserPropResults = data.docs;
-      _allUserWardResults = data.docs;
-    });
+        _allPropResults = data.docs;
+        _allUserPropResults = data.docs;
+        _allUserWardResults = data.docs;
+        _allUserSuburbResults = data.docs;
+      });
     }
     getUserDetails();
+  }
+
+  getPropSuburbStream() async{
+    var data = await FirebaseFirestore.instance.collection('suburbs').orderBy('suburb', descending: false).get();
+
+    if(context.mounted) {
+      setState(() {
+        _allSuburbResults = data.docs;
+      });
+    }
+    getSuburbDetails();
+  }
+
+  getSuburbDetails() async{
+    for(var suburbSnapshot in _allSuburbResults){
+      dropdownSuburbs.add(suburbSnapshot['suburb']);
+      print('the suburbs are $dropdownSuburbs');
+    }
   }
 
   searchWardsList() async {
@@ -253,6 +281,20 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
         var ward = propSnapshot['ward'].toString().toLowerCase();
 
         if(ward.contains(_searchController.text.toLowerCase())) {
+          showResults.add(propSnapshot);
+        }
+      }
+    } else {
+      getUsersPropStream();
+      showResults = List.from(_allUserPropResults);
+    }
+    if(_searchSuburbController.text != "Select Suburb") {
+      getUsersPropStream();
+      for(var propSnapshot in _allUserPropResults){
+        ///Need to build a property model that retrieves property data entirely from the db
+        var suburb = propSnapshot['address'].toString().toLowerCase();
+
+        if(suburb.contains(_searchSuburbController.text.toLowerCase())) {
           showResults.add(propSnapshot);
         }
       }
@@ -369,7 +411,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
@@ -389,13 +431,26 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                   icon: const Icon(
                     Icons.history_outlined, color: Colors.white,)),),
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white70,
               tabs: [
-                Tab(text: 'Notify All',),
-                Tab(text: 'Target Notice',),
-                Tab(text: 'Ward Notice',),
+                Tab(
+                  child: Container(alignment: Alignment.center,
+                    child: const Text('Notify\nAll', textAlign: TextAlign.center,),),
+                ),
+                Tab(
+                  child: Container(alignment: Alignment.center,
+                    child: const Text('Target\nNotice', textAlign: TextAlign.center,),),
+                ),
+                Tab(
+                  child: Container(alignment: Alignment.center,
+                    child: const Text('Ward\nNotice', textAlign: TextAlign.center,),),
+                ),
+                Tab(
+                  child: Container(alignment: Alignment.center,
+                    child: const Text('Suburb\nNotice', textAlign: TextAlign.center,),),
+                ),
               ]
           ),
         ),
@@ -579,6 +634,117 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
                 ],
               ),
+
+              ///Tab for suburb
+              Column(
+                children: [
+                  ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
+                  ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
+
+                  /// Warc select bar
+                  const SizedBox(height: 5,),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
+                    child: Column(
+                        children: [
+                          SizedBox(
+                            // width: 400,
+                            height: 50,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 10, right: 10),
+                              child: Center(
+                                child: TextField(
+                                  controller: _searchSuburbController,
+                                  ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                        borderSide: const BorderSide(color: Colors.grey,)
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                        borderSide: const BorderSide(color: Colors.grey,)
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                        borderSide: const BorderSide(color: Colors.grey,)
+                                    ),
+                                    disabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                        borderSide: const BorderSide(color: Colors.grey,)
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                    fillColor: Colors.white,
+                                    filled: true,
+                                    suffixIcon: DropdownButtonFormField <String>(
+                                      value: dropdownSuburbValue,
+                                      items: dropdownSuburbs.map<DropdownMenuItem<String>>((String value) {
+                                        return DropdownMenuItem<String>(
+                                          value: value,
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 20.0),
+                                            child: Text(
+                                              value,
+                                              style: const TextStyle(fontSize: 16),
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (String? newValue) async{
+                                        if(context.mounted) {
+                                          setState(() {
+                                            getUsersTokenStream();
+                                            getUsersPropStream();
+                                            dropdownSuburbValue = newValue!;
+                                            _searchSuburbController.text = dropdownSuburbValue;
+                                          });
+                                        }
+                                      },
+                                      icon: const Padding(
+                                        padding: EdgeInsets.only(left: 10, right: 10),
+                                        child: Icon(Icons.arrow_circle_down_sharp),
+                                      ),
+                                      iconEnabledColor: Colors.green,
+                                      style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 18
+                                      ),
+                                      dropdownColor: Colors.grey[50],
+                                      isExpanded: true,
+
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ]
+                    ),
+                  ),
+                  /// Search bar end
+
+                  const SizedBox(height: 5,),
+
+                  BasicIconButtonGrey(
+                    onPress: () async {
+                      _notifyWardUsers();
+                    },
+                    labelText: 'Notify Selected Suburb',
+                    fSize: 16,
+                    faIcon: const FaIcon(Icons.notifications,),
+                    fgColor: Theme.of(context).primaryColor,
+                    btSize: const Size(300, 50),
+                  ),
+
+                  const SizedBox(height: 5,),
+                  ///made the listview card a reusable widget
+                  Expanded(
+                    child: userSuburbCard(),
+                  ),
+
+                ],
+              ),
+
             ]
         ),
       ),
@@ -903,6 +1069,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                     }
                                   }
                                   if(notifyToken!=''){
+                                    userPhoneNumber = _allUserPropResults[index]['cell number'];
                                     _notifyThisUser(_allUserPropResults[index]);
                                   } else {
                                     Fluttertoast.showToast(msg: 'This user has not registered on this app yet!', gravity: ToastGravity.CENTER);
@@ -922,6 +1089,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                           BasicIconButtonGrey(
                             onPress: () async {
                               if(notifyToken!=''){
+                                userPhoneNumber = _allUserPropResults[index]['cell number'];
                                 _disconnectThisUser(_allUserTokenResults[index]);
                               } else {
                                 Fluttertoast.showToast(msg: 'This user has not registered on this app yet!', gravity: ToastGravity.CENTER);
@@ -1072,7 +1240,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                     }
                                   }
                                   if(notifyToken!=''){
-                                  _notifyThisUser(_allUserWardResults[index]);
+                                    userPhoneNumber = _allUserPropResults[index]['cell number'];
+                                    _notifyThisUser(_allUserWardResults[index]);
                                   } else {
                                     Fluttertoast.showToast(msg: 'This user has not registered on this app yet!', gravity: ToastGravity.CENTER);
                                   }
@@ -1101,7 +1270,189 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                 }
                               }
                               if(notifyToken!=''){
+                                userPhoneNumber = _allUserWardResults[index]['cell number'];
                                 _disconnectThisUser(_allUserWardResults[index]);
+                              } else {
+                                Fluttertoast.showToast(msg: 'This user has not registered on this app yet!', gravity: ToastGravity.CENTER);
+                              }
+                            },
+                            labelText: 'Disconnect',
+                            fSize: 14,
+                            faIcon: const FaIcon(Icons.warning_amber,),
+                            fgColor: Colors.amber,
+                            btSize: const Size(50, 38),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            } else {
+              const SizedBox();
+            }
+          }
+      );
+    }
+    return const Padding(
+      padding: EdgeInsets.all(10.0),
+      child: Center(
+          child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget userSuburbCard() {
+    if (_allUserSuburbResults.isNotEmpty){
+      return ListView.builder(
+          itemCount: _allUserSuburbResults.length,
+          itemBuilder: (context, index) {
+
+            userNameProp = '${_allUserSuburbResults[index]['first name']} ${_allUserSuburbResults[index]['last name']}';
+            userAddress = _allUserSuburbResults[index]['address'];
+            userWardProp = _allUserSuburbResults[index]['ward'];
+            userPhoneNumber = _allUserSuburbResults[index]['cell number'];
+
+            for (var tokenSnapshot in _allUserTokenResults) {
+              if (tokenSnapshot.id == _allUserSuburbResults[index]['cell number']) {
+                notifyToken = tokenSnapshot['token'];
+                userValid = 'User will receive notification';
+                break;
+              } else {
+                notifyToken = '';
+                userValid = 'User is not yet registered';
+              }
+            }
+
+            if (_allUserSuburbResults[index]['cell number'].contains('+27') &&
+                (_allUserSuburbResults[index]['address'].toLowerCase().contains(dropdownSuburbValue.toString().toLowerCase()) ||
+                    dropdownSuburbValue == 'Select Suburb')) {
+              return Card(
+                margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Center(
+                        child: Text('Users Device Details',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      const SizedBox(height: 10,),
+                      tokenItemField(
+                          userPhoneNumber, userNameProp,
+                          userAddress,
+                          userPhoneNumber, userValid,
+                          userWardProp),
+                      Visibility(
+                        visible: false,
+                        child: Text('User Token: $notifyToken',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                      ),
+                      const SizedBox(height: 10,),
+                      Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              BasicIconButtonGrey(
+                                onPress: () async {
+                                  showDialog(
+                                      barrierDismissible: false,
+                                      context: context,
+                                      builder: (context) {
+                                        return AlertDialog(
+                                          shape: const RoundedRectangleBorder(
+                                              borderRadius: BorderRadius
+                                                  .all(
+                                                  Radius.circular(16))),
+                                          title: const Text("Call User!"),
+                                          content: const Text(
+                                              "Would you like to call the user directly?"),
+                                          actions: [
+                                            IconButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                              icon: const Icon(
+                                                Icons.cancel,
+                                                color: Colors.red,
+                                              ),
+                                            ),
+                                            IconButton(
+                                              onPressed: () {
+                                                String cellGiven = userPhoneNumber;
+
+                                                final Uri _tel = Uri.parse('tel:${cellGiven.toString()}');
+                                                launchUrl(_tel);
+
+                                                Navigator.of(context).pop();
+                                              },
+                                              icon: const Icon(
+                                                Icons.done,
+                                                color: Colors.green,
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      });
+                                },
+                                labelText: 'Call User',
+                                fSize: 14,
+                                faIcon: const FaIcon(Icons.call,),
+                                fgColor: Colors.green,
+                                btSize: const Size(50, 38),
+                              ),
+                              BasicIconButtonGrey(
+                                onPress: () async {
+                                  for (var tokenSnapshot in _allUserTokenResults) {
+                                    if (tokenSnapshot.id == _allUserSuburbResults[index]['cell number']) {
+                                      notifyToken = tokenSnapshot['token'];
+                                      userValid = 'User will receive notification';
+                                      break;
+                                    } else {
+                                      notifyToken = '';
+                                      userValid = 'User is not yet registered';
+                                    }
+                                  }
+                                  if(notifyToken!=''){
+                                    userPhoneNumber = _allUserPropResults[index]['cell number'];
+                                    _notifyThisUser(_allUserSuburbResults[index]);
+                                  } else {
+                                    Fluttertoast.showToast(msg: 'This user has not registered on this app yet!', gravity: ToastGravity.CENTER);
+                                  }
+                                },
+                                labelText: 'Notify',
+                                fSize: 14,
+                                faIcon: const FaIcon(Icons.edit,),
+                                fgColor: Theme
+                                    .of(context)
+                                    .primaryColor,
+                                btSize: const Size(50, 38),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 5,),
+                          BasicIconButtonGrey(
+                            onPress: () async {
+                              for (var tokenSnapshot in _allUserTokenResults) {
+                                if (tokenSnapshot.id == _allUserSuburbResults[index]['cell number']) {
+                                  notifyToken = tokenSnapshot['token'];
+                                  userValid = 'User will receive notification';
+                                  break;
+                                } else {
+                                  notifyToken = '';
+                                  userValid = 'User is not yet registered';
+                                }
+                              }
+                              if(notifyToken!=''){
+                                userPhoneNumber = _allUserPropResults[index]['cell number'];
+                                _disconnectThisUser(_allUserSuburbResults[index]);
                               } else {
                                 Fluttertoast.showToast(msg: 'This user has not registered on this app yet!', gravity: ToastGravity.CENTER);
                               }
@@ -1577,7 +1928,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                   String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
 
                                   final String tokenSelected = notifyToken;
-                                  final String? userNumber = documentSnapshot?.id;
+                                  final String userNumber = userPhoneNumber;
                                   final String notificationTitle = title.text;
                                   final String notificationBody = body.text;
                                   final String notificationDate = formattedDate;
@@ -1690,7 +2041,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                               String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
 
                               final String tokenSelected = notifyToken;
-                              final String? userNumber = documentSnapshot?.id;
+                              final String userNumber = userPhoneNumber;
                               final String notificationTitle = title.text;
                               final String notificationBody = body.text;
                               final String notificationDate = formattedDate;
@@ -1714,6 +2065,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                 ///gets users phone token to send notification to this phone
                                 if (userNumber != "") {
                                   DocumentSnapshot snap = await FirebaseFirestore.instance.collection("UserToken").doc(userNumber).get();
+                                  print('Snap token $snap');
+                                  print('User number $userNumber');
                                   String token = snap['token'];
                                   print('The phone number is retrieved as ::: $userNumber');
                                   print('The token is retrieved as ::: $token');
