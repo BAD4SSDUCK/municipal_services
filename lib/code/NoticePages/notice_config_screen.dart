@@ -727,6 +727,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
                   BasicIconButtonGrey(
                     onPress: () async {
+
                       _notifyWardUsers();
                     },
                     labelText: 'Notify Selected Suburb',
@@ -1735,12 +1736,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
   Future<void> _notifyWardUsers([DocumentSnapshot? documentSnapshot]) async {
 
-
-    // for (var i = 0; i < numTokens; i++) {
-    //   if (documentSnapshot?.id == usersNumbers[i]) {
-    //     usersNumbers.removeAt(i);
-    //   }
-    // }
     print(usersNumbers);
     print(usersNumbers.length);
     print(usersTokens);

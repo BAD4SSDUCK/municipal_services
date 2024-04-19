@@ -161,6 +161,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   @override
   void initState() {
     getPropertyStream();
+    getUsersTokenStream();
     checkAdmin();
     _searchController.addListener(_onSearchChanged);
     super.initState();
@@ -219,7 +220,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
       if (user == userEmail) {
         userRole = role;
         userDept = userDepartment;
-        // print('My Role is::: $userRole');
+        print('My Role is::: $userRole');
 
         if(userRole == 'Admin'|| userRole == 'Administrator'){
           visAdmin = true;
@@ -295,9 +296,17 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   String token = '';
   String notifyToken = '';
 
+  String userNameProp = '';
+  String userAddress = '';
+  String userWardProp = '';
+  String userValid = '';
+  String userPhoneProp = '';
+  String userPhoneToken = '';
+  String userPhoneNumber = '';
   String userRole = '';
   String userDept = '';
   List _allUserRolesResults = [];
+  List _allUserTokenResults = [];
   bool visShow = true;
   bool visHide = false;
   bool adminAcc = false;
@@ -319,8 +328,15 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     if(context.mounted) {
       setState(() {
       _allPropResults = data.docs;
+      _allPropReport = data.docs;
     });
     }
+    searchResultsList();
+  }
+
+  getUsersTokenStream() async{
+    var data = await FirebaseFirestore.instance.collection('UserToken').get();
+    _allUserTokenResults = data.docs;
     searchResultsList();
   }
 
@@ -359,7 +375,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
         backgroundColor: Colors.green,
         actions: <Widget>[
           Visibility(
-            visible: adminAcc,
+            visible: visAdmin,
             child: IconButton(
                 onPressed: (){
                   Navigator.push(context,
@@ -369,33 +385,33 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
         ],
       ),
       body: Column(
-        children: [
-          /// Search bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
-            child: SearchBar(
-              controller: _searchController,
-              padding: const MaterialStatePropertyAll<EdgeInsets>(
-                EdgeInsets.symmetric(horizontal: 16.0)),
-              leading: const Icon(Icons.search),
-              hintText: "Search by Address...",
-              onChanged: (value) async{
-                setState(() {
-                  searchText = value;
-                  // print('this is the input text ::: $searchText');
-                });
-              },
-            ),
+      children: [
+        /// Search bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
+          child: SearchBar(
+            controller: _searchController,
+            padding: const MaterialStatePropertyAll<EdgeInsets>(
+              EdgeInsets.symmetric(horizontal: 16.0)),
+            leading: const Icon(Icons.search),
+            hintText: "Search by Address...",
+            onChanged: (value) async{
+              setState(() {
+                searchText = value;
+                // print('this is the input text ::: $searchText');
+              });
+            },
           ),
-          /// Search bar end
+        ),
+        /// Search bar end
 
-          // firebasePropertyCard(_propList),
+        // firebasePropertyCard(_propList),
 
-          Expanded(child: propertyCard(),),
+        Expanded(child: propertyCard(),),
 
-          const SizedBox(height: 5,),
-        ],
-      ),
+        const SizedBox(height: 5,),
+      ],
+                ),
       /// Add new account, removed because it was not necessary for non-staff users.
         floatingActionButton: Visibility(
           visible: visDev,
@@ -406,7 +422,6 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
           ),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.startFloat
-
     );
   }
 
