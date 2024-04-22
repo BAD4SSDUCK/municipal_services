@@ -190,7 +190,7 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
   List _allPropertyResults = [];
   List _allPropertyReport = [];
   List _regPropertyReport = [];
-  List _unregPropertyReport = [];
+  List _nonRegPropertyReport = [];
 
   getPropertyStream() async{
     var data = await FirebaseFirestore.instance.collection('properties').get();
@@ -294,11 +294,11 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
                 ),
                 Tab(
                   child: Container(alignment: Alignment.center,
-                    child: const Text('Valid\nUsers', textAlign: TextAlign.center,),),
+                    child: const Text('Registered\nApp Users', textAlign: TextAlign.center,),),
                 ),
                 Tab(
                   child: Container(alignment: Alignment.center,
-                    child: const Text('Invalid\nUsers', textAlign: TextAlign.center,),),
+                    child: const Text('Non-Registered\nApp Users', textAlign: TextAlign.center,),),
                 ),
               ]
           ),
@@ -458,6 +458,53 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
             ///Tab for non-registered
             Column(
               children: [
+
+                const SizedBox(height: 8,),
+                BasicIconButtonGrey(
+                  onPress: () async {
+                    ///Generate Report here
+                    showDialog(
+                        barrierDismissible: false,
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: const Text("Generate Live Report"),
+                            content: const Text(
+                                "Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
+                            actions: [
+                              IconButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                icon: const Icon(
+                                  Icons.cancel,
+                                  color: Colors.red,
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () async {
+                                  Fluttertoast.showToast(
+                                      msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
+                                  nonRegisteredReportGeneration();
+                                  Navigator.pop(context);
+                                },
+                                icon: const Icon(
+                                  Icons.done,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ],
+                          );
+                        });
+                  },
+                  labelText: 'Generate Non-registered Users Report',
+                  fSize: 16,
+                  faIcon: const FaIcon(Icons.edit_note_outlined,),
+                  fgColor: Theme.of(context).primaryColor,
+                  btSize: const Size(300, 50),
+                ),
+                const SizedBox(height: 4,),
+
                 /// Search bar
                 Padding(
                   padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
@@ -1103,21 +1150,23 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
 
     var data = await FirebaseFirestore.instance.collection('properties').get();
 
-    for (var tokenSnapshot in _allUserTokenResults) {
-      for(int i = 0; i<=_allPropertyReport.length+1; i++){
-        if (tokenSnapshot.id == data.docs[i]['cell number']) {
-          _regPropertyReport.add(data.docs[i]);
-          userPhoneToken = tokenSnapshot['token'];
-          notifyToken = tokenSnapshot['token'];
-          userValid = 'User will receive notification';
-          break;
-        } else {
-          userPhoneToken = '';
-          notifyToken = '';
-          userValid = 'User is not yet registered';
+    _allPropertyReport = data.docs;
+
+        for(int i = 0; i<=_allPropertyReport.length-1; i++) {
+          for (var tokenSnapshot in _allUserTokenResults) {
+            if (tokenSnapshot.id == _allPropertyReport[i]['cell number']) {
+              _regPropertyReport.add(_allPropertyReport[i]);
+              userPhoneToken = tokenSnapshot['token'];
+              notifyToken = tokenSnapshot['token'];
+              userValid = 'User will receive notification';
+              break;
+            } else {
+              userPhoneToken = '';
+              notifyToken = '';
+              userValid = 'User is not yet registered';
+            }
+          }
         }
-      }
-    }
 
     String column = "A";
     int excelRow = 2;
@@ -1140,7 +1189,7 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
 
     for(var reportSnapshot in _regPropertyReport){
       ///Property snapshot that retrieves property data entirely from the db
-      while(excelRow <= _allPropertyReport.length+1) {
+      while(excelRow <= _allPropertyReport.length-1) {
 
         print('Report Lists:::: ${_regPropertyReport[listRow]['address']}');
         String accountNum = _regPropertyReport[listRow]['account number'].toString();
@@ -1194,6 +1243,116 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
       await file.writeAsBytes(bytes, flush: true);
       //Launch the file (used open_file package)
       await OpenFile.open('$path/(registered users) Msunduzi Property Reports $formattedDate.xlsx');
+    }
+    // File('Msunduzi Property Reports.xlsx').writeAsBytes(bytes);
+    workbook.dispose();
+  }
+
+  Future<void> nonRegisteredReportGeneration() async {
+    final excel.Workbook workbook = excel.Workbook();
+    final excel.Worksheet sheet = workbook.worksheets[0];
+
+    var data = await FirebaseFirestore.instance.collection('properties').get();
+
+    _nonRegPropertyReport = data.docs;
+
+        for(int i = 0; i<=_nonRegPropertyReport.length-1; i++) {
+          for (var tokenSnapshot in _allUserTokenResults) {
+            if (tokenSnapshot.id == _nonRegPropertyReport[i]['cell number']) {
+              _nonRegPropertyReport.remove(_nonRegPropertyReport[i]);
+              userPhoneToken = tokenSnapshot['token'];
+              notifyToken = tokenSnapshot['token'];
+              userValid = 'User will receive notification';
+              for(int i = 0; i<=_nonRegPropertyReport.length-1; i++) {
+                if (tokenSnapshot.id == _nonRegPropertyReport[i]['cell number']) {
+                  _nonRegPropertyReport.remove(_nonRegPropertyReport[i]);
+                }
+              }
+              // break;
+            } else {
+              userPhoneToken = '';
+              notifyToken = '';
+              userValid = 'User is not yet registered';
+            }
+          }
+        }
+        print(_nonRegPropertyReport);
+
+    String column = "A";
+    int excelRow = 2;
+    int listRow = 0;
+
+    sheet.getRangeByName('A1').setText('Account #');
+    sheet.getRangeByName('B1').setText('Address');
+    sheet.getRangeByName('C1').setText('Area Code');
+    sheet.getRangeByName('D1').setText('Utilities Bill');
+    sheet.getRangeByName('E1').setText('Meter Number');
+    sheet.getRangeByName('F1').setText('Meter Reading');
+    sheet.getRangeByName('G1').setText('Electric Image Submitted');
+    sheet.getRangeByName('H1').setText('Water Meter Number');
+    sheet.getRangeByName('I1').setText('Water Meter Reading');
+    sheet.getRangeByName('J1').setText('Water Image Submitted');
+    sheet.getRangeByName('K1').setText('First Name');
+    sheet.getRangeByName('L1').setText('Last Name');
+    sheet.getRangeByName('M1').setText('ID Number');
+    sheet.getRangeByName('N1').setText('Owner Phone Number');
+
+    for(var reportSnapshot in _nonRegPropertyReport){
+      ///Property snapshot that retrieves property data entirely from the db
+      while(excelRow <= _nonRegPropertyReport.length-1) {
+
+        print('Report Lists:::: ${_nonRegPropertyReport[listRow]['address']}');
+        String accountNum = _nonRegPropertyReport[listRow]['account number'].toString();
+        String address = _nonRegPropertyReport[listRow]['address'].toString();
+        String eBill = _nonRegPropertyReport[listRow]['eBill'].toString();
+        String areaCode = _nonRegPropertyReport[listRow]['area code'].toString();
+        String meterNumber = _nonRegPropertyReport[listRow]['meter number'].toString();
+        String meterReading = _nonRegPropertyReport[listRow]['meter reading'].toString();
+        String uploadedLatestE = _nonRegPropertyReport[listRow]['imgStateE'].toString();
+        String waterMeterNum = _nonRegPropertyReport[listRow]['water meter number'].toString();
+        String waterMeterReading = _nonRegPropertyReport[listRow]['water meter reading'].toString();
+        String uploadedLatestW = _nonRegPropertyReport[listRow]['imgStateW'].toString();
+        String firstName = _nonRegPropertyReport[listRow]['first name'].toString();
+        String lastName = _nonRegPropertyReport[listRow]['last name'].toString();
+        String idNumber = _nonRegPropertyReport[listRow]['id number'].toString();
+        String phoneNumber = _nonRegPropertyReport[listRow]['cell number'].toString();
+
+        sheet.getRangeByName('A$excelRow').setText(accountNum);
+        sheet.getRangeByName('B$excelRow').setText(address);
+        sheet.getRangeByName('C$excelRow').setText(areaCode);
+        sheet.getRangeByName('D$excelRow').setText(eBill);
+        sheet.getRangeByName('E$excelRow').setText(meterNumber);
+        sheet.getRangeByName('F$excelRow').setText(meterReading);
+        sheet.getRangeByName('G$excelRow').setText(uploadedLatestE);
+        sheet.getRangeByName('H$excelRow').setText(waterMeterNum);
+        sheet.getRangeByName('I$excelRow').setText(waterMeterReading);
+        sheet.getRangeByName('J$excelRow').setText(uploadedLatestW);
+        sheet.getRangeByName('K$excelRow').setText(firstName);
+        sheet.getRangeByName('L$excelRow').setText(lastName);
+        sheet.getRangeByName('M$excelRow').setText(idNumber);
+        sheet.getRangeByName('N$excelRow').setText(phoneNumber);
+
+        excelRow+=1;
+        listRow+=1;
+      }
+    }
+
+    final List<int> bytes = workbook.saveAsStream();
+
+    if(kIsWeb){
+      AnchorElement(href: 'data:application/ocelot-stream;charset=utf-16le;base64,${base64.encode(bytes)}')
+          ..setAttribute('download', '(non-registered users) Msunduzi Property Reports $formattedDate.xlsx')
+          ..click();
+    } else {
+      final String path = (await getApplicationSupportDirectory()).path;
+      //Create an empty file to write Excel data
+      final String filename = Platform.isWindows ? '$path\\(non-registered users) Msunduzi Property Reports $formattedDate.xlsx' : '$path/(non-registered users) Msunduzi Property Reports $formattedDate.xlsx';
+      final File file = File(filename);
+      final List<int> bytes = workbook.saveAsStream();
+      //Write Excel data
+      await file.writeAsBytes(bytes, flush: true);
+      //Launch the file (used open_file package)
+      await OpenFile.open('$path/(non-registered users) Msunduzi Property Reports $formattedDate.xlsx');
     }
     // File('Msunduzi Property Reports.xlsx').writeAsBytes(bytes);
     workbook.dispose();
