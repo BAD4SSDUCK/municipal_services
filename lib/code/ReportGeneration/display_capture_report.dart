@@ -20,15 +20,16 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
-import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
 
+import '../Reusable/icon_elevated_button.dart';
 
-class ReportBuilderProps extends StatefulWidget {
-  const ReportBuilderProps({Key? key}) : super(key: key);
+
+class ReportBuilderCaptured extends StatefulWidget {
+  const ReportBuilderCaptured({Key? key}) : super(key: key);
 
   @override
-  _ReportBuilderPropsState createState() => _ReportBuilderPropsState();
+  _ReportBuilderCapturedState createState() => _ReportBuilderCapturedState();
 }
 
 final FirebaseAuth auth = FirebaseAuth.instance;
@@ -66,7 +67,7 @@ class FireStorageService extends ChangeNotifier{
   }
 }
 
-class _ReportBuilderPropsState extends State<ReportBuilderProps> {
+class _ReportBuilderCapturedState extends State<ReportBuilderCaptured> {
 
   @override
   void initState() {
@@ -165,8 +166,10 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
   String userPhoneNumber = '';
   String EMeterNum =  '';
   String EMeterRead =  '';
+  bool EMeterCap = false;
   String WMeterNum =  '';
   String WMeterRead =  '';
+  bool WMeterCap = false;
   String userBill =  '';
   String userValid = '';
   String userPhoneToken = '';
@@ -186,8 +189,6 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
 
   TextEditingController _searchController = TextEditingController();
   List _allPropertyReport = [];
-  List _regPropertyReport = [];
-  List _nonRegPropertyReport = [];
 
   getPropertyStream() async{
     var data = await FirebaseFirestore.instance.collection('properties').get();
@@ -233,7 +234,7 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: Scaffold(
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
@@ -286,22 +287,22 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
               tabs: [
                 Tab(
                   child: Container(alignment: Alignment.center,
-                    child: const Text('Report\nAll', textAlign: TextAlign.center,),),
+                    child: const Text('Completed\nCaptures', textAlign: TextAlign.center,),),
                 ),
                 Tab(
                   child: Container(alignment: Alignment.center,
-                    child: const Text('Registered\nApp Users', textAlign: TextAlign.center,),),
+                    child: const Text('Outstanding\nCaptures', textAlign: TextAlign.center,),),
                 ),
-                Tab(
-                  child: Container(alignment: Alignment.center,
-                    child: const Text('Non-Registered\nApp Users', textAlign: TextAlign.center,),),
-                ),
+                // Tab(
+                //   child: Container(alignment: Alignment.center,
+                //     child: const Text('Downloaded\nInvoice', textAlign: TextAlign.center,),),
+                // ),
               ]
           ),
         ),
         body: TabBarView(
           children: [
-            ///Tab for all
+            ///Tab for captures
             Column(
               children: [
 
@@ -331,7 +332,7 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
                                 onPressed: () async {
                                   Fluttertoast.showToast(
                                       msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
-                                  reportGeneration();
+                                  capReportGeneration();
                                   Navigator.pop(context);
                                 },
                                 icon: const Icon(
@@ -343,7 +344,7 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
                           );
                         });
                   },
-                  labelText: 'Generate Properties Report',
+                  labelText: 'Generate Captures Report',
                   fSize: 16,
                   faIcon: const FaIcon(Icons.edit_note_outlined,),
                   fgColor: Theme.of(context).primaryColor,
@@ -370,13 +371,13 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
                 ),
                 /// Search bar end
 
-                Expanded(child: propertyCard(),),
+                Expanded(child: propertyCapCard(),),
 
                 const SizedBox(height: 5,),
               ],
             ),
 
-            ///Tab for registered
+            ///Tab for un-captured
             Column(
               children: [
 
@@ -406,7 +407,7 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
                                 onPressed: () async {
                                   Fluttertoast.showToast(
                                       msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
-                                  registeredReportGeneration();
+                                  noCapReportGeneration();
                                   Navigator.pop(context);
                                 },
                                 icon: const Icon(
@@ -418,7 +419,7 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
                           );
                         });
                   },
-                  labelText: 'Generate Registered Report',
+                  labelText: 'Generate Non-Captured Report',
                   fSize: 16,
                   faIcon: const FaIcon(Icons.edit_note_outlined,),
                   fgColor: Theme.of(context).primaryColor,
@@ -445,86 +446,86 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
                 ),
                 /// Search bar end
 
-                Expanded(child: userValidCard(),),
+                Expanded(child: propertyNoCapCard(),),
 
                 const SizedBox(height: 5,),
               ],
             ),
 
-            ///Tab for non-registered
-            Column(
-              children: [
-
-                const SizedBox(height: 8,),
-                BasicIconButtonGrey(
-                  onPress: () async {
-                    ///Generate Report here
-                    showDialog(
-                        barrierDismissible: false,
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: const Text("Generate Live Report"),
-                            content: const Text(
-                                "Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
-                            actions: [
-                              IconButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                icon: const Icon(
-                                  Icons.cancel,
-                                  color: Colors.red,
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () async {
-                                  Fluttertoast.showToast(
-                                      msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
-                                  nonRegisteredReportGeneration();
-                                  Navigator.pop(context);
-                                },
-                                icon: const Icon(
-                                  Icons.done,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          );
-                        });
-                  },
-                  labelText: 'Generate Non-registered Report',
-                  fSize: 16,
-                  faIcon: const FaIcon(Icons.edit_note_outlined,),
-                  fgColor: Theme.of(context).primaryColor,
-                  btSize: const Size(300, 50),
-                ),
-                const SizedBox(height: 4,),
-
-                /// Search bar
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
-                  child: SearchBar(
-                    controller: _searchController,
-                    padding: const MaterialStatePropertyAll<EdgeInsets>(
-                        EdgeInsets.symmetric(horizontal: 16.0)),
-                    leading: const Icon(Icons.search),
-                    hintText: "Search by Address...",
-                    onChanged: (value) async{
-                      setState(() {
-                        searchText = value;
-                        // print('this is the input text ::: $searchText');
-                      });
-                    },
-                  ),
-                ),
-                /// Search bar end
-
-                Expanded(child: userInValidCard(),),
-
-                const SizedBox(height: 5,),
-              ],
-            ),
+            ///Tab for something if needed
+            // Column(
+            //   children: [
+            //
+            //     const SizedBox(height: 8,),
+            //     BasicIconButtonGrey(
+            //       onPress: () async {
+            //         ///Generate Report here
+            //         showDialog(
+            //             barrierDismissible: false,
+            //             context: context,
+            //             builder: (context) {
+            //               return AlertDialog(
+            //                 title: const Text("Generate Live Report"),
+            //                 content: const Text(
+            //                     "Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
+            //                 actions: [
+            //                   IconButton(
+            //                     onPressed: () {
+            //                       Navigator.pop(context);
+            //                     },
+            //                     icon: const Icon(
+            //                       Icons.cancel,
+            //                       color: Colors.red,
+            //                     ),
+            //                   ),
+            //                   IconButton(
+            //                     onPressed: () async {
+            //                       Fluttertoast.showToast(
+            //                           msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
+            //                       nonRegisteredReportGeneration();
+            //                       Navigator.pop(context);
+            //                     },
+            //                     icon: const Icon(
+            //                       Icons.done,
+            //                       color: Colors.green,
+            //                     ),
+            //                   ),
+            //                 ],
+            //               );
+            //             });
+            //       },
+            //       labelText: 'Generate Non-registered Report',
+            //       fSize: 16,
+            //       faIcon: const FaIcon(Icons.edit_note_outlined,),
+            //       fgColor: Theme.of(context).primaryColor,
+            //       btSize: const Size(300, 50),
+            //     ),
+            //     const SizedBox(height: 4,),
+            //
+            //     /// Search bar
+            //     Padding(
+            //       padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
+            //       child: SearchBar(
+            //         controller: _searchController,
+            //         padding: const MaterialStatePropertyAll<EdgeInsets>(
+            //             EdgeInsets.symmetric(horizontal: 16.0)),
+            //         leading: const Icon(Icons.search),
+            //         hintText: "Search by Address...",
+            //         onChanged: (value) async{
+            //           setState(() {
+            //             searchText = value;
+            //             // print('this is the input text ::: $searchText');
+            //           });
+            //         },
+            //       ),
+            //     ),
+            //     /// Search bar end
+            //
+            //     Expanded(child: userInValidCard(),),
+            //
+            //     const SizedBox(height: 5,),
+            //   ],
+            // ),
           ],
         ),
         /// Add new account, removed because it was not necessary for non-staff users.
@@ -773,8 +774,10 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
             userPhoneNumber = _allPropResults[index]['cell number'];
             EMeterNum = _allPropResults[index]['meter number'];
             EMeterRead = _allPropResults[index]['meter reading'];
+            EMeterCap = _allPropResults[index]['imgStateE'];
             WMeterNum = _allPropResults[index]['water meter number'];
             WMeterRead = _allPropResults[index]['water meter reading'];
+            WMeterCap = _allPropResults[index]['imgStateW'];
             userBill = _allPropResults[index]['eBill'];
 
             if(_allPropResults[index]['eBill'] != '' ||
@@ -810,7 +813,7 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Center(
-                        child: Text('Users Device Details',
+                        child: Text('Property Details',
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.w700),
                         ),
@@ -854,7 +857,7 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
     );
   }
 
-  Widget userValidCard() {
+  Widget propertyCapCard() {
     if (_allPropResults.isNotEmpty){
       return ListView.builder(
           itemCount: _allPropResults.length,
@@ -869,106 +872,10 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
             userPhoneNumber = _allPropResults[index]['cell number'];
             EMeterNum = _allPropResults[index]['meter number'];
             EMeterRead = _allPropResults[index]['meter reading'];
+            EMeterCap = _allPropResults[index]['imgStateE'];
             WMeterNum = _allPropResults[index]['water meter number'];
             WMeterRead = _allPropResults[index]['water meter reading'];
-            userBill = _allPropResults[index]['eBill'];
-
-            if(_allPropResults[index]['eBill'] != '' ||
-            _allPropResults[index]['eBill'] != 'R0,000.00' ||
-            _allPropResults[index]['eBill'] != 'R0.00' ||
-            _allPropResults[index]['eBill'] != 'R0' ||
-            _allPropResults[index]['eBill'] != '0'
-            ){
-            userBill = 'Utilities bill outstanding: ${_allPropResults[index]['eBill']}';
-            } else {
-            userBill = 'No outstanding payments';
-            }
-
-            for (var tokenSnapshot in _allUserTokenResults) {
-              if (tokenSnapshot.id == _allPropResults[index]['cell number']) {
-                userPhoneToken = tokenSnapshot['token'];
-                notifyToken = tokenSnapshot['token'];
-                userValid = 'User will receive notification';
-                break;
-              } else {
-                userPhoneToken = '';
-                notifyToken = '';
-                userValid = 'User is not yet registered';
-              }
-            }
-
-            if(userValid == 'User will receive notification'){
-              return Card(
-                margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Center(
-                        child: Text('Users Device Details',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      const SizedBox(height: 10,),
-                      tokenItemField(
-                          userAccNum,
-                          userAddress,
-                          userAreaCode,
-                          userWardProp,
-                          userNameProp,
-                          userIDnum,
-                          userPhoneNumber,
-                          userValid,
-                          EMeterNum,
-                          EMeterRead,
-                          WMeterNum,
-                          WMeterRead,
-                          userBill,
-                      ),
-                      Visibility(
-                        visible: false,
-                        child: Text('User Token: $userPhoneToken',
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w400),
-                        ),
-                      ),
-                      const SizedBox(height: 5,),
-                    ],
-                  ),
-                ),
-              );
-            } else {
-              return const SizedBox();
-            }
-          }
-      );
-    }
-    return const Padding(
-      padding: EdgeInsets.all(10.0),
-      child: Center(
-          child: CircularProgressIndicator()),
-    );
-  }
-
-  Widget userInValidCard() {
-    if (_allPropResults.isNotEmpty){
-      return ListView.builder(
-          itemCount: _allPropResults.length,
-          itemBuilder: (context, index) {
-            userAccNum = _allPropResults[index]['address'];
-            userAddress = _allPropResults[index]['address'];
-            userAreaCode = _allPropResults[index]['area code'].toString();
-            userWardProp = _allPropResults[index]['ward'];
-            userNameProp = '${_allPropResults[index]['first name']} ${_allPropResults[index]['last name']}';
-            userIDnum = _allPropResults[index]['id number'];
-            userPhoneNumber = _allPropResults[index]['cell number'];
-            EMeterNum = _allPropResults[index]['meter number'];
-            EMeterRead = _allPropResults[index]['meter reading'];
-            WMeterNum = _allPropResults[index]['water meter number'];
-            WMeterRead = _allPropResults[index]['water meter reading'];
+            WMeterCap = _allPropResults[index]['imgStateW'];
             userBill = _allPropResults[index]['eBill'];
 
             if(_allPropResults[index]['eBill'] != '' ||
@@ -995,7 +902,7 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
               }
             }
 
-            if(userValid == 'User is not yet registered'){
+            if(EMeterCap == true || WMeterCap == true) {
               return Card(
                 margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
                 child: Padding(
@@ -1005,7 +912,108 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Center(
-                        child: Text('Users Device Details',
+                        child: Text('Property Details',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      const SizedBox(height: 10,),
+                      tokenItemField(
+                        userAccNum,
+                        userAddress,
+                        userAreaCode,
+                        userWardProp,
+                        userNameProp,
+                        userIDnum,
+                        userPhoneNumber,
+                        userValid,
+                        EMeterNum,
+                        EMeterRead,
+                        WMeterNum,
+                        WMeterRead,
+                        userBill,
+                      ),
+                      Visibility(
+                        visible: false,
+                        child: Text('User Token: $userPhoneToken',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                      ),
+                      const SizedBox(height: 5,),
+                    ],
+                  ),
+                ),
+              );
+            } else {
+              return const SizedBox();
+            }
+          }
+      );
+    }
+    return const Padding(
+      padding: EdgeInsets.all(10.0),
+      child: Center(
+          child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget propertyNoCapCard() {
+    if (_allPropResults.isNotEmpty){
+      return ListView.builder(
+          itemCount: _allPropResults.length,
+          itemBuilder: (context, index) {
+
+            userAccNum = _allPropResults[index]['address'];
+            userAddress = _allPropResults[index]['address'];
+            userAreaCode = _allPropResults[index]['area code'].toString();
+            userWardProp = _allPropResults[index]['ward'];
+            userNameProp = '${_allPropResults[index]['first name']} ${_allPropResults[index]['last name']}';
+            userIDnum = _allPropResults[index]['id number'];
+            userPhoneNumber = _allPropResults[index]['cell number'];
+            EMeterNum = _allPropResults[index]['meter number'];
+            EMeterRead = _allPropResults[index]['meter reading'];
+            EMeterCap = _allPropResults[index]['imgStateE'];
+            WMeterNum = _allPropResults[index]['water meter number'];
+            WMeterRead = _allPropResults[index]['water meter reading'];
+            WMeterCap = _allPropResults[index]['imgStateW'];
+            userBill = _allPropResults[index]['eBill'];
+
+            if(_allPropResults[index]['eBill'] != '' ||
+                _allPropResults[index]['eBill'] != 'R0,000.00' ||
+                _allPropResults[index]['eBill'] != 'R0.00' ||
+                _allPropResults[index]['eBill'] != 'R0' ||
+                _allPropResults[index]['eBill'] != '0'
+            ){
+              userBill = 'Utilities bill outstanding: ${_allPropResults[index]['eBill']}';
+            } else {
+              userBill = 'No outstanding payments';
+            }
+
+            for (var tokenSnapshot in _allUserTokenResults) {
+              if (tokenSnapshot.id == _allPropResults[index]['cell number']) {
+                userPhoneToken = tokenSnapshot['token'];
+                notifyToken = tokenSnapshot['token'];
+                userValid = 'User will receive notification';
+                break;
+              } else {
+                userPhoneToken = '';
+                notifyToken = '';
+                userValid = 'User is not yet registered';
+              }
+            }
+
+            if(EMeterCap == false || WMeterCap == false) {
+              return Card(
+                margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Center(
+                        child: Text('Property Details',
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.w700),
                         ),
@@ -1140,7 +1148,7 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
     workbook.dispose();
   }
 
-  Future<void> registeredReportGeneration() async {
+  Future<void> capReportGeneration() async {
     final excel.Workbook workbook = excel.Workbook();
     final excel.Worksheet sheet = workbook.worksheets[0];
 
@@ -1148,24 +1156,9 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
 
     _allPropertyReport = data.docs;
 
-        for(int i = 0; i<=_allPropertyReport.length-1; i++) {
-          for (var tokenSnapshot in _allUserTokenResults) {
-            if (tokenSnapshot.id == _allPropertyReport[i]['cell number']) {
-              _regPropertyReport.add(_allPropertyReport[i]);
-              userPhoneToken = tokenSnapshot['token'];
-              notifyToken = tokenSnapshot['token'];
-              userValid = 'User will receive notification';
-              break;
-            } else {
-              userPhoneToken = '';
-              notifyToken = '';
-              userValid = 'User is not yet registered';
-            }
-          }
-        }
-
     String column = "A";
     int excelRow = 2;
+    int excelCap = 2;
     int listRow = 0;
 
     sheet.getRangeByName('A1').setText('Account #');
@@ -1183,43 +1176,49 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
     sheet.getRangeByName('M1').setText('ID Number');
     sheet.getRangeByName('N1').setText('Owner Phone Number');
 
-    for(var reportSnapshot in _regPropertyReport){
+    for(var reportSnapshot in _allPropertyReport){
       ///Property snapshot that retrieves property data entirely from the db
-      while(excelRow <= _allPropertyReport.length-1) {
+      while(excelCap <= _allPropertyReport.length+1) {
 
-        print('Report Lists:::: ${_regPropertyReport[listRow]['address']}');
-        String accountNum = _regPropertyReport[listRow]['account number'].toString();
-        String address = _regPropertyReport[listRow]['address'].toString();
-        String eBill = _regPropertyReport[listRow]['eBill'].toString();
-        String areaCode = _regPropertyReport[listRow]['area code'].toString();
-        String meterNumber = _regPropertyReport[listRow]['meter number'].toString();
-        String meterReading = _regPropertyReport[listRow]['meter reading'].toString();
-        String uploadedLatestE = _regPropertyReport[listRow]['imgStateE'].toString();
-        String waterMeterNum = _regPropertyReport[listRow]['water meter number'].toString();
-        String waterMeterReading = _regPropertyReport[listRow]['water meter reading'].toString();
-        String uploadedLatestW = _regPropertyReport[listRow]['imgStateW'].toString();
-        String firstName = _regPropertyReport[listRow]['first name'].toString();
-        String lastName = _regPropertyReport[listRow]['last name'].toString();
-        String idNumber = _regPropertyReport[listRow]['id number'].toString();
-        String phoneNumber = _regPropertyReport[listRow]['cell number'].toString();
+        print('Report Lists:::: ${_allPropertyReport[listRow]['address']}');
+        String accountNum = _allPropertyReport[listRow]['account number'].toString();
+        String address = _allPropertyReport[listRow]['address'].toString();
+        String eBill = _allPropertyReport[listRow]['eBill'].toString();
+        String areaCode = _allPropertyReport[listRow]['area code'].toString();
+        String meterNumber = _allPropertyReport[listRow]['meter number'].toString();
+        String meterReading = _allPropertyReport[listRow]['meter reading'].toString();
+        String uploadedLatestE = _allPropertyReport[listRow]['imgStateE'].toString();
+        String waterMeterNum = _allPropertyReport[listRow]['water meter number'].toString();
+        String waterMeterReading = _allPropertyReport[listRow]['water meter reading'].toString();
+        String uploadedLatestW = _allPropertyReport[listRow]['imgStateW'].toString();
+        String firstName = _allPropertyReport[listRow]['first name'].toString();
+        String lastName = _allPropertyReport[listRow]['last name'].toString();
+        String idNumber = _allPropertyReport[listRow]['id number'].toString();
+        String phoneNumber = _allPropertyReport[listRow]['cell number'].toString();
 
-        sheet.getRangeByName('A$excelRow').setText(accountNum);
-        sheet.getRangeByName('B$excelRow').setText(address);
-        sheet.getRangeByName('C$excelRow').setText(areaCode);
-        sheet.getRangeByName('D$excelRow').setText(eBill);
-        sheet.getRangeByName('E$excelRow').setText(meterNumber);
-        sheet.getRangeByName('F$excelRow').setText(meterReading);
-        sheet.getRangeByName('G$excelRow').setText(uploadedLatestE);
-        sheet.getRangeByName('H$excelRow').setText(waterMeterNum);
-        sheet.getRangeByName('I$excelRow').setText(waterMeterReading);
-        sheet.getRangeByName('J$excelRow').setText(uploadedLatestW);
-        sheet.getRangeByName('K$excelRow').setText(firstName);
-        sheet.getRangeByName('L$excelRow').setText(lastName);
-        sheet.getRangeByName('M$excelRow').setText(idNumber);
-        sheet.getRangeByName('N$excelRow').setText(phoneNumber);
+        if(uploadedLatestE == 'true' || uploadedLatestW == 'true') {
+          sheet.getRangeByName('A$excelRow').setText(accountNum);
+          sheet.getRangeByName('B$excelRow').setText(address);
+          sheet.getRangeByName('C$excelRow').setText(areaCode);
+          sheet.getRangeByName('D$excelRow').setText(eBill);
+          sheet.getRangeByName('E$excelRow').setText(meterNumber);
+          sheet.getRangeByName('F$excelRow').setText(meterReading);
+          sheet.getRangeByName('G$excelRow').setText(uploadedLatestE);
+          sheet.getRangeByName('H$excelRow').setText(waterMeterNum);
+          sheet.getRangeByName('I$excelRow').setText(waterMeterReading);
+          sheet.getRangeByName('J$excelRow').setText(uploadedLatestW);
+          sheet.getRangeByName('K$excelRow').setText(firstName);
+          sheet.getRangeByName('L$excelRow').setText(lastName);
+          sheet.getRangeByName('M$excelRow').setText(idNumber);
+          sheet.getRangeByName('N$excelRow').setText(phoneNumber);
 
-        excelRow+=1;
-        listRow+=1;
+          excelRow+=1;
+          excelCap+=1;
+          listRow+=1;
+        } else {
+          excelCap+=1;
+          listRow+=1;
+        }
       }
     }
 
@@ -1227,55 +1226,34 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
 
     if(kIsWeb){
       AnchorElement(href: 'data:application/ocelot-stream;charset=utf-16le;base64,${base64.encode(bytes)}')
-          ..setAttribute('download', '(registered users) Msunduzi Property Reports $formattedDate.xlsx')
+          ..setAttribute('download', 'Msunduzi Property Captured Reports $formattedDate.xlsx')
           ..click();
     } else {
       final String path = (await getApplicationSupportDirectory()).path;
       //Create an empty file to write Excel data
-      final String filename = Platform.isWindows ? '$path\\(registered users) Msunduzi Property Reports $formattedDate.xlsx' : '$path/(registered users) Msunduzi Property Reports $formattedDate.xlsx';
+      final String filename = Platform.isWindows ? '$path\\Msunduzi Property Captured Reports $formattedDate.xlsx' : '$path/Msunduzi Property Captured Reports $formattedDate.xlsx';
       final File file = File(filename);
       final List<int> bytes = workbook.saveAsStream();
       //Write Excel data
       await file.writeAsBytes(bytes, flush: true);
       //Launch the file (used open_file package)
-      await OpenFile.open('$path/(registered users) Msunduzi Property Reports $formattedDate.xlsx');
+      await OpenFile.open('$path/Msunduzi Property Captured Reports $formattedDate.xlsx');
     }
     // File('Msunduzi Property Reports.xlsx').writeAsBytes(bytes);
     workbook.dispose();
   }
 
-  Future<void> nonRegisteredReportGeneration() async {
+  Future<void> noCapReportGeneration() async {
     final excel.Workbook workbook = excel.Workbook();
     final excel.Worksheet sheet = workbook.worksheets[0];
 
     var data = await FirebaseFirestore.instance.collection('properties').get();
 
-    _nonRegPropertyReport = data.docs;
-
-        for(int i = 0; i<=_nonRegPropertyReport.length-1; i++) {
-          for (var tokenSnapshot in _allUserTokenResults) {
-            if (tokenSnapshot.id == _nonRegPropertyReport[i]['cell number']) {
-              _nonRegPropertyReport.remove(_nonRegPropertyReport[i]);
-              userPhoneToken = tokenSnapshot['token'];
-              notifyToken = tokenSnapshot['token'];
-              userValid = 'User will receive notification';
-              for(int i = 0; i<=_nonRegPropertyReport.length-1; i++) {
-                if (tokenSnapshot.id == _nonRegPropertyReport[i]['cell number']) {
-                  _nonRegPropertyReport.remove(_nonRegPropertyReport[i]);
-                }
-              }
-              // break;
-            } else {
-              userPhoneToken = '';
-              notifyToken = '';
-              userValid = 'User is not yet registered';
-            }
-          }
-        }
-        print(_nonRegPropertyReport);
+    _allPropertyReport = data.docs;
 
     String column = "A";
     int excelRow = 2;
+    int excelCap = 2;
     int listRow = 0;
 
     sheet.getRangeByName('A1').setText('Account #');
@@ -1293,43 +1271,49 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
     sheet.getRangeByName('M1').setText('ID Number');
     sheet.getRangeByName('N1').setText('Owner Phone Number');
 
-    for(var reportSnapshot in _nonRegPropertyReport){
+    for(var reportSnapshot in _allPropertyReport){
       ///Property snapshot that retrieves property data entirely from the db
-      while(excelRow <= _nonRegPropertyReport.length-1) {
+      while(excelCap <= _allPropertyReport.length+1) {
 
-        print('Report Lists:::: ${_nonRegPropertyReport[listRow]['address']}');
-        String accountNum = _nonRegPropertyReport[listRow]['account number'].toString();
-        String address = _nonRegPropertyReport[listRow]['address'].toString();
-        String eBill = _nonRegPropertyReport[listRow]['eBill'].toString();
-        String areaCode = _nonRegPropertyReport[listRow]['area code'].toString();
-        String meterNumber = _nonRegPropertyReport[listRow]['meter number'].toString();
-        String meterReading = _nonRegPropertyReport[listRow]['meter reading'].toString();
-        String uploadedLatestE = _nonRegPropertyReport[listRow]['imgStateE'].toString();
-        String waterMeterNum = _nonRegPropertyReport[listRow]['water meter number'].toString();
-        String waterMeterReading = _nonRegPropertyReport[listRow]['water meter reading'].toString();
-        String uploadedLatestW = _nonRegPropertyReport[listRow]['imgStateW'].toString();
-        String firstName = _nonRegPropertyReport[listRow]['first name'].toString();
-        String lastName = _nonRegPropertyReport[listRow]['last name'].toString();
-        String idNumber = _nonRegPropertyReport[listRow]['id number'].toString();
-        String phoneNumber = _nonRegPropertyReport[listRow]['cell number'].toString();
+        print('Report Lists:::: ${_allPropertyReport[listRow]['address']}');
+        String accountNum = _allPropertyReport[listRow]['account number'].toString();
+        String address = _allPropertyReport[listRow]['address'].toString();
+        String eBill = _allPropertyReport[listRow]['eBill'].toString();
+        String areaCode = _allPropertyReport[listRow]['area code'].toString();
+        String meterNumber = _allPropertyReport[listRow]['meter number'].toString();
+        String meterReading = _allPropertyReport[listRow]['meter reading'].toString();
+        String uploadedLatestE = _allPropertyReport[listRow]['imgStateE'].toString();
+        String waterMeterNum = _allPropertyReport[listRow]['water meter number'].toString();
+        String waterMeterReading = _allPropertyReport[listRow]['water meter reading'].toString();
+        String uploadedLatestW = _allPropertyReport[listRow]['imgStateW'].toString();
+        String firstName = _allPropertyReport[listRow]['first name'].toString();
+        String lastName = _allPropertyReport[listRow]['last name'].toString();
+        String idNumber = _allPropertyReport[listRow]['id number'].toString();
+        String phoneNumber = _allPropertyReport[listRow]['cell number'].toString();
 
-        sheet.getRangeByName('A$excelRow').setText(accountNum);
-        sheet.getRangeByName('B$excelRow').setText(address);
-        sheet.getRangeByName('C$excelRow').setText(areaCode);
-        sheet.getRangeByName('D$excelRow').setText(eBill);
-        sheet.getRangeByName('E$excelRow').setText(meterNumber);
-        sheet.getRangeByName('F$excelRow').setText(meterReading);
-        sheet.getRangeByName('G$excelRow').setText(uploadedLatestE);
-        sheet.getRangeByName('H$excelRow').setText(waterMeterNum);
-        sheet.getRangeByName('I$excelRow').setText(waterMeterReading);
-        sheet.getRangeByName('J$excelRow').setText(uploadedLatestW);
-        sheet.getRangeByName('K$excelRow').setText(firstName);
-        sheet.getRangeByName('L$excelRow').setText(lastName);
-        sheet.getRangeByName('M$excelRow').setText(idNumber);
-        sheet.getRangeByName('N$excelRow').setText(phoneNumber);
+        if(uploadedLatestE == 'false' || uploadedLatestW == 'false') {
+          sheet.getRangeByName('A$excelRow').setText(accountNum);
+          sheet.getRangeByName('B$excelRow').setText(address);
+          sheet.getRangeByName('C$excelRow').setText(areaCode);
+          sheet.getRangeByName('D$excelRow').setText(eBill);
+          sheet.getRangeByName('E$excelRow').setText(meterNumber);
+          sheet.getRangeByName('F$excelRow').setText(meterReading);
+          sheet.getRangeByName('G$excelRow').setText(uploadedLatestE);
+          sheet.getRangeByName('H$excelRow').setText(waterMeterNum);
+          sheet.getRangeByName('I$excelRow').setText(waterMeterReading);
+          sheet.getRangeByName('J$excelRow').setText(uploadedLatestW);
+          sheet.getRangeByName('K$excelRow').setText(firstName);
+          sheet.getRangeByName('L$excelRow').setText(lastName);
+          sheet.getRangeByName('M$excelRow').setText(idNumber);
+          sheet.getRangeByName('N$excelRow').setText(phoneNumber);
 
-        excelRow+=1;
-        listRow+=1;
+          excelRow+=1;
+          excelCap+=1;
+          listRow+=1;
+        } else {
+          excelCap+=1;
+          listRow+=1;
+        }
       }
     }
 
@@ -1337,22 +1321,24 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
 
     if(kIsWeb){
       AnchorElement(href: 'data:application/ocelot-stream;charset=utf-16le;base64,${base64.encode(bytes)}')
-          ..setAttribute('download', '(non-registered users) Msunduzi Property Reports $formattedDate.xlsx')
+          ..setAttribute('download', 'Msunduzi Property Non-Captured Reports $formattedDate.xlsx')
           ..click();
     } else {
       final String path = (await getApplicationSupportDirectory()).path;
       //Create an empty file to write Excel data
-      final String filename = Platform.isWindows ? '$path\\(non-registered users) Msunduzi Property Reports $formattedDate.xlsx' : '$path/(non-registered users) Msunduzi Property Reports $formattedDate.xlsx';
+      final String filename = Platform.isWindows ? '$path\\Msunduzi Property Non-Captured Reports $formattedDate.xlsx' : '$path/Msunduzi Property Non-Captured Reports $formattedDate.xlsx';
       final File file = File(filename);
       final List<int> bytes = workbook.saveAsStream();
       //Write Excel data
       await file.writeAsBytes(bytes, flush: true);
       //Launch the file (used open_file package)
-      await OpenFile.open('$path/(non-registered users) Msunduzi Property Reports $formattedDate.xlsx');
+      await OpenFile.open('$path/Msunduzi Property Non-Captured Reports $formattedDate.xlsx');
     }
     // File('Msunduzi Property Reports.xlsx').writeAsBytes(bytes);
     workbook.dispose();
   }
+
+
 
   void setMonthLimits(String currentMonth) {
     String month1 = 'January';

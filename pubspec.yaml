@@ -39,6 +39,7 @@ dependencies:
   device_apps: ^2.2.0
   android_intent_plus: ^4.0.1
   js: ^0.6.7
+  rename: ^3.0.2
 
   rflutter_alert: ^2.0.4
   http: ^0.13.5

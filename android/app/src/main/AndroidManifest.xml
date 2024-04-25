@@ -21,7 +21,7 @@
     </queries>
 
    <application
-        android:label="Municipal Tracker Msunduzi"
+        android:label="Municipal Services"
         android:name="${applicationName}"
         android:largeHeap="true"
         android:icon="@mipmap/ic_launcher">

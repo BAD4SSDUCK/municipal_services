@@ -92,7 +92,7 @@ BEGIN
             VALUE "CompanyName", "com.example" "\0"
             VALUE "FileDescription", "municipal_tracker_msunduzi" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "municipal_tracker_msunduzi" "\0"
+            VALUE "InternalName", "com.example.municipal_services" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2022 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "municipal_tracker_msunduzi.exe" "\0"
             VALUE "ProductName", "municipal_tracker_msunduzi" "\0"

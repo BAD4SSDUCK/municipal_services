@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -376,12 +378,37 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
         actions: <Widget>[
           Visibility(
             visible: visAdmin,
-            child: IconButton(
-                onPressed: (){
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => const ReportBuilderProps()));
-                },
-                icon: const Icon(Icons.file_copy_outlined, color: Colors.white,)),),
+            child: Container(
+              alignment: Alignment.center,
+              child:  Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (
+                                  context) => const ReportBuilderProps()));
+                        },
+                          child: Text('Reports', style: GoogleFonts.jacquesFrancois(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                            fontStyle: FontStyle.italic,
+                            fontSize: 14,), textAlign: TextAlign.center,)
+                      ),
+                      IconButton(
+                          onPressed: (){
+                            Navigator.push(context,
+                                MaterialPageRoute(builder: (context) => const ReportBuilderProps()));
+                          },
+                          icon: const Icon(Icons.file_copy_outlined, color: Colors.white,)),
+                    ],
+                  ),
+                ],
+              ),),
+            ),
         ],
       ),
       body: Column(

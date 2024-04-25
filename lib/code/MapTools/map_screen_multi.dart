@@ -1,21 +1,23 @@
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'map_user_badge.dart';
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
+import 'location_search_dialogue.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:map_box_geocoder/map_box_geocoder.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_multi_invert.dart';
-
 import 'package:municipal_tracker_msunduzi/code/SQLApp/propertiesData/properties_data.dart';
-import 'location_search_dialogue.dart';
-import 'map_user_badge.dart';
+import 'package:municipal_tracker_msunduzi/code/ReportGeneration/display_capture_report.dart';
 
 
 const LatLng SOURCE_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);
@@ -27,6 +29,13 @@ class MapScreenMulti extends StatefulWidget {
   @override
   State<MapScreenMulti> createState() => _MapScreenMultiState();
 }
+
+final FirebaseAuth auth = FirebaseAuth.instance;
+final User? user = auth.currentUser;
+final uid = user?.uid;
+final email = user?.email;
+String userID = uid as String;
+String userEmail = email as String;
 
 class _MapScreenMultiState extends State<MapScreenMulti> {
 
@@ -45,8 +54,20 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
 
   List _allPropertiesResults = [];
 
+  bool adminAcc = false;
+  bool visAdmin = false;
+  bool visManager = false;
+  bool visEmployee = false;
+  bool visCapture = false;
+  bool visDev = false;
+  String userRole = '';
+  String userDept = '';
+  List _allUserRolesResults = [];
+
   @override
   void initState(){
+
+    checkAdmin();
 
     ///This is the circular loading widget in this future.delayed call
     _isLoading = true;
@@ -73,6 +94,66 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
     _cameraPosition = CameraPosition(target: currentLocation, zoom: 16);
 
     super.initState();
+  }
+
+  void checkAdmin() {
+    getUsersStream();
+    if(userRole == 'Admin'|| userRole == 'Administrator'){
+      adminAcc = true;
+    } else {
+      adminAcc = false;
+    }
+  }
+
+  getUsersStream() async{
+    var data = await FirebaseFirestore.instance.collection('users').get();
+    setState(() {
+      _allUserRolesResults = data.docs;
+    });
+    getUserDetails();
+  }
+
+  getUserDetails() async {
+    for (var userSnapshot in _allUserRolesResults) {
+      ///Need to build a property model that retrieves property data entirely from the db
+      var user = userSnapshot['email'].toString();
+      var role = userSnapshot['userRole'].toString();
+      var userName = userSnapshot['userName'].toString();
+      var firstName = userSnapshot['firstName'].toString();
+      var lastName = userSnapshot['lastName'].toString();
+      var userDepartment = userSnapshot['deptName'].toString();
+
+      if (user == userEmail) {
+        userRole = role;
+        userDept = userDepartment;
+        print('My Role is::: $userRole');
+
+        if(userRole == 'Admin'|| userRole == 'Administrator'){
+          visAdmin = true;
+          visManager = false;
+          visEmployee = false;
+          visCapture = false;
+        } else if(userRole == 'Manager'){
+          visAdmin = false;
+          visManager = true;
+          visEmployee = false;
+          visCapture = false;
+        } else if(userRole == 'Employee'){
+          visAdmin = false;
+          visManager = false;
+          visEmployee = true;
+          visCapture = false;
+        } else if(userRole == 'Capturer'){
+          visAdmin = false;
+          visManager = false;
+          visEmployee = false;
+          visCapture = true;
+        }
+        if(userDept == 'Developer'){
+          visDev = true;
+        }
+      }
+    }
   }
 
   late GoogleMapController _mapController;
@@ -415,6 +496,38 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                 iconTheme: const IconThemeData(color: Colors.white),
                 backgroundColor: Colors.green[700],
                 actions: <Widget>[
+                  Visibility(
+                    visible: visAdmin,
+                    child: Container(
+                      alignment: Alignment.center,
+                      child:  Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Row(
+                            children: [
+                              InkWell(
+                                  onTap: () {
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) => const ReportBuilderCaptured()));
+                                  },
+                                  child: Text('Reports', style: GoogleFonts.jacquesFrancois(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500,
+                                    fontStyle: FontStyle.italic,
+                                    fontSize: 14,), textAlign: TextAlign.center,)
+                              ),
+                              IconButton(
+                                  onPressed: (){
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) => const ReportBuilderCaptured()));
+                                  },
+                                  icon: const Icon(Icons.file_copy_outlined, color: Colors.white,)),
+                            ],
+                          ),
+                        ],
+                      ),),
+                  ),
                   Visibility(
                     visible: true,
                     child: IconButton(
