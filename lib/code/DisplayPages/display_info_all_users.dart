@@ -369,86 +369,138 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[350],
-      appBar: AppBar(
-        title: const Text('Registered Accounts',style: TextStyle(color: Colors.white),),
-        iconTheme: const IconThemeData(color: Colors.white),
-        backgroundColor: Colors.green,
-        actions: <Widget>[
-          Visibility(
-            visible: visAdmin,
-            child: Container(
-              alignment: Alignment.center,
-              child:  Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          Navigator.push(context,
-                              MaterialPageRoute(builder: (
-                                  context) => const ReportBuilderProps()));
-                        },
-                          child: Text('Reports', style: GoogleFonts.jacquesFrancois(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                            fontStyle: FontStyle.italic,
-                            fontSize: 14,), textAlign: TextAlign.center,)
-                      ),
-                      IconButton(
-                          onPressed: (){
-                            Navigator.push(context,
-                                MaterialPageRoute(builder: (context) => const ReportBuilderProps()));
-                          },
-                          icon: const Icon(Icons.file_copy_outlined, color: Colors.white,)),
-                    ],
-                  ),
-                ],
-              ),),
-            ),
-        ],
-      ),
-      body: Column(
-      children: [
-        /// Search bar
-        Padding(
-          padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
-          child: SearchBar(
-            controller: _searchController,
-            padding: const MaterialStatePropertyAll<EdgeInsets>(
-              EdgeInsets.symmetric(horizontal: 16.0)),
-            leading: const Icon(Icons.search),
-            hintText: "Search by Address...",
-            onChanged: (value) async{
-              setState(() {
-                searchText = value;
-                // print('this is the input text ::: $searchText');
-              });
-            },
-          ),
-        ),
-        /// Search bar end
-
-        // firebasePropertyCard(_propList),
-
-        Expanded(child: propertyCard(),),
-
-        const SizedBox(height: 5,),
-      ],
-                ),
-      /// Add new account, removed because it was not necessary for non-staff users.
-        floatingActionButton: Visibility(
-          visible: visDev,
-          child: FloatingActionButton(
-            onPressed: () => _create(),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+          backgroundColor: Colors.grey[350],
+          appBar: AppBar(
+            title: const Text('Registered Accounts', style: TextStyle(color: Colors.white),),
+            iconTheme: const IconThemeData(color: Colors.white),
             backgroundColor: Colors.green,
-            child: const Icon(Icons.add_home, color: Colors.white,),
+            actions: <Widget>[
+              Visibility(
+                visible: visAdmin,
+                child: Container(
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          InkWell(
+                              onTap: () {
+                                Navigator.push(context,
+                                    MaterialPageRoute(builder: (
+                                        context) => const ReportBuilderProps()));
+                              },
+                              child: Text(
+                                'Reports', style: GoogleFonts.jacquesFrancois(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                                fontStyle: FontStyle.italic,
+                                fontSize: 14,), textAlign: TextAlign.center,)
+                          ),
+                          IconButton(
+                              onPressed: () {
+                                Navigator.push(context,
+                                    MaterialPageRoute(builder: (context) => const ReportBuilderProps()));
+                              },
+                              icon: const Icon(Icons.file_copy_outlined, color: Colors.white,)),
+                        ],
+                      ),
+                    ],
+                  ),),
+              ),
+            ],
+            bottom: TabBar(
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                tabs: [
+                  Tab(
+                    child: Container(alignment: Alignment.center,
+                      child: const Text('All\nProperties', textAlign: TextAlign.center,),),
+                  ),
+                  Tab(
+                    child: Container(alignment: Alignment.center,
+                      child: const Text('Outstanding\nCaptures', textAlign: TextAlign.center,),),
+                  ),
+                ]
+            ),
           ),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.startFloat
+          body: TabBarView(
+            children: [
+
+              ///Tab for all properties
+              Column(
+                children: [
+
+                  /// Search bar
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 10.0),
+                    child: SearchBar(
+                      controller: _searchController,
+                      padding: const MaterialStatePropertyAll<EdgeInsets>(EdgeInsets.symmetric(horizontal: 16.0)),
+                      leading: const Icon(Icons.search),
+                      hintText: "Search by Address...",
+                      onChanged: (value) async {
+                        setState(() {
+                          searchText = value;
+                          // print('this is the input text ::: $searchText');
+                        });
+                      },
+                    ),
+                  ),/// Search bar end
+
+                  // firebasePropertyCard(_propList),
+
+                  Expanded(child: propertyCard(),),
+
+                  const SizedBox(height: 5,),
+                ],
+              ),
+
+              ///Tab for un-captured reading properties
+              Column(
+                children: [
+
+                  /// Search bar
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 10.0),
+                    child: SearchBar(
+                      controller: _searchController,
+                      padding: const MaterialStatePropertyAll<EdgeInsets>(EdgeInsets.symmetric(horizontal: 16.0)),
+                      leading: const Icon(Icons.search),
+                      hintText: "Search by Address...",
+                      onChanged: (value) async {
+                        setState(() {
+                          searchText = value;
+                          // print('this is the input text ::: $searchText');
+                        });
+                      },
+                    ),
+                  ),/// Search bar end
+
+                  Expanded(child: noCapPropertyCard(),),
+
+                  const SizedBox(height: 5,),
+                ],
+              ),
+
+            ],
+          ),
+
+          /// Add new account, removed because it was not necessary for non-staff users.
+          floatingActionButton: Visibility(
+            visible: visDev,
+            child: FloatingActionButton(
+              onPressed: () => _create(),
+              backgroundColor: Colors.green,
+              child: const Icon(Icons.add_home, color: Colors.white,),
+            ),
+          ),
+          floatingActionButtonLocation: FloatingActionButtonLocation.startFloat
+      ),
     );
   }
 
@@ -1046,6 +1098,271 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
           );
       },
     );
+    } return const Center(
+      child: CircularProgressIndicator(),
+    );
+  }
+
+  Widget noCapPropertyCard() {
+    if (_allPropResults.isNotEmpty) {
+      return ListView.builder(
+        ///this call is to display all details for all users but is only displaying for the current user account.
+        ///it can be changed to display all users for the staff to see if the role is set to all later on.
+        itemCount: _allPropResults.length,
+        itemBuilder: (context, index) {
+
+          eMeterNumber = _allPropResults[index]['meter number'];
+          wMeterNumber = _allPropResults[index]['water meter number'];
+          propPhoneNum = _allPropResults[index]['cell number'];
+
+          String billMessage;///A check for if payment is outstanding or not
+          if(_allPropResults[index]['eBill'] != '' ||
+              _allPropResults[index]['eBill'] != 'R0,000.00' ||
+              _allPropResults[index]['eBill'] != 'R0.00' ||
+              _allPropResults[index]['eBill'] != 'R0' ||
+              _allPropResults[index]['eBill'] != '0'
+          ){
+            billMessage = 'Utilities bill outstanding: ${_allPropResults[index]['eBill']}';
+          } else {
+            billMessage = 'No outstanding payments';
+          }
+
+          if(_allPropResults[index]['imgStateE'] == false || _allPropResults[index]['imgStateW'] == false ) {
+            return Card(
+              margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Center(
+                      child: Text(
+                        'Property Information',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    const SizedBox(height: 10,),
+                    Text(
+                      'Account Number: ${_allPropResults[index]['account number']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Text(
+                      'Street Address: ${_allPropResults[index]['address']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Text(
+                      'Area Code: ${_allPropResults[index]['area code']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Text(
+                      'Meter Number: ${_allPropResults[index]['meter number']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Text(
+                      'Meter Reading: ${_allPropResults[index]['meter reading']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Text(
+                      'Water Meter Number: ${_allPropResults[index]['water meter number']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Text(
+                      'Water Meter Reading: ${_allPropResults[index]['water meter reading']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Text(
+                      'Phone Number: ${_allPropResults[index]['cell number']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Text(
+                      'First Name: ${_allPropResults[index]['first name']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Text(
+                      'Surname: ${_allPropResults[index]['last name']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 5,),
+                    Text(
+                      'ID Number: ${_allPropResults[index]['id number']}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 20,),
+
+                    const Center(
+                      child: Text(
+                        'Electricity & Water Meter Photos',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    const SizedBox(height: 5,),
+                    Center(
+                      child: BasicIconButtonGrey(
+                        onPress: () async {
+                          imageName = 'files/meters/$formattedDate/${_allPropResults[index]['cell number']}/electricity/${_allPropResults[index]['meter number']}.jpg';
+                          addressSnap = _allPropResults[index]['address'];
+
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) => ImageZoomPage(imageName: imageName, addressSnap: addressSnap)));
+                        },
+                        labelText: 'View Uploaded Image',
+                        fSize: 16,
+                        faIcon: const FaIcon(Icons.zoom_in,),
+                        fgColor: Colors.blue,
+                        btSize: const Size(100, 38),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10,),
+                    Text(
+                      billMessage,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w400),
+                    ),
+
+                    const SizedBox(height: 10,),
+                    Column(
+                      children: [
+                        BasicIconButtonGrey(
+                          onPress: () async {
+                            addressForTrend = _allPropResults[index]['address'];
+
+                            Navigator.push(context,
+                                MaterialPageRoute(builder: (context) =>
+                                    PropertyTrend(
+                                        addressTarget: addressForTrend)
+                                ));
+                          },
+                          labelText: 'History',
+                          fSize: 16,
+                          faIcon: const FaIcon(Icons.stacked_line_chart,),
+                          fgColor: Colors.purple,
+                          btSize: const Size(100, 38),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Stack(
+                              children: [
+                                BasicIconButtonGrey(
+                                  onPress: () async {
+                                    Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!");
+
+                                    _onSubmit();
+
+                                    String accountNumberPDF = _allPropResults[index]['account number'];
+                                    print('The acc number is ::: $accountNumberPDF');
+
+                                    final storageRef = FirebaseStorage.instance.ref().child("pdfs/$formattedDate");
+                                    final listResult = await storageRef.listAll();
+                                    for (var prefix in listResult.prefixes) {
+                                      print('The ref is ::: $prefix');
+                                      // The prefixes under storageRef.
+                                      // You can call listAll() recursively on them.
+                                    }
+                                    for (var item in listResult.items) {
+                                      print('The item is ::: $item');
+                                      // The items under storageRef.
+                                      if (item.toString().contains(accountNumberPDF)) {
+                                        final url = item.fullPath;
+                                        print('The url is ::: $url');
+                                        final file = await PDFApi.loadFirebase(url);
+                                        try {
+                                          if (context.mounted) openPDF(context, file);
+                                          Fluttertoast.showToast(msg: "Download Successful!");
+                                        } catch (e) {
+                                          Fluttertoast.showToast(msg: "Unable to download statement.");
+                                        }
+                                      }
+                                      // else {
+                                      //   Fluttertoast.showToast(msg: "Unable to download statement.");
+                                      // }
+                                    }
+                                  },
+                                  labelText: 'Invoice',
+                                  fSize: 16,
+                                  faIcon: const FaIcon(Icons.picture_as_pdf,),
+                                  fgColor: Colors.orangeAccent,
+                                  btSize: const Size(100, 38),
+                                ),
+                                const SizedBox(width: 5,),
+                                Visibility(
+                                    visible: _isLoading,
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment
+                                          .center,
+                                      children: [
+                                        const SizedBox(height: 15, width: 130,),
+                                        Container(
+                                          width: 24,
+                                          height: 24,
+                                          padding: const EdgeInsets.all(2.0),
+                                          child: const CircularProgressIndicator(
+                                            color: Colors.purple,
+                                            strokeWidth: 3,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                ),
+                              ],
+                            ),
+                            BasicIconButtonGrey(
+                              onPress: () async {
+                                accountNumberAll = _allPropResults[index]['account number'];
+                                locationGivenAll = _allPropResults[index]['address'];
+
+                                Navigator.push(context,
+                                    MaterialPageRoute(builder: (context) => MapScreenProp(
+                                          propAddress: locationGivenAll,
+                                          propAccNumber: accountNumberAll,)
+                                    ));
+                              },
+                              labelText: 'Map',
+                              fSize: 16,
+                              faIcon: const FaIcon(Icons.map,),
+                              fgColor: Colors.green,
+                              btSize: const Size(100, 38),
+                            ),
+                            const SizedBox(width: 5,),
+                          ],
+                        ),
+                        const SizedBox(height: 5,),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          } else {
+            return const SizedBox();
+          }
+        },
+      );
     } return const Center(
       child: CircularProgressIndicator(),
     );

@@ -293,10 +293,6 @@ class _ReportBuilderCapturedState extends State<ReportBuilderCaptured> {
                   child: Container(alignment: Alignment.center,
                     child: const Text('Outstanding\nCaptures', textAlign: TextAlign.center,),),
                 ),
-                // Tab(
-                //   child: Container(alignment: Alignment.center,
-                //     child: const Text('Downloaded\nInvoice', textAlign: TextAlign.center,),),
-                // ),
               ]
           ),
         ),
