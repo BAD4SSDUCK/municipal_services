@@ -287,7 +287,7 @@ class _ReportBuilderCapturedState extends State<ReportBuilderCaptured> {
               tabs: [
                 Tab(
                   child: Container(alignment: Alignment.center,
-                    child: const Text('Completed\nCaptures', textAlign: TextAlign.center,),),
+                    child: const Text('Submitted\nCaptures', textAlign: TextAlign.center,),),
                 ),
                 Tab(
                   child: Container(alignment: Alignment.center,
