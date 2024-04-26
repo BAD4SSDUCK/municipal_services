@@ -251,7 +251,7 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
                         context: context,
                         builder: (context) {
                           return AlertDialog(
-                            title: const Text("Generate Live Report"),
+                            title: const Text("Generate Overall Report"),
                             content: const Text("Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
                             actions: [
                               IconButton(
@@ -314,9 +314,8 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
                         context: context,
                         builder: (context) {
                           return AlertDialog(
-                            title: const Text("Generate Live Report"),
-                            content: const Text(
-                                "Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
+                            title: const Text("Generate Overall Report"),
+                            content: const Text("Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
                             actions: [
                               IconButton(
                                 onPressed: () {
@@ -389,9 +388,9 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
                         context: context,
                         builder: (context) {
                           return AlertDialog(
-                            title: const Text("Generate Live Report"),
+                            title: const Text("Generate Report of App Users"),
                             content: const Text(
-                                "Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
+                                "Generating a report will go through properties with users who are active on this municipal services app and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
                             actions: [
                               IconButton(
                                 onPressed: () {
@@ -464,9 +463,9 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
                         context: context,
                         builder: (context) {
                           return AlertDialog(
-                            title: const Text("Generate Live Report"),
+                            title: const Text("Generate Report of Inactive Users"),
                             content: const Text(
-                                "Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
+                                "Generating a report will go through properties with users not using this municipal services app and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
                             actions: [
                               IconButton(
                                 onPressed: () {

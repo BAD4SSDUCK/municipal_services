@@ -315,9 +315,9 @@ class _ReportBuilderCapturedState extends State<ReportBuilderCaptured> {
                         context: context,
                         builder: (context) {
                           return AlertDialog(
-                            title: const Text("Generate Live Report"),
+                            title: const Text("Generate Captured Readings Report"),
                             content: const Text(
-                                "Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
+                                "Generating a report will go through properties that have taken readings for this month and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
                             actions: [
                               IconButton(
                                 onPressed: () {
@@ -390,9 +390,9 @@ class _ReportBuilderCapturedState extends State<ReportBuilderCaptured> {
                         context: context,
                         builder: (context) {
                           return AlertDialog(
-                            title: const Text("Generate Live Report"),
+                            title: const Text("Generate Outstanding Readings Report"),
                             content: const Text(
-                                "Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
+                                "Generating this report will go through all properties that have not captured readings for this month and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
                             actions: [
                               IconButton(
                                 onPressed: () {
@@ -451,81 +451,6 @@ class _ReportBuilderCapturedState extends State<ReportBuilderCaptured> {
                 const SizedBox(height: 5,),
               ],
             ),
-
-            ///Tab for something if needed
-            // Column(
-            //   children: [
-            //
-            //     const SizedBox(height: 8,),
-            //     BasicIconButtonGrey(
-            //       onPress: () async {
-            //         ///Generate Report here
-            //         showDialog(
-            //             barrierDismissible: false,
-            //             context: context,
-            //             builder: (context) {
-            //               return AlertDialog(
-            //                 title: const Text("Generate Live Report"),
-            //                 content: const Text(
-            //                     "Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
-            //                 actions: [
-            //                   IconButton(
-            //                     onPressed: () {
-            //                       Navigator.pop(context);
-            //                     },
-            //                     icon: const Icon(
-            //                       Icons.cancel,
-            //                       color: Colors.red,
-            //                     ),
-            //                   ),
-            //                   IconButton(
-            //                     onPressed: () async {
-            //                       Fluttertoast.showToast(
-            //                           msg: "Now generating report\nPlease wait till prompted to open Spreadsheet!");
-            //                       nonRegisteredReportGeneration();
-            //                       Navigator.pop(context);
-            //                     },
-            //                     icon: const Icon(
-            //                       Icons.done,
-            //                       color: Colors.green,
-            //                     ),
-            //                   ),
-            //                 ],
-            //               );
-            //             });
-            //       },
-            //       labelText: 'Generate Non-registered Report',
-            //       fSize: 16,
-            //       faIcon: const FaIcon(Icons.edit_note_outlined,),
-            //       fgColor: Theme.of(context).primaryColor,
-            //       btSize: const Size(300, 50),
-            //     ),
-            //     const SizedBox(height: 4,),
-            //
-            //     /// Search bar
-            //     Padding(
-            //       padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
-            //       child: SearchBar(
-            //         controller: _searchController,
-            //         padding: const MaterialStatePropertyAll<EdgeInsets>(
-            //             EdgeInsets.symmetric(horizontal: 16.0)),
-            //         leading: const Icon(Icons.search),
-            //         hintText: "Search by Address...",
-            //         onChanged: (value) async{
-            //           setState(() {
-            //             searchText = value;
-            //             // print('this is the input text ::: $searchText');
-            //           });
-            //         },
-            //       ),
-            //     ),
-            //     /// Search bar end
-            //
-            //     Expanded(child: userInValidCard(),),
-            //
-            //     const SizedBox(height: 5,),
-            //   ],
-            // ),
           ],
         ),
         /// Add new account, removed because it was not necessary for non-staff users.
@@ -537,9 +462,8 @@ class _ReportBuilderCapturedState extends State<ReportBuilderCaptured> {
                   context: context,
                   builder: (context) {
                     return AlertDialog(
-                      title: const Text("Generate Live Report"),
-                      content: const Text(
-                          "Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
+                      title: const Text("Generate Overall Report"),
+                      content: const Text("Generating a report will go through all properties and build an excel Spreadsheet!\n\nThis process will take time based on your internet speed.\n\nAre you ready to proceed? This may take a few minutes."),
                       actions: [
                         IconButton(
                           onPressed: () {
