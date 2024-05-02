@@ -292,7 +292,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
         backgroundColor: Colors.green,
         actions: <Widget>[
           Visibility(
-            visible: adminAcc,
+            visible: false,
             child: IconButton(
                 onPressed: (){
                   ///Generate Report here
