@@ -1,24 +1,23 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_database/ui/firebase_animated_list.dart';
+import 'package:flutter/foundation.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:firebase_database/ui/firebase_animated_list.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_config_arc_screen.dart';
 import 'package:municipal_tracker_msunduzi/code/faultPages/fault_task_screen_archive.dart';
@@ -102,9 +101,9 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
   late final TextEditingController _searchBarController = TextEditingController();
   late bool _noticeReadController;
 
+  List<String> usersRetrieve = [];
   List<String> usersNumbers = [];
   List<String> usersTokens = [];
-  List<String> usersRetrieve = [];
 
   ///Methods and implementation for push notifications with firebase and specific device token saving
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -152,7 +151,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
   List _allUserSuburbResults = [];
   List _allPropResults = [];
   List _allSuburbResults = [];
-  List _resultsList =[];
   List _allUserTokenResults = [];
 
   getUsersTokenStream() async{
@@ -216,8 +214,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
     var data = await FirebaseFirestore.instance.collection('users').get();
     if(context.mounted) {
       setState(() {
-      _allUserResults = data.docs;
-    });
+        _allUserResults = data.docs;
+      });
     }
     getUserDetails();
   }
@@ -362,7 +360,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
   Future<List<Map<String, dynamic>>> _fetchTokenData() async {
     List<Map<String, dynamic>> combinedData = [];
 
-
     // Iterate over UserToken documents
     for (var tokenDoc in _allUserTokenResults) {
       String phoneNumber = tokenDoc.id;
@@ -404,7 +401,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
         });
       }
     }
-
     return combinedData;
   }
 
@@ -428,8 +424,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                     Navigator.push(context,
                         MaterialPageRoute(builder: (context) => const NoticeConfigArcScreen()));
                   },
-                  icon: const Icon(
-                    Icons.history_outlined, color: Colors.white,)),),
+                  icon: const Icon(Icons.history_outlined, color: Colors.white,)),),
           ],
           bottom: TabBar(
               labelColor: Colors.white,
@@ -501,8 +496,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                     child: SearchBar(
 
                       controller: _searchController,
-                      padding: const MaterialStatePropertyAll<EdgeInsets>(
-                          EdgeInsets.symmetric(horizontal: 16.0)),
+                      padding: const MaterialStatePropertyAll<EdgeInsets>(EdgeInsets.symmetric(horizontal: 16.0)),
                       leading: const Icon(Icons.search),
                       hintText: "Search by Phone Number...",
                       onChanged: (value) async{
@@ -573,10 +567,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                           value: value,
                                           child: Padding(
                                             padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 20.0),
-                                            child: Text(
-                                              value,
-                                              style: const TextStyle(fontSize: 16),
-                                            ),
+                                            child: Text(value, style: const TextStyle(fontSize: 16),),
                                           ),
                                         );
                                       }).toList(),
@@ -631,7 +622,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                   Expanded(
                     child: userWardCard(),
                   ),
-
                 ],
               ),
 
@@ -683,9 +673,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                           value: value,
                                           child: Padding(
                                             padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 20.0),
-                                            child: Text(
-                                              value,
-                                              style: const TextStyle(fontSize: 16),
+                                            child: Text(value, style: const TextStyle(fontSize: 16),
                                             ),
                                           ),
                                         );
@@ -705,10 +693,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                         child: Icon(Icons.arrow_circle_down_sharp),
                                       ),
                                       iconEnabledColor: Colors.green,
-                                      style: const TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 18
-                                      ),
+                                      style: const TextStyle(color: Colors.black, fontSize: 18),
                                       dropdownColor: Colors.grey[50],
                                       isExpanded: true,
 
@@ -745,7 +730,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
 
                 ],
               ),
-
             ]
         ),
       ),
@@ -838,10 +822,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  'User: $userNameProp',
-                  style: const TextStyle(
-                    fontSize: 16,
+                child: Text('User: $userNameProp',
+                  style: const TextStyle(fontSize: 16,
                   ),
                 ),
               ),
@@ -850,10 +832,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  'Phone: $tokenData',
-                  style: const TextStyle(
-                    fontSize: 16,
+                child: Text('Phone: $tokenData',
+                  style: const TextStyle(fontSize: 16,
                   ),
                 ),
               ),
@@ -862,10 +842,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  'Property: $userAddress',
-                  style: const TextStyle(
-                    fontSize: 16,
+                child: Text('Property: $userAddress',
+                  style: const TextStyle(fontSize: 16,
                   ),
                 ),
               ),
@@ -874,10 +852,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  'Ward: $userWardProp',
-                  style: const TextStyle(
-                    fontSize: 16,
+                child: Text('Ward: $userWardProp',
+                  style: const TextStyle(fontSize: 16,
                   ),
                 ),
               ),
@@ -923,8 +899,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                   children: [
                     const Center(
                       child: Text('Users Device Details',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w700),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                       ),
                     ),
                     const SizedBox(height: 10,),
@@ -936,8 +911,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                     Visibility(
                       visible: false,
                       child: Text('User Token: $userPhoneToken',
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w400),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                       ),
                     ),
                     const SizedBox(height: 5,),
@@ -988,8 +962,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                     children: [
                       const Center(
                         child: Text('Users Device Details',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.w700),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                         ),
                       ),
                       const SizedBox(height: 10,),
@@ -1001,8 +974,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                       Visibility(
                         visible: false,
                         child: Text('User Token: $userPhoneToken',
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w400),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                         ),
                       ),
                       const SizedBox(height: 10,),
@@ -1079,9 +1051,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                 labelText: 'Notify',
                                 fSize: 14,
                                 faIcon: const FaIcon(Icons.edit,),
-                                fgColor: Theme
-                                    .of(context)
-                                    .primaryColor,
+                                fgColor: Theme.of(context).primaryColor,
                                 btSize: const Size(50, 38),
                               ),
                             ],
@@ -1250,9 +1220,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                 labelText: 'Notify',
                                 fSize: 14,
                                 faIcon: const FaIcon(Icons.edit,),
-                                fgColor: Theme
-                                    .of(context)
-                                    .primaryColor,
+                                fgColor: Theme.of(context).primaryColor,
                                 btSize: const Size(50, 38),
                               ),
                             ],
@@ -1337,8 +1305,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                     children: [
                       const Center(
                         child: Text('Users Device Details',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.w700),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                         ),
                       ),
                       const SizedBox(height: 10,),
@@ -1350,8 +1317,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                       Visibility(
                         visible: false,
                         child: Text('User Token: $notifyToken',
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w400),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                         ),
                       ),
                       const SizedBox(height: 10,),
@@ -1368,10 +1334,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                       context: context,
                                       builder: (context) {
                                         return AlertDialog(
-                                          shape: const RoundedRectangleBorder(
-                                              borderRadius: BorderRadius
-                                                  .all(
-                                                  Radius.circular(16))),
+                                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
                                           title: const Text("Call User!"),
                                           content: const Text(
                                               "Would you like to call the user directly?"),
@@ -1431,9 +1394,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                 labelText: 'Notify',
                                 fSize: 14,
                                 faIcon: const FaIcon(Icons.edit,),
-                                fgColor: Theme
-                                    .of(context)
-                                    .primaryColor,
+                                fgColor: Theme.of(context).primaryColor,
                                 btSize: const Size(50, 38),
                               ),
                             ],
@@ -1606,18 +1567,12 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                 );
               })));
     }
-
     _createBottomSheet();
   }
 
   Future<void> _notifyAllUser([DocumentSnapshot? documentSnapshot]) async {
     _searchBarController.text = '';
 
-    // for (var i = 0; i < numTokens; i++) {
-    //   if (documentSnapshot?.id == documentSnapshot[i]) {
-    //     usersNumbers.removeAt(i);
-    //   }
-    // }
     print(usersNumbers);
     print(usersNumbers.length);
     print(usersTokens);
@@ -1730,7 +1685,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                 );
               })));
     }
-
     _createBottomSheet();
   }
 
@@ -1804,7 +1758,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                                         final String notificationBody = body.text;
                                         final String notificationDate = formattedDate;
                                         const bool readStatus = false;
-
                                         final String wardSelected = dropdownValue;
 
                                         for (var userSnapshot in _allUserPropResults) {
@@ -1866,7 +1819,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                 );
               })));
     }
-
     _createBottomSheet();
   }
 
@@ -1974,7 +1926,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
                 );
               })));
     }
-
     _createBottomSheet();
   }
 
@@ -2088,10 +2039,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
               },
             );
           })));
-
     }
-
     _createBottomSheet();
   }
-
 }

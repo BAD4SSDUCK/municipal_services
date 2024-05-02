@@ -1,28 +1,26 @@
-import 'dart:convert';
 import 'dart:io';
-
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:syncfusion_flutter_xlsio/xlsio.dart' as excel;
-import 'package:open_file/open_file.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:universal_html/html.dart' show AnchorElement;
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:share_plus/share_plus.dart';
-import 'package:http/http.dart' as http;
-import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
-import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
+import 'package:open_file/open_file.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:universal_html/html.dart' show AnchorElement;
+import 'package:syncfusion_flutter_xlsio/xlsio.dart' as excel;
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
-
-import '../Reusable/icon_elevated_button.dart';
+import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 
 
 class ReportBuilderCaptured extends StatefulWidget {
@@ -75,7 +73,6 @@ class _ReportBuilderCapturedState extends State<ReportBuilderCaptured> {
       getPropertyStream();
     }
     getUsersTokenStream();
-    // getPropertyStream();
     checkAdmin();
     _searchController.addListener(_onSearchChanged);
     super.initState();
@@ -177,7 +174,6 @@ class _ReportBuilderCapturedState extends State<ReportBuilderCaptured> {
   List _allUserRolesResults = [];
   List _allUserTokenResults = [];
   List _allPropResults = [];
-  List _allPropReport = [];
   bool visShow = true;
   bool visHide = false;
   bool adminAcc = false;
@@ -187,7 +183,7 @@ class _ReportBuilderCapturedState extends State<ReportBuilderCaptured> {
   String dropdownValue = 'Select Month';
   List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   List _allPropertyReport = [];
 
   getPropertyStream() async{
@@ -195,7 +191,6 @@ class _ReportBuilderCapturedState extends State<ReportBuilderCaptured> {
 
     setState(() {
       _allPropResults = data.docs;
-      _allPropReport = data.docs;
     });
     searchResultsList();
   }
@@ -988,7 +983,6 @@ class _ReportBuilderCapturedState extends State<ReportBuilderCaptured> {
 
     _allPropertyReport = data.docs;
 
-    String column = "A";
     int excelRow = 2;
     int listRow = 0;
 
@@ -1076,7 +1070,6 @@ class _ReportBuilderCapturedState extends State<ReportBuilderCaptured> {
 
     _allPropertyReport = data.docs;
 
-    String column = "A";
     int excelRow = 2;
     int excelCap = 2;
     int listRow = 0;
@@ -1171,7 +1164,6 @@ class _ReportBuilderCapturedState extends State<ReportBuilderCaptured> {
 
     _allPropertyReport = data.docs;
 
-    String column = "A";
     int excelRow = 2;
     int excelCap = 2;
     int listRow = 0;
