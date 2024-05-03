@@ -609,9 +609,13 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                       itemCount: streamSnapshot.data!.docs.length,
                       itemBuilder: (context, index) {
                         final DocumentSnapshot documentSnapshot = streamSnapshot.data!.docs[index];
-                        String billMessage;
+                        late String billMessage;
                         ///A check for if payment is outstanding or not
-                        if (documentSnapshot['eBill'] != '') {
+                        if (documentSnapshot['eBill'] != '' ||
+                            documentSnapshot['eBill'] != 'R0,000.00' ||
+                            documentSnapshot['eBill'] != 'R0.00' ||
+                            documentSnapshot['eBill'] != 'R0' ||
+                            documentSnapshot['eBill'] != '0') {
                           billMessage = documentSnapshot['eBill'];
                           buttonEnabled = false;
                         } else {

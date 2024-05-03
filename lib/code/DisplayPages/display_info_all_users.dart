@@ -516,7 +516,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
         wMeterNumber = _allPropResults[index]['water meter number'];
         propPhoneNum = _allPropResults[index]['cell number'];
 
-        String billMessage;///A check for if payment is outstanding or not
+        late String billMessage;///A check for if payment is outstanding or not
         if(_allPropResults[index]['eBill'] != '' ||
             _allPropResults[index]['eBill'] != 'R0,000.00' ||
             _allPropResults[index]['eBill'] != 'R0.00' ||
@@ -1115,7 +1115,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
           wMeterNumber = _allPropResults[index]['water meter number'];
           propPhoneNum = _allPropResults[index]['cell number'];
 
-          String billMessage;///A check for if payment is outstanding or not
+          late String billMessage;///A check for if payment is outstanding or not
           if(_allPropResults[index]['eBill'] != '' ||
               _allPropResults[index]['eBill'] != 'R0,000.00' ||
               _allPropResults[index]['eBill'] != 'R0.00' ||
@@ -1518,7 +1518,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                     eMeterNumber = documentSnapshot['meter number'];
                     wMeterNumber = documentSnapshot['water meter number'];
                     propPhoneNum = documentSnapshot['cell number'];
-                    String billMessage;
+                    late String billMessage;
 
                     ///A check for if payment is outstanding or not
                     if (documentSnapshot['eBill'] != '' ||
