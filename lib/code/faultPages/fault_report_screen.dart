@@ -75,7 +75,7 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
   String accountPass = '';
   String phoneNumPass = '';
   String dropdownValue = 'Select Fault Type';
-
+  late String billMessage;
   String reporterCellGiven = '';
   String reporterDateGiven = '';
   String accountNumberRep = '';
@@ -609,7 +609,6 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
                       itemCount: streamSnapshot.data!.docs.length,
                       itemBuilder: (context, index) {
                         final DocumentSnapshot documentSnapshot = streamSnapshot.data!.docs[index];
-                        late String billMessage;
                         ///A check for if payment is outstanding or not
                         if (documentSnapshot['eBill'] != '' ||
                             documentSnapshot['eBill'] != 'R0,000.00' ||
