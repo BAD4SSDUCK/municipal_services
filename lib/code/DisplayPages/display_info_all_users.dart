@@ -1,27 +1,19 @@
 import 'dart:io';
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:easy_image_viewer/easy_image_viewer.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:get/get.dart';
-import 'package:excel/excel.dart';
 import 'package:http/http.dart' as http;
-import 'package:open_file/open_file.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:flutter/foundation.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:syncfusion_flutter_xlsio/xlsio.dart' as excel;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_meter.dart';
 import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_water.dart';
@@ -258,6 +250,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
   final _accountNumberController = TextEditingController();
   final _addressController = TextEditingController();
   final _areaCodeController = TextEditingController();
+  final _wardController = TextEditingController();
   final _meterNumberController = TextEditingController();
   final _meterReadingController = TextEditingController();
   final _waterMeterController = TextEditingController();
@@ -1450,34 +1443,32 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                                   final String notificationDate = formattedDate;
                                   const bool readStatus = false;
 
-                                  if (tokenSelected != null) {
-                                    if(title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty) {
-                                      await _listNotifications.add({
-                                        "token": tokenSelected,
-                                        "user": userNumber,
-                                        "title": notificationTitle,
-                                        "body": notificationBody,
-                                        "read": readStatus,
-                                        "date": notificationDate,
-                                        "level": 'severe',
-                                      });
+                                  if(title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty) {
+                                    await _listNotifications.add({
+                                      "token": tokenSelected,
+                                      "user": userNumber,
+                                      "title": notificationTitle,
+                                      "body": notificationBody,
+                                      "read": readStatus,
+                                      "date": notificationDate,
+                                      "level": 'severe',
+                                    });
 
-                                      ///It can be changed to the firebase notification
-                                      String titleText = title.text;
-                                      String bodyText = body.text;
+                                    ///It can be changed to the firebase notification
+                                    String titleText = title.text;
+                                    String bodyText = body.text;
 
-                                      ///gets users phone token to send notification to this phone
-                                      if (userNumber != "") {
-                                        DocumentSnapshot snap = await FirebaseFirestore.instance.collection("UserToken").doc(userNumber).get();
-                                        String token = snap['token'];
-                                        print('The phone number is retrieved as ::: $userNumber');
-                                        print('The token is retrieved as ::: $token');
-                                        sendPushMessage(token, titleText, bodyText);
-                                        Fluttertoast.showToast(msg: 'The user has been sent the notification!', gravity: ToastGravity.CENTER);
-                                      }
-                                    } else {
-                                      Fluttertoast.showToast(msg: 'Please Fill Header and Message of the notification!', gravity: ToastGravity.CENTER);
+                                    ///gets users phone token to send notification to this phone
+                                    if (userNumber != "") {
+                                      DocumentSnapshot snap = await FirebaseFirestore.instance.collection("UserToken").doc(userNumber).get();
+                                      String token = snap['token'];
+                                      print('The phone number is retrieved as ::: $userNumber');
+                                      print('The token is retrieved as ::: $token');
+                                      sendPushMessage(token, titleText, bodyText);
+                                      Fluttertoast.showToast(msg: 'The user has been sent the notification!', gravity: ToastGravity.CENTER);
                                     }
+                                  } else {
+                                    Fluttertoast.showToast(msg: 'Please Fill Header and Message of the notification!', gravity: ToastGravity.CENTER);
                                   }
 
                                   username.text =  '';
@@ -2096,6 +2087,15 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
+                      keyboardType:
+                      const TextInputType.numberWithOptions(),
+                      controller: _wardController,
+                      decoration: const InputDecoration(labelText: 'Ward Number',),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
                       controller: _meterNumberController,
                       decoration: const InputDecoration(labelText: 'Meter Number'),
                     ),
@@ -2108,7 +2108,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                     ),
                   ),
                   Visibility(
-                    visible: visibilityState2,
+                    visible: visibilityState1,
                     child: TextField(
                       controller: _waterMeterController,
                       decoration: const InputDecoration(labelText: 'Water Meter Number'),
@@ -2158,6 +2158,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                       final String accountNumber = _accountNumberController.text;
                       final String address = _addressController.text;
                       final String areaCode = _areaCodeController.text;
+                      final String ward = _wardController.text;
                       final String meterNumber = _meterNumberController.text;
                       final String meterReading = _meterReadingController.text;
                       final String waterMeterNumber = _waterMeterController.text;
@@ -2166,39 +2167,38 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                       final String firstName = _firstNameController.text;
                       final String lastName = _lastNameController.text;
                       final String idNumber = _idNumberController.text;
-                      if (accountNumber != null) {
-                        await _propList.add({
-                          "account number": accountNumber,
-                          "address": address,
-                          "area code": areaCode,
-                          "meter number": meterNumber,
-                          "meter reading": meterReading,
-                          "water meter number": waterMeterNumber,
-                          "water meter reading": waterMeterReading,
-                          "cell number": cellNumber,
-                          "first name": firstName,
-                          "last name": lastName,
-                          "id number": idNumber,
-                          "user id": 'TBA',
-                          "imgStateE": false,
-                          "imgStateW": false,
-                          "eBill": ''
-                        });
-                        _accountNumberController.text = '';
-                        _addressController.text = '';
-                        _areaCodeController.text = '';
-                        _meterNumberController.text = '';
-                        _meterReadingController.text = '';
-                        _waterMeterController.text = '';
-                        _waterMeterReadingController.text = '';
-                        _cellNumberController.text = '';
-                        _firstNameController.text = '';
-                        _lastNameController.text = '';
-                        _idNumberController.text = '';
+                      await _propList.add({
+                        "account number": accountNumber,
+                        "address": address,
+                        "area code": areaCode,
+                        "ward": ward,
+                        "meter number": meterNumber,
+                        "meter reading": meterReading,
+                        "water meter number": waterMeterNumber,
+                        "water meter reading": waterMeterReading,
+                        "cell number": cellNumber,
+                        "first name": firstName,
+                        "last name": lastName,
+                        "id number": idNumber,
+                        "user id": 'TBA',
+                        "imgStateE": false,
+                        "imgStateW": false,
+                        "eBill": ''
+                      });
+                      _accountNumberController.text = '';
+                      _addressController.text = '';
+                      _areaCodeController.text = '';
+                      _meterNumberController.text = '';
+                      _meterReadingController.text = '';
+                      _waterMeterController.text = '';
+                      _waterMeterReadingController.text = '';
+                      _cellNumberController.text = '';
+                      _firstNameController.text = '';
+                      _lastNameController.text = '';
+                      _idNumberController.text = '';
 
-                        if(context.mounted)Navigator.of(context).pop();
-                      }
-                    },
+                      if(context.mounted)Navigator.of(context).pop();
+                                        },
                   )
                 ],
               ),
@@ -2333,40 +2333,38 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                       final String lastName = _lastNameController.text;
                       final String idNumber = _idNumberController.text;
 
-                      if (accountNumber != null) {
-                        await _propList
-                            .doc(documentSnapshot!.id)
-                            .update({
-                          "account number": accountNumber,
-                          "address": address,
-                          "area code": areaCode,
-                          "meter number": meterNumber,
-                          "meter reading": meterReading,
-                          "water meter number": waterMeterNumber,
-                          "water meter reading": waterMeterReading,
-                          "cell number": cellNumber,
-                          "first name": firstName,
-                          "last name": lastName,
-                          "id number": idNumber,
-                          "user id" : userID,
-                        });
+                      await _propList
+                          .doc(documentSnapshot!.id)
+                          .update({
+                        "account number": accountNumber,
+                        "address": address,
+                        "area code": areaCode,
+                        "meter number": meterNumber,
+                        "meter reading": meterReading,
+                        "water meter number": waterMeterNumber,
+                        "water meter reading": waterMeterReading,
+                        "cell number": cellNumber,
+                        "first name": firstName,
+                        "last name": lastName,
+                        "id number": idNumber,
+                        "user id" : userID,
+                      });
 
-                        _accountNumberController.text = '';
-                        _addressController.text = '';
-                        _areaCodeController.text = '';
-                        _meterNumberController.text = '';
-                        _meterReadingController.text = '';
-                        _waterMeterController.text = '';
-                        _waterMeterReadingController.text = '';
-                        _cellNumberController.text = '';
-                        _firstNameController.text = '';
-                        _lastNameController.text = '';
-                        _idNumberController.text = '';
+                      _accountNumberController.text = '';
+                      _addressController.text = '';
+                      _areaCodeController.text = '';
+                      _meterNumberController.text = '';
+                      _meterReadingController.text = '';
+                      _waterMeterController.text = '';
+                      _waterMeterReadingController.text = '';
+                      _cellNumberController.text = '';
+                      _firstNameController.text = '';
+                      _lastNameController.text = '';
+                      _idNumberController.text = '';
 
-                        if(context.mounted)Navigator.of(context).pop();
+                      if(context.mounted)Navigator.of(context).pop();
 
-                      }
-                    },
+                                        },
                   )
                 ],
               ),
@@ -2504,58 +2502,56 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                       final String lastName = _lastNameController.text;
                       final String idNumber = _idNumberController.text;
 
-                      if (accountNumber != null) {
-                        await _propList
-                            .doc(documentSnapshot!.id)
-                            .update({
-                          "account number": accountNumber,
+                      await _propList
+                          .doc(documentSnapshot!.id)
+                          .update({
+                        "account number": accountNumber,
+                        "address": address,
+                        "area code": areaCode,
+                        "meter number": meterNumber,
+                        "meter reading": meterReading,
+                        "water meter number": waterMeterNumber,
+                        "water meter reading": waterMeterReading,
+                        "cell number": cellNumber,
+                        "first name": firstName,
+                        "last name": lastName,
+                        "id number": idNumber,
+                        "user id" : userID,
+                      });
+
+                      final CollectionReference _propMonthReadings = FirebaseFirestore.instance
+                          .collection('consumption').doc(formattedMonth)
+                          .collection('address').doc(address) as CollectionReference<Object?>;
+
+                      if(_propMonthReadings.id != address || _propMonthReadings.id == '' ){
+                        await _propMonthReadings.add({
                           "address": address,
-                          "area code": areaCode,
-                          "meter number": meterNumber,
                           "meter reading": meterReading,
-                          "water meter number": waterMeterNumber,
                           "water meter reading": waterMeterReading,
-                          "cell number": cellNumber,
-                          "first name": firstName,
-                          "last name": lastName,
-                          "id number": idNumber,
-                          "user id" : userID,
                         });
-
-                        final CollectionReference _propMonthReadings = FirebaseFirestore.instance
-                            .collection('consumption').doc(formattedMonth)
-                            .collection('address').doc(address) as CollectionReference<Object?>;
-
-                        if(_propMonthReadings.id != address || _propMonthReadings.id == '' ){
-                          await _propMonthReadings.add({
-                            "address": address,
-                            "meter reading": meterReading,
-                            "water meter reading": waterMeterReading,
-                          });
-                        } else {
-                          await _propMonthReadings.doc(address).update({
-                            "address": address,
-                            "meter reading": meterReading,
-                            "water meter reading": waterMeterReading,
-                          });
-                        }
-
-                        _accountNumberController.text = '';
-                        _addressController.text = '';
-                        _areaCodeController.text = '';
-                        _meterNumberController.text = '';
-                        _meterReadingController.text = '';
-                        _waterMeterController.text = '';
-                        _waterMeterReadingController.text = '';
-                        _cellNumberController.text = '';
-                        _firstNameController.text = '';
-                        _lastNameController.text = '';
-                        _idNumberController.text = '';
-
-                        if(context.mounted)Navigator.of(context).pop();
-
+                      } else {
+                        await _propMonthReadings.doc(address).update({
+                          "address": address,
+                          "meter reading": meterReading,
+                          "water meter reading": waterMeterReading,
+                        });
                       }
-                    },
+
+                      _accountNumberController.text = '';
+                      _addressController.text = '';
+                      _areaCodeController.text = '';
+                      _meterNumberController.text = '';
+                      _meterReadingController.text = '';
+                      _waterMeterController.text = '';
+                      _waterMeterReadingController.text = '';
+                      _cellNumberController.text = '';
+                      _firstNameController.text = '';
+                      _lastNameController.text = '';
+                      _idNumberController.text = '';
+
+                      if(context.mounted)Navigator.of(context).pop();
+
+                                        },
                   )
                 ],
               ),
@@ -2699,40 +2695,38 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
                       final String lastName = _lastNameController.text;
                       final String idNumber = _idNumberController.text;
 
-                      if (accountNumber != null) {
-                        await _propList
-                            .doc(documentSnapshot!.id)
-                            .update({
-                          "account number": accountNumber,
-                          "address": address,
-                          "area code": areaCode,
-                          "meter number": meterNumber,
-                          "meter reading": meterReading,
-                          "water meter number": waterMeterNumber,
-                          "water meter reading": waterMeterReading,
-                          "cell number": cellNumber,
-                          "first name": firstName,
-                          "last name": lastName,
-                          "id number": idNumber,
-                          "user id" : userID,
-                        });
+                      await _propList
+                          .doc(documentSnapshot!.id)
+                          .update({
+                        "account number": accountNumber,
+                        "address": address,
+                        "area code": areaCode,
+                        "meter number": meterNumber,
+                        "meter reading": meterReading,
+                        "water meter number": waterMeterNumber,
+                        "water meter reading": waterMeterReading,
+                        "cell number": cellNumber,
+                        "first name": firstName,
+                        "last name": lastName,
+                        "id number": idNumber,
+                        "user id" : userID,
+                      });
 
-                        _accountNumberController.text = '';
-                        _addressController.text = '';
-                        _areaCodeController.text = '';
-                        _meterNumberController.text = '';
-                        _meterReadingController.text = '';
-                        _waterMeterController.text = '';
-                        _waterMeterReadingController.text = '';
-                        _cellNumberController.text = '';
-                        _firstNameController.text = '';
-                        _lastNameController.text = '';
-                        _idNumberController.text = '';
+                      _accountNumberController.text = '';
+                      _addressController.text = '';
+                      _areaCodeController.text = '';
+                      _meterNumberController.text = '';
+                      _meterReadingController.text = '';
+                      _waterMeterController.text = '';
+                      _waterMeterReadingController.text = '';
+                      _cellNumberController.text = '';
+                      _firstNameController.text = '';
+                      _lastNameController.text = '';
+                      _idNumberController.text = '';
 
-                        if(context.mounted)Navigator.of(context).pop();
+                      if(context.mounted)Navigator.of(context).pop();
 
-                      }
-                    },
+                                        },
                   )
                 ],
               ),

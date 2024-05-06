@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
 import 'package:municipal_tracker_msunduzi/code/MapTools/map_user_badge.dart';
@@ -26,7 +26,7 @@ class _MapScreenState extends State<MapScreen> {
   late bool _isLoading;
 
   String location ='Null, Press Button';
-  String Address = 'search';
+  String address = 'search';
 
   @override
   void initState(){
@@ -45,11 +45,11 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
 
     //Set camera position based on db address given
-    this.addressConvert();
+    addressConvert();
     //Set up initial locations
-    this.setInitialLocation();
+    setInitialLocation();
     //Set up the marker icons
-    this.setSourceAndDestinationMarkerIcons();
+    setSourceAndDestinationMarkerIcons();
 
     // city all position for camera default (target: LatLng(-29.601505328570788, 30.379442518631805), zoom: 16);
     //_cameraPosition = CameraPosition(target: currentLocation, zoom: 16);
@@ -58,7 +58,7 @@ class _MapScreenState extends State<MapScreen> {
   late GoogleMapController _mapController;
 
   late BitmapDescriptor sourceIcon;
-  Set<Marker> _markers = Set<Marker>();
+  final Set<Marker> _markers = <Marker>{};
 
   ///This checks current users location
   Future<void> locationAllow() async {
@@ -105,13 +105,13 @@ class _MapScreenState extends State<MapScreen> {
     List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
     print(placemarks);
     Placemark place = placemarks[0];
-    Address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+    address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
   }
   ///End of current user location check
 
   void setSourceAndDestinationMarkerIcons() async{
     sourceIcon = await BitmapDescriptor.fromAssetImage(
-        ImageConfiguration(devicePixelRatio: 2.0),
+        const ImageConfiguration(devicePixelRatio: 2.0),
         'assets/images/location/source_pin_android.png'
     );
   }
@@ -119,8 +119,6 @@ class _MapScreenState extends State<MapScreen> {
   void addressConvert() async {
     ///Location change here for address conversion into lat long
     String address = locationGiven;
-
-    //List<Location> locations = await Geocoding.google(apiKey: "AIzaSyB3p4M0JwkbBauV_5_dIHxWNpk8PSqmmU0").searchByAddress(address);
 
     try {
       List<Location> locations = await locationFromAddress(address);
@@ -199,7 +197,10 @@ class _MapScreenState extends State<MapScreen> {
 
                             onMapCreated: (GoogleMapController mapController) {
                               addressConvert();
-                              _mapController = mapController;
+                              setState(() {
+                                _mapController = mapController;
+                              });
+                              Fluttertoast.showToast(msg: "Tap on the pin and access directions to the property.", gravity: ToastGravity.CENTER);
                             },
                             initialCameraPosition: _cameraPosition
                       ),

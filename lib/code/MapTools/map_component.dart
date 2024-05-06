@@ -1,10 +1,10 @@
 import 'dart:async';
+import 'map_user_badge.dart';
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:get/get.dart';
-import '../DisplayPages/display_info.dart';
-import 'map_user_badge.dart';
+import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
 
 ///This is the old map page, currently using the mapScreen
 
@@ -37,11 +37,11 @@ class _MapPageState extends State<MapPage> {
   void initState(){
     super.initState();
     //Set up initial locations
-    this.setInitialLocation();
+    setInitialLocation();
     //Set up the marker icons
-    this.setSourceAndDestinationMarkerIcons();
+    setSourceAndDestinationMarkerIcons();
 
-    this.setBadgeInformation();
+    setBadgeInformation();
   }
 
   void setBadgeInformation(){
@@ -58,7 +58,7 @@ class _MapPageState extends State<MapPage> {
 
   void setSourceAndDestinationMarkerIcons() async{
     sourceIcon = await BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(devicePixelRatio: 2.0),
+      const ImageConfiguration(devicePixelRatio: 2.0),
       'assets/images/location/source_pin_android.png'
     );
   }

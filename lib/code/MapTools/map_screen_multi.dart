@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'map_user_badge.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
@@ -159,8 +158,8 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
   late GoogleMapController _mapController;
 
   late BitmapDescriptor sourceIcon;
-  Set<Marker> _markers = Set<Marker>();
-  Set<Marker> newMarker = Set<Marker>();
+  final Set<Marker> _markers = <Marker>{};
+  Set<Marker> newMarker = <Marker>{};
 
 
   void setSourceAndDestinationMarkerIcons() async{
@@ -285,9 +284,8 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
 
         _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
 
-        Fluttertoast.showToast(
-            msg: "Address not found! Default map location City Hall!",
-            gravity: ToastGravity.CENTER);
+        // Fluttertoast.showToast(msg: "Address not found! Default map location City Hall!", gravity: ToastGravity.CENTER);
+
       }
     }
 
@@ -361,9 +359,9 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                   showPinOnMap();
                 }
               } catch (e) {
-                addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
+                addressLocation = const LatLng(-29.601505328570788, 30.379442518631805);
               }
-            } else if (result['imgStateE'].isBlank || result['imgStateW'].isBlank){
+            } else if (result['imgStateE'] == true || result['imgStateW'] == true){
               try {
                 List<Location> locations = await locationFromAddress(address);
 
@@ -378,7 +376,7 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                   showPinOnMap();
                 }
               } catch (e) {
-                addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
+                addressLocation = const LatLng(-29.601505328570788, 30.379442518631805);
               }
             }
 
@@ -556,7 +554,8 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                             setState(() {
                               _mapController = mapController;
                             });
-                            },
+                            Fluttertoast.showToast(msg: "Tap on the pin and access directions to the property.", gravity: ToastGravity.TOP);
+                          },
                           initialCameraPosition: _cameraPosition
                       ),
 
