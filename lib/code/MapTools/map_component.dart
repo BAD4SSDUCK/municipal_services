@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
+import 'package:municipal_services/code/DisplayPages/display_info.dart';
 
 ///This is the old map page, currently using the mapScreen
 

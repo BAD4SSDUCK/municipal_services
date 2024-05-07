@@ -10,13 +10,13 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_meter.dart';
-import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_water.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
-import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
-import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_services/code/ImageUploading/image_upload_meter.dart';
+import 'package:municipal_services/code/ImageUploading/image_upload_water.dart';
+import 'package:municipal_services/code/MapTools/map_screen_prop.dart';
+import 'package:municipal_services/code/MapTools/map_screen.dart';
+import 'package:municipal_services/code/PDFViewer/pdf_api.dart';
+import 'package:municipal_services/code/PDFViewer/view_pdf.dart';
+import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
 
 
 class ImageZoomPage extends StatefulWidget {

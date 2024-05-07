@@ -4,9 +4,9 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/map_user_badge.dart';
+import 'package:municipal_services/code/DisplayPages/display_info.dart';
+import 'package:municipal_services/code/MapTools/location_controller.dart';
+import 'package:municipal_services/code/MapTools/map_user_badge.dart';
 
 
 const LatLng SOURCE_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);

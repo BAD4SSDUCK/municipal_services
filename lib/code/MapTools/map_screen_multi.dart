@@ -13,10 +13,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:map_box_geocoder/map_box_geocoder.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_multi_invert.dart';
-import 'package:municipal_tracker_msunduzi/code/SQLApp/propertiesData/properties_data.dart';
-import 'package:municipal_tracker_msunduzi/code/ReportGeneration/display_capture_report.dart';
+import 'package:municipal_services/code/MapTools/location_controller.dart';
+import 'package:municipal_services/code/MapTools/map_screen_multi_invert.dart';
+import 'package:municipal_services/code/SQLApp/propertiesData/properties_data.dart';
+import 'package:municipal_services/code/ReportGeneration/display_capture_report.dart';
 
 
 const LatLng SOURCE_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);

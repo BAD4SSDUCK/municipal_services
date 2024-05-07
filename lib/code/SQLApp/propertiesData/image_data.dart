@@ -1,13 +1,13 @@
 import 'dart:ui';
 
-import 'package:municipal_tracker_msunduzi/code/SQLApp/model/user.dart';
-import 'package:municipal_tracker_msunduzi/code/SQLApp/userPreferences/user_preferences.dart';
+import 'package:municipal_services/code/SQLApp/model/user.dart';
+import 'package:municipal_services/code/SQLApp/userPreferences/user_preferences.dart';
 
 import 'package:get/get.dart';
 import 'dart:io';
 
-import 'package:municipal_tracker_msunduzi/code/SQLApp/model/meter_image.dart';
-import 'package:municipal_tracker_msunduzi/code/SQLApp/propertiesData/image_preferences.dart';
+import 'package:municipal_services/code/SQLApp/model/meter_image.dart';
+import 'package:municipal_services/code/SQLApp/propertiesData/image_preferences.dart';
 
 
 ///This is the controller using getx for the information on the mySql

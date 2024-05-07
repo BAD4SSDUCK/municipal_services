@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
-import 'package:municipal_tracker_msunduzi/code/SQLApp/Auth/login_screen.dart';
+import 'package:municipal_services/code/SQLApp/Auth/login_screen.dart';
 import 'package:http/http.dart' as http;
 
-import 'package:municipal_tracker_msunduzi/code/ApiConnection/api_connection.dart';
-import 'package:municipal_tracker_msunduzi/code/SQLApp/model/user.dart';
+import 'package:municipal_services/code/ApiConnection/api_connection.dart';
+import 'package:municipal_services/code/SQLApp/model/user.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);

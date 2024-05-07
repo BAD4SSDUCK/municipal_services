@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_property_trend.dart';
 import 'package:open_file/open_file.dart';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
@@ -23,16 +22,16 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
-import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_meter.dart';
-import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_water.dart';
-import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_zoom_page.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
-import 'package:municipal_tracker_msunduzi/code/PDFViewer/pdf_api.dart';
-import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/push_notification_message.dart';
-import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_config_screen.dart';
-import 'package:municipal_tracker_msunduzi/code/ReportGeneration/display_prop_report.dart';
+import 'package:municipal_services/code/ImageUploading/image_upload_meter.dart';
+import 'package:municipal_services/code/ImageUploading/image_upload_water.dart';
+import 'package:municipal_services/code/ImageUploading/image_zoom_page.dart';
+import 'package:municipal_services/code/MapTools/map_screen_prop.dart';
+import 'package:municipal_services/code/PDFViewer/pdf_api.dart';
+import 'package:municipal_services/code/PDFViewer/view_pdf.dart';
+import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_services/code/Reusable/push_notification_message.dart';
+import 'package:municipal_services/code/NoticePages/notice_config_screen.dart';
+import 'package:municipal_services/code/ReportGeneration/display_prop_report.dart';
 
 
 class AllPropCapture extends StatefulWidget {

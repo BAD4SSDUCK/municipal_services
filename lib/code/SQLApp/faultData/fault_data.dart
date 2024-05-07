@@ -1,8 +1,8 @@
-import 'package:municipal_tracker_msunduzi/code/SQLApp/model/fault_report.dart';
-import 'package:municipal_tracker_msunduzi/code/SQLApp/faultData/fault_storage.dart';
+import 'package:municipal_services/code/SQLApp/model/fault_report.dart';
+import 'package:municipal_services/code/SQLApp/faultData/fault_storage.dart';
 
-import 'package:municipal_tracker_msunduzi/code/SQLApp/model/user.dart';
-import 'package:municipal_tracker_msunduzi/code/SQLApp/userPreferences/user_preferences.dart';
+import 'package:municipal_services/code/SQLApp/model/user.dart';
+import 'package:municipal_services/code/SQLApp/userPreferences/user_preferences.dart';
 
 import 'package:get/get.dart';
 

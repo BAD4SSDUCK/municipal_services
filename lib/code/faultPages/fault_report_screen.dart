@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:uuid/uuid.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:fluttertoast/fluttertoast.dart';
@@ -14,18 +15,17 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_fault.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
-import 'package:municipal_tracker_msunduzi/code/faultPages/fault_viewing_screen.dart';
 import 'package:path/path.dart' as pathing;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
-import 'package:uuid/uuid.dart';
 
-import 'package:municipal_tracker_msunduzi/code/MapTools/address_search.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/location_search_dialogue.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/place_service.dart';
+import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_services/code/ImageUploading/image_upload_fault.dart';
+import 'package:municipal_services/code/MapTools/map_screen_prop.dart';
+import 'package:municipal_services/code/faultPages/fault_viewing_screen.dart';
+import 'package:municipal_services/code/MapTools/address_search.dart';
+import 'package:municipal_services/code/MapTools/location_controller.dart';
+import 'package:municipal_services/code/MapTools/location_search_dialogue.dart';
+import 'package:municipal_services/code/MapTools/place_service.dart';
 
 class ReportPropertyMenu extends StatefulWidget {
   const ReportPropertyMenu({Key? key}) : super(key: key);

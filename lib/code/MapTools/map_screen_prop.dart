@@ -8,10 +8,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
-import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
-
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
 import 'map_user_badge.dart';
+import 'package:municipal_services/code/MapTools/location_controller.dart';
+import 'package:municipal_services/code/DisplayPages/display_info.dart';
 
 
 const LatLng SOURCE_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);

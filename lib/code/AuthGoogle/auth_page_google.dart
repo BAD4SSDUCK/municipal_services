@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:municipal_tracker_msunduzi/code/login/login_page_google.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:municipal_tracker_msunduzi/main.dart';
-import 'package:municipal_tracker_msunduzi/code/login/login_page.dart';
+import 'package:municipal_services/code/login/login_page_google.dart';
+import 'package:municipal_services/main.dart';
+import 'package:municipal_services/code/login/login_page.dart';
 
 import '../DisplayPages/dashboard.dart';
 

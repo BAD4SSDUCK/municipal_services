@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
-import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
-import 'package:municipal_tracker_msunduzi/code/ApiConnection/api_connection.dart';
-import 'package:municipal_tracker_msunduzi/code/SQLApp/pdfview/view_pdf_sql.dart';
+import 'package:municipal_services/code/PDFViewer/view_pdf.dart';
+import 'package:municipal_services/code/ApiConnection/api_connection.dart';
+import 'package:municipal_services/code/SQLApp/pdfview/view_pdf_sql.dart';
 
 import '../propertiesData/properties_data.dart';
 import '../userPreferences/current_user.dart';

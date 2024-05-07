@@ -8,9 +8,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen_finance.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
 import 'chat_screen.dart';
+import 'package:municipal_services/code/Chat/chat_screen_finance.dart';
+import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
 
 class ChatList extends StatefulWidget {
   const ChatList({Key? key}) : super(key: key);

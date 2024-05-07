@@ -17,12 +17,12 @@ import 'package:firebase_database/ui/firebase_animated_list.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen_finance.dart';
-import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_user_arc_screen.dart';
-import 'package:municipal_tracker_msunduzi/code/faultPages/fault_task_screen_archive.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_services/code/Chat/chat_screen_finance.dart';
+import 'package:municipal_services/code/NoticePages/notice_user_arc_screen.dart';
+import 'package:municipal_services/code/faultPages/fault_task_screen_archive.dart';
+import 'package:municipal_services/code/MapTools/map_screen.dart';
+import 'package:municipal_services/code/MapTools/map_screen_prop.dart';
+import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
 
 class NoticeScreen extends StatefulWidget {
   const NoticeScreen({Key? key}) : super(key: key);

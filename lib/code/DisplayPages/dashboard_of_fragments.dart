@@ -4,11 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
-import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/dashboard.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
-
-import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
+import 'package:municipal_services/code/Chat/chat_screen.dart';
+import 'package:municipal_services/code/DisplayPages/dashboard.dart';
+import 'package:municipal_services/code/DisplayPages/display_info.dart';
+import 'package:municipal_services/code/PDFViewer/view_pdf.dart';
 
 ///This dashboard is only for testing and will in the future use the firebase dashboard already built but with the sql connection instead
 ///I may use this dashboard if the design is better but input all the build pages in the fragment screens

@@ -8,9 +8,9 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'package:municipal_tracker_msunduzi/code/AuthGoogle/auth_page_google.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/display_info.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_services/code/AuthGoogle/auth_page_google.dart';
+import 'package:municipal_services/code/DisplayPages/display_info.dart';
+import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
 
 class ConfigPage extends StatefulWidget{
   const ConfigPage({super.key});

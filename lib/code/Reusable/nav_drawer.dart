@@ -7,10 +7,10 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:external_app_launcher/external_app_launcher.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/menu_reusable_elevated_button.dart';
-import 'package:municipal_tracker_msunduzi/code/EventsPages/display_events_calendar.dart';
-import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/councillor_screen.dart';
+import 'package:municipal_services/code/Reusable/menu_reusable_elevated_button.dart';
+import 'package:municipal_services/code/EventsPages/display_events_calendar.dart';
+import 'package:municipal_services/code/PDFViewer/view_pdf.dart';
+import 'package:municipal_services/code/DisplayPages/councillor_screen.dart';
 
 class NavDrawer extends StatelessWidget {
   const NavDrawer({Key? key}) : super(key: key);

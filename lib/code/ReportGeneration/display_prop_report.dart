@@ -20,8 +20,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
-import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
-import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
+import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_services/code/PDFViewer/view_pdf.dart';
 
 
 class ReportBuilderProps extends StatefulWidget {
@@ -1122,20 +1122,20 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
 
     if(kIsWeb){
       AnchorElement(href: 'data:application/ocelot-stream;charset=utf-16le;base64,${base64.encode(bytes)}')
-          ..setAttribute('download', 'Msunduzi Property Reports $formattedDate.xlsx')
+          ..setAttribute('download', 'Municipality Property Reports $formattedDate.xlsx')
           ..click();
     } else {
       final String path = (await getApplicationSupportDirectory()).path;
       //Create an empty file to write Excel data
-      final String filename = Platform.isWindows ? '$path\\Msunduzi Property Reports $formattedDate.xlsx' : '$path/Msunduzi Property Reports $formattedDate.xlsx';
+      final String filename = Platform.isWindows ? '$path\\Municipality Property Reports $formattedDate.xlsx' : '$path/Municipality Property Reports $formattedDate.xlsx';
       final File file = File(filename);
       final List<int> bytes = workbook.saveAsStream();
       //Write Excel data
       await file.writeAsBytes(bytes, flush: true);
       //Launch the file (used open_file package)
-      await OpenFile.open('$path/Msunduzi Property Reports $formattedDate.xlsx');
+      await OpenFile.open('$path/Municipality Property Reports $formattedDate.xlsx');
     }
-    // File('Msunduzi Property Reports.xlsx').writeAsBytes(bytes);
+    // File('Municipality Property Reports.xlsx').writeAsBytes(bytes);
     workbook.dispose();
   }
 
@@ -1226,20 +1226,20 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
 
     if(kIsWeb){
       AnchorElement(href: 'data:application/ocelot-stream;charset=utf-16le;base64,${base64.encode(bytes)}')
-          ..setAttribute('download', '(registered users) Msunduzi Property Reports $formattedDate.xlsx')
+          ..setAttribute('download', '(registered users) Municipality Property Reports $formattedDate.xlsx')
           ..click();
     } else {
       final String path = (await getApplicationSupportDirectory()).path;
       //Create an empty file to write Excel data
-      final String filename = Platform.isWindows ? '$path\\(registered users) Msunduzi Property Reports $formattedDate.xlsx' : '$path/(registered users) Msunduzi Property Reports $formattedDate.xlsx';
+      final String filename = Platform.isWindows ? '$path\\(registered users) Municipality Property Reports $formattedDate.xlsx' : '$path/(registered users) Municipality Property Reports $formattedDate.xlsx';
       final File file = File(filename);
       final List<int> bytes = workbook.saveAsStream();
       //Write Excel data
       await file.writeAsBytes(bytes, flush: true);
       //Launch the file (used open_file package)
-      await OpenFile.open('$path/(registered users) Msunduzi Property Reports $formattedDate.xlsx');
+      await OpenFile.open('$path/(registered users) Municipality Property Reports $formattedDate.xlsx');
     }
-    // File('Msunduzi Property Reports.xlsx').writeAsBytes(bytes);
+    // File('Municipality Property Reports.xlsx').writeAsBytes(bytes);
     workbook.dispose();
   }
 
@@ -1336,20 +1336,20 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps> {
 
     if(kIsWeb){
       AnchorElement(href: 'data:application/ocelot-stream;charset=utf-16le;base64,${base64.encode(bytes)}')
-          ..setAttribute('download', '(non-registered users) Msunduzi Property Reports $formattedDate.xlsx')
+          ..setAttribute('download', '(non-registered users) Municipality Property Reports $formattedDate.xlsx')
           ..click();
     } else {
       final String path = (await getApplicationSupportDirectory()).path;
       //Create an empty file to write Excel data
-      final String filename = Platform.isWindows ? '$path\\(non-registered users) Msunduzi Property Reports $formattedDate.xlsx' : '$path/(non-registered users) Msunduzi Property Reports $formattedDate.xlsx';
+      final String filename = Platform.isWindows ? '$path\\(non-registered users) Municipality Property Reports $formattedDate.xlsx' : '$path/(non-registered users) Municipality Property Reports $formattedDate.xlsx';
       final File file = File(filename);
       final List<int> bytes = workbook.saveAsStream();
       //Write Excel data
       await file.writeAsBytes(bytes, flush: true);
       //Launch the file (used open_file package)
-      await OpenFile.open('$path/(non-registered users) Msunduzi Property Reports $formattedDate.xlsx');
+      await OpenFile.open('$path/(non-registered users) Municipality Property Reports $formattedDate.xlsx');
     }
-    // File('Msunduzi Property Reports.xlsx').writeAsBytes(bytes);
+    // File('Municipality Property Reports.xlsx').writeAsBytes(bytes);
     workbook.dispose();
   }
 

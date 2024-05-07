@@ -1,5 +1,5 @@
-import 'package:municipal_tracker_msunduzi/code/SQLApp/model/admin.dart';
-import 'package:municipal_tracker_msunduzi/code/SQLApp/adminData/admin_preferences.dart';
+import 'package:municipal_services/code/SQLApp/model/admin.dart';
+import 'package:municipal_services/code/SQLApp/adminData/admin_preferences.dart';
 import 'package:get/get.dart';
 
 

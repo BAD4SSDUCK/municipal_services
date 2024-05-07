@@ -7,14 +7,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/location_controller.dart';
-
-import 'package:municipal_tracker_msunduzi/code/SQLApp/auth/login_screen.dart';
-import 'package:municipal_tracker_msunduzi/code/SQLApp/fragments/dashboard_of_fragments_sql.dart';
-import 'package:municipal_tracker_msunduzi/code/SQLApp/fragments/home_frag_manager_screen.dart';
-import 'package:municipal_tracker_msunduzi/code/SQLInt/sql_main.dart';
-import 'package:municipal_tracker_msunduzi/code/login/citizen_otp_page.dart';
-import 'package:municipal_tracker_msunduzi/code/login/login_page.dart';
+import 'package:municipal_services/code/MapTools/location_controller.dart';
+import 'package:municipal_services/code/SQLApp/auth/login_screen.dart';
+import 'package:municipal_services/code/SQLApp/fragments/dashboard_of_fragments_sql.dart';
+import 'package:municipal_services/code/SQLApp/fragments/home_frag_manager_screen.dart';
+import 'package:municipal_services/code/SQLInt/sql_main.dart';
+import 'package:municipal_services/code/login/citizen_otp_page.dart';
+import 'package:municipal_services/code/login/login_page.dart';
 
 import 'code/main_page.dart';
 

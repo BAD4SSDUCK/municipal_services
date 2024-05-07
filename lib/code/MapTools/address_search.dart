@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/place_service.dart';
+import 'package:municipal_services/code/MapTools/place_service.dart';
 
 class AddressSearch extends SearchDelegate<Suggestion> {
   @override

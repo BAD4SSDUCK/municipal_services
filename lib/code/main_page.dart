@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:municipal_tracker_msunduzi/code/Auth/auth_page.dart';
-import 'package:municipal_tracker_msunduzi/code/AuthGoogle/auth_page_google.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/dashboard_official.dart';
-import 'package:municipal_tracker_msunduzi/code/login/login_page.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/dashboard.dart';
-import 'package:municipal_tracker_msunduzi/code/DisplayPages/dashboard_of_fragments.dart';
+import 'package:municipal_services/code/Auth/auth_page.dart';
+import 'package:municipal_services/code/AuthGoogle/auth_page_google.dart';
+import 'package:municipal_services/code/DisplayPages/dashboard_official.dart';
+import 'package:municipal_services/code/login/login_page.dart';
+import 'package:municipal_services/code/DisplayPages/dashboard.dart';
+import 'package:municipal_services/code/DisplayPages/dashboard_of_fragments.dart';
 
 ///this page is for login check on users and will return the user to the main menu or a login page if they are logged in or not.
 

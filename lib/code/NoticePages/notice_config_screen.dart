@@ -19,12 +19,12 @@ import 'package:firebase_database/ui/firebase_animated_list.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-import 'package:municipal_tracker_msunduzi/code/NoticePages/notice_config_arc_screen.dart';
-import 'package:municipal_tracker_msunduzi/code/faultPages/fault_task_screen_archive.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen.dart';
-import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/icon_elevated_button.dart';
-import 'package:municipal_tracker_msunduzi/code/Reusable/push_notification_message.dart';
+import 'package:municipal_services/code/NoticePages/notice_config_arc_screen.dart';
+import 'package:municipal_services/code/faultPages/fault_task_screen_archive.dart';
+import 'package:municipal_services/code/MapTools/map_screen.dart';
+import 'package:municipal_services/code/MapTools/map_screen_prop.dart';
+import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
+import 'package:municipal_services/code/Reusable/push_notification_message.dart';
 
 class NoticeConfigScreen extends StatefulWidget {
   const NoticeConfigScreen({Key? key, required this.userNumber}) : super(key: key);

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:municipal_tracker_msunduzi/code/SQLApp/model/user.dart';
+import 'package:municipal_services/code/SQLApp/model/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 ///This is the class that saves the logged in user information to local storage
