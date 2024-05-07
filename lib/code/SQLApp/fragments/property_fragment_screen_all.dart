@@ -6,17 +6,17 @@
 // import 'package:get/get.dart';
 // import 'package:intl/intl.dart';
 //
-// import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_meter.dart';
-// import 'package:municipal_tracker_msunduzi/code/ImageUploading/image_upload_water.dart';
-// import 'package:municipal_tracker_msunduzi/code/MapTools/map_screen_prop.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/fragments/photo_upload_screen.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/model/property.dart';
+// import 'package:municipal_services/code/ImageUploading/image_upload_meter.dart';
+// import 'package:municipal_services/code/ImageUploading/image_upload_water.dart';
+// import 'package:municipal_services/code/MapTools/map_screen_prop.dart';
+// import 'package:municipal_services/code/SQLApp/fragments/photo_upload_screen.dart';
+// import 'package:municipal_services/code/SQLApp/model/property.dart';
 //
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/propertiesData/image_data.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/propertiesData/properties_data.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/userPreferences/current_user.dart';
-// import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
-// import 'package:municipal_tracker_msunduzi/code/ApiConnection/api_connection.dart';
+// import 'package:municipal_services/code/SQLApp/propertiesData/image_data.dart';
+// import 'package:municipal_services/code/SQLApp/propertiesData/properties_data.dart';
+// import 'package:municipal_services/code/SQLApp/userPreferences/current_user.dart';
+// import 'package:municipal_services/code/PDFViewer/view_pdf.dart';
+// import 'package:municipal_services/code/ApiConnection/api_connection.dart';
 //
 // class PropertyFragmentScreenAll extends StatelessWidget{
 //   PropertyFragmentScreenAll({super.key});

@@ -1,6 +1,6 @@
 {
-    "name": "municipal_tracker_msunduzi",
-    "short_name": "municipal_tracker_msunduzi",
+    "name": "municipal_services",
+    "short_name": "municipal_services",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

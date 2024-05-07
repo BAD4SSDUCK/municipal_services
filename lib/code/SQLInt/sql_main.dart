@@ -1,8 +1,8 @@
 // import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/Auth/login_screen.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/fragments/dashboard_of_fragments_sql.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/userPreferences/user_preferences.dart';
+// import 'package:municipal_services/code/SQLApp/Auth/login_screen.dart';
+// import 'package:municipal_services/code/SQLApp/fragments/dashboard_of_fragments_sql.dart';
+// import 'package:municipal_services/code/SQLApp/userPreferences/user_preferences.dart';
 //
 //
 // class SQLMain extends StatelessWidget {

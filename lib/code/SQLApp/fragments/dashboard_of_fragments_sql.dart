@@ -3,14 +3,14 @@
 // import 'package:flutter/material.dart';
 // import 'package:fluttertoast/fluttertoast.dart';
 // import 'package:get/get.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/fragments/home_fragment_screen.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/fragments/photo_upload_screen.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/fragments/profile_fragment_screen.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/fragments/property_fragment_screen.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/userPreferences/current_user.dart';
+// import 'package:municipal_services/code/SQLApp/fragments/home_fragment_screen.dart';
+// import 'package:municipal_services/code/SQLApp/fragments/photo_upload_screen.dart';
+// import 'package:municipal_services/code/SQLApp/fragments/profile_fragment_screen.dart';
+// import 'package:municipal_services/code/SQLApp/fragments/property_fragment_screen.dart';
+// import 'package:municipal_services/code/SQLApp/userPreferences/current_user.dart';
 //
-// import 'package:municipal_tracker_msunduzi/code/PDFViewer/view_pdf.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/auth/fb_chat_auth.dart';
+// import 'package:municipal_services/code/PDFViewer/view_pdf.dart';
+// import 'package:municipal_services/code/SQLApp/auth/fb_chat_auth.dart';
 //
 // ///This dashboard is only for testing and will in the future use the firebase dashboard already built but with the sql connection instead
 // ///I may use this dashboard if the design is better but input all the build pages in the fragment screens

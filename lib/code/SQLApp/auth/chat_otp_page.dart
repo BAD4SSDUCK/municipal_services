@@ -3,12 +3,12 @@
 // import 'package:fluttertoast/fluttertoast.dart';
 // import 'package:google_fonts/google_fonts.dart';
 // import 'package:intl_phone_field/intl_phone_field.dart';
-// import 'package:municipal_tracker_msunduzi/code/Chat/chat_screen.dart';
-// import 'package:municipal_tracker_msunduzi/code/DisplayPages/dashboard.dart';
+// import 'package:municipal_services/code/Chat/chat_screen.dart';
+// import 'package:municipal_services/code/DisplayPages/dashboard.dart';
 // import 'package:pin_code_fields/pin_code_fields.dart';
 //
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/fragments/dashboard_of_fragments_sql.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/fragments/home_fragment_screen.dart';
+// import 'package:municipal_services/code/SQLApp/fragments/dashboard_of_fragments_sql.dart';
+// import 'package:municipal_services/code/SQLApp/fragments/home_fragment_screen.dart';
 // import 'fb_chat_auth.dart';
 //
 // class ChatRegisterScreen extends StatefulWidget {

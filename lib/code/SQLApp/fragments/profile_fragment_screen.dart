@@ -1,11 +1,11 @@
 // import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/auth/login_screen.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/userPreferences/current_user.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/userPreferences/user_preferences.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/propertiesData/property_storage.dart';
-// import 'package:municipal_tracker_msunduzi/code/SQLApp/propertiesData/image_preferences.dart';
+// import 'package:municipal_services/code/SQLApp/auth/login_screen.dart';
+// import 'package:municipal_services/code/SQLApp/userPreferences/current_user.dart';
+// import 'package:municipal_services/code/SQLApp/userPreferences/user_preferences.dart';
+// import 'package:municipal_services/code/SQLApp/propertiesData/property_storage.dart';
+// import 'package:municipal_services/code/SQLApp/propertiesData/image_preferences.dart';
 //
 // class ProfileFragmentScreen extends StatelessWidget {
 //
