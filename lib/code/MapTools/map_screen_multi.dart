@@ -570,11 +570,8 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                           },
                         child: Container(
                           height: 50,
-                          padding: EdgeInsets.symmetric(horizontal: 5),
-                          decoration: BoxDecoration(color: Theme
-                              .of(context)
-                              .highlightColor,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          decoration: BoxDecoration(color: Theme.of(context).highlightColor,),
 
                           child: Row(children: [
                             Icon(Icons.location_on, size: 25, color: Colors.green[700],
@@ -586,7 +583,7 @@ class _MapScreenMultiState extends State<MapScreenMulti> {
                                       '${locationController.pickPlaceMark.locality ?? ''}'
                                       '${locationController.pickPlaceMark.postalCode ?? ''}'
                                       '${locationController.pickPlaceMark.country ?? ''}',
-                                  style: TextStyle(fontSize: 20),
+                                  style: const TextStyle(fontSize: 20),
                                   maxLines: 1, overflow: TextOverflow.ellipsis,
                                 ),
                             ),
