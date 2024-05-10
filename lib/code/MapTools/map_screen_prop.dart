@@ -38,6 +38,8 @@ class _MapScreenPropState extends State<MapScreenProp> {
   @override
   void initState(){
 
+    Fluttertoast.showToast(msg: "Tap on the pin to access directions.", gravity: ToastGravity.TOP);
+
     ///This is the circular loading widget in this future.delayed call
     _isLoading = true;
     Future.delayed(const Duration(seconds: 5),(){
@@ -241,6 +243,7 @@ class _MapScreenPropState extends State<MapScreenProp> {
                           onMapCreated: (GoogleMapController mapController) {
                             addressConvert();
                             _mapController = mapController;
+                            Fluttertoast.showToast(msg: "Tap on the pin to access directions.", gravity: ToastGravity.TOP);
                           },
                           initialCameraPosition: _cameraPosition
                       ),
