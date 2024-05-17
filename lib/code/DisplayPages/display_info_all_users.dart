@@ -2034,6 +2034,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> {
     _accountNumberController.text = '';
     _addressController.text = '';
     _areaCodeController.text = '';
+    _wardController.text = '';
     _meterNumberController.text = '';
     _meterReadingController.text = '';
     _waterMeterController.text = '';
