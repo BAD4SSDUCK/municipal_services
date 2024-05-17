@@ -278,7 +278,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
         ///Need to build a property model that retrieves property data entirely from the db
         var ward = propSnapshot['ward'].toString().toLowerCase();
 
-        if(ward.contains(_searchController.text.toLowerCase())) {
+        if(ward == (_searchController.text.toLowerCase())) {
           showResults.add(propSnapshot);
         }
       }
@@ -1114,7 +1114,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
             }
 
             if (_allUserWardResults[index]['cell number'].contains('+27') &&
-                (userWardProp == dropdownValue ||
+                (userWardProp == dropdownValue.toString() ||
                     dropdownValue == 'Select Ward')) {
               return Card(
                 margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
@@ -1293,7 +1293,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen> {
             }
 
             if (_allUserSuburbResults[index]['cell number'].contains('+27') &&
-                (_allUserSuburbResults[index]['address'].toLowerCase().contains(dropdownSuburbValue.toString().toLowerCase()) ||
+                ((_allUserSuburbResults[index]['address'].toLowerCase()).contains(dropdownSuburbValue.toString().toLowerCase()) ||
                     dropdownSuburbValue == 'Select Suburb')) {
               return Card(
                 margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
