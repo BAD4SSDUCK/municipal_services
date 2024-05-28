@@ -1,7 +1,6 @@
 # municipal_services
 
-Municipal Tracker application using mySql with php rest api's
-REST API's in folder wampserver/www/municipal_services/ This folder must be placed in the wamp server folder
+This app stands as the original creation by BAD4SSDUCK all APIs and firestore database information was originally managed by BAD4SSDUCK but has been transfered to Cyberfox
 
 ## Getting Started
 
