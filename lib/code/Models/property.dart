@@ -16,13 +16,16 @@ class Property {
   String firstName;
   String lastName;
   String id;
-  bool imgStateE;
+  // bool imgStateE;
   bool imgStateW;
-  String meterNum;
-  String meterReading;
+  // String meterNum;
+  // String meterReading;
   String waterMeterNum;
   String waterMeterReading;
   String uid;
+  String districtId; // New field
+  String municipalityId; // New field
+  bool isLocalMunicipality;
 
   Property({
     this.documentId,
@@ -34,74 +37,84 @@ class Property {
     required this.firstName,
     required this.lastName,
     required this.id,
-    required this.imgStateE,
+    // required this.imgStateE,
     required this.imgStateW,
-    required this.meterNum,
-    required this.meterReading,
+    // required this.meterNum,
+    // required this.meterReading,
     required this.waterMeterNum,
     required this.waterMeterReading,
     required this.uid,
+    required this.districtId, // Initialize new field
+    required this.municipalityId, // Initialize new field
+    required this.isLocalMunicipality,
   });
 
   factory Property.fromJson(Map<String, dynamic> json) => Property(
       documentId: json["Document ID"],
-      accountNo: json["account number"],
+      accountNo: json["accountNumber"],
       address: json["address"],
-      areaCode: json["area code"],
-      cellNum: json["cell number"],
+      areaCode: json["areaCode"],
+      cellNum: json["cellNumber"],
       eBill: json["eBill"],
-      firstName: json["first name"],
-      lastName: json["last name"],
-      id: json["id number"],
-      imgStateE: json["imgStateE"],
+      firstName: json["firstName"],
+      lastName: json["lastName"],
+      id: json["idNumber"],
+      // imgStateE: json["imgStateE"],
       imgStateW: json["imgStateW"],
-      meterNum: json["meter number"],
-      meterReading: json["meter reading"],
-      waterMeterNum: json["water meter number"],
-      waterMeterReading: json["water meter reading"],
-      uid: json["user id"],
+      // meterNum: json["meter_number"],
+      // meterReading: json["meter_reading"],
+      waterMeterNum: json["water_meter_number"],
+      waterMeterReading: json["water_meter_reading"],
+      uid: json["userID"],
+      districtId: json["districtId"], // Parse new field
+      municipalityId: json["municipalityId"],
+    isLocalMunicipality: json['isLocalMunicipality'],
   );
 
   // formatting for upload to Firebase when creating the property
   Map<String, dynamic> toJson() => {
     'Document ID': documentId,
-    'account number': accountNo,
+    'accountNumber': accountNo,
     'address': address,
-    'area code': areaCode,
-    'cell number': cellNum,
+    'areaCode': areaCode,
+    'cellNumber': cellNum,
     'eBill': eBill,
-    'first name': firstName,
-    'last name': lastName,
-    'id number': id,
-    'imgStateE': imgStateE,
+    'firstName': firstName,
+    'lastName': lastName,
+    'idNumber': id,
+    // 'imgStateE': imgStateE,
     'imgStateW': imgStateW,
-    'meter number': meterNum,
-    'meter reading': meterReading,
-    'water meter number': waterMeterNum,
-    'water meter reading': waterMeterReading,
-    'user id': uid,
-
+    // 'meter_number': meterNum,
+    // 'meter_reading': meterReading,
+    'water_meter_number': waterMeterNum,
+    'water_meter_reading': waterMeterReading,
+    'userID': uid,
+    'districtId': districtId, // Add to JSON
+    'municipalityId': municipalityId, // Add to JSON
+    'isLocalMunicipality': isLocalMunicipality,
   };
 
   // creating a property object from a firebase snapshot
   Property.fromSnapshot(DocumentSnapshot snapshot) :
         documentId = snapshot.id,
-        accountNo = snapshot['account number'],
+        accountNo = snapshot['accountNumber'],
         address = snapshot['address'],
-        areaCode = snapshot['area code'],
-        cellNum = snapshot['cell number'],
+        areaCode = snapshot['areaCode'],
+        cellNum = snapshot['cellNumber'],
         eBill = snapshot['eBill'],
-        firstName = snapshot['first name'],
-        lastName = snapshot['last name'],
-        id = snapshot['id number'],
-        imgStateE = snapshot['imgStateE'],
+        firstName = snapshot['firstName'],
+        lastName = snapshot['lastName'],
+        id = snapshot['idNumber'],
+        // imgStateE = snapshot['imgStateE'],
         imgStateW = snapshot['imgStateW'],
-        meterNum = snapshot['meter number'],
-        meterReading = snapshot['meter reading'],
-        waterMeterNum = snapshot['water meter number'],
-        waterMeterReading = snapshot['water meter reading'],
-        uid = snapshot['user id'];
-
+        // meterNum = snapshot['meter_number'],
+        // meterReading = snapshot['meter_reading'],
+        waterMeterNum = snapshot['water_meter_number'],
+        waterMeterReading = snapshot['water_meter_reading'],
+        uid = snapshot['userID'],
+        districtId = snapshot['districtId'],// Retrieve from snapshot
+        municipalityId = snapshot['municipalityId'],
+        isLocalMunicipality = snapshot['isLocalMunicipality'];
 
   Map<String, Icon> types() => {
     "car": Icon(Icons.directions_car, size: 50),

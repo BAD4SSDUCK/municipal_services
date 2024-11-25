@@ -1,4 +1,4 @@
-package com.example.municipal_tracker_msunduzi
+package www.cyberfox.co.za.Municipal_Services
 
 import io.flutter.embedding.android.FlutterActivity
 

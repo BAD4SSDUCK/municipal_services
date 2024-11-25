@@ -1,21 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
-
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
@@ -26,6 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="municipal_services">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
+
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
@@ -33,66 +20,95 @@
   <link rel="manifest" href="manifest.json">
 
   <script>
-    // The value below is injected by flutter build, do not touch.
     var serviceWorkerVersion = null;
   </script>
   <!-- This script adds the flutter initialization JS code -->
   <script src="flutter.js" defer></script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY&libraries=maps,drawing,visualization,places,routes&callback=initMap"></script>
 
+  <!-- Firebase Configuration -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics.js";
+    import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-messaging.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY",
+      authDomain: "municipal-tracker-msunduzi.firebaseapp.com",
+      projectId: "municipal-tracker-msunduzi",
+      storageBucket: "municipal-tracker-msunduzi.appspot.com",
+      messagingSenderId: "183405317738",
+      appId: "1:183405317738:web:bcbd50b2a791564f790413",
+      measurementId: "G-PJ8BZFZZ8D"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+
+    // Initialize Firebase Messaging
+    const messaging = getMessaging(app);
+
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then((registration) => {
+          messaging.useServiceWorker(registration);
+        }).catch((err) => {
+          console.log('Service Worker registration failed: ', err);
+        });
+    }
+
+    // Request permission and get token
+    async function requestPermissionAndGetToken() {
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          const token = await getToken(messaging, { vapidKey: 'BKIRt7npcxun4bLzG-F_HXEHLu49TVVqBAHSx_V6KPwv8tIrIl2PIHvsoJdh_vGWhuM-V6byFLZVAqnk53LM6KM' });
+          console.log('FCM Token:', token);
+          // Send token to your server here if needed
+        } else {
+          console.error('Notification permission not granted');
+        }
+      } catch (error) {
+        console.error('Error getting FCM token:', error);
+      }
+    }
+
+    // Handle incoming messages
+    onMessage(messaging, (payload) => {
+      console.log('Message received. ', payload);
+      // Customize how you want to handle the incoming message
+    });
+
+    // Request permission and get token on page load
+    window.addEventListener('load', requestPermissionAndGetToken);
+  </script>
 </head>
 <body>
 
-  <script>
+<script>
     window.flutterWebRenderer = "html"
   </script>
 
+<div id="loading"></div>
+<script>
+    window.addEventListener('load', function(ev) {
+      var loading = document.querySelector('#loading');
+      loading.textContent = "Loading entrypoint...";
+      _flutter.loader.loadEntrypoint({
+        serviceWorker: {
+          serviceWorkerVersion: serviceWorkerVersion,
+        },
+        onEntrypointLoaded: async function(engineInitializer) {
+          loading.textContent = "Initializing engine...";
+          let appRunner = await engineInitializer.initializeEngine();
 
-
-  <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY",
-    authDomain: "municipal-tracker-msunduzi.firebaseapp.com",
-    projectId: "municipal-tracker-msunduzi",
-    storageBucket: "municipal-tracker-msunduzi.appspot.com",
-    messagingSenderId: "183405317738",
-    appId: "1:183405317738:web:bcbd50b2a791564f790413",
-    measurementId: "G-PJ8BZFZZ8D"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-  </script>
-
-  <div id="loading"></div>
-  <script>
-    let useHtml = true;
-
-      window.addEventListener('load', function(ev) {
-        var loading = document.querySelector('#loading');
-        loading.textContent = "Loading entrypoint...";
-        _flutter.loader.loadEntrypoint({
-          serviceWorker: {
-            serviceWorkerVersion: serviceWorkerVersion,
-          },
-          onEntrypointLoaded: async function(engineInitializer) {
-            loading.textContent = "Initializing engine...";
-            let appRunner = await engineInitializer.initializeEngine();
-
-            loading.textContent = "Loading app...";
-            await appRunner.runApp();
-          }
-        });
+          loading.textContent = "Loading app...";
+          await appRunner.runApp();
+        }
       });
-    </script>
+    });
+  </script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-
+import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -24,599 +24,555 @@ import 'package:municipal_services/code/Reusable/cache_manager.dart';
 import 'package:municipal_services/code/faultPages/fault_task_screen_archive.dart';
 import 'package:municipal_services/code/MapTools/map_screen.dart';
 import 'package:municipal_services/code/MapTools/map_screen_prop.dart';
+import '../Chat/councillor_chatroom.dart';
+import '../Models/notify_provider.dart';
+
 
 class CouncillorScreen extends StatefulWidget {
-  const CouncillorScreen({Key? key}) : super(key: key);
+  const CouncillorScreen({super.key,});
 
   @override
   State<CouncillorScreen> createState() => _CouncillorScreenState();
 }
 
-final storageRef = FirebaseStorage.instance.ref();
-String councillorName = ' ';
-
 class _CouncillorScreenState extends State<CouncillorScreen> {
+  final FirebaseAuth auth = FirebaseAuth.instance;
+  final User? user = FirebaseAuth.instance.currentUser;
+  late final CollectionReference councillors;
+
+  List<DocumentSnapshot> councillorList = [];
+  bool isLoading = true;
+  String dropdownValue = 'Select Ward';
+  List<String> dropdownWards = List.generate(
+      41,
+          (index) =>
+      (index == 0) ? 'Select Ward' : index.toString().padLeft(2, '0'));
+  List<DocumentSnapshot> filteredCouncillorList = [];
+  final TextEditingController _searchController = TextEditingController();
+  String? userEmail;
+  String districtId='';
+  String municipalityId='';
+  bool isLocalMunicipality = false;
+  StreamSubscription? councillorUnreadSubscription;
+
 
   @override
   void initState() {
-    _searchController.addListener(_onSearchChanged);
-    if(dropdownValue == 'Select Ward'){
-      getCouncillorStream();
-    }
     super.initState();
+    _searchController.addListener(_onSearchChanged);
+    fetchUserDetails();
+
+    // Fetch user details and initialize councillors collection afterward
   }
 
-  @override
-  void dispose() {
-    _searchController.removeListener(_onSearchChanged);
-    _searchController.dispose();
-    _headerController;
-    _messageController;
-    searchText;
-    super.dispose();
+
+  Future<void> fetchUserDetails() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        String cellNumber = user.phoneNumber ?? '';
+
+        // First, try fetching from local municipalities
+        QuerySnapshot localPropertiesSnapshot = await FirebaseFirestore.instance
+            .collectionGroup('properties')
+            .where('cellNumber', isEqualTo: cellNumber)
+            .where('isLocalMunicipality', isEqualTo: true)
+            .limit(1)
+            .get();
+
+        if (localPropertiesSnapshot.docs.isNotEmpty) {
+          // Local municipality property found
+          var propertyDoc = localPropertiesSnapshot.docs.first;
+
+          // Extract municipalityId
+          List<String> pathSegments = propertyDoc.reference.path.split('/');
+          municipalityId = pathSegments[1];
+          isLocalMunicipality = true;
+
+          print("Local municipality detected");
+        } else {
+          // If no local municipality property is found, fetch from district municipalities
+          QuerySnapshot districtPropertiesSnapshot = await FirebaseFirestore.instance
+              .collectionGroup('properties')
+              .where('cellNumber', isEqualTo: cellNumber)
+              .where('isLocalMunicipality', isEqualTo: false)
+              .limit(1)
+              .get();
+
+          if (districtPropertiesSnapshot.docs.isNotEmpty) {
+            var propertyDoc = districtPropertiesSnapshot.docs.first;
+
+            // Extract districtId and municipalityId
+            List<String> pathSegments = propertyDoc.reference.path.split('/');
+            districtId = pathSegments[1];
+            municipalityId = pathSegments[3];
+            isLocalMunicipality = false;
+
+            print("District municipality detected");
+          } else {
+            print("No property found for the provided cell number.");
+          }
+        }
+
+        print("districtId: $districtId");
+        print("municipalityId: $municipalityId");
+        print("isLocalMunicipality: $isLocalMunicipality");
+
+        // Initialize the councillors reference with the correct path
+        councillors = isLocalMunicipality
+            ? FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .collection('councillors')
+            : FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('councillors');
+
+        // Fetch councillor data
+        fetchCouncillorData();
+      } else {
+        print("No current user found.");
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+    }
   }
 
-  final user = FirebaseAuth.instance.currentUser!;
+  Stream<bool> getUnreadMessagesStream(String userPhone, bool isCouncillor) {
+    if (isCouncillor) {
+      // Stream for councillors (messages sent to them)
+      return FirebaseFirestore.instance
+          .collectionGroup('chatRoomCouncillor')
+          .snapshots()
+          .asyncMap((snapshot) async {
+        for (var councillorDoc in snapshot.docs) {
+          QuerySnapshot userChatsSnapshot =
+          await councillorDoc.reference.collection('userChats').get();
 
-  final CollectionReference _listCounsellors =
-  FirebaseFirestore.instance.collection('councillors');
+          for (var userChatDoc in userChatsSnapshot.docs) {
+            QuerySnapshot unreadMessages = await userChatDoc.reference
+                .collection('messages')
+                .where('isReadByCouncillor', isEqualTo: false)
+                .where('sendBy', isNotEqualTo: userPhone)
+                .get();
 
-  final _headerController = TextEditingController();
-  final _messageController = TextEditingController();
+            if (unreadMessages.docs.isNotEmpty) {
+              return true; // Unread messages for the councillor
+            }
+          }
+        }
+        return false; // No unread messages
+      });
+    } else {
+      // Stream for regular users (messages sent to them)
+      return FirebaseFirestore.instance
+          .collectionGroup('chatRoomCouncillor')
+          .where('sendTo', isEqualTo: userPhone)
+          .snapshots()
+          .asyncMap((snapshot) async {
+        for (var chatDoc in snapshot.docs) {
+          QuerySnapshot unreadMessages = await chatDoc.reference
+              .collection('messages')
+              .where('isReadByUser', isEqualTo: false)
+              .get();
 
-  ///Methods and implementation for push notifications with firebase and specific device token saving
-  late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-  TextEditingController username = TextEditingController();
-  TextEditingController title = TextEditingController();
-  TextEditingController body = TextEditingController();
-  String? mtoken = " ";
-
-  ///This was made for testing a default message
-  String title2 = "Outstanding Utilities Payment";
-  String body2 = "Make sure you pay utilities before the end of this month or your services will be disconnected";
-
-  String token = '';
-  String notifyToken = '';
-  String searchText = '';
-
-  String dropdownValue = 'Select Ward';
-  List<String> dropdownWards = ['Select Ward','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40',];
-
-  bool visShow = true;
-  bool visHide = false;
-  bool adminAcc = false;
-
-  TextEditingController _searchController = TextEditingController();
-  List _resultsList =[];
-  List _allCouncillorResults = [];
-
-  getCouncillorStream() async{
-    var data = await FirebaseFirestore.instance.collection('councillors').orderBy('wardNum').get();
-
-    // MyCacheManager().defaultCacheManager;
-
-    setState(() {
-      _allCouncillorResults = data.docs;
-    });
-    searchResultsList();
+          if (unreadMessages.docs.isNotEmpty) {
+            return true; // Unread messages for the regular user
+          }
+        }
+        return false; // No unread messages
+      });
+    }
   }
 
-  _onSearchChanged() async {
-    searchResultsList();
+  void _onSearchChanged() {
+    filterCouncillors(dropdownValue);
   }
 
-  searchResultsList() async {
-    var showResults = [];
-
-    if(dropdownValue != 'Select Ward') {
-      getCouncillorStream();
-      for(var councillorSnapshot in _allCouncillorResults){
-        ///Need to build a property model that retrieves property data entirely from the db
-        var wardNum = councillorSnapshot['wardNum'].toString().toLowerCase();
-
-        if(wardNum.contains(dropdownValue.toLowerCase())) {
-          showResults.add(councillorSnapshot);
+  void filterCouncillors(String? ward) {
+    List<DocumentSnapshot> tempResults = [];
+    String searchText = _searchController.text.toLowerCase();
+    if (ward == 'Select Ward' && searchText.isEmpty) {
+      tempResults = List.from(councillorList);
+    } else {
+      for (var doc in councillorList) {
+        final wardNum = doc['wardNum'].toString();
+        final name = doc['councillorName'].toString().toLowerCase();
+        final phone = doc['councillorPhone'].toString().toLowerCase();
+        if ((ward == 'Select Ward' || wardNum == ward) &&
+            (name.contains(searchText) || phone.contains(searchText))) {
+          tempResults.add(doc);
         }
       }
-    } else {
-      getCouncillorStream();
-      showResults = List.from(_allCouncillorResults);
     }
-    setState(() {
-      _allCouncillorResults = showResults;
-    });
-  }
-
-  //it is called within a listview page widget
-  Widget noticeItemField(String noticeData) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8,),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              noticeData,
-              style: const TextStyle(
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<Widget> _getImage(BuildContext context, String imageName) async{
-    Image image;
-    final value = await FireStorageService.loadImage(context, imageName);
-    final imageUrl = await storageRef.child(imageName).getDownloadURL();
-
-    ///Check what the app is running on
-    if(defaultTargetPlatform == TargetPlatform.android){
-      image =Image.network(
-        value.toString(),
-        fit: BoxFit.fill,
-        width: double.infinity,
-        height: double.infinity,
-      );
-    }else{
-      // print('The url is::: $imageUrl');
-      image =Image.network(
-        imageUrl,
-        fit: BoxFit.fitHeight,
-        width: double.infinity,
-        height: double.infinity,
-      );
+    if (mounted) {
+      setState(() {
+        filteredCouncillorList = tempResults;
+      });
     }
-    return image;
   }
 
-  Widget counsellorCard() {
-    if (_allCouncillorResults.isNotEmpty) {
-    return ListView.builder(
-        itemCount: _allCouncillorResults.length,
-        itemBuilder: (context, index) {
-          councillorName = _allCouncillorResults[index]['councillorName'];
 
-          return Card(
-              margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Center(
-                      child: Text('Ward Councillor',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    const SizedBox(height: 10,),
-                    InkWell(
-                      ///Can be later changed to display the picture zoomed in if user taps on it.
-                      onTap: () {
-
-                      },
-                      child: Center(
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 1),
-                          height: 100,
-                          width: 100,
-                          child: Center(
-                            child: Card(
-                              color: Colors.grey,
-                              semanticContainer: true,
-                              clipBehavior: Clip.antiAliasWithSaveLayer,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                              elevation: 0,
-                              margin: const EdgeInsets.all(10.0),
-                              child:
-                              ClipRRect(
-                                  // borderRadius: BorderRadius.circular(40.0),
-                                  child: Image.asset('assets/images/councillors/$councillorName.jpg', width: 100, height: 100,),
-                              ),
-
-                              ///Old image pull method from firebase db dose not work
-                              // FutureBuilder(
-                              //     future: _getImage(
-                              //
-                              //       ///Firebase image location must be changed to display image based on the councillor name
-                              //         context, 'files/councillors/$councillorName.jpg'),
-                              //     builder: (context, snapshot) {
-                              //       if (snapshot.hasError) {
-                              //         return const Padding(
-                              //           padding: EdgeInsets.all(10.0),
-                              //           child: Column(
-                              //             mainAxisSize: MainAxisSize.min,
-                              //             children: [
-                              //               // Text('Image not yet uploaded.',),
-                              //               // SizedBox(height: 10,),
-                              //               FaIcon(Icons.person, size: 50,),
-                              //             ],
-                              //           ),
-                              //         );
-                              //       }
-                              //       if (snapshot.connectionState ==
-                              //           ConnectionState.done) {
-                              //         return SizedBox(
-                              //           height: 100,
-                              //           width: 100,
-                              //           child: snapshot.data,
-                              //         );
-                              //       }
-                              //       if (snapshot.connectionState ==
-                              //           ConnectionState.waiting) {
-                              //         return const Padding(
-                              //           padding: EdgeInsets.all(5.0),
-                              //           child: CircularProgressIndicator(),
-                              //         );
-                              //       }
-                              //       return Container();
-                              //     }
-                              // ),
-
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const Text('Ward:',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w500),
-                    ),
-                    noticeItemField(_allCouncillorResults[index]['wardNum']),
-                    const Text('Name:',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w500),
-                    ),
-                    noticeItemField(_allCouncillorResults[index]['councillorName']),
-                    const Text('Contact Number:',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w500),
-                    ),
-                    noticeItemField(_allCouncillorResults[index]['councillorPhone']),
-                    const SizedBox(height: 10,),
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Row(
-                              children: [
-                                BasicIconButtonGrey(
-                                  onPress: () async {
-                                    String phoneNum = _allCouncillorResults[index]['councillorPhone'];
-                                    String passedID = user.phoneNumber!;
-                                    String councillorName = _allCouncillorResults[index]['councillorName'];
-                                    print(councillorName);
-                                    Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) =>
-                                                ChatCouncillor(chatRoomId: phoneNum, councillorName: councillorName)));
-                                  },
-                                  labelText: 'Chat',
-                                  fSize: 14,
-                                  faIcon: const FaIcon(Icons.message,),
-                                  fgColor: Colors.blue,
-                                  btSize: const Size(50, 38),
-                                ),
-                                // BasicIconButtonGrey(
-                                //   onPress: () async {
-                                //     String phoneNum = documentSnapshot['councillorPhone'];
-                                //     final Uri _tel = Uri.parse(
-                                //         'tel:$phoneNum');
-                                //     launchUrl(_tel);
-                                //   },
-                                //   labelText: 'Contact by Phone',
-                                //   fSize: 14,
-                                //   faIcon: const FaIcon(Icons.add_call,),
-                                //   fgColor: Colors.green,
-                                //   btSize: const Size(50, 38),
-                                // ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-
+  void fetchCouncillorData() async {
+    try {
+      var snapshot = await councillors.orderBy('wardNum').get();
+      print("Fetched ${snapshot.docs.length} councillors");
+      if (mounted) {
+        setState(() {
+          councillorList = snapshot.docs;
+          filteredCouncillorList = snapshot.docs;
+          isLoading = false;
         });
-    } return const Center(
-      child: CircularProgressIndicator(),
-    );
+      }
+    } catch (e) {
+      print("Error fetching councillor data: $e");
+    }
   }
 
-  Widget wardCounsellorCard(CollectionReference<Object?> wardCounsellorStream){
-    return Expanded(
-      child: StreamBuilder<QuerySnapshot>(
-        stream: wardCounsellorStream.orderBy('wardNum', descending: false).snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-          if (streamSnapshot.hasData) {
-            return ListView.builder(
-              itemCount: streamSnapshot.data!.docs.length,
-              itemBuilder: (context, index) {
-                final DocumentSnapshot documentSnapshot =
-                streamSnapshot.data!.docs[index];
 
-                councillorName = documentSnapshot['councillorName'];
 
-                if(documentSnapshot['wardNum'].trim()==dropdownValue.trim()|| dropdownValue == 'Select Ward') {
-                  return Card(
-                    margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Center(
-                            child: Text(
-                              'Ward Councillor',
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                          // const SizedBox(height: 10,),
-                          InkWell(
-                            ///Can be later changed to display the picture zoomed in if user taps on it.
-                            onTap: () {
+  Future<String> getImageUrl(String imagePath) async {
+    final ref = FirebaseStorage.instance.ref().child(imagePath);
+    try {
+      final url = await ref.getDownloadURL();
+      return url;
+    } catch (e) {
+      print("Failed to load image $imagePath, $e");
+      return '';
+    }
+  }
 
-                            },
-                            child: Center(
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 1),
-                                height: 100,
-                                width: 100,
-                                child: Center(
-                                  child: Card(
-                                    color: Colors.grey,
-                                    semanticContainer: true,
-                                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                    ),
-                                    elevation: 0,
-                                    margin: const EdgeInsets.all(10.0),
-                                    child: FutureBuilder(
-                                        future: _getImage(
-                                          ///Firebase image location must be changed to display image based on the meter number
-                                            context, 'files/councillors/$councillorName.jpg'),
-                                        builder: (context, snapshot) {
-                                          if (snapshot.hasError) {
-                                            return const Padding(
-                                              padding: EdgeInsets.all(10.0),
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  // Text('Image not yet uploaded.',),
-                                                  // SizedBox(height: 10,),
-                                                  FaIcon(Icons.person,size: 50,),
-                                                ],
-                                              ),
-                                            );
-                                          }
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.done) {
-                                            return Container(
-                                              height: 100,
-                                              width: 100,
-                                              child: snapshot.data,
-                                            );
-                                          }
-                                          if (snapshot.connectionState ==
-                                              ConnectionState.waiting) {
-                                            return Container(
-                                              child: const Padding(
-                                                padding: EdgeInsets.all(5.0),
-                                                child: CircularProgressIndicator(),
-                                              ),);
-                                          }
-                                          return Container();
-                                        }
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const Text(
-                            'Ward:',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                          noticeItemField(documentSnapshot['wardNum']),
-                          const Text(
-                            'Name:',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                          noticeItemField(documentSnapshot['councillorName']),
-                          const Text(
-                            'Contact Number:',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                          noticeItemField(documentSnapshot['councillorPhone']),
-                          const SizedBox(height: 10,),
-                          Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Row(
-                                    children: [
-                                      BasicIconButtonGrey(
-                                        onPress: () async {
-                                          String phoneNum = documentSnapshot['councillorPhone'];
-                                          String passedID = user.phoneNumber!;
-                                          String councillorName = documentSnapshot['councillorName'];
-                                          print(councillorName);
-                                          Navigator.push(context,
-                                              MaterialPageRoute(builder: (context) => ChatCouncillor(chatRoomId: phoneNum, councillorName: councillorName)));
+  Stream<bool> councillorUnreadMessagesStream(String councillorPhone) async* {
+    try {
+      CollectionReference userChats = isLocalMunicipality
+          ? FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId)
+          .collection('chatRoomCouncillor')
+          .doc(councillorPhone)
+          .collection('userChats')
+          : FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .collection('chatRoomCouncillor')
+          .doc(councillorPhone)
+          .collection('userChats');
 
-                                        },
-                                        labelText: 'Chat',
-                                        fSize: 14,
-                                        faIcon: const FaIcon(Icons.message,),
-                                        fgColor: Colors.blue,
-                                        btSize: const Size(50, 38),
-                                      ),
-                                      // BasicIconButtonGrey(
-                                      //   onPress: () async {
-                                      //     String phoneNum = documentSnapshot['councillorPhone'];
-                                      //     final Uri _tel = Uri.parse(
-                                      //         'tel:$phoneNum');
-                                      //     launchUrl(_tel);
-                                      //   },
-                                      //   labelText: 'Contact by Phone',
-                                      //   fSize: 14,
-                                      //   faIcon: const FaIcon(Icons.add_call,),
-                                      //   fgColor: Colors.green,
-                                      //   btSize: const Size(50, 38),
-                                      // ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-                return Card();
-              },
-            );
+      yield* userChats.snapshots().asyncMap((snapshot) async {
+        for (var chatDoc in snapshot.docs) {
+          QuerySnapshot unreadMessages = await chatDoc.reference
+              .collection('messages')
+              .where('isReadByCouncillor', isEqualTo: false)
+              .get();
+
+          if (unreadMessages.docs.isNotEmpty) {
+            return true; // Unread messages found
           }
-          return const Padding(
-            padding: EdgeInsets.all(10.0),
-            child: Center(
-                child: CircularProgressIndicator()),
-          );
-        },
-      ),
-    );
+        }
+        return false; // No unread messages
+      });
+    } catch (e) {
+      print("Error in councillorUnreadMessagesStream: $e");
+      yield false;
+    }
   }
 
 
+  Future<void> markMessagesAsReadForUser(String councillorPhone) async {
+    try {
+      CollectionReference userChats = isLocalMunicipality
+          ? FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId)
+          .collection('chatRoomCouncillor')
+          .doc(councillorPhone)
+          .collection('userChats')
+          : FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .collection('chatRoomCouncillor')
+          .doc(councillorPhone)
+          .collection('userChats');
+
+      String userPhone = FirebaseAuth.instance.currentUser?.phoneNumber ?? '';
+
+      QuerySnapshot unreadMessages = await userChats
+          .doc(userPhone)
+          .collection('messages')
+          .where('isReadByUser', isEqualTo: false)
+          .get();
+
+      for (var message in unreadMessages.docs) {
+        await message.reference.update({'isReadByUser': true});
+      }
+
+      print("Marked all messages as read for user $userPhone with councillor $councillorPhone");
+
+      // Update the provider
+      NotificationProvider().updateCouncillorUnreadMessages(councillorPhone, false);
+    } catch (e) {
+      print("Error marking messages as read: $e");
+    }
+  }
+
+
+
+
+  Future<bool> hasUnreadCouncilMessages(String councillorPhone) async {
+    try {
+      CollectionReference userChats = isLocalMunicipality
+          ? FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId)
+          .collection('chatRoomCouncillor')
+          .doc(councillorPhone)
+          .collection('userChats')
+          : FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .collection('chatRoomCouncillor')
+          .doc(councillorPhone)
+          .collection('userChats');
+
+      String userPhone = FirebaseAuth.instance.currentUser?.phoneNumber ?? '';
+      QuerySnapshot unreadMessages = await userChats
+          .doc(userPhone)
+          .collection('messages')
+          .where('isReadByUser', isEqualTo: false)
+          .get();
+
+      return unreadMessages.docs.isNotEmpty;
+    } catch (e) {
+      print("Error checking unread messages: $e");
+      return false;
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Ward Counsellors',style: TextStyle(color: Colors.white),),
+        title: const Text('Councillor Screen', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.green,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: <Widget>[
-          Visibility(
-              visible: false,
-              child: IconButton(
-                  onPressed: (){
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => const NoticeArchiveScreen()));
-                  },
-                  icon: const Icon(Icons.history_outlined, color: Colors.white,)),),
-        ],
       ),
+      body: isLoading ? const Center(child: CircularProgressIndicator()) : buildBody(),
+    );
+  }
 
-      body: Column(
-        children: [
-          const SizedBox(height: 10,),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
-            child: Column(
-                children: [
-                  SizedBox(
-                    // width: 400,
-                    height: 50,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 10, right: 10),
-                      child: Center(
-                        child: TextField(
-                          ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(color: Colors.grey,)
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(color: Colors.grey,)
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(color: Colors.grey,)
-                            ),
-                            disabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(color: Colors.grey,)
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                            fillColor: Colors.white,
-                            filled: true,
-                            suffixIcon: DropdownButtonFormField <String>(
-                              value: dropdownValue,
-                              items: dropdownWards.map<DropdownMenuItem<String>>((String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 20.0),
-                                    child: Text(
-                                      value,
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) async{
-                                setState(() {
-                                  dropdownValue = newValue!;
-                                });
-                              },
-                              icon: const Padding(
-                                padding: EdgeInsets.only(left: 10, right: 10),
-                                child: Icon(Icons.arrow_circle_down_sharp),
-                              ),
-                              iconEnabledColor: Colors.green,
-                              style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 18
-                              ),
-                              dropdownColor: Colors.grey[50],
-                              isExpanded: true,
+  Widget buildBody() {
+    return Column(
+      children: [
+        buildSearchAndFilter(),
+        Expanded(child: buildCouncillorList()),
+      ],
+    );
+  }
 
-                            ),
-                          ),
+  Widget buildSearchAndFilter() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(10),
+          child: DropdownButton<String>(
+            value: dropdownValue,
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  dropdownValue = newValue;
+                  filterCouncillors(newValue);
+                });
+              }
+            },
+            items: dropdownWards.map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+          ),
+        ),
+        TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            labelText: 'Search',
+            suffixIcon: const Icon(Icons.search),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+          ),
+          onChanged: (String value) {
+            _onSearchChanged();
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget buildCouncillorList() {
+    final String userPhone = FirebaseAuth.instance.currentUser?.phoneNumber ?? '';
+    return ListView.builder(
+      itemCount: filteredCouncillorList.length,
+      itemBuilder: (context, index) {
+        DocumentSnapshot doc = filteredCouncillorList[index];
+        if (doc.exists) {
+          return StreamBuilder<bool>(
+            stream: councillorUnreadMessagesStream(doc['councillorPhone']),
+            builder: (context, snapshot) {
+              bool hasUnreadMessages = snapshot.data ?? false;
+              return buildCouncillorCard(doc, userPhone, hasUnreadMessages);
+            },
+          );
+        } else {
+          return const Text("Document does not exist");
+        }
+      },
+    );
+  }
+
+
+  Widget buildCouncillorCard(
+      DocumentSnapshot doc, String userPhone, bool hasUnreadMessages) {
+    final String councillorPhone = doc['councillorPhone'];
+    final String councillorName = doc['councillorName'];
+    final String imagePath = 'files/councillors/$councillorName.jpg';
+
+    bool isUserCouncillor = userPhone == councillorPhone;
+
+    return Card(
+      margin: const EdgeInsets.all(10),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            FutureBuilder(
+              future: getImageUrl(imagePath),
+              builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+                if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                  return CircleAvatar(
+                    backgroundImage: NetworkImage(snapshot.data!),
+                    radius: 60,
+                  );
+                } else {
+                  return const CircleAvatar(
+                    radius: 60,
+                    child: Icon(Icons.person),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 10),
+            Text(
+              councillorName,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              'Ward: ${doc['wardNum']}',
+              style: const TextStyle(fontSize: 16),
+            ),
+            Text(
+              'Contact Number: $councillorPhone',
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 10),
+            Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.message, color: Colors.blue),
+                  onPressed: () {
+                    if (isUserCouncillor) {
+                      navigateToCouncillorChatListScreen(councillorPhone);
+                    } else {
+                      navigateToCouncillorChat(councillorPhone, userPhone, councillorName);
+                    }
+                  },
+                ),
+                if (hasUnreadMessages)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 20,
+                        minHeight: 20,
+                      ),
+                      child: const Text(
+                        '!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),
-                ]
+              ],
             ),
-          ),
-          // const SizedBox(height: 10,),
-          ///made the listview card a reusable widget
-          // wardCounsellorCard(_listCounsellors),
-
-          Expanded(child: counsellorCard()),
-
-          const SizedBox(height: 5,),
-
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+
+  void navigateToCouncillorChatListScreen(String councillorPhone) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CouncillorChatListScreen(
+          councillorPhone: councillorPhone,
+          isLocalMunicipality: isLocalMunicipality,
+          municipalityId: municipalityId,  // Pass municipalityId
+        ),
+      ),
+    );
+    fetchCouncillorData();
+  }
+
+
+  void navigateToCouncillorChat(String councillorPhone, String userPhone, String councillorName) {
+    // Mark messages as read before navigating to the chat screen
+    markMessagesAsReadForUser(councillorPhone);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatCouncillor(
+          chatRoomId: councillorPhone,
+          councillorName: councillorName,
+          userId: userPhone,
+          isLocalMunicipality: isLocalMunicipality,
+          districtId: districtId,
+          municipalityId: municipalityId,
+        ),
+      ),
+    ).then((_) {
+      // Refresh councillor data after returning from the chat
+      fetchCouncillorData();
+    });
+  }
+
+
+
+
+
+  @override
+  void dispose() {
+    super.dispose();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    councillorUnreadSubscription?.cancel();
   }
 }

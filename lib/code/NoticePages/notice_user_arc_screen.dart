@@ -24,20 +24,28 @@ import 'package:municipal_services/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
 
 class NoticeArchiveScreen extends StatefulWidget {
-  const NoticeArchiveScreen({Key? key}) : super(key: key);
+  const NoticeArchiveScreen({super.key, });
 
   @override
   State<NoticeArchiveScreen> createState() => _NoticeArchiveScreenState();
 }
-
+final FirebaseAuth auth = FirebaseAuth.instance;
+DateTime now = DateTime.now();
+final User? user = auth.currentUser;
+final uid = user?.uid;
+final email = user?.email;
+String userID = uid as String;
+String userEmail = email as String;
 
 class _NoticeArchiveScreenState extends State<NoticeArchiveScreen> {
-
+  late final CollectionReference _listNotifications;
   final CollectionReference _listUserTokens =
   FirebaseFirestore.instance.collection('UserToken');
-
-  final CollectionReference _listNotifications =
-  FirebaseFirestore.instance.collection('Notifications');
+  String? userEmail;
+  late String districtId;
+  late String municipalityId;
+  // final CollectionReference _listNotifications =
+  // FirebaseFirestore.instance.collection('Notifications');
 
   final _headerController = TextEditingController();
   final _messageController = TextEditingController();
@@ -65,6 +73,13 @@ class _NoticeArchiveScreenState extends State<NoticeArchiveScreen> {
 
   @override
   void initState() {
+    fetchUserDetails();
+    _listNotifications= FirebaseFirestore.instance
+        .collection('districts')
+        .doc(districtId)
+        .collection('municipalities')
+        .doc(municipalityId)
+        .collection('Notifications');
     super.initState();
   }
 
@@ -74,6 +89,36 @@ class _NoticeArchiveScreenState extends State<NoticeArchiveScreen> {
     _messageController;
     searchText;
     super.dispose();
+  }
+  Future<void> fetchUserDetails() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        userEmail = user.email;
+
+        QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+            .collectionGroup('users')
+            .where('email', isEqualTo: userEmail)
+            .limit(1)
+            .get();
+
+        if (userSnapshot.docs.isNotEmpty) {
+          var userDoc = userSnapshot.docs.first;
+
+          districtId = userDoc.reference.parent.parent!.parent.id;
+          municipalityId = userDoc.reference.parent.parent!.id;
+        }
+
+        setState(() {
+          // isLoading = false; // Set loading to false after fetching data
+        });
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+      setState(() {
+        //isLoading = false; // Set loading to false even if there's an error
+      });
+    }
   }
 
   User? user = FirebaseAuth.instance.currentUser;

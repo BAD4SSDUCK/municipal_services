@@ -1,204 +1,922 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-
+import 'package:image_picker/image_picker.dart';
+import 'package:municipal_services/code/Chat/upload_file.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'chat_screen.dart';
+
 
 class ChatFinance extends StatefulWidget {
-  String chatRoomId;
-  String? userName;
-
-  ChatFinance({super.key, required this.chatRoomId, required this.userName});
+  final String chatRoomId;
+  final String? userName;
+  final CollectionReference chatFinCollectionRef;
+  final Function refreshChatList;
+  final bool isLocalMunicipality; // Add this flag to distinguish between local municipalities and districts
+  final String? districtId; // Only needed for district-based municipalities
+  final String municipalityId;
+  const ChatFinance({super.key, required this.chatRoomId, required this.userName, required this.chatFinCollectionRef, required this.refreshChatList, required this.isLocalMunicipality, required this.districtId, required this.municipalityId, });
 
   @override
   _ChatFinanceState createState() => _ChatFinanceState();
 }
+final FirebaseAuth auth = FirebaseAuth.instance;
+DateTime now = DateTime.now();
+final User? user = auth.currentUser;
+final uid = user?.uid;
+final email = user?.email;
+String userID = uid as String;
+String userEmail = email as String;
 
 class _ChatFinanceState extends State<ChatFinance> {
-
   late bool _isLoading;
   late Stream<QuerySnapshot> chats;
   TextEditingController messageEditingController = TextEditingController();
-  final _navigatorKey = GlobalKey<NavigatorState>();
   String chatTo = 'Finance Chat';
+  ScrollController _scrollController = ScrollController();
+  late CollectionReference _chatsListFinance ;
+  String? userEmail;
+  String districtId='';
+  String municipalityId='';
+  late CollectionReference _propList;
+  bool hasUnreadMessages = false;
 
   @override
   void initState() {
-    ///This is the circular loading widget in this future.delayed call
+
+    _chatsListFinance= widget.chatFinCollectionRef;
+    createOrUpdateChatRoom();
+    fetchChats(widget.chatRoomId);
+    markMessagesAsRead(widget.chatRoomId,widget.userName);
+    fetchUserDetails();
+
     _isLoading = true;
-    checkUser();
-    Future.delayed(const Duration(seconds: 3),(){
-      setState(() {
-        _isLoading = false;
-      });
+    //checkUser();
+    _scrollController = ScrollController();
+    Future.delayed(const Duration(seconds: 3), () {
+      if(mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     });
 
-    DatabaseMethods().getChats(widget.chatRoomId).then((val) {
-      setState(() {
-        chats = val;
-      });
-    });
+    // chats = DatabaseMethods().getFinanceChats(
+    //   widget.chatRoomId,
+    // );
     super.initState();
   }
 
-  Future<void> checkUser() async{
-    print('username must be :::${user?.phoneNumber}');
-    if(user?.phoneNumber == null ||
-    user?.phoneNumber == ''){
-      useNum = '';
-      useEmail = user?.email!;
-      Constants.myName = useEmail;
-    } else if (user?.email == null ||
-        user?.email == ''){
-      useNum = user?.phoneNumber!;
-      useEmail = '';
-      Constants.myName = useNum;
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> fetchUserDetails() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        String userPhoneNumber = user.phoneNumber!;
+        String accountNumber = widget.chatRoomId;
+
+        // Add logging for phone number and account number
+        print("Fetching details for phoneNumber: $userPhoneNumber and accountNumber: $accountNumber");
+
+        QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
+            .collectionGroup('properties')
+            .where('cellNumber', isEqualTo: userPhoneNumber)
+            .where('accountNumber', isEqualTo: accountNumber)
+            .get();
+
+        // Check if the query returns any documents
+        if (propertySnapshot.docs.isNotEmpty) {
+          var propertyDoc = propertySnapshot.docs.first;
+          var pathSegments = propertyDoc.reference.path.split('/');
+
+          // Log the full path for debugging
+          print("Property found at path: ${propertyDoc.reference.path}");
+
+          // Check if it's a local municipality or district
+          if (pathSegments[0] == 'localMunicipalities') {
+            municipalityId = pathSegments[1];
+            print('Found local municipality: $municipalityId');
+          } else if (pathSegments[0] == 'districts') {
+            districtId = pathSegments[1];
+            municipalityId = pathSegments[3];
+            print('Found district: $districtId and municipality: $municipalityId');
+          } else {
+            print('Error: Unexpected path format.');
+          }
+        } else {
+          // Log that no property was found for this user
+          print("No matching property found for the user.");
+        }
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+    }
+  }
+
+
+  Future<void> createOrUpdateChatRoom() async {
+    try {
+      DocumentReference chatRoomRef;
+      DocumentReference accountRef;
+
+      if (widget.isLocalMunicipality) {
+        chatRoomRef = FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(widget.municipalityId)
+            .collection('chatRoomFinance')
+            .doc(widget.chatRoomId);
+
+        accountRef = chatRoomRef
+            .collection('accounts')
+            .doc(widget.userName);
+      } else {
+        chatRoomRef = FirebaseFirestore.instance
+            .collection('districts')
+            .doc(widget.districtId!)
+            .collection('municipalities')
+            .doc(widget.municipalityId)
+            .collection('chatRoomFinance')
+            .doc(widget.chatRoomId);
+
+        accountRef = chatRoomRef
+            .collection('accounts')
+            .doc(widget.userName);
+      }
+
+      await chatRoomRef.set({
+        'chatRoom': widget.chatRoomId,
+        'lastUpdated': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      await accountRef.set({
+        'chatRoom': widget.userName,
+        'lastUpdated': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      print('Finance chat room created/updated for phoneNumber: ${widget.chatRoomId} and accountNumber: ${widget.userName}');
+    } catch (e) {
+      print('Error creating or updating finance chat room: $e');
+    }
+  }
+
+
+  void fetchChats(String phoneNumber) {
+    CollectionReference chatsCollection;
+
+    if (widget.isLocalMunicipality) {
+      chatsCollection = FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(widget.municipalityId)
+          .collection('chatRoomFinance')
+          .doc(phoneNumber)
+          .collection('accounts')
+          .doc(widget.userName)
+          .collection('chats');
+    } else {
+      chatsCollection = FirebaseFirestore.instance
+          .collection('districts')
+          .doc(widget.districtId!)
+          .collection('municipalities')
+          .doc(widget.municipalityId)
+          .collection('chatRoomFinance')
+          .doc(phoneNumber)
+          .collection('accounts')
+          .doc(widget.userName)
+          .collection('chats');
     }
 
-    print('chatroom name is ${widget.chatRoomId}');
-    print('username is :::${Constants.myName}');
+    chats = chatsCollection.orderBy('time').snapshots();
+
+    // Listen for unread messages specifically to update badge status
+    chatsCollection
+        .where('isReadByMunicipalUser', isEqualTo: false)
+        .snapshots()
+        .listen((snapshot) {
+      if (mounted) {
+        setState(() {
+          hasUnreadMessages = snapshot.docs.isNotEmpty;
+        });
+        widget.refreshChatList();  // Trigger refresh to update badge in chat list
+      }
+    });
   }
 
-  Widget chatMessages(){
-    return StreamBuilder<QuerySnapshot>(
-      stream: chats, //Provide the proper stream source here
-      builder: (context, snapshot){
-        return snapshot.hasData ? ListView.builder(
-            itemCount: snapshot.data?.docs.length ?? 0,
-            itemBuilder: (context, index){
-              return MessageTile(
-                message: snapshot.data?.docs[index]["message"],
-                sendByMe: Constants.myName == snapshot.data?.docs[index]["sendBy"],
 
-              );
-            }) : Container();
-      },
-    );
+  // Future<void> checkUser() async {
+  //   print('username must be :::${user?.phoneNumber}');
+  //   if (user?.phoneNumber == null || user?.phoneNumber == '') {
+  //     useNum = '';
+  //     useEmail = user?.email!;
+  //     Constants.myName = useEmail;
+  //   } else if (user?.email == null || user?.email == '') {
+  //     useNum = user?.phoneNumber!;
+  //     useEmail = '';
+  //     Constants.myName = useNum;
+  //   }
+  //
+  //   print('chatroom name is ${widget.chatRoomId}');
+  //   print('username is :::${Constants.myName}');
+  // }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
-  String official = 'official';
+  void markMessagesAsRead(String phoneNumber, String? accountNumber) async {
+    CollectionReference chatsCollection;
 
-  addMessage() {
-    if (messageEditingController.text.isNotEmpty) {
-      if (Constants.myName == '') {
-        Constants.myName = useEmail;
-        // 'official';
-        Map<String, dynamic> chatMessageMap = {
-          "sendBy": Constants.myName,
-          "message": messageEditingController.text,
-          'time': DateTime
-              .now()
-              .millisecondsSinceEpoch,
-        };
+    // Determine the correct path for the chat collection
+    if (widget.isLocalMunicipality) {
+      chatsCollection = FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(widget.municipalityId)
+          .collection('chatRoomFinance')
+          .doc(phoneNumber)
+          .collection('accounts')
+          .doc(accountNumber)
+          .collection('chats');
+    } else {
+      chatsCollection = FirebaseFirestore.instance
+          .collection('districts')
+          .doc(widget.districtId)
+          .collection('municipalities')
+          .doc(widget.municipalityId)
+          .collection('chatRoomFinance')
+          .doc(phoneNumber)
+          .collection('accounts')
+          .doc(accountNumber)
+          .collection('chats');
+    }
 
-        DatabaseMethods().addMessage(widget.chatRoomId, chatMessageMap);
+    // Get current user's identifier (phone number or email) to differentiate
+    final currentUser = FirebaseAuth.instance.currentUser;
+    String currentUserIdentifier = currentUser?.phoneNumber ?? currentUser?.email ?? '';
 
-        setState(() {
-          messageEditingController.text = "";
-        });
-      } else {
-        Map<String, dynamic> chatMessageMap = {
-          "sendBy": Constants.myName,
-          "message": messageEditingController.text,
-          'time': DateTime
-              .now()
-              .millisecondsSinceEpoch,
-        };
+    // Fetch unread messages sent by the municipal user (not the regular user)
+    QuerySnapshot unreadMessagesSnapshot = await chatsCollection
+        .where('isReadByRegularUser', isEqualTo: false)
+        .get();
 
-        DatabaseMethods().addMessage(widget.chatRoomId, chatMessageMap);
-
-        setState(() {
-          messageEditingController.text = "";
-        });
+    // Update each unread message's read status for regular user
+    for (var doc in unreadMessagesSnapshot.docs) {
+      if (doc['sendBy'] != currentUserIdentifier) {
+        await doc.reference.update({'isReadByRegularUser': true});
       }
     }
   }
 
 
-  ///need to fix auto generate to custom named generate
-  Future<void> setIDName() async {
+  Widget chatMessages() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: chats,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return const Center(child: Text("Error loading messages"));
+        } else if (!snapshot.hasData || snapshot.data?.docs.isEmpty == true) {
+          return const Center(child: Text("No messages found"));
+        }
 
-    String thisNewChat = widget.chatRoomId;
-    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-        .collection(thisNewChat).doc(thisNewChat).get();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToBottom();
+        });
 
-    DatabaseMethods().addChatDocName(documentSnapshot, thisNewChat);
+        // Debug: print the number of documents found
+        print("Messages count: ${snapshot.data?.docs.length}");
+
+        return SingleChildScrollView(
+          reverse: true,
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              ListView.builder(
+                controller: _scrollController,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: snapshot.data?.docs.length ?? 0,
+                itemBuilder: (context, index) {
+                  var data = snapshot.data?.docs[index].data() as Map<String, dynamic>;
+
+                  // Debug: print the data of each message
+                  print("Message data: $data");
+
+                  String currentUserIdentifier;
+
+                  // Determine the current user's identifier (phone number or email)
+                  if (FirebaseAuth.instance.currentUser != null) {
+                    if (FirebaseAuth.instance.currentUser!.phoneNumber != null &&
+                        FirebaseAuth.instance.currentUser!.phoneNumber!.isNotEmpty) {
+                      currentUserIdentifier = FirebaseAuth.instance.currentUser!.phoneNumber!;
+                    } else {
+                      currentUserIdentifier = FirebaseAuth.instance.currentUser!.email!;
+                    }
+                  } else {
+                    currentUserIdentifier = 'Unknown User';
+                  }
+
+                  // Check if the message was sent by the current user
+                  bool sendByMe = data["sendBy"] == currentUserIdentifier;
+
+                  // Debug: print whether the message was sent by the current user
+                  print("Message sent by me: $sendByMe");
+
+                  return MessageTile(
+                    message: data["message"],
+                    sendByMe: sendByMe,
+                    timestamp: data["time"],
+                    isRead:false,
+                    fileUrl: data["fileUrl"],
+                    sendBy: data["sendBy"],
+                  );
+                },
+              ),
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+
+
+  // void sendMessage({String? text, String? fileUrl}) {
+  //   String message = text ?? "Sent a file";
+  //   Map<String, dynamic> messageData = {
+  //     "sendBy": Constants.myName,
+  //     "message": message,
+  //     "time": DateTime.now().millisecondsSinceEpoch,
+  //     if (fileUrl != null) "fileUrl": fileUrl,
+  //   };
+  //   DatabaseMethods().addMessage(widget.chatRoomId, messageData);
+  //   messageEditingController.clear();
+  // }
+  // void addMessage({String? fileUrl}) {
+  //   Map<String, dynamic> chatMessageMap = {
+  //     "sendBy": Constants.myName,
+  //     "message": fileUrl != null ? "Sent a file" : messageEditingController.text,  // This sets the message text
+  //     'time': DateTime.now().millisecondsSinceEpoch,
+  //     if (fileUrl != null) "fileUrl": fileUrl,
+  //   };
+  //
+  //   DatabaseMethods().addFinanceMessage(
+  //     widget.chatRoomId,
+  //     chatMessageMap,
+  //   );
+  //
+  //   setState(() {
+  //     messageEditingController.text = "";  // Clear the text field after sending
+  //   });
+  // }
+
+  // void sendMessage({
+  //   String? text,
+  //   String? fileUrl,
+  //   required String chatRoomId,
+  //   required String districtId,
+  //   required String municipalityId,
+  // }) {
+  //   User? user = FirebaseAuth.instance.currentUser;
+  //
+  //   if (user == null) {
+  //     print("User is not authenticated, message not sent.");
+  //     return;
+  //   }
+  //
+  //   // Log the values to check if they are correctly populated
+  //   print('chatRoomId: $chatRoomId');
+  //   print('districtId: $districtId');
+  //   print('municipalityId: $municipalityId');
+  //
+  //   if (chatRoomId.isEmpty || municipalityId.isEmpty || (districtId.isEmpty && !widget.isLocalMunicipality)) {
+  //     print('Error: One of the required values (chatRoomId, municipalityId, districtId) is empty.');
+  //     return;
+  //   }
+  //
+  //   String message = messageEditingController.text.trim();
+  //   if (message.isEmpty && fileUrl == null) {
+  //     return;
+  //   }
+  //
+  //   if (message.isEmpty && fileUrl != null) {
+  //     message = "File has been sent";
+  //   }
+  //
+  //   String sendBy = user.phoneNumber ?? user.email ?? 'Unknown User';
+  //
+  //   Map<String, dynamic> messageData = {
+  //     "sendBy": sendBy,
+  //     "message": message,
+  //     "time": DateTime.now().millisecondsSinceEpoch,
+  //     if (fileUrl != null) "fileUrl": fileUrl,
+  //   };
+  //
+  //   if (districtId.isEmpty) {
+  //     // Local municipality case
+  //     FirebaseFirestore.instance
+  //         .collection('localMunicipalities')
+  //         .doc(municipalityId)
+  //         .collection("chatRoomFinance")
+  //         .doc(chatRoomId)
+  //         .collection("chats")
+  //         .add(messageData)
+  //         .then((_) {
+  //       print("Message sent successfully.");
+  //     }).catchError((error) {
+  //       print("Failed to send message: $error");
+  //     });
+  //   } else {
+  //     // District-based case
+  //     FirebaseFirestore.instance
+  //         .collection('districts')
+  //         .doc(districtId)
+  //         .collection('municipalities')
+  //         .doc(municipalityId)
+  //         .collection("chatRoomFinance")
+  //         .doc(chatRoomId)
+  //         .collection("chats")
+  //         .add(messageData)
+  //         .then((_) {
+  //       print("Message sent successfully.");
+  //     }).catchError((error) {
+  //       print("Failed to send message: $error");
+  //     });
+  //   }
+  //
+  //   messageEditingController.clear();
+  // }
+  //
+  void sendMessage({
+    String? text,
+    String? fileUrl,
+    required String chatRoomId,
+  }) {
+    // Use text from the parameter if provided, otherwise take it from the controller
+    String message = text ?? messageEditingController.text.trim();
+
+    // Exit if both message and fileUrl are empty
+    if (message.isEmpty && fileUrl == null) {
+      print("No text or file to send, exiting sendMessage.");
+      return;
+    }
+
+    // Set a default message if only a file is being sent
+    if (message.isEmpty && fileUrl != null) {
+      message = "File has been sent";
+    }
+
+    // Determine current user identifier
+    String currentUserIdentifier;
+    if (FirebaseAuth.instance.currentUser!.phoneNumber != null) {
+      currentUserIdentifier = FirebaseAuth.instance.currentUser!.phoneNumber!;
+    } else {
+      currentUserIdentifier = FirebaseAuth.instance.currentUser!.email!;
+    }
+
+    // Set read flags based on user type
+    bool isReadByRegularUser = currentUserIdentifier == FirebaseAuth.instance.currentUser!.phoneNumber;
+    bool isReadByMunicipalUser = !isReadByRegularUser;
+
+    // Prepare message data
+    Map<String, dynamic> messageData = {
+      "sendBy": currentUserIdentifier,
+      "message": message,
+      "time": DateTime.now().millisecondsSinceEpoch,
+      "isReadByRegularUser": isReadByRegularUser,
+      "isReadByMunicipalUser": isReadByMunicipalUser,
+      if (fileUrl != null) "fileUrl": fileUrl,
+    };
+
+    // Select the appropriate collection based on user type
+    CollectionReference chatsCollection = widget.isLocalMunicipality
+        ? FirebaseFirestore.instance
+        .collection('localMunicipalities')
+        .doc(widget.municipalityId)
+        .collection('chatRoomFinance')
+        .doc(chatRoomId)
+        .collection('accounts')
+        .doc(widget.userName)
+        .collection('chats')
+        : FirebaseFirestore.instance
+        .collection('districts')
+        .doc(widget.districtId)
+        .collection('municipalities')
+        .doc(widget.municipalityId)
+        .collection('chatRoomFinance')
+        .doc(chatRoomId)
+        .collection('accounts')
+        .doc(widget.userName)
+        .collection('chats');
+
+    // Add message to Firestore
+    chatsCollection.add(messageData).then((_) {
+      print("Finance message sent successfully.");
+    }).catchError((error) {
+      print("Failed to send finance message: $error");
+    });
+
+    // Clear input field
+    messageEditingController.clear();
+  }
+
+
+  Future<void> uploadImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      File file = File(pickedFile.path);
+      String fileName = pickedFile.name;
+      String cellNumber = FirebaseAuth.instance.currentUser!.phoneNumber!;
+
+      if (await file.length() > 10 * 1024 * 1024) { // 10 MB limit
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Image is too large (over 10 MB). Please select a smaller file.'))
+        );
+        return; // Stop execution if the file is too large
+      }
+
+      String mimeType = 'image/jpeg'; // Default MIME type; adjust as necessary
+      if (fileName.endsWith('.png')) {
+        mimeType = 'image/png';
+      } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+        mimeType = 'image/jpeg';
+      } else if (fileName.endsWith('.gif')) {
+        mimeType = 'image/gif';
+      }
+
+      try {
+        String filePath = 'chat_files/$cellNumber/${widget.chatRoomId}/$fileName';
+        final ref = FirebaseStorage.instance.ref().child(filePath);
+        var metadata = SettableMetadata(
+            contentType: mimeType,  // Ensure this is correctly set based on the file
+            customMetadata: {'compressed': 'false'}
+        );
+
+        // Show snackbar to inform the user about the upload process
+        const snackBar =
+        SnackBar(content: Text('Uploading file... Please wait.'));
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
+        print("Starting upload to: $filePath");
+        // Uploading the file with metadata
+        TaskSnapshot uploadTask = await ref.putFile(file,metadata);
+        print("Upload task state: ${uploadTask.state}");
+
+        // Verify if the file upload was successful
+        if (uploadTask.state == TaskState.success) {
+          // Add delay to ensure the file is fully processed before fetching the URL
+          await Future.delayed(const Duration(seconds: 1)); // Adjust as needed
+
+          // Try to get the download URL
+          String fileUrl = await ref.getDownloadURL();
+          print("File uploaded successfully to: $filePath");
+          print("File URL: $fileUrl"); // Debugging
+
+          // Dismiss the snackbar after successful upload
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+          sendMessage(
+            chatRoomId: widget.chatRoomId,
+            text: "",
+            fileUrl: fileUrl,
+
+          ); // Pass the URL to the message sender
+        } else {
+          print("Upload failed: ${uploadTask.state}");
+          // Show an error snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Upload failed: ${uploadTask.state}')));
+        }
+      } catch (e) {
+        print("Upload error: $e");
+        // Show an error snackbar
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Upload error: $e')));
+      }
+    } else {
+      print("No file selected");
+      // Show a snackbar for no file selected
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('No file selected')));
+    }
+  }
+
+  Future<void> uploadDocument() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt', 'xlsx', 'xls'],
+    );
+
+    if (result != null) {
+      File file = File(result.files.single.path!);
+      String fileName = result.files.single.name;
+      String cellNumber = FirebaseAuth.instance.currentUser!.phoneNumber!;
+      // Check if the file size is within the 10 MB limit
+      if (await file.length() > 10 * 1024 * 1024) { // 10 MB limit
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Document is too large (over 10 MB). Please select a smaller file.'))
+        );
+        return; // Stop execution if the file is too large
+      }
+
+      String mimeType = 'application/octet-stream'; // Default MIME type; adjust as necessary
+      if (fileName.endsWith('.pdf')) {
+        mimeType = 'application/pdf';
+      } else if (fileName.endsWith('.doc')) {
+        mimeType = 'application/msword';
+      } else if (fileName.endsWith('.docx')) {
+        mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      } else if (fileName.endsWith('.ppt')) {
+        mimeType = 'application/vnd.ms-powerpoint';
+      } else if (fileName.endsWith('.pptx')) {
+        mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      } else if (fileName.endsWith('.txt')) {
+        mimeType = 'text/plain';
+      } else if (fileName.endsWith('.xls')) {
+        mimeType = 'application/vnd.ms-excel';
+      } else if (fileName.endsWith('.xlsx')) {
+        mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      }
+
+      try {
+        String filePath = 'chat_files/$cellNumber/${widget.chatRoomId}/$fileName';
+        final ref = FirebaseStorage.instance.ref().child(filePath);
+        var metadata = SettableMetadata(
+            contentType: mimeType,
+            customMetadata: {'description': 'User uploaded document'}
+        );
+
+        // Show snackbar to inform the user about the upload process
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Uploading document... Please wait.'))
+        );
+
+        // Uploading the file with metadata
+        TaskSnapshot uploadTask = await ref.putFile(file, metadata);
+        // Verify if the file upload was successful
+        if (uploadTask.state == TaskState.success) {
+          // Try to get the download URL
+          String fileUrl = await ref.getDownloadURL();
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          sendMessage(
+            chatRoomId: widget.chatRoomId,
+            text: "",
+
+            fileUrl: fileUrl,
+          ); // Pass the URL to the message sender
+        } else {
+          // Show an error snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Upload failed: ${uploadTask.state}'))
+          );
+        }
+      } catch (e) {
+        // Show an error snackbar
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Upload error: $e'))
+        );
+      }
+    } else {
+      // Show a snackbar for no file selected
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No document selected'))
+      );
+    }
+  }
+
+  void showUploadOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('Upload Image'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    uploadImage();
+                  }),
+              ListTile(
+                  leading: const Icon(Icons.insert_drive_file),
+                  title: const Text('Upload Document'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    uploadDocument();
+                  }),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    if(widget.userName!=null){
-      chatTo = 'Query from: ${widget.userName}';
+    if (widget.userName != null) {
+      chatTo = ' ${widget.userName}';
     } else {
       chatTo = 'Finance Chat';
     }
-    return Scaffold(
+    return WillPopScope(
+        onWillPop: () async {
+      // Trigger the refresh function when the back button is pressed
+          markMessagesAsRead(widget.chatRoomId, widget.userName!);
+      widget.refreshChatList();
+      return true;  // Allows the pop to happen
+    },
+    child: Scaffold(
       appBar: AppBar(
-        title: Text(chatTo,style: const TextStyle(color: Colors.white),),
+        title: Text(
+          chatTo,
+          style: const TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: <Widget>[
-          contactPopUp(context)
-        ],
-
       ),
-      body: Container(
-        child: Stack(
-          children: [_isLoading
-              ? const Center(child: CircularProgressIndicator(),)
-              :
-          chatMessages(),
-            Container(alignment: Alignment.bottomCenter,
-              width: MediaQuery
-                  .of(context)
-                  .size
-                  .width,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                color: Colors.grey[350],
-                child: Row(
-                  children: [
-                    Expanded(
-                        child: TextField(
-                          controller: messageEditingController,
-                          style: simpleTextStyle(),
-                          decoration: InputDecoration(
-                              hintText: "Message ...",
-                              hintStyle: TextStyle(
-                                color: Colors.black54,
-                                fontSize: 16,
-                              ),
-                              border: InputBorder.none
-                          ),
-                        )),
-                    SizedBox(width: 16,),
-                    GestureDetector(
-                      onTap: () {
-                        addMessage();
-                      },
-                      child: Container(
-                          height: 40,
-                          width: 40,
-                          decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF39833C),
-                                    Color(0xFF474747)
-                                  ],
-                                  begin: FractionalOffset.topLeft,
-                                  end: FractionalOffset.bottomRight
-                              ),
-                              borderRadius: BorderRadius.circular(40)
-                          ),
-                          padding: const EdgeInsets.all(12),
-                          child: Image.asset("assets/images/send.png",
-                            height: 30, width: 30,)),
+      body: Column(
+        children: [
+          Expanded(
+            child: _isLoading
+                ? const Center(
+              child: CircularProgressIndicator(),
+            )
+                : chatMessages(),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            color: Colors.grey[350],
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.attach_file),
+                  onPressed: () async {
+                    showUploadOptions(); // This function will handle file picking and uploading
+                  },
+                ),
+
+                Expanded(
+                  child: TextField(
+                    controller: messageEditingController,
+                    style: simpleTextStyle(),
+                    decoration: const InputDecoration(
+                        hintText: "Message ...",
+                        hintStyle: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 16,
+                        ),
+                        border: InputBorder.none),
+                  ),
+                ),
+                const SizedBox(
+                  width: 16,
+                ),
+                GestureDetector(
+                  onTap: () {
+                    sendMessage(chatRoomId: widget.chatRoomId);
+                  },
+                  child: Container(
+                    height: 40,
+                    width: 40,
+                    decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                            colors: [Color(0xFF39833C), Color(0xFF474747)],
+                            begin: FractionalOffset.topLeft,
+                            end: FractionalOffset.bottomRight),
+                        borderRadius: BorderRadius.circular(40)),
+                    padding: const EdgeInsets.all(12),
+                    child: Image.asset(
+                      "assets/images/send.png",
+                      height: 30,
+                      width: 30,
                     ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+    );
+  }
+}
+
+class MessageTile extends StatelessWidget {
+  final String message;
+  final bool sendByMe;
+  final int timestamp;
+  final String? fileUrl;
+  final String sendBy;
+// Callback for attaching files
+
+  const MessageTile({
+    super.key,
+    required this.message,
+    required this.sendByMe,
+    required this.timestamp,
+    this.fileUrl,required bool isRead, required this.sendBy,
+    // Accept the callback in the constructor
+  });
+
+  String _formatTimestamp(int timestamp) {
+    var format = DateFormat('dd MMM yyyy, hh:mm a');
+    var date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    return format.format(date);
+  }
+
+  void _launchURL(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        top: 8,
+        bottom: 8,
+        left: sendByMe ? 0 : 24,
+        right: sendByMe ? 24 : 0,
+      ),
+      alignment: sendByMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: sendByMe
+            ? const EdgeInsets.only(left: 30)
+            : const EdgeInsets.only(right: 30),
+        padding: const EdgeInsets.only(
+            top: 17, bottom: 17, left: 20, right: 20),
+        decoration: BoxDecoration(
+          borderRadius: sendByMe
+              ? const BorderRadius.only(
+              topLeft: Radius.circular(23),
+              topRight: Radius.circular(23),
+              bottomLeft: Radius.circular(23))
+              : const BorderRadius.only(
+              topLeft: Radius.circular(23),
+              topRight: Radius.circular(23),
+              bottomRight: Radius.circular(23)),
+          color: sendByMe ? Colors.blue : Colors.grey[700],  // Different color based on sender
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (fileUrl != null && fileUrl!.isNotEmpty)
+              InkWell(
+                onTap: () {
+                  // Implement file download or viewing functionality
+                  _launchURL(fileUrl!);
+                },
+                child: const Row(
+                  children: [
+                    Icon(Icons.attachment),
+                    SizedBox(width: 8),
+                    Text('View File',
+                        style: TextStyle(decoration: TextDecoration.underline)),
                   ],
                 ),
+              ),
+            Text(message,
+                textAlign: TextAlign.start,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontFamily: 'OverpassRegular',
+                    fontWeight: FontWeight.w400)),
+            const SizedBox(height: 5),
+            Text(
+              _formatTimestamp(timestamp),
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+                fontFamily: 'OverpassRegular',
+                fontWeight: FontWeight.w300,
               ),
             ),
           ],
@@ -208,240 +926,174 @@ class _ChatFinanceState extends State<ChatFinance> {
   }
 }
 
-class MessageTile extends StatelessWidget {
-  final String message;
-  final bool sendByMe;
-
-  const MessageTile({super.key, required this.message, required this.sendByMe});
-
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-          top: 8,
-          bottom: 8,
-          left: sendByMe ? 0 : 24,
-          right: sendByMe ? 24 : 0),
-      alignment: sendByMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: sendByMe
-            ? EdgeInsets.only(left: 30)
-            : EdgeInsets.only(right: 30),
-        padding: EdgeInsets.only(
-            top: 17, bottom: 17, left: 20, right: 20),
-        decoration: BoxDecoration(
-            borderRadius: sendByMe ? BorderRadius.only(
-                topLeft: Radius.circular(23),
-                topRight: Radius.circular(23),
-                bottomLeft: Radius.circular(23)
-            ) :
-            BorderRadius.only(
-                topLeft: Radius.circular(23),
-                topRight: Radius.circular(23),
-                bottomRight: Radius.circular(23)),
-            gradient: LinearGradient(
-              colors: sendByMe ? [
-                const Color(0xff007EF4),
-                const Color(0xff2A75BC)
-              ]
-                  : [
-                const Color(0xFF505050),
-                const Color(0xFF474747)
-              ],
-            )
-        ),
-        child: Text(message,
-            textAlign: TextAlign.start,
-            style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontFamily: 'OverpassRegular',
-                fontWeight: FontWeight.w400)),
-      ),
-    );
-  }
-}
-
-final FirebaseAuth auth = FirebaseAuth.instance;
-final User? user = auth.currentUser;
-String? useNum;
-String? useEmail;
-
-///Constraints class
-class Constants{
-  static String? myName = useNum;
-}
-
-///Widget items
-Widget appBarMain(BuildContext context) {
-  return AppBar(
-    title: Image.asset(
-      "assets/images/logo.png",
-      height: 40,
-    ),
-    elevation: 0.0,
-    centerTitle: false,
-  );
-}
-
-Widget contactPopUp(BuildContext context) {
-  return IconButton(
-      onPressed: () {
-        showDialog(
-            barrierDismissible: false,
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                shape: RoundedRectangleBorder(borderRadius:
-                BorderRadius.all(Radius.circular(18))),
-                title: Text("Contact Municipal Finance?"),
-                content: Text("Do you want to contact the Municipal Finance department directly for your statement charge error via Email or Phone call?"),
-                actions: [
-                  IconButton(
-                    onPressed: () async {
-                      Navigator.pop(context);
-                    },
-                    icon: Icon(
-                      Icons.cancel,
-                      color: Colors.red,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () async {
-                      emailAddressRedirect();
-                      Navigator.pop(context);
-                    },
-                    icon: Icon(
-                      Icons.mail,
-                      color: Colors.purple,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () async {
-                      phoneCallRedirect();
-                      Navigator.pop(context);
-
-                      ///SystemNavigator.pop() closes the entire app
-                      // SystemNavigator.pop();
-                    },
-                    icon: const Icon(
-                      Icons.add_call,
-                      color: Colors.green,
-                    ),
-                  ),
-                ],
-              );
-            });
-      }, icon: const FaIcon(Icons.contact_mail_outlined)
-  );
-}
-
-Future<void> emailAddressRedirect() async {
-
-
-  String email = Uri.encodeComponent("finance@msunduzi.gov.za");
-  String subject = Uri.encodeComponent("Municipal Finance Enquiry");
-  String body = Uri.encodeComponent("Dear Sire/Madam,\n\nI am contacting you to dispute an issue with the bill on my property not matching the trend of my readings.");
-  print(subject);
-  Uri mail = Uri.parse("mailto:$email?subject=$subject&body=$body");
-  if (await canLaunchUrl(mail)) {
-    await launchUrl(mail);
-  }else{
-    Fluttertoast.showToast(msg: "Could not launch email service.",);
-  //email app is not opened
-  }
-}
-
-Future<void> phoneCallRedirect() async {
-  final Uri _tel = Uri.parse('tel:+27${0333923000}');
-  launchUrl(_tel);
+/// Constraints class
+class Constants {
+  static String? myName;
 }
 
 InputDecoration textFieldInputDecoration(String hintText) {
   return InputDecoration(
       hintText: hintText,
-      hintStyle: TextStyle(color: Colors.white54),
-      focusedBorder:
-      UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-      enabledBorder:
-      UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)));
+      hintStyle: const TextStyle(color: Colors.white54),
+      focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+      enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)));
 }
 
 TextStyle simpleTextStyle() {
-  return TextStyle(color: Colors.black54, fontSize: 16);
+  return const TextStyle(color: Colors.black54, fontSize: 16);
 }
 
 TextStyle biggerTextStyle() {
-  return TextStyle(color: Colors.white, fontSize: 17);
+  return const TextStyle(color: Colors.white, fontSize: 17);
 }
 
-///Database functions/APIs
 class DatabaseMethods {
-  Future<void> addUserInfo(userData) async {
-    FirebaseFirestore.instance.collection("users").add(userData).catchError((e) {
-      print(e.toString());
-    });
+  String? userEmail;
+  late String districtId;
+  late String municipalityId;
+
+  Future<void> addUserInfo(Map<String, dynamic> userData) async {
+    try {
+      await FirebaseFirestore.instance.collection("users").add(userData);
+    } catch (e) {
+      print("Error adding user info: $e");
+      rethrow;
+    }
   }
 
-  getUserInfo(String phone) async {
-    return FirebaseFirestore.instance
-        .collection("users")
-        .where("cell number", isEqualTo: phone)
-        .get()
-        .catchError((e) {
-      print(e.toString());
-    });
+  Future<QuerySnapshot> getUserInfo(String phone) async {
+    try {
+      return await FirebaseFirestore.instance.collection("users").where("cellNumber", isEqualTo: phone).get();
+    } catch (e) {
+      print("Error fetching user info: $e");
+      rethrow;
+    }
   }
 
-  searchByName(String searchField) {
-    return FirebaseFirestore.instance
-        .collection("users")
-        .where('first name', isEqualTo: searchField)
-        .get();
+  Future<QuerySnapshot> searchByName(String searchField) async {
+    try {
+      return await FirebaseFirestore.instance.collection("users").where('firstName', isEqualTo: searchField).get();
+    } catch (e) {
+      print("Error searching by name: $e");
+      rethrow;
+    }
   }
 
-  Future<bool> addChatRoom(Map<String, dynamic> chatRoom, String chatRoomId) async {
+  Future<bool> addChatRoom( Map<String, dynamic> chatRoom, String chatRoomId) async {
     try {
       await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
           .collection("chatRoomFinance")
           .doc(chatRoomId)
           .set(chatRoom);
       return true;
     } catch (e) {
-      print(e);
+      print("Error adding chat room: $e");
       return false;
     }
   }
 
-  getChats(String chatRoomId) async{
+  Stream<QuerySnapshot> getChats(String chatRoomId) {
     return FirebaseFirestore.instance
-        .collection("chatRoomFinance")
+        .collection('districts')
+        .doc(districtId)
+        .collection('municipalities')
+        .doc(municipalityId)
+        .collection("chatRoom")
         .doc(chatRoomId)
         .collection("chats")
         .orderBy('time')
         .snapshots();
   }
 
-  Future<void> addMessage(String chatRoomId, chatMessageData) async {
-    FirebaseFirestore.instance.collection("chatRoomFinance")
-        .doc(chatRoomId)
-        .collection("chats")
-        .add(chatMessageData).catchError((e){
-      print(e.toString());
-    });
+  Stream<QuerySnapshot> getFinanceChats({
+    required String chatRoomId,
+    required bool isLocalMunicipality,
+    required String municipalityId,
+    String? districtId,
+  }) {
+    if (isLocalMunicipality) {
+      return FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId)
+          .collection("chatRoomFinance")
+          .doc(chatRoomId)
+          .collection("chats")
+          .orderBy('time')
+          .snapshots();
+    } else {
+      return FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .collection("chatRoomFinance")
+          .doc(chatRoomId)
+          .collection("chats")
+          .orderBy('time')
+          .snapshots();
+    }
   }
 
-  getUserChats(String itIsMyName) async {
-    return await FirebaseFirestore.instance
+
+
+  Future<void> addMessage( String chatRoomId, Map<String, dynamic> chatMessageData) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .collection("chatRoom")
+          .doc(chatRoomId)
+          .collection("chats")
+          .add(chatMessageData);
+    } catch (e) {
+      print("Error adding message: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> addFinanceMessage( String chatRoomId, Map<String, dynamic> chatMessageData) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .collection("chatRoomFinance")
+          .doc(chatRoomId)
+          .collection("chats")
+          .add(chatMessageData);
+    } catch (e) {
+      print("Error adding finance message: $e");
+      rethrow;
+    }
+  }
+
+
+  Stream<QuerySnapshot> getUserChats( String userName) {
+    return FirebaseFirestore.instance
+        .collection('districts')
+        .doc(districtId)
+        .collection('municipalities')
+        .doc(municipalityId)
         .collection("chatRoomFinance")
-        .where('users', arrayContains: itIsMyName)
+        .where('users', arrayContains: userName)
         .snapshots();
   }
 
-  Future<void> addChatDocName(DocumentSnapshot? documentSnapshot, String chatRoomId) async{
-    final CollectionReference namedChatAdd =
-    FirebaseFirestore.instance.collection("chatRoomFinance");
+  Future<void> addChatDocName(
+      DocumentSnapshot? documentSnapshot, String chatRoomId) async {
+    final CollectionReference namedChatAdd = FirebaseFirestore.instance
+        .collection('districts')
+        .doc(districtId)
+        .collection('municipalities')
+        .doc(municipalityId)
+        .collection("chatRoomFinance");
 
     if (documentSnapshot != null) {
       await namedChatAdd.add({

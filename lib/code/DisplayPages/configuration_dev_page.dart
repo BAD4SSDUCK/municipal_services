@@ -13,7 +13,8 @@ import 'package:municipal_services/code/DisplayPages/display_info.dart';
 import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
 
 class DevConfigPage extends StatefulWidget{
-  const DevConfigPage({super.key});
+
+  const DevConfigPage({super.key, });
 
   @override
   State<DevConfigPage> createState() => _DevConfigPageState();
@@ -36,18 +37,143 @@ class FireStorageService extends ChangeNotifier{
 }
 
 class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateMixin{
+  String? userEmail;
+  String districtId='';
+  String municipalityId='';
+  bool isLocalMunicipality=false;
 
   @override
   void initState() {
-    countUsersResult();
-    countDeptResult();
-    countRoleResult();
-    getDBUsers(_usersList);
-    getDBDept(_deptInfo);
-    getDBRoles(_roles);
-    getDBDeptRoles(_deptRoles);
-    getDBAppVersion(_version);
     super.initState();
+
+    fetchUserDetails().then((_) {
+      // Ensure that Firestore references are initialized before calling these methods
+      if (_usersList != null && _deptInfo != null && _roles != null && _deptRoles != null && _version != null) {
+        // Call the counting and data-fetching methods after ensuring initialization
+        countUsersResult();
+        countDeptResult();
+        countRoleResult();
+
+        // Fetch data only after ensuring the references are ready
+        getDBUsers(_usersList!);
+        getDBDept(_deptInfo!);
+        getDBRoles(_roles!);
+        getDBDeptRoles(_deptRoles!);
+        getDBAppVersion(_version!);
+      } else {
+        print("Error: One or more Firestore references are not initialized.");
+      }
+    }).catchError((error) {
+      print("Error fetching user details: $error");
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+
+  Future<void> fetchUserDetails() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        userEmail = user.email;
+
+        QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+            .collectionGroup('users')
+            .where('email', isEqualTo: userEmail)
+            .limit(1)
+            .get();
+
+        if (userSnapshot.docs.isNotEmpty) {
+          var userDoc = userSnapshot.docs.first;
+
+          // Detect whether the user is in a local or district municipality
+          isLocalMunicipality = userDoc['isLocalMunicipality'] ?? false;
+
+          if (isLocalMunicipality) {
+            municipalityId = userDoc.reference.parent.parent!.id;
+
+            // Set Firestore paths for local municipalities
+            setState(() {
+              _usersList = FirebaseFirestore.instance
+                  .collection('localMunicipalities')
+                  .doc(municipalityId)
+                  .collection('users');
+
+              _deptInfo = FirebaseFirestore.instance
+                  .collection('localMunicipalities')
+                  .doc(municipalityId)
+                  .collection('departments');
+
+              _roles = FirebaseFirestore.instance
+                  .collection('localMunicipalities')
+                  .doc(municipalityId)
+                  .collection('roles');
+
+              _deptRoles = FirebaseFirestore.instance
+                  .collection('localMunicipalities')
+                  .doc(municipalityId)
+                  .collection('departmentRoles');
+
+              _version = FirebaseFirestore.instance
+                  .collection('localMunicipalities')
+                  .doc(municipalityId)
+                  .collection('version');
+            });
+          } else {
+            // District municipality handling
+            districtId = userDoc.reference.parent.parent!.parent.id;
+            municipalityId = userDoc.reference.parent.parent!.id;
+
+            // Set Firestore paths for district municipalities
+            setState(() {
+              _usersList = FirebaseFirestore.instance
+                  .collection('districts')
+                  .doc(districtId)
+                  .collection('municipalities')
+                  .doc(municipalityId)
+                  .collection('users');
+
+              _deptInfo = FirebaseFirestore.instance
+                  .collection('districts')
+                  .doc(districtId)
+                  .collection('municipalities')
+                  .doc(municipalityId)
+                  .collection('departments');
+
+              _roles = FirebaseFirestore.instance
+                  .collection('districts')
+                  .doc(districtId)
+                  .collection('municipalities')
+                  .doc(municipalityId)
+                  .collection('roles');
+
+              _deptRoles = FirebaseFirestore.instance
+                  .collection('districts')
+                  .doc(districtId)
+                  .collection('municipalities')
+                  .doc(municipalityId)
+                  .collection('departmentRoles');
+
+              _version = FirebaseFirestore.instance
+                  .collection('districts')
+                  .doc(districtId)
+                  .collection('municipalities')
+                  .doc(municipalityId)
+                  .collection('version');
+            });
+          }
+        } else {
+          print("No user document found for the provided email.");
+        }
+      } else {
+        print("No current user found.");
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+    }
   }
 
   //text fields' controllers
@@ -65,8 +191,8 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
   int _tabIndex = 0;
   final int _tabLength = 4;
   void _toggleTab(){
-    _tabIndex = _tabController!.index+1 ;
-    _tabController?.animateTo(_tabIndex);
+    _tabIndex = _tabController.index+1 ;
+    _tabController.animateTo(_tabIndex);
   }
 
   TextEditingController controllerDept = TextEditingController();
@@ -85,20 +211,27 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
   String dropdownValue3 = 'Select Version...';
   int numVersion = 0;
 
-  final CollectionReference _usersList =
-  FirebaseFirestore.instance.collection('users');
+  // final CollectionReference _usersList =
+  // FirebaseFirestore.instance.collection('users');
+  //
+  // final CollectionReference _deptInfo =
+  // FirebaseFirestore.instance.collection('departments');
+  //
+  // final CollectionReference _roles =
+  // FirebaseFirestore.instance.collection('roles');
+  //
+  // final CollectionReference _deptRoles =
+  // FirebaseFirestore.instance.collection('departmentRoles');
+  //
+  // final CollectionReference _version =
+  // FirebaseFirestore.instance.collection('version');
+  CollectionReference? _usersList;
+  CollectionReference? _deptInfo;
+  CollectionReference? _roles;
+  CollectionReference? _deptRoles;
+  CollectionReference? _version;
 
-  final CollectionReference _deptInfo =
-  FirebaseFirestore.instance.collection('departments');
-
-  final CollectionReference _roles =
-  FirebaseFirestore.instance.collection('roles');
-
-  final CollectionReference _deptRoles =
-  FirebaseFirestore.instance.collection('departmentRoles');
-
-  final CollectionReference _version =
-  FirebaseFirestore.instance.collection('version');
+  // Data storage
 
   String selectedDept = "0";
   String selectedRole = "0";
@@ -365,7 +498,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
                         const bool official = true;
 
                         if (userName != null) {
-                          await _usersList.add({
+                          await _usersList?.add({
                             "userName": userName,
                             "deptName": deptName,
                             "userRole": userRole,
@@ -402,7 +535,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
   }///Creation method for details on an official user
 
   Future<void> _update([DocumentSnapshot? documentSnapshot]) async {
-    final docRef = _deptInfo.snapshots();
+    final docRef = _deptInfo?.snapshots();
 
     if (documentSnapshot != null) {
       _userNameController.text = documentSnapshot['userName'];
@@ -562,7 +695,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
 
                         if (userName != null) {
                           await _usersList
-                              .doc(documentSnapshot!.id)
+                              ?.doc(documentSnapshot!.id)
                               .update({
                             "userName": userName,
                             "deptName": deptName,
@@ -594,7 +727,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
   }
 
   Future<void> _delete(String user) async {
-    await _usersList.doc(user).delete();
+    await _usersList?.doc(user).delete();
     Fluttertoast.showToast(msg: "You have successfully deleted an account!");
   }
 
@@ -702,7 +835,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
                         const bool official = true;
 
                         if (deptName != null) {
-                          await _deptRoles.add({
+                          await _deptRoles?.add({
                             "deptName": deptName,
                             "userRole": userRole,
                             "official": official,
@@ -812,7 +945,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
 
                         if (deptName != null) {
                           await _deptRoles
-                              .doc(documentSnapshot!.id)
+                              ?.doc(documentSnapshot!.id)
                               .update({
                             "deptName": deptName,
                             "userRole": userRole,
@@ -834,7 +967,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
   }
 
   Future<void> _deleteDeptRole(String deptID) async {
-    await _deptRoles.doc(deptID).delete();
+    await _deptRoles?.doc(deptID).delete();
     Fluttertoast.showToast(msg: "You have successfully deleted a department & role!");
   }
 
@@ -885,7 +1018,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
                         const bool official = true;
 
                         if (deptName != null) {
-                          await _deptInfo.add({
+                          await _deptInfo?.add({
                             "deptName": deptartName,
                             "official": official,
                           });
@@ -954,7 +1087,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
 
                         if (deptName != null) {
                           await _deptInfo
-                              .doc(documentSnapshot!.id)
+                              ?.doc(documentSnapshot!.id)
                               .update({
                             "deptName": deptName,
                             "official": official,
@@ -974,7 +1107,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
   }
 
   Future<void> _deleteDept(String deptID) async {
-    await _deptInfo.doc(deptID).delete();
+    await _deptInfo?.doc(deptID).delete();
     Fluttertoast.showToast(msg: "You have successfully deleted a department & role!");
   }
 
@@ -1025,7 +1158,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
                         const bool official = true;
 
                         if (deptName != null) {
-                          await _deptInfo.add({
+                          await _deptInfo?.add({
                             "role": roleName,
                           });
 
@@ -1093,7 +1226,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
 
                         if (deptName != null) {
                           await _roles
-                              .doc(documentSnapshot!.id)
+                              ?.doc(documentSnapshot!.id)
                               .update({
                             "role": roleName,
                           });
@@ -1112,7 +1245,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
   }
 
   Future<void> _deleteRole(String roleID) async {
-    await _roles.doc(roleID).delete();
+    await _roles?.doc(roleID).delete();
     Fluttertoast.showToast(msg: "You have successfully deleted a role!");
   }
 
@@ -1162,7 +1295,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
                         final String versionName = _versionController.text;
 
                         if (deptName != null) {
-                          await _deptInfo.add({
+                          await _deptInfo?.add({
                             "version": versionName,
                           });
 
@@ -1193,7 +1326,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
       });
 
       await _version
-          .doc('current')
+          ?.doc('current')
           .update({
         "version": newVersion,
       });
@@ -1206,33 +1339,45 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
   }
 
   Future<void> _deleteVersion(String versionID) async {
-    await _version.doc(versionID).delete();
+    await _version?.doc(versionID).delete();
     Fluttertoast.showToast(msg: "You have successfully deleted a role!");
   }
 
-  void countUsersResult() async{
-    var query = _usersList.where("email");
-    var snapshot = await query.get();
-    var count = snapshot.size;
-    numUsers = snapshot.size;
+  void countUsersResult() async {
+    if (_usersList != null) {
+      var query = _usersList!.where("email");
+      var snapshot = await query.get();
+      var count = snapshot.size;
+      numUsers = snapshot.size;
 
-    print('Records are ::: $count');
-    print('num emails are ::: $numUsers');
-  }///counting db results to get length of all columns in the table (needed for loop)
+      print('Records are ::: $count');
+      print('num emails are ::: $numUsers');
+    } else {
+      print('Users list is not initialized yet.');
+    }
+  }
 
-  void countDeptResult() async{
-    var query1 = _deptInfo.where("deptName");
-    var snapshot1 = await query1.get();
-    var count1 = snapshot1.size;
-    numDept = snapshot1.size;
-  }///counting db results to get length of all columns in the table (needed for loop)
+  void countDeptResult() async {
+    if (_deptInfo != null) {
+      var query1 = _deptInfo!.where("deptName");
+      var snapshot1 = await query1.get();
+      var count1 = snapshot1.size;
+      numDept = snapshot1.size;
+    } else {
+      print('Department info is not initialized yet.');
+    }
+  }
 
-  void countRoleResult() async{
-    var query2 = _deptRoles.where("userRole");
-    var snapshot2 = await query2.get();
-    var count2 = snapshot2.size;
-    numDept = snapshot2.size;
-  }///counting db results to get length of all columns in the table (needed for loop)
+  void countRoleResult() async {
+    if (_roles != null) {
+      var query2 = _roles!.where("userRole");
+      var snapshot2 = await query2.get();
+      var count2 = snapshot2.size;
+      numDept = snapshot2.size;
+    } else {
+      print('Roles collection is not initialized yet.');
+    }
+  }
 
   void getDBDept(CollectionReference dept) async {
     dept.get().then((querySnapshot) async {
@@ -1272,38 +1417,66 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
   }///Looping department roles collection
 
   void getDBUsers(CollectionReference users) async {
-    users.get().then((querySnapshot) async {
+    try {
+      // Fetch users from Firestore and process them
+      final querySnapshot = await users.get();
       for (var result in querySnapshot.docs) {
         print('The user email is::: ${result['email']}');
-        if(result['email'].contains('@') && usersEmails.length-1<querySnapshot.docs.length) {
+        if (result['email'].contains('@') && usersEmails.length - 1 < querySnapshot.docs.length) {
           usersEmails.add(result['email']);
         }
-        print(usersEmails);
-        print(usersEmails.length);
       }
-    });
-  }///Looping users collection
+      print(usersEmails);
+      print(usersEmails.length);
+    } catch (e) {
+      // Handle any errors that occur during the Firestore query
+      print("Error fetching users from Firestore: $e");
+    }
+  }
 
+
+  // void getDBAppVersion(CollectionReference versions) async {
+  //   versions.get().then((querySnapshot) async {
+  //     for (var result in querySnapshot.docs) {
+  //       print('The version is::: ${result['version']}');
+  //
+  //       versions.add(result['version']);
+  //
+  //       if(versionList.length-1<querySnapshot.docs.length && result != result[2]['version']) {
+  //         versionList.add(result['version']);
+  //       }
+  //     }
+  //   });
+  //
+  //   versionList.toSet();
+  //   print(versionList);
+  //
+  // }///Looping version collection
   void getDBAppVersion(CollectionReference versions) async {
     versions.get().then((querySnapshot) async {
       for (var result in querySnapshot.docs) {
-        print('The version is::: ${result['version']}');
+        String version = result['version'];
+        print('The version is::: $version');
 
-        versions.add(result['version']);
-
-        if(versionList.length-1<querySnapshot.docs.length && result != result[2]['version']) {
-          versionList.add(result['version']);
+        // Add the version to the versionList if it's not already present
+        if (!versionList.contains(version)) {
+          versionList.add(version);
         }
       }
+
+      // Remove any duplicate versions from the list
+      versionList = versionList.toSet().toList();
+      print(versionList);
+    }).catchError((error) {
+      print('Error fetching app versions: $error');
     });
-
-    versionList.toSet();
-    print(versionList);
-
-  }///Looping version collection
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_usersList == null || _deptInfo == null || _roles == null || _deptRoles == null || _version == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return DefaultTabController(
       initialIndex: 0,
       length: 4,
@@ -1329,7 +1502,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
           controller: _tabController,
           children: <Widget>[
             StreamBuilder(
-              stream: _roles.snapshots(),
+              stream: _roles?.snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
                 if (streamSnapshot.hasData) {
                   return ListView.builder(
@@ -1470,7 +1643,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
             ),///Tab for role control
 
             StreamBuilder(
-              stream: _deptInfo.snapshots(),
+              stream: _deptInfo?.snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
                 if (streamSnapshot.hasData) {
                   return ListView.builder(
@@ -1621,7 +1794,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
             ),///Tab for department list view
 
             StreamBuilder(
-              stream: _usersList.orderBy('deptName', descending: false).snapshots(),
+              stream: _usersList?.orderBy('deptName', descending: false).snapshots(),
               builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
                 if (streamSnapshot.hasData) {
                   return ListView.builder(
@@ -1931,6 +2104,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
             Visibility(
               visible: visShow,
               child: FloatingActionButton(
+                heroTag: 'roleFab', // Unique hero tag
                 onPressed: () => _createRole(),
                 backgroundColor: Colors.green,
                 child: const Icon(Icons.add_moderator),
@@ -1938,18 +2112,21 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
             ),
             const SizedBox(width: 10,),
             FloatingActionButton(
+              heroTag: 'deptFab', // Unique hero tag
               onPressed: () => _createDept(),
               backgroundColor: Colors.green,
               child: const Icon(Icons.business),
             ),
             const SizedBox(width: 10,),
             FloatingActionButton(
+              heroTag: 'deptRolesFab', // Unique hero tag
               onPressed: () => _createDeptRoles(),
               backgroundColor: Colors.green,
               child: const Icon(Icons.add_business),
             ),
             const SizedBox(width: 10,),
             FloatingActionButton(
+              heroTag: 'createUserFab', // Unique hero tag
               onPressed: () => _create(),
               backgroundColor: Colors.green,
               child: const Icon(Icons.add_reaction),
@@ -1957,6 +2134,7 @@ class _DevConfigPageState extends State<DevConfigPage> with TickerProviderStateM
           ],
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+
       ),
     );
   }

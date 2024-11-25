@@ -138,16 +138,16 @@ class FaultManageScreen extends StatelessWidget {
                           labelText: 'Street Address'),
                     ),
                   ),
-                  Visibility(
-                    visible: visHide,
-                    child: TextField(
-                      keyboardType:
-                      const TextInputType.numberWithOptions(),
-                      controller: _eDescriptionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Electrical Fault Description',),
-                    ),
-                  ),
+                  // Visibility(
+                  //   visible: visHide,
+                  //   child: TextField(
+                  //     keyboardType:
+                  //     const TextInputType.numberWithOptions(),
+                  //     controller: _eDescriptionController,
+                  //     decoration: const InputDecoration(
+                  //       labelText: 'Electrical Fault Description',),
+                  //   ),
+                  // ),
                   Visibility(
                     visible: visHide,
                     child: TextField(
@@ -206,7 +206,7 @@ class FaultManageScreen extends StatelessWidget {
 
                         _accountNumberController.text = '';
                         _addressController.text = '';
-                        _eDescriptionController.text = '';
+                        // _eDescriptionController.text = '';
                         _wDescriptionController.text = '';
                         _depAllocationController.text = '';
                         _faultResolvedController = false;

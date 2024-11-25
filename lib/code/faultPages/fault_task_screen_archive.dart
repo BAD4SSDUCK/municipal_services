@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -17,7 +18,7 @@ import 'package:municipal_services/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
 
 class FaultTaskScreenArchive extends StatefulWidget {
-  const FaultTaskScreenArchive({Key? key}) : super(key: key);
+  const FaultTaskScreenArchive({super.key,});
 
   @override
   State<FaultTaskScreenArchive> createState() => _FaultTaskScreenArchiveState();
@@ -42,11 +43,33 @@ class FireStorageService extends ChangeNotifier{
 }
 
 class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
+  String districtId='';
+  String municipalityId='';
+  bool isLocalMunicipality=false;
+  String selectedMunicipality = 'All Municipalities';
+  List<String> municipalityOptions = [];
+  bool isLocalUser = false;
+  bool isLoading = true;
+  bool _isDataLoaded = false;
+  final ScrollController _scrollController = ScrollController();
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+    fetchUserDetails().then((_) {
+      if (isLocalUser) {
+        fetchFaultsForLocalMunicipality();
+      } else {
+        fetchMunicipalities(); // Fetch municipalities after user details are loaded
+        selectedMunicipality = "All Municipalities"; // Set the default value
+      }
+    });
+
     if(_searchController.text == ""){
-      getFaultStream();
+
     }
     _searchController.addListener(_onSearchChanged);
     checkRole();
@@ -55,12 +78,73 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
+    _focusNode.dispose();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     searchText;
-    getFaultStream();
     searchResultsList();
     super.dispose();
+  }
+
+  Future<void> fetchUserDetails() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        userEmail = user.email ?? '';
+        print("User email initialized: $userEmail");
+
+        QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+            .collectionGroup('users')
+            .where('email', isEqualTo: user.email)
+            .limit(1)
+            .get();
+
+        if (userSnapshot.docs.isNotEmpty) {
+          var userDoc = userSnapshot.docs.first;
+          Map<String, dynamic> userData =
+          userDoc.data() as Map<String, dynamic>;
+          var userPathSegments = userDoc.reference.path.split('/');
+
+          if (userPathSegments.contains('districts')) {
+            districtId = userPathSegments[1];
+            municipalityId = userPathSegments[3];
+            isLocalMunicipality = false;
+          } else if (userPathSegments.contains('localMunicipalities')) {
+            municipalityId = userPathSegments[1];
+            districtId = '';
+            isLocalMunicipality = true;
+          }
+
+          isLocalUser = userData['isLocalUser'] ?? false;
+
+          print("districtId assigned: $districtId");
+
+          // Call appropriate fetch based on user type
+          if (isLocalMunicipality) {
+            await fetchFaultsForLocalMunicipality();
+          } else {
+            await fetchFaultsForAllMunicipalities();
+          }
+          if (mounted) {
+            setState(() {
+              _isDataLoaded = true;
+              isLoading = false;
+            });
+          }
+        } else {
+          print('No user document found.');
+        }
+      } else {
+        print("No current user found.");
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+      setState(() {
+        _isDataLoaded = true;
+        isLoading = false;
+      });
+    }
   }
 
   final _accountNumberController = TextEditingController();
@@ -71,9 +155,9 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
   final _depAllocationController = TextEditingController();
   late bool _faultResolvedController;
   final _dateReportedController = TextEditingController();
-
-  final CollectionReference _faultData =
-  FirebaseFirestore.instance.collection('faultReporting');
+  late final CollectionReference _faultData;
+  // final CollectionReference _faultData =
+  // FirebaseFirestore.instance.collection('faultReporting');
 
   String accountNumberRep = '';
   String locationGivenRep = '';
@@ -96,8 +180,8 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
   bool visStage4 = false;
   bool visStage5 = false;
 
-  final CollectionReference _listUser =
-  FirebaseFirestore.instance.collection('users');
+  // final CollectionReference _listUser =
+  // FirebaseFirestore.instance.collection('users');
 
   User? user = FirebaseAuth.instance.currentUser;
 
@@ -105,38 +189,234 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
   List _resultsList =[];
   List _allFaultResults = [];
 
-  getFaultStream() async{
-    var data = await FirebaseFirestore.instance.collection('faultReporting').orderBy('dateReported', descending: true).get();
+  Future<void> fetchMunicipalities() async {
+    try {
+      if (districtId.isNotEmpty) {
+        print("Fetching municipalities under district: $districtId");
+        var municipalitiesSnapshot = await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .get();
 
-    _allFaultResults = data.docs;
+        print("Municipalities fetched: ${municipalitiesSnapshot.docs.length}");
+        if (mounted) {
+          setState(() {
+            municipalityOptions = [
+              "All Municipalities"
+            ]; // Ensure "All Municipalities" is the first option
+            municipalityOptions.addAll(
+                municipalitiesSnapshot.docs.map((doc) => doc.id).toList());
 
-    searchResultsList();
+            selectedMunicipality =
+            "All Municipalities"; // Set default selected value
+
+            print("Municipalities list: $municipalityOptions");
+            fetchFaultsForAllMunicipalities();
+          });
+        }
+      } else {
+        print("districtId is empty or null.");
+        if (mounted) {
+          setState(() {
+            municipalityOptions = ["All Municipalities"];
+            selectedMunicipality = "All Municipalities";
+          });
+        }
+      }
+    } catch (e) {
+      print('Error fetching municipalities: $e');
+    }
   }
 
+  Future<void> fetchFaultsForAllMunicipalities() async {
+    if (districtId.isEmpty) {
+      print("Error: districtId is empty. Cannot fetch faults.");
+      return;
+    }
+
+    List<QuerySnapshot> faultSnapshots = [];
+
+    try {
+      // First, retrieve all municipalities under the district
+      var municipalitiesSnapshot = await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .get();
+
+      // For each municipality, fetch faults from its faultReporting collection
+      for (var municipalityDoc in municipalitiesSnapshot.docs) {
+        var municipalityId = municipalityDoc.id;
+
+        var faultsSnapshot = await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('faultReporting')
+            .get();
+
+        faultSnapshots.add(faultsSnapshot);
+      }
+
+      // Aggregate results
+      List<QueryDocumentSnapshot> allFaults = [];
+      for (var snapshot in faultSnapshots) {
+        allFaults.addAll(snapshot.docs);
+      }
+
+      setState(() {
+        _allFaultResults = allFaults;
+        print("Fetched ${_allFaultResults.length} faults for all municipalities in district $districtId.");
+      });
+    } catch (e) {
+      print("Error fetching faults for all municipalities: $e");
+    }
+  }
+
+
+
+  Future<void> fetchFaultsForLocalMunicipality() async {
+    if (municipalityId.isEmpty) {
+      print("Error: municipalityId is empty. Cannot fetch faults.");
+      return;
+    }
+
+    try {
+      print("Fetching faults for local municipality: $municipalityId");
+
+      // Fetch properties only for the specific municipality the user belongs to
+      QuerySnapshot faultSnapshot = await FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId) // The local municipality ID for the user
+          .collection('faultReporting')
+          .get();
+
+      // Check if any properties were fetched
+      if (faultSnapshot.docs.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            _allFaultResults = faultSnapshot.docs; // Store fetched properties
+          });
+        }
+        print('Faults fetched for local municipality: $municipalityId');
+        print('Number of faults fetched: ${faultSnapshot.docs.length}');
+      } else {
+        print("No faults found for local municipality: $municipalityId");
+      }
+    } catch (e) {
+      print('Error fetching faults for local municipality: $e');
+    }
+  }
+
+  Future<void> fetchFaultsByMunicipality(String municipality) async {
+    try {
+      // Fetch properties for the selected municipality
+      QuerySnapshot faultSnapshot = await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipality)
+          .collection('faultReporting')
+          .get();
+
+      // Log the properties fetched
+      print('Faults fetched for $municipality: ${faultSnapshot.docs.length}');
+      if (mounted) {
+        setState(() {
+          _allFaultResults = faultSnapshot.docs; // Store filtered properties
+          print(
+              "Number of Faults fetched: ${_allFaultResults}"); // Debugging to ensure properties are set
+        });
+      }
+    } catch (e) {
+      print('Error fetching faults for $municipality: $e');
+    }
+  }
+
+  // getFaultStream() async {
+  //   try {
+  //     var data;
+  //     if (isLocalMunicipality) {
+  //       data = await FirebaseFirestore.instance
+  //           .collection('localMunicipalities')
+  //           .doc(municipalityId)
+  //           .collection('faultReporting')
+  //           .orderBy('dateReported', descending: true)
+  //           .get();
+  //     } else {
+  //       data = await FirebaseFirestore.instance
+  //           .collection('districts')
+  //           .doc(districtId)
+  //           .collection('municipalities')
+  //           .doc(municipalityId)
+  //           .collection('faultReporting')
+  //           .orderBy('dateReported', descending: true)
+  //           .get();
+  //     }
+  //
+  //     _allFaultResults = data.docs;
+  //     searchResultsList();
+  //   } catch (e) {
+  //     print('Error fetching fault stream: $e');
+  //   }
+  // }
+
+
   _onSearchChanged() async {
-    searchResultsList();
+    if (_searchController.text.isEmpty) {
+      if (mounted) {
+        // If search is cleared, fetch and display all properties again
+        setState(() {
+          searchText = ''; // Clear search text
+        });
+      }
+      if (isLocalUser) {
+        await fetchFaultsForLocalMunicipality();
+      } else {
+        await fetchFaultsForAllMunicipalities();
+      }
+    } else {
+      // Perform search
+      searchResultsList();
+    }
   }
 
   searchResultsList() async {
     var showResults = [];
-    if(_searchController.text != "") {
-      getFaultStream();
-      for(var faultSnapshot in _allFaultResults){
-        ///Need to build a property model that retrieves property data entirely from the db
-        var address = faultSnapshot['address'].toString().toLowerCase();
+    if (_searchController.text.isNotEmpty) {
+      var searchLower = _searchController.text.toLowerCase();
 
-        if(address.contains(_searchController.text.toLowerCase())) {
-          showResults.add(faultSnapshot);
+      // Perform the search by filtering _allPropResults
+      for (var propSnapshot in _allFaultResults) {
+        var address = propSnapshot['address'].toString().toLowerCase();
+        String referenceNum = propSnapshot['ref']?.toString().toLowerCase() ?? '';
+        var cellNumber = propSnapshot['reporterContact'].toString().toLowerCase();
+        var accountNumber=propSnapshot['accountNumber'].toString().toLowerCase();
+
+        if (address.contains(searchLower) ||
+            referenceNum.contains(searchLower) || // Search full name instead of first and last separately
+            cellNumber.contains(searchLower) ||
+            accountNumber.contains(searchLower)) {
+          showResults.add(propSnapshot);
         }
       }
+      if (mounted) {
+        setState(() {
+          _allFaultResults = showResults; // Update state with filtered results
+        });
+      }
     } else {
-      getFaultStream();
-      showResults = List.from(_allFaultResults);
+      // If the search is cleared, reload the full property list
+      if (isLocalUser) {
+        await fetchFaultsForLocalMunicipality();
+      } else {
+        await fetchFaultsForAllMunicipalities();
+      }
     }
-    setState(() {
-      _allFaultResults = showResults;
-    });
   }
+
 
   void checkRole() {
     getUsersStream();
@@ -155,13 +435,40 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
     }
   }
 
-  getUsersStream() async{
-    var data = await FirebaseFirestore.instance.collection('users').get();
-    setState(() {
-      _allUserRolesResults = data.docs;
-    });
-    getUserDetails();
+  getUsersStream() async {
+    try {
+      QuerySnapshot usersSnapshot;
+
+      // Fetch properties directly from the properties collection based on the current municipality
+      if (isLocalMunicipality) {
+        usersSnapshot = await FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .collection('users')
+            .get();
+      } else {
+        usersSnapshot = await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('users')
+            .get();
+      }
+
+      if (mounted) {
+        setState(() {
+          _allUserRolesResults = usersSnapshot
+              .docs; // This will now hold all property documents with tokens.
+        });
+      }
+
+      searchResultsList();
+    } catch (e) {
+      print('Error fetching properties: $e');
+    }
   }
+
 
   getUserDetails() async {
     for (var userSnapshot in _allUserRolesResults) {
@@ -204,16 +511,39 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
 
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: DropdownButton<String>(
+              value: selectedMunicipality,
+              hint: const Text('All Municipalities'),
+              isExpanded: true,
+              onChanged: (String? newValue) {
+                setState(() {
+                  selectedMunicipality = newValue!;
+                  if (selectedMunicipality == "All Municipalities") {
+                    fetchFaultsForAllMunicipalities();
+                  } else {
+                    fetchFaultsByMunicipality(selectedMunicipality);
+                  }
+                });
+              },
+              items: municipalityOptions.map((String municipality) {
+                return DropdownMenuItem<String>(
+                  value: municipality,
+                  child: Text(municipality),
+                );
+              }).toList(),
+            ),
+          ),
           /// Search bar
           Padding(
             padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
             child: SearchBar(
-
               controller: _searchController,
               padding: const MaterialStatePropertyAll<EdgeInsets>(
                   EdgeInsets.symmetric(horizontal: 16.0)),
               leading: const Icon(Icons.search),
-              hintText: "Search by Address...",
+              hintText: "Search",
               onChanged: (value) async{
                 setState(() {
                   searchText = value;
@@ -238,351 +568,396 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
   //this widget is for displaying the fault report list all together
   Widget faultCard(){
     if (_allFaultResults.isNotEmpty) {
-      return ListView.builder(
-        itemCount: _allFaultResults.length,
-        itemBuilder: (context, index) {
 
-          String status;
-          if (_allFaultResults[index]['faultResolved'] == false) {
-            status = "Pending";
-          } else {
-            status = "Completed";
+      return KeyboardListener(
+        focusNode: _focusNode,
+        onKeyEvent: (KeyEvent event) {
+          if (event is KeyDownEvent) {
+            final double pageScrollAmount =
+                _scrollController.position.viewportDimension;
+
+            if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+              _scrollController.animateTo(
+                _scrollController.offset + 50,
+                duration: const Duration(milliseconds: 100),
+                curve: Curves.easeIn,
+              );
+            } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+              _scrollController.animateTo(
+                _scrollController.offset - 50,
+                duration: const Duration(milliseconds: 100),
+                curve: Curves.easeIn,
+              );
+            } else if (event.logicalKey == LogicalKeyboardKey.pageDown) {
+              _scrollController.animateTo(
+                _scrollController.offset + pageScrollAmount,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeIn,
+              );
+            } else if (event.logicalKey == LogicalKeyboardKey.pageUp) {
+              _scrollController.animateTo(
+                _scrollController.offset - pageScrollAmount,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeIn,
+              );
+            }
           }
+        },
+        child: Scrollbar(
+          controller: _scrollController,
+          thickness: 12, // Customize the thickness of the scrollbar
+          radius: const Radius.circular(8), // Rounded edges for the scrollbar
+          thumbVisibility: true,
+          trackVisibility: true, // Makes the track visible as well
+          interactive: true,
+          child: ListView.builder(
+            controller: _scrollController,
+            itemCount: _allFaultResults.length,
+            itemBuilder: (context, index) {
 
-          if (_allFaultResults[index]['faultResolved'] == true) {
-            return Card(margin: const EdgeInsets.fromLTRB(10.0, 0.0, 10.0, 10.0),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Center(
-                      child: Text(
-                        'Fault Information',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    const SizedBox(height: 10,),
-                    Text(
-                      'Reference Number: ${_allFaultResults[index]['ref']}',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                    ),
-                    const SizedBox(height: 5,),
-                    Column(
+              String status;
+              if (_allFaultResults[index]['faultResolved'] == false) {
+                status = "Pending";
+              } else {
+                status = "Completed";
+              }
+
+              if (_allFaultResults[index]['faultResolved'] == true) {
+                return Card(margin: const EdgeInsets.fromLTRB(10.0, 0.0, 10.0, 10.0),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if(_allFaultResults[index]['accountNumber'] != "")...[
-                          Text(
-                            'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                        const Center(
+                          child: Text(
+                            'Fault Information',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                           ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Text(
-                      'Street Address of Fault: ${_allFaultResults[index]['address']}',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                    ),
-                    const SizedBox(height: 5,),
-                    Text(
-                      'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                    ),
-                    const SizedBox(height: 5,),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['faultStage'] == 1)...[
-                          Text(
-                            'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          if(_allFaultResults[index]['faultStage'] == 2) ...[
-                            Text(
-                              'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            if(_allFaultResults[index]['faultStage'] == 3) ...[
+                        ),
+                        const SizedBox(height: 10,),
+                        Text(
+                          'Reference Number: ${_allFaultResults[index]['ref']}',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 5,),
+                        Column(
+                          children: [
+                            if(_allFaultResults[index]['accountNumber'] != "")...[
                               Text(
-                                'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
+                                'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                               ),
                               const SizedBox(height: 5,),
                             ] else
-                              if(_allFaultResults[index]['faultStage'] == 4) ...[
+                              ...[
+                              ],
+                          ],
+                        ),
+                        Text(
+                          'Street Address of Fault: ${_allFaultResults[index]['address']}',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 5,),
+                        Text(
+                          'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 5,),
+                        Column(
+                          children: [
+                            if(_allFaultResults[index]['faultStage'] == 1)...[
+                              Text(
+                                'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              if(_allFaultResults[index]['faultStage'] == 2) ...[
                                 Text(
                                   'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
                                 ),
                                 const SizedBox(height: 5,),
                               ] else
-                                if(_allFaultResults[index]['faultStage'] == 5) ...[
+                                if(_allFaultResults[index]['faultStage'] == 3) ...[
                                   Text(
                                     'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
                                   ),
                                   const SizedBox(height: 5,),
                                 ] else
-                                  ...[
-                                  ],
-                      ],
-                    ),
-                    Text(
-                      'Fault Type: ${_allFaultResults[index]['faultType']}',
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w400),
-                    ),
-                    const SizedBox(height: 5,),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['faultDescription'] != "")...[
-                          Text(
-                            'Fault Description: ${_allFaultResults[index]['faultDescription']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
+                                  if(_allFaultResults[index]['faultStage'] == 4) ...[
+                                    Text(
+                                      'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                    ),
+                                    const SizedBox(height: 5,),
+                                  ] else
+                                    if(_allFaultResults[index]['faultStage'] == 5) ...[
+                                      Text(
+                                        'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
+                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
+                                      ),
+                                      const SizedBox(height: 5,),
+                                    ] else
+                                      ...[
+                                      ],
                           ],
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['adminComment'] != "")...[
-                          Text(
-                            'Admin Comment: ${_allFaultResults[index]['adminComment']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['reallocationComment'] != "")...[
-                          Text(
-                            'Reason fault reallocated: ${_allFaultResults[index]['reAllocationComment']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['managerAllocated'] != "")...[
-                          Text(
-                            'Manager of fault: ${_allFaultResults[index]['managerAllocated']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['attendeeAllocated'] != "")...[
-                          Text(
-                            'Attendee Allocated: ${_allFaultResults[index]['attendeeAllocated']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['attendeeCom1'] != "")...[
-                          Text(
-                            'Attendee Comment: ${_allFaultResults[index]['attendeeCom1']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['managerCom1'] != "")...[
-                          Text(
-                            'Manager Comment: ${_allFaultResults[index]['managerCom1']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['attendeeCom2'] != "")...[
-                          Text(
-                            'Attendee Followup Comment: ${_allFaultResults[index]['attendeeCom2']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['managerCom2'] != "")...[
-                          Text(
-                            'Manager Final/Additional Comment: ${_allFaultResults[index]['managerCom2']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['attendeeCom3'] != "")...[
-                          Text(
-                            'Attendee Final Comment: ${_allFaultResults[index]['attendeeCom3']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        if(_allFaultResults[index]['managerCom3'] != "")...[
-                          Text(
-                            'Manager Final Comment: ${_allFaultResults[index]['managerCom3']}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(height: 5,),
-                        ] else
-                          ...[
-                          ],
-                      ],
-                    ),
-                    Text(
-                      'Resolve State: $status',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                    ),
-                    const SizedBox(height: 20,),
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                        ),
+                        Text(
+                          'Fault Type: ${_allFaultResults[index]['faultType']}',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 5,),
+                        Column(
                           children: [
-                            BasicIconButtonGrey(
-                              onPress: () async {
-                                accountNumberRep = _allFaultResults[index]['accountNumber'];
-                                locationGivenRep = _allFaultResults[index]['address'];
-
-                                Navigator.push(context, MaterialPageRoute(
-                                    builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                ));
-                              },
-                              labelText: 'Location',
-                              fSize: 14,
-                              faIcon: const FaIcon(Icons.map,),
-                              fgColor: Colors.green,
-                              btSize: const Size(50, 38),
-                            ),
-                            const SizedBox(width: 5,),
-                            BasicIconButtonGrey(
-                              onPress: () async {
-                                showDialog(
-                                    barrierDismissible: false,
-                                    context: context,
-                                    builder: (context) {
-                                      return
-                                        AlertDialog(
-                                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
-                                          title: const Text("Call Reporter!"),
-                                          content: const Text("Would you like to call the individual who logged the fault?"),
-                                          actions: [
-                                            IconButton(
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                              },
-                                              icon: const Icon(Icons.cancel, color: Colors.red,),
-                                            ),
-                                            IconButton(
-                                              onPressed: () {
-                                                reporterCellGiven = _allFaultResults[index]['reporterContact'];
-
-                                                final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                                launchUrl(_tel);
-
-                                                Navigator.of(context).pop();
-                                              },
-                                              icon: const Icon(Icons.done, color: Colors.green,),
-                                            ),
-                                          ],
-                                        );
-                                    });
-                              },
-                              labelText: 'Call User',
-                              fSize: 14,
-                              faIcon: const FaIcon(Icons.call,),
-                              fgColor: Colors.orange,
-                              btSize: const Size(50, 38),
-                            ),
-                            const SizedBox(width: 5,),
+                            if(_allFaultResults[index]['faultDescription'] != "")...[
+                              Text(
+                                'Fault Description: ${_allFaultResults[index]['faultDescription']}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              ...[
+                              ],
                           ],
                         ),
                         Column(
                           children: [
-                            Visibility(
-                              visible: adminAcc,
-                              child: Center(
-                                child: BasicIconButtonGrey(
+                            if(_allFaultResults[index]['adminComment'] != "")...[
+                              Text(
+                                'Admin Comment: ${_allFaultResults[index]['adminComment']}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              ...[
+                              ],
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            if(_allFaultResults[index]['reallocationComment'] != "")...[
+                              Text(
+                                'Reason fault reallocated: ${_allFaultResults[index]['reAllocationComment']}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              ...[
+                              ],
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            if(_allFaultResults[index]['managerAllocated'] != "")...[
+                              Text(
+                                'Manager of fault: ${_allFaultResults[index]['managerAllocated']}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              ...[
+                              ],
+                          ],
+                        ),
+
+                        Column(
+                          children: [
+                            if(_allFaultResults[index]['attendeeAllocated'] != "")...[
+                              Text(
+                                'Attendee Allocated: ${_allFaultResults[index]['attendeeAllocated']}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              ...[
+                              ],
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            if(_allFaultResults[index]['attendeeCom1'] != "")...[
+                              Text(
+                                'Attendee Comment: ${_allFaultResults[index]['attendeeCom1']}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              ...[
+                              ],
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            if(_allFaultResults[index]['managerCom1'] != "")...[
+                              Text(
+                                'Manager Comment: ${_allFaultResults[index]['managerCom1']}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              ...[
+                              ],
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            if(_allFaultResults[index]['attendeeCom2'] != "")...[
+                              Text(
+                                'Attendee Followup Comment: ${_allFaultResults[index]['attendeeCom2']}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              ...[
+                              ],
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            if(_allFaultResults[index]['managerCom2'] != "")...[
+                              Text(
+                                'Manager Final/Additional Comment: ${_allFaultResults[index]['managerCom2']}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              ...[
+                              ],
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            if(_allFaultResults[index]['attendeeCom3'] != "")...[
+                              Text(
+                                'Attendee Final Comment: ${_allFaultResults[index]['attendeeCom3']}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              ...[
+                              ],
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            if(_allFaultResults[index]['managerCom3'] != "")...[
+                              Text(
+                                'Manager Final Comment: ${_allFaultResults[index]['managerCom3']}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5,),
+                            ] else
+                              ...[
+                              ],
+                          ],
+                        ),
+                        Text(
+                          'Resolve State: $status',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 20,),
+                        Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                BasicIconButtonGrey(
                                   onPress: () async {
-                                    _updateReport(_allFaultResults[index]);
+                                    accountNumberRep = _allFaultResults[index]['accountNumber'];
+                                    locationGivenRep = _allFaultResults[index]['address'];
+
+                                    Navigator.push(context, MaterialPageRoute(
+                                        builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
+                                    ));
                                   },
-                                  labelText: 'Remove from archive',
+                                  labelText: 'Location',
                                   fSize: 14,
-                                  faIcon: const FaIcon(Icons.replay_circle_filled,),
-                                  fgColor: Colors.blue,
+                                  faIcon: const FaIcon(Icons.map,),
+                                  fgColor: Colors.green,
                                   btSize: const Size(50, 38),
                                 ),
-                              ),
+                                const SizedBox(width: 5,),
+                                BasicIconButtonGrey(
+                                  onPress: () async {
+                                    showDialog(
+                                        barrierDismissible: false,
+                                        context: context,
+                                        builder: (context) {
+                                          return
+                                            AlertDialog(
+                                              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+                                              title: const Text("Call Reporter!"),
+                                              content: const Text("Would you like to call the individual who logged the fault?"),
+                                              actions: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  icon: const Icon(Icons.cancel, color: Colors.red,),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () {
+                                                    reporterCellGiven = _allFaultResults[index]['reporterContact'];
+
+                                                    final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
+                                                    launchUrl(_tel);
+
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  icon: const Icon(Icons.done, color: Colors.green,),
+                                                ),
+                                              ],
+                                            );
+                                        });
+                                  },
+                                  labelText: 'Call User',
+                                  fSize: 14,
+                                  faIcon: const FaIcon(Icons.call,),
+                                  fgColor: Colors.orange,
+                                  btSize: const Size(50, 38),
+                                ),
+                                const SizedBox(width: 5,),
+                              ],
+                            ),
+                            Column(
+                              children: [
+                                Visibility(
+                                  visible: adminAcc,
+                                  child: Center(
+                                    child: BasicIconButtonGrey(
+                                      onPress: () async {
+                                        _updateReport(_allFaultResults[index]);
+                                      },
+                                      labelText: 'Remove from archive',
+                                      fSize: 14,
+                                      faIcon: const FaIcon(Icons.replay_circle_filled,),
+                                      fgColor: Colors.blue,
+                                      btSize: const Size(50, 38),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            );
-          } else {
-            return const SizedBox();
-          }
+                  ),
+                );
+              } else {
+                return const SizedBox();
+              }
 
 
-        },
+            },
+          ),
+        ),
       );
     }
     return const Padding(

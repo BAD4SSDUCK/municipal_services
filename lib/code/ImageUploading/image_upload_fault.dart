@@ -7,14 +7,15 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
-import 'package:path/path.dart';
+import 'package:mime/mime.dart';
+import 'package:path/path.dart' as path;
+
 
 class FaultImageUpload extends StatefulWidget {
-  FaultImageUpload({Key? key, required this.propertyAddress, required this.reportedDate}) : super(key: key);
+   FaultImageUpload({super.key, required this.propertyAddress, required this.reportedDate, });
 
   final String propertyAddress;
   final String reportedDate;
-
   @override
   _FaultImageUploadState createState() => _FaultImageUploadState();
 }
@@ -62,26 +63,59 @@ class _FaultImageUploadState extends State<FaultImageUpload> {
     });
   }
 
+  // Future uploadFile() async {
+  //
+  //   final String photoName;
+  //   final String reportAddress = widget.propertyAddress;
+  //   final String dateReported = widget.reportedDate;
+  //
+  //   ///'files/$userID/$fileName' is used specifically for adding the user id to a table in order to split the users per account
+  //   if (_photo == null) return;
+  //   final fileName = basename(_photo!.path);
+  //   final destination = 'files/faultImages/$dateReported/';
+  //
+  //   try {
+  //     final ref = firebase_storage.FirebaseStorage.instance
+  //         .ref(destination)
+  //         .child('$reportAddress/');   ///this is the jpg filename which needs to be named something on the db in order to display in the display screen
+  //     await ref.putFile(_photo!);
+  //     photoName = _photo!.toString();
+  //     print(destination);
+  //   } catch (e) {
+  //     print('error occured');
+  //   }
+  // }
   Future uploadFile() async {
+    if (_photo == null) {
+      print('No image selected.');
+      return;
+    }
 
-    final String photoName;
     final String reportAddress = widget.propertyAddress;
     final String dateReported = widget.reportedDate;
-
-    ///'files/$userID/$fileName' is used specifically for adding the user id to a table in order to split the users per account
-    if (_photo == null) return;
-    final fileName = basename(_photo!.path);
-    final destination = 'files/faultImages/$dateReported/';
+    String fileExtension = path.extension(_photo!.path);
+    final String fileName = '$reportAddress$fileExtension';
+    final String destination = 'files/faultImages/$dateReported/$fileName';
 
     try {
-      final ref = firebase_storage.FirebaseStorage.instance
-          .ref(destination)
-          .child('$reportAddress/');   ///this is the jpg filename which needs to be named something on the db in order to display in the display screen
-      await ref.putFile(_photo!);
-      photoName = _photo!.toString();
-      print(destination);
+      final ref = firebase_storage.FirebaseStorage.instance.ref(destination);
+
+      // Determine MIME type of the file
+      final mimeType = lookupMimeType(_photo!.path) ?? 'application/octet-stream';
+      print("Determined MIME type: $mimeType");
+
+      // Metadata for the upload, specifying the content type
+      final metadata = firebase_storage.SettableMetadata(contentType: mimeType);
+
+      // Uploading the file with metadata
+      await ref.putFile(_photo!, metadata);
+
+      // Optionally, get the URL of the uploaded file
+      String fileUrl = await ref.getDownloadURL();
+      print('Image uploaded successfully to: $destination');
+      print('File URL: $fileUrl');
     } catch (e) {
-      print('error occured');
+      print('Error uploading image: $e');
     }
   }
 

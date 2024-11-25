@@ -4,10 +4,13 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -28,7 +31,19 @@ import 'package:municipal_services/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
 
 class FaultTaskScreen extends StatefulWidget {
-  const FaultTaskScreen({Key? key}) : super(key: key);
+  final String? municipalityUserEmail;
+  final String? districtId;
+  final String municipalityId;
+  final bool isLocalMunicipality;
+  final bool isLocalUser;
+  const FaultTaskScreen({
+    super.key,
+    this.municipalityUserEmail,
+    this.districtId,
+    required this.municipalityId,
+    required this.isLocalMunicipality,
+    required this.isLocalUser,
+  });
 
   @override
   State<FaultTaskScreen> createState() => _FaultTaskScreenState();
@@ -45,9 +60,9 @@ final email = user?.email;
 String userID = uid as String;
 String myUserEmail = email as String;
 
-class FireStorageService extends ChangeNotifier{
+class FireStorageService extends ChangeNotifier {
   FireStorageService();
-  static Future<String> loadImage(BuildContext context, String image) async{
+  static Future<String> loadImage(BuildContext context, String image) async {
     return await FirebaseStorage.instance.ref().child(image).getDownloadURL();
   }
 }
@@ -55,44 +70,101 @@ class FireStorageService extends ChangeNotifier{
 String imageName = '';
 String dateReported = '';
 
-late LatLng addressLocation;
-late LatLng addressLocation2;
+LatLng addressLocation = LatLng(0, 0);
+LatLng addressLocation2 = LatLng(0, 0);
 
-class _FaultTaskScreenState extends State<FaultTaskScreen> {
+class _FaultTaskScreenState extends State<FaultTaskScreen>
+    with TickerProviderStateMixin {
+  CollectionReference? _faultData;
+  CollectionReference? _departmentData;
+  String? userEmail;
+  String districtId = '';
+  String municipalityId = '';
+  bool isLocalMunicipality = false;
+  bool _isLoading = true;
+  bool isLocalUser = true;
+  List<String> municipalities = []; // To hold the list of municipality names
+  String? selectedMunicipality = "Select Municipality";
+  List<DocumentSnapshot> filteredProperties = [];
+  final FocusNode faultFocusNode = FocusNode();
+  final FocusNode noFaultFocusNode = FocusNode();
+  final ScrollController _allFaultsScrollController = ScrollController();
+  final ScrollController _unassignedFaultsScrollController = ScrollController();
+  late TabController _tabController;
 
   @override
   void initState() {
-    if(_searchController.text == ""){
-      getFaultStream();
-    }
-
-    _searchController.addListener(_onSearchChanged);
-    checkRole();
-    // getUserDepartmentDetails();
-    getDBDept(_departmentData);
-
-    if(myDepartment=="Water & Sanitation"){
-      getSimilarFaultStreamWater();
-    } else if (myDepartment=="Waste Management"){
-      getSimilarFaultStreamWaste();
-    } else if (myDepartment=="Electricity"){
-      getSimilarFaultStreamElectricity();
-    } else if (myDepartment=="Roadworks"){
-      getSimilarFaultStreamRoad();
-    }
-
-    _isLoading = true;
-    Future.delayed(const Duration(seconds: 3),(){
-      setState(() {
-        _isLoading = false;
-      });
+    super.initState();
+    FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: false);
+    faultFocusNode.requestFocus();
+    noFaultFocusNode.requestFocus();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.index == 0) {
+        faultFocusNode.requestFocus();
+      } else if (_tabController.index == 1) {
+        noFaultFocusNode.requestFocus();
+      }
     });
 
-    super.initState();
+    faultFocusNode.requestFocus();
+
+    // Listeners for scroll position
+    _allFaultsScrollController.addListener(() {
+    });
+    _unassignedFaultsScrollController.addListener(() {
+    });
+    fetchUserDetails().then((_) {
+      print("initState - isLocalMunicipality: $isLocalMunicipality");
+      print("initState - districtId: $districtId");
+      print("initState - municipalityId: $municipalityId");
+
+      // Fetch faults based on user type
+      if (isLocalMunicipality) {
+        fetchFaultsForLocalMunicipality();
+      } else if (!isLocalMunicipality && municipalityId.isEmpty) {
+        fetchFaultsForAllMunicipalities(); // Fetch all faults for district-level user
+      } else {
+        fetchFaultsByMunicipality(
+            municipalityId); // Fetch faults for specific municipality
+      }
+
+      fetchMunicipalities(); // Fetch all municipalities under district
+
+      checkRole(); // Initialize role-based streams or settings
+
+      // Fetch similar faults based on department
+      if (myDepartment == "Water & Sanitation") {
+        getSimilarFaultStreamWater();
+     // } else if (myDepartment == "Waste Management") {
+        //getSimilarFaultStreamWaste();
+    //  } else if (myDepartment == "Roadworks") {
+       // getSimilarFaultStreamRoad();
+      }
+    }).catchError((error) {
+      print("Error in fetchUserDetails: $error");
+    });
+
+    _searchController.addListener(_onSearchChanged);
+
+    // Loading indicator management
+    _isLoading = true;
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
+    faultFocusNode.dispose();
+    noFaultFocusNode.dispose();
+    _allFaultsScrollController.dispose();
+    _unassignedFaultsScrollController.dispose();
+    _tabController.dispose();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     searchText;
@@ -109,7 +181,89 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     super.dispose();
   }
 
-  late bool _isLoading;
+  Future<void> fetchUserDetails() async {
+    try {
+      print("Fetching user details...");
+      User? user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        userEmail = user.email ?? ''; // Set userEmail safely
+        print("User email initialized: $userEmail");
+
+        // Fetch user document using collectionGroup query
+        QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+            .collectionGroup('users')
+            .where('email', isEqualTo: user.email)
+            .limit(1)
+            .get();
+
+        if (userSnapshot.docs.isNotEmpty) {
+          var userDoc = userSnapshot.docs.first;
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
+
+          var userPathSegments = userDoc.reference.path.split('/');
+
+          // Determine if user belongs to a district-based or local municipality
+          if (userPathSegments.contains('districts')) {
+            // District-based municipality
+            districtId = userPathSegments[1];
+            municipalityId = "";
+            isLocalMunicipality = false;
+            print("District User Detected");
+          } else if (userPathSegments.contains('localMunicipalities')) {
+            // Local municipality
+            municipalityId = userPathSegments[1];
+            districtId = ''; // No district for local municipality
+            isLocalMunicipality = true;
+            print("Local Municipality User Detected");
+          }
+
+          // Safely access the 'isLocalUser' field
+          isLocalUser = userData['isLocalUser'] ?? false;
+
+          // Log fetched details
+          print("After fetchUserDetails:");
+          print("districtId: $districtId");
+          print("municipalityId: $municipalityId");
+          print("isLocalMunicipality: $isLocalMunicipality");
+          print("isLocalUser: $isLocalUser");
+
+          // Fetch fault data depending on municipality type
+          if (isLocalMunicipality) {
+            _faultData = FirebaseFirestore.instance
+                .collection('localMunicipalities')
+                .doc(municipalityId)
+                .collection('faultReporting');
+            print(
+                "Fetching fault data for local municipality: $municipalityId");
+          } else {
+            _faultData = FirebaseFirestore.instance
+                .collection('districts')
+                .doc(districtId)
+                .collection('municipalities')
+                .doc(municipalityId)
+                .collection('faultReporting');
+            print(
+                "Fetching fault data for district: $districtId, municipality: $municipalityId");
+          }
+
+          // After fetching fault data, you can now proceed with any additional logic or streams:
+          if (!isLocalMunicipality) {
+            await fetchFaultsForAllMunicipalities(); // Fetch faults for all municipalities in the district
+          } else {
+            await fetchFaultsForLocalMunicipality(); // Fetch faults for the local municipality
+          }
+        } else {
+          print('No user document found.');
+        }
+      } else {
+        print("No current user found.");
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+    }
+  }
 
   final _accountNumberController = TextEditingController();
   final _addressController = TextEditingController();
@@ -120,11 +274,11 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   late bool _faultResolvedController;
   final _dateReportedController = TextEditingController();
 
-  final CollectionReference _faultData =
-  FirebaseFirestore.instance.collection('faultReporting');
-
-  final CollectionReference _departmentData =
-  FirebaseFirestore.instance.collection('departments');
+  // final CollectionReference _faultData =
+  // FirebaseFirestore.instance.collection('faultReporting');
+  //
+  // final CollectionReference _departmentData =
+  // FirebaseFirestore.instance.collection('departments');
 
   String accountNumberRep = '';
   String locationGivenRep = '';
@@ -166,7 +320,166 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   bool visStage5 = false;
 
   final CollectionReference _listUser =
-  FirebaseFirestore.instance.collection('users');
+      FirebaseFirestore.instance.collection('users');
+
+  Future<void> fetchMunicipalities() async {
+    try {
+      if (districtId.isNotEmpty) {
+        print("Fetching municipalities under district: $districtId");
+
+        var municipalitiesSnapshot = await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .get();
+
+        print("Municipalities fetched: ${municipalitiesSnapshot.docs.length}");
+
+        if (municipalitiesSnapshot.docs.isNotEmpty && mounted) {
+          setState(() {
+            municipalities = municipalitiesSnapshot.docs
+                .map((doc) =>
+                    doc.id) // Using document ID as the municipality name
+                .toList();
+
+            print("Municipalities list: $municipalities");
+            selectedMunicipality =
+                "Select Municipality"; // Ensure dropdown default value
+          });
+        } else {
+          setState(() {
+            municipalities = []; // Clear if nothing found
+            print("No municipalities found");
+          });
+        }
+      } else {
+        print("districtId is empty or null.");
+      }
+    } catch (e) {
+      print('Error fetching municipalities: $e');
+    }
+  }
+
+  Future<void> fetchFaultsForAllMunicipalities() async {
+    try {
+      if (districtId.isEmpty) {
+        print("Error: District ID is empty.");
+        return;
+      }
+
+      print(
+          "Fetching faults for all municipalities under district: $districtId");
+
+      // Step 1: Fetch all municipalities under the district
+      QuerySnapshot municipalitiesSnapshot = await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .get();
+
+      List<QueryDocumentSnapshot> municipalities = municipalitiesSnapshot.docs;
+
+      if (municipalities.isEmpty) {
+        print("No municipalities found under district: $districtId");
+        return;
+      }
+
+      List<QueryDocumentSnapshot> allFaults = [];
+
+      // Step 2: Fetch faults for each municipality
+      for (var municipality in municipalities) {
+        String municipalityId = municipality.id;
+        print("Fetching faults for municipality: $municipalityId");
+
+        QuerySnapshot faultsSnapshot = await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('faultReporting')
+            .orderBy('dateReported', descending: true)
+            .get();
+
+        allFaults.addAll(faultsSnapshot.docs);
+      }
+
+      // Step 3: Store and update the state with all faults
+      if (allFaults.isEmpty) {
+        print("No faults found for all municipalities under the district.");
+      } else {
+        print("Fetched ${allFaults.length} faults from all municipalities.");
+      }
+
+      if (mounted) {
+        setState(() {
+          _allFaultResults = allFaults; // Store all fetched faults
+        });
+      }
+    } catch (e) {
+      print("Error fetching faults for all municipalities: $e");
+    }
+  }
+
+  Future<void> fetchFaultsForLocalMunicipality() async {
+    if (municipalityId.isEmpty) {
+      print("Error: municipalityId is empty. Cannot fetch properties.");
+      return;
+    }
+
+    try {
+      print("Fetching properties for local municipality: $municipalityId");
+
+      // Fetch properties only for the specific municipality the user belongs to
+      QuerySnapshot propertiesSnapshot = await FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId) // The local municipality ID for the user
+          .collection('faultReporting')
+          .get();
+
+      // Check if any properties were fetched
+      if (propertiesSnapshot.docs.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            _allFaultResults =
+                propertiesSnapshot.docs; // Store fetched properties
+          });
+        }
+        print('Properties fetched for local municipality: $municipalityId');
+        print(
+            'Number of properties fetched: ${propertiesSnapshot.docs.length}');
+      } else {
+        print("No properties found for local municipality: $municipalityId");
+      }
+    } catch (e) {
+      print('Error fetching properties for local municipality: $e');
+    }
+  }
+
+  Future<void> fetchFaultsByMunicipality(String municipalityId) async {
+    try {
+      print("Fetching faults for selected municipality: $municipalityId");
+
+      QuerySnapshot faultSnapshot = await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .collection('faultReporting')
+          .get();
+
+      print(
+          'Fetched ${faultSnapshot.docs.length} faults for municipality: $municipalityId');
+
+      if (mounted) {
+        setState(() {
+          _allFaultResults = faultSnapshot.docs;
+          print('State updated, faults stored: ${_allFaultResults.length}');
+        });
+      }
+    } catch (e) {
+      print('Error fetching faults for municipality: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -175,199 +488,316 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
       child: Scaffold(
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
-          title: const Text('Faults Reported',style: TextStyle(color: Colors.white),),
+          title: const Text(
+            'Faults Reported',
+            style: TextStyle(color: Colors.white),
+          ),
           backgroundColor: Colors.green,
           iconTheme: const IconThemeData(color: Colors.white),
           actions: <Widget>[
-            // Visibility(
-            //   visible: adminAcc || managerAcc,
-            //   child: IconButton(
-            //     onPressed: (){
-            //
-            //     },
-            //     icon: const Icon(Icons.details, color: Colors.white,),),
-            // ),
             Visibility(
               visible: adminAcc || managerAcc,
-              child: IconButton(
-                onPressed: (){
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => const ReportBuilderFaults()));
-                },
-                icon: const Icon(Icons.file_copy_outlined, color: Colors.white,),),
+              child: Row(
+                children: [
+                  Text(
+                    "Report Generator",
+                    style: GoogleFonts.jacquesFrancois(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                        fontStyle: FontStyle.italic,
+                        fontSize: 14),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ReportBuilderFaults()),
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.file_copy_outlined,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(width: 16), // Spacing between buttons
             Visibility(
               visible: adminAcc,
-              child: IconButton(
-                  onPressed: (){
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => const FaultTaskScreenArchive()));
-                  },
-                  icon: const Icon(Icons.history_outlined, color: Colors.white,)),
+              child: Row(
+                children: [
+                  Text(
+                    "Completed Faults Archive",
+                    style: GoogleFonts.jacquesFrancois(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                        fontStyle: FontStyle.italic,
+                        fontSize: 14),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const FaultTaskScreenArchive()),
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.history_outlined,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
-
           bottom: const TabBar(
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
             tabs: [
-              Tab(text: 'All Department Faults', icon: FaIcon(Icons.bar_chart),),
-              Tab(text: 'Unassigned Faults', icon: FaIcon(Icons.handyman),),
+              Tab(
+                text: 'All Department Faults',
+                icon: FaIcon(Icons.bar_chart),
+              ),
+              Tab(
+                text: 'Unassigned Faults',
+                icon: FaIcon(Icons.handyman),
+              ),
             ],
           ),
-
         ),
 
-        body: TabBarView(
-          children: [
-            ///Tab for all faults
-            Column(
-              children: [
+        body: TabBarView(controller: _tabController, children: [
+          ///Tab for all faults
+          Column(
+            children: [
+              const SizedBox(
+                height: 10,
+              ),
+              // Dropdown for district-level users only
+              if (!widget.isLocalMunicipality && !widget.isLocalUser)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 40),
+                      child: DropdownButton<String>(
+                        value: selectedMunicipality,
+                        hint: const Text('Select Municipality'),
+                        isExpanded: true,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            selectedMunicipality = newValue!;
+                            if (selectedMunicipality == "Select Municipality") {
+                              fetchFaultsForAllMunicipalities(); // Fetch faults for all municipalities
+                            } else {
+                              fetchFaultsByMunicipality(
+                                  newValue); // Fetch faults for a specific municipality
+                            }
+                          });
+                        },
+                        items: [
+                          const DropdownMenuItem<String>(
+                            value: "Select Municipality",
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: Text("Select Municipality"),
+                            ),
+                          ),
+                          ...municipalities.map((String municipality) {
+                            return DropdownMenuItem<String>(
+                              value: municipality,
+                              child: Align(
+                                alignment: Alignment.center,
+                                child: Text(municipality),
+                              ),
+                            );
+                          }).toList(),
+                        ],
+                      )),
+                ),
 
-                const SizedBox(height: 10,),
-                Center(
-                  child: Column(
-                      children: [
-                        SizedBox(
-                          width: 450,
-                          height: 50,
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 10, right: 10),
-                            child: Center(
-                              child: TextField(
+              const SizedBox(height: 10),
 
-                                ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          30),
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                      )
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          30),
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                      )
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          30),
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                      )
-                                  ),
-                                  disabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          30),
-                                      borderSide: const BorderSide(
-                                        color: Colors.grey,
-                                      )
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 6
-                                  ),
-                                  fillColor: Colors.purple[20],
-                                  filled: true,
-                                  suffixIcon: DropdownButtonFormField <String>(
-                                    value: dropdownValue,
-                                    items: <String>['Filter Fault Stage', 'Stage 1', 'Stage 2', 'Stage 3', 'Stage 4', 'Stage 5'].map<DropdownMenuItem<String>>((String value) {
-                                      return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 20.0),
-                                          child: Text(
-                                            value,
-                                            style: const TextStyle(fontSize: 16),
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                    onChanged: (String? newValue) {
-                                      setState(() {
-                                        dropdownValue = newValue!;
-                                        // if (dropdownValue == 'Filter Fault Stage') {
-                                        //   _addressController.text = '';
-                                        // }
-                                        stageResultsList();
-                                      });
-                                    },
-                                    icon: const Padding(
-                                      padding: EdgeInsets.only(left: 10, right: 10),
-                                      child: Icon(Icons.arrow_circle_down_sharp),
+              Center(
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: 450,
+                      height: 50,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 10, right: 10),
+                        child: Center(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                  borderSide: const BorderSide(
+                                    color: Colors.grey,
+                                  )),
+                              enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                  borderSide: const BorderSide(
+                                    color: Colors.grey,
+                                  )),
+                              focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                  borderSide: const BorderSide(
+                                    color: Colors.grey,
+                                  )),
+                              disabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                  borderSide: const BorderSide(
+                                    color: Colors.grey,
+                                  )),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 6),
+                              fillColor: Colors.purple[20],
+                              filled: true,
+                              suffixIcon: DropdownButtonFormField<String>(
+                                value: dropdownValue,
+                                items: <String>[
+                                  'Filter Fault Stage',
+                                  'Stage 1',
+                                  'Stage 2',
+                                  'Stage 3',
+                                  'Stage 4',
+                                  'Stage 5'
+                                ].map<DropdownMenuItem<String>>((String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 0.0, horizontal: 20.0),
+                                      child: Text(
+                                        value,
+                                        style: const TextStyle(fontSize: 16),
+                                      ),
                                     ),
-                                    iconEnabledColor: Colors.green,
-                                    style: const TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 18
-                                    ),
-                                    dropdownColor: Colors.grey[50],
-                                    isExpanded: true,
-
-                                  ),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    dropdownValue = newValue!;
+                                    stageResultsList();
+                                  });
+                                },
+                                icon: const Padding(
+                                  padding: EdgeInsets.only(left: 10, right: 10),
+                                  child: Icon(Icons.arrow_circle_down_sharp),
                                 ),
+                                iconEnabledColor: Colors.green,
+                                style: const TextStyle(
+                                    color: Colors.black, fontSize: 18),
+                                dropdownColor: Colors.grey[50],
+                                isExpanded: true,
                               ),
                             ),
                           ),
                         ),
-                      ]
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
 
               /// Search bar
               Padding(
-                padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,5.0),
+                padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 5.0),
                 child: SearchBar(
                   controller: _searchController,
                   padding: const MaterialStatePropertyAll<EdgeInsets>(
                       EdgeInsets.symmetric(horizontal: 16.0)),
                   leading: const Icon(Icons.search),
-                  hintText: "Search by Address...",
-                  onChanged: (value) async{
+                  hintText: "Search",
+                  onChanged: (value) async {
                     setState(() {
                       searchText = value;
-                      print('this is the input text ::: $searchText');
                     });
                   },
                 ),
               ),
+
               /// Search bar end
-              Expanded(child: faultCard(),),
-              const SizedBox(height: 5,),
-             ],
-            ),
+              Expanded(
+                child: faultCard(),
+              ),
+              const SizedBox(
+                height: 5,
+              ),
+            ],
+          ),
 
-            ///Tab for unassigned faults
-            Column(
-              children: [
-                /// Search bar
+          ///Tab for unassigned faults
+          Column(
+            children: [
+              if (!widget.isLocalMunicipality && !widget.isLocalUser)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,5.0),
-                  child: SearchBar(
-                    controller: _searchController,
-                    padding: const MaterialStatePropertyAll<EdgeInsets>(
-                        EdgeInsets.symmetric(horizontal: 16.0)),
-                    leading: const Icon(Icons.search),
-                    hintText: "Search by Address...",
-                    onChanged: (value) async{
-                      setState(() {
-                        searchText = value;
-                        print('this is the input text ::: $searchText');
-                      });
-                    },
-                  ),
+                  padding: const EdgeInsets.all(8.0),
+                  child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 40),
+                      child: DropdownButton<String>(
+                        value: selectedMunicipality,
+                        hint: const Text('Select Municipality'),
+                        isExpanded: true,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            selectedMunicipality = newValue!;
+                            if (selectedMunicipality == "Select Municipality") {
+                              fetchFaultsForAllMunicipalities(); // Fetch faults for all municipalities
+                            } else {
+                              fetchFaultsByMunicipality(
+                                  newValue); // Fetch faults for a specific municipality
+                            }
+                          });
+                        },
+                        items: [
+                          const DropdownMenuItem<String>(
+                            value: "Select Municipality",
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: Text("Select Municipality"),
+                            ),
+                          ),
+                          ...municipalities.map((String municipality) {
+                            return DropdownMenuItem<String>(
+                              value: municipality,
+                              child: Align(
+                                alignment: Alignment.center,
+                                child: Text(municipality),
+                              ),
+                            );
+                          }).toList(),
+                        ],
+                      )),
                 ),
-                /// Search bar end
-                Expanded(child: unassignedFaultCard(),),
-                const SizedBox(height: 5,),
-              ],
-            ),
 
-          ]
-        ),
+              /// Search bar
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 5.0),
+                child: SearchBar(
+                  controller: _searchController,
+                  padding: const MaterialStatePropertyAll<EdgeInsets>(
+                      EdgeInsets.symmetric(horizontal: 16.0)),
+                  leading: const Icon(Icons.search),
+                  hintText: "Search",
+                  onChanged: (value) async {
+                    setState(() {
+                      searchText = value;
+                    });
+                  },
+                ),
+              ),
+
+              /// Search bar end
+              Expanded(
+                child: unassignedFaultCard(),
+              ),
+              const SizedBox(
+                height: 5,
+              ),
+            ],
+          ),
+        ]),
       ),
     );
   }
@@ -375,277 +805,372 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   void getDBDept(CollectionReference dept) async {
     dept.get().then((querySnapshot) async {
       for (var result in querySnapshot.docs) {
-        if(_deptName.length-1<querySnapshot.docs.length) {
+        if (_deptName.length - 1 < querySnapshot.docs.length) {
           _deptName.add(result['deptName']);
         }
       }
     });
-  }///Looping department collection
-
-  getFaultStream() async{
-    var data = await FirebaseFirestore.instance.collection('faultReporting').orderBy('dateReported', descending: true).get();
-
-    setState(() {
-      _allFaultResults = data.docs;
-      _unassignedFaultResults = data.docs;
-    });
-    searchResultsList();
   }
 
-  getSimilarFaultStreamWater() async{
-    var data = await FirebaseFirestore.instance.collection('faultReporting').orderBy('dateReported', descending: true).get();
+  ///Looping department collection
 
-    _similarFaultResults = data.docs;
+  // getFaultStream() async {
+  //   try {
+  //   //  print("Fetching fault data for district: $districtId, municipality: $municipalityId");
+  //
+  //     QuerySnapshot data;
+  //
+  //     if (isLocalMunicipality) {
+  //       if (municipalityId.isEmpty) {
+  //         print("Error: Municipality ID is empty for local municipality.");
+  //         return;
+  //       }
+  //
+  //       // Fetch faults for local municipality
+  //       data = await FirebaseFirestore.instance
+  //           .collection('localMunicipalities')
+  //           .doc(municipalityId)
+  //           .collection('faultReporting')
+  //           .orderBy('dateReported', descending: true)
+  //           .get();
+  //     } else {
+  //       if (districtId.isEmpty || municipalityId.isEmpty) {
+  //         print("Error: District ID or Municipality ID is empty for district-based municipality.");
+  //         return;
+  //       }
+  //
+  //       // Fetch faults for district-based municipality
+  //       data = await FirebaseFirestore.instance
+  //           .collection('districts')
+  //           .doc(districtId)
+  //           .collection('municipalities')
+  //           .doc(municipalityId)
+  //           .collection('faultReporting')
+  //           .orderBy('dateReported', descending: true)
+  //           .get();
+  //     }
+  //
+  //     if (data.docs.isEmpty) {
+  //       print("No faults found for this query.");
+  //     }
+  //
+  //     if (mounted) {
+  //       setState(() {
+  //         _allFaultResults = data.docs;
+  //       });
+  //    //   print("Updated _allFaultResults with ${_allFaultResults.length} faults");
+  //     }
+  //
+  //    // print("Number of faults retrieved: ${_allFaultResults.length}");
+  //     searchResultsList();
+  //   } catch (e) {
+  //     print("Error fetching fault data: $e");
+  //   }
+  // }
 
-    addressLocation=LatLng(0,0);
-    addressLocation2=LatLng(0,0);
-
-    /// Example query to get faults of the water & sanitation type
-    var queryWater = FirebaseFirestore.instance
-        .collection('faultReporting')
-        .where('faultType', isEqualTo: 'Water & Sanitation');
-
-    var queryWaterSnapshot = await queryWater.get();
-
-    // Iterate through the documents and compare distances
-    for (var i = 0; i < queryWaterSnapshot.docs.length; i++) {
-
-      var address1 = queryWaterSnapshot.docs[i]['address'];
-      addressConvert(address1);
-
-      var fault1 = addressLocation;
-      var fault1Coordinates = addressLocation;
-      // GeoPoint(
-      //   fault1['latitude'] as double,
-      //   fault1['longitude'] as double,
-      // );
-
-      // Compare distances using geolocator
-      for (var j = i + 1; j < queryWaterSnapshot.docs.length; j++) {
-
-        var address2 = queryWaterSnapshot.docs[i]['address'];
-        addressConvert2(address2);
-
-        var fault2 = addressLocation2;
-        var fault2Coordinates = addressLocation2;
-        // GeoPoint(
-        //   fault2['latitude'] as double,
-        //   fault2['longitude'] as double,
-        // );
-
-        // Calculate distance
-        double distance = await calculateDistance(
-          fault1Coordinates.latitude,
-          fault1Coordinates.longitude,
-          fault2Coordinates.latitude,
-          fault2Coordinates.longitude,
-        );
-
-          // Check if distance is within 5 meters
-          if (distance <= 5.0) {
-            // Flag or process the faults as needed
-            if(address1 != address2) {
-              _closeFaultResults.add(address2);
-
-              print('Fault at $address1 is within 5 meters of ''Fault at $address2');
-          }
+  getSimilarFaultStreamWater() async {
+    try {
+      // Fetch all faults first
+      QuerySnapshot data;
+      if (isLocalMunicipality) {
+        if (municipalityId.isNotEmpty) {
+          data = await FirebaseFirestore.instance
+              .collection('localMunicipalities')
+              .doc(municipalityId)
+              .collection('faultReporting')
+              .orderBy('dateReported', descending: true)
+              .get();
+        } else {
+          print('Error: municipalityId is empty for local municipality.');
+          return;
+        }
+      } else {
+        if (districtId.isNotEmpty && municipalityId.isNotEmpty) {
+          data = await FirebaseFirestore.instance
+              .collection('districts')
+              .doc(districtId)
+              .collection('municipalities')
+              .doc(municipalityId)
+              .collection('faultReporting')
+              .orderBy('dateReported', descending: true)
+              .get();
+        } else {
+          print(
+              'Error: District ID or Municipality ID is empty for district-based municipality.');
+          return;
         }
       }
+
+      // Process the results
+      _similarFaultResults = data.docs;
+
+      // Query specifically for Water & Sanitation faults
+      QuerySnapshot queryWaterSnapshot;
+      if (isLocalMunicipality && municipalityId.isNotEmpty) {
+        queryWaterSnapshot = await FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .collection('faultReporting')
+            .where('faultType', isEqualTo: 'Water & Sanitation')
+            .get();
+      } else if (districtId.isNotEmpty && municipalityId.isNotEmpty) {
+        queryWaterSnapshot = await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('faultReporting')
+            .where('faultType', isEqualTo: 'Water & Sanitation')
+            .get();
+      } else {
+        print("Error: Invalid municipality or district IDs.");
+        return;
+      }
+
+      // Process Water & Sanitation results
+      _similarFaultResults = queryWaterSnapshot.docs;
+      if (_similarFaultResults.isEmpty) {
+        print('No Water & Sanitation faults found');
+      }
+
+      for (var fault in queryWaterSnapshot.docs) {
+        print('Water Fault fetched: ${fault.data()}');
+        // You can now process each fault to calculate distances or other logic as needed
+      }
+
+      setState(() {
+        _similarFaultResults = queryWaterSnapshot.docs;
+      });
+    } catch (e) {
+      print('Error fetching Water & Sanitation faults: $e');
     }
   }
 
-  getSimilarFaultStreamWaste() async{
-    var data = await FirebaseFirestore.instance.collection('faultReporting').orderBy('dateReported', descending: true).get();
+  // getSimilarFaultStreamWaste() async {
+  //   try {
+  //     QuerySnapshot data;
+  //
+  //     if (isLocalMunicipality) {
+  //       if (municipalityId.isNotEmpty) {
+  //         data = await FirebaseFirestore.instance
+  //             .collection('localMunicipalities')
+  //             .doc(municipalityId)
+  //             .collection('faultReporting')
+  //             .orderBy('dateReported', descending: true)
+  //             .get();
+  //       } else {
+  //         print("Error: municipalityId is empty for local municipality.");
+  //         return;
+  //       }
+  //     } else {
+  //       if (districtId.isNotEmpty && municipalityId.isNotEmpty) {
+  //         data = await FirebaseFirestore.instance
+  //             .collection('districts')
+  //             .doc(districtId)
+  //             .collection('municipalities')
+  //             .doc(municipalityId)
+  //             .collection('faultReporting')
+  //             .orderBy('dateReported', descending: true)
+  //             .get();
+  //       } else {
+  //         print(
+  //             "Error: District ID or Municipality ID is empty for district-based municipality.");
+  //         return;
+  //       }
+  //     }
+  //
+  //     _similarFaultResults = data.docs;
+  //
+  //     // Fetching specifically for Waste Management faults
+  //     QuerySnapshot queryWasteSnapshot;
+  //     if (isLocalMunicipality && municipalityId.isNotEmpty) {
+  //       queryWasteSnapshot = await FirebaseFirestore.instance
+  //           .collection('localMunicipalities')
+  //           .doc(municipalityId)
+  //           .collection('faultReporting')
+  //           .where('faultType', isEqualTo: 'Waste Management')
+  //           .get();
+  //     } else if (districtId.isNotEmpty && municipalityId.isNotEmpty) {
+  //       queryWasteSnapshot = await FirebaseFirestore.instance
+  //           .collection('districts')
+  //           .doc(districtId)
+  //           .collection('municipalities')
+  //           .doc(municipalityId)
+  //           .collection('faultReporting')
+  //           .where('faultType', isEqualTo: 'Waste Management')
+  //           .get();
+  //     } else {
+  //       print("Error: Invalid municipality or district IDs.");
+  //       return;
+  //     }
+  //
+  //     _similarFaultResults = queryWasteSnapshot.docs;
+  //     if (_similarFaultResults.isEmpty) {
+  //       print('No Waste Management faults found');
+  //     }
+  //
+  //     // Additional logic like calculating distances or handling the data can be added here
+  //
+  //     setState(() {
+  //       _similarFaultResults = queryWasteSnapshot.docs;
+  //     });
+  //   } catch (e) {
+  //     print('Error fetching Waste Management faults: $e');
+  //   }
+  // }
 
-    _similarFaultResults = data.docs;
-    addressLocation=LatLng(0,0);
-    addressLocation2=LatLng(0,0);
+  // getSimilarFaultStreamElectricity() async{
+  //   var data = await FirebaseFirestore.instance
+  //       .collection('districts')
+  //       .doc(districtId)
+  //       .collection('municipalities')
+  //       .doc(municipalityId)
+  //       .collection('faultReporting')
+  //       .orderBy('dateReported', descending: true)
+  //       .get();
+  //
+  //   _similarFaultResults = data.docs;
+  //   addressLocation=LatLng(0,0);
+  //   addressLocation2=LatLng(0,0);
+  //
+  //   /// Example query to get faults of the water & sanitation type
+  //   var queryElectricity = FirebaseFirestore.instance
+  //       .collection('districts')
+  //       .doc(districtId)
+  //       .collection('municipalities')
+  //       .doc(municipalityId)
+  //       .collection('faultReporting')
+  //       .where('faultType', isEqualTo: 'Electricity');
+  //
+  //   var queryElectricitySnapshot = await queryElectricity.get();
+  //
+  //   // Iterate through the documents and compare distances
+  //   for (var i = 0; i < queryElectricitySnapshot.docs.length; i++) {
+  //
+  //     var address1 = queryElectricitySnapshot.docs[i]['address'];
+  //     addressConvert(address1);
+  //
+  //     var fault1 = queryElectricitySnapshot.docs[i];
+  //     var fault1Coordinates = addressLocation;
+  //     // GeoPoint(
+  //     //   fault1['latitude'] as double,
+  //     //   fault1['longitude'] as double,
+  //     // );
+  //
+  //     // Compare distances using geolocator
+  //     for (var j = i + 1; j < queryElectricitySnapshot.docs.length; j++) {
+  //       var address2 = queryElectricitySnapshot.docs[i]['address'];
+  //       addressConvert2(address2);
+  //
+  //       var fault2 = queryElectricitySnapshot.docs[j];
+  //       var fault2Coordinates = addressLocation2;
+  //       // GeoPoint(
+  //       //   fault2['latitude'] as double,
+  //       //   fault2['longitude'] as double,
+  //       // );
+  //
+  //       if (fault1Coordinates != fault2Coordinates){
+  //         // Calculate distance
+  //         double distance = await calculateDistance(
+  //           fault1Coordinates.latitude,
+  //           fault1Coordinates.longitude,
+  //           fault2Coordinates.latitude,
+  //           fault2Coordinates.longitude,
+  //         );
+  //
+  //         // Check if distance is within 5 meters
+  //         if (distance <= 5.0) {
+  //           // Flag or process the faults as needed
+  //           if(address1 != address2) {
+  //             _closeFaultResults.add(address2);
+  //
+  //             print('Fault at $address1 is within 5 meters of ''Fault at $address2');
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 
-    /// Example query to get faults of the water & sanitation type
-    var queryWaste = FirebaseFirestore.instance
-        .collection('faultReporting')
-        .where('faultType', isEqualTo: 'Waste Management');
-
-    var queryWasteSnapshot = await queryWaste.get();
-
-    // Iterate through the documents and compare distances
-    for (var i = 0; i < queryWasteSnapshot.docs.length; i++) {
-
-      var address1 = queryWasteSnapshot.docs[i]['address'];
-      addressConvert(address1);
-
-      var fault1 = queryWasteSnapshot.docs[i];
-      var fault1Coordinates = addressLocation;
-      // GeoPoint(
-      //   fault1['latitude'] as double,
-      //   fault1['longitude'] as double,
-      // );
-
-      // Compare distances using geolocator
-      for (var j = i + 1; j < queryWasteSnapshot.docs.length; j++) {
-
-        var address2 = queryWasteSnapshot.docs[i]['address'];
-        addressConvert2(address2);
-
-        var fault2 = queryWasteSnapshot.docs[j];
-        var fault2Coordinates = addressLocation2;
-        // GeoPoint(
-        //   fault2['latitude'] as double,
-        //   fault2['longitude'] as double,
-        // );
-
-        if (fault1Coordinates != fault2Coordinates){
-          // Calculate distance
-          double distance = await calculateDistance(
-            fault1Coordinates.latitude,
-            fault1Coordinates.longitude,
-            fault2Coordinates.latitude,
-            fault2Coordinates.longitude,
-          );
-
-          // Check if distance is within 5 meters
-          if (distance <= 5.0) {
-            // Flag or process the faults as needed
-            if(address1 != address2) {
-              _closeFaultResults.add(address2);
-
-              print('Fault at $address1 is within 5 meters of ''Fault at $address2');
-            }
-          }
-        }
-      }
-    }
-  }
-
-  getSimilarFaultStreamElectricity() async{
-    var data = await FirebaseFirestore.instance.collection('faultReporting').orderBy('dateReported', descending: true).get();
-
-    _similarFaultResults = data.docs;
-    addressLocation=LatLng(0,0);
-    addressLocation2=LatLng(0,0);
-
-    /// Example query to get faults of the water & sanitation type
-    var queryElectricity = FirebaseFirestore.instance
-        .collection('faultReporting')
-        .where('faultType', isEqualTo: 'Electricity');
-
-    var queryElectricitySnapshot = await queryElectricity.get();
-
-    // Iterate through the documents and compare distances
-    for (var i = 0; i < queryElectricitySnapshot.docs.length; i++) {
-
-      var address1 = queryElectricitySnapshot.docs[i]['address'];
-      addressConvert(address1);
-
-      var fault1 = queryElectricitySnapshot.docs[i];
-      var fault1Coordinates = addressLocation;
-      // GeoPoint(
-      //   fault1['latitude'] as double,
-      //   fault1['longitude'] as double,
-      // );
-
-      // Compare distances using geolocator
-      for (var j = i + 1; j < queryElectricitySnapshot.docs.length; j++) {
-        var address2 = queryElectricitySnapshot.docs[i]['address'];
-        addressConvert2(address2);
-
-        var fault2 = queryElectricitySnapshot.docs[j];
-        var fault2Coordinates = addressLocation2;
-        // GeoPoint(
-        //   fault2['latitude'] as double,
-        //   fault2['longitude'] as double,
-        // );
-
-        if (fault1Coordinates != fault2Coordinates){
-          // Calculate distance
-          double distance = await calculateDistance(
-            fault1Coordinates.latitude,
-            fault1Coordinates.longitude,
-            fault2Coordinates.latitude,
-            fault2Coordinates.longitude,
-          );
-
-          // Check if distance is within 5 meters
-          if (distance <= 5.0) {
-            // Flag or process the faults as needed
-            if(address1 != address2) {
-              _closeFaultResults.add(address2);
-
-              print('Fault at $address1 is within 5 meters of ''Fault at $address2');
-            }
-          }
-        }
-      }
-    }
-  }
-
-  getSimilarFaultStreamRoad() async{
-    var data = await FirebaseFirestore.instance.collection('faultReporting').orderBy('dateReported', descending: true).get();
-
-    _similarFaultResults = data.docs;
-    addressLocation=LatLng(0,0);
-    addressLocation2=LatLng(0,0);
-
-    /// Example query to get faults of the water & sanitation type
-    var queryRoadworks = FirebaseFirestore.instance
-        .collection('faultReporting')
-        .where('faultType', isEqualTo: 'Roadworks');
-
-    var queryRoadworksSnapshot = await queryRoadworks.get();
-
-    // Iterate through the documents and compare distances
-    for (var i = 0; i < queryRoadworksSnapshot.docs.length; i++) {
-
-      var address1 = queryRoadworksSnapshot.docs[i]['address'];
-      addressConvert(address1);
-
-      var fault1 = queryRoadworksSnapshot.docs[i];
-      var fault1Coordinates = addressLocation;
-      // GeoPoint(
-      //   fault1['latitude'] as double,
-      //   fault1['longitude'] as double,
-      // );
-
-      // Compare distances using geolocator
-      for (var j = i + 1; j < queryRoadworksSnapshot.docs.length; j++) {
-
-        var address2 = queryRoadworksSnapshot.docs[i]['address'];
-        addressConvert2(address2);
-
-        var fault2 = queryRoadworksSnapshot.docs[j];
-        var fault2Coordinates = addressLocation2;
-        // GeoPoint(
-        //   fault2['latitude'] as double,
-        //   fault2['longitude'] as double,
-        // );
-
-        // Calculate distance
-        double distance = await calculateDistance(
-          fault1Coordinates.latitude,
-          fault1Coordinates.longitude,
-          fault2Coordinates.latitude,
-          fault2Coordinates.longitude,
-        );
-
-        print('The distance is::: $distance');
-        // Check if distance is within 5 meters
-        if (distance <= 5.0) {
-          // Flag or process the faults as needed
-          if(address1 != address2) {
-            _closeFaultResults.add(address2);
-            print('Fault at $address1 is within 5 meters of ''Fault at $address2');
-          }
-        }
-      }
-    }
-  }
+  // getSimilarFaultStreamRoad() async {
+  //   try {
+  //     QuerySnapshot data;
+  //
+  //     if (isLocalMunicipality) {
+  //       if (municipalityId.isNotEmpty) {
+  //         data = await FirebaseFirestore.instance
+  //             .collection('localMunicipalities')
+  //             .doc(municipalityId)
+  //             .collection('faultReporting')
+  //             .orderBy('dateReported', descending: true)
+  //             .get();
+  //       } else {
+  //         print("Error: municipalityId is empty for local municipality.");
+  //         return;
+  //       }
+  //     } else {
+  //       if (districtId.isNotEmpty && municipalityId.isNotEmpty) {
+  //         data = await FirebaseFirestore.instance
+  //             .collection('districts')
+  //             .doc(districtId)
+  //             .collection('municipalities')
+  //             .doc(municipalityId)
+  //             .collection('faultReporting')
+  //             .orderBy('dateReported', descending: true)
+  //             .get();
+  //       } else {
+  //         print(
+  //             "Error: District ID or Municipality ID is empty for district-based municipality.");
+  //         return;
+  //       }
+  //     }
+  //
+  //     _similarFaultResults = data.docs;
+  //
+  //     // Fetching specifically for Roadworks faults
+  //     QuerySnapshot queryRoadworksSnapshot;
+  //     if (isLocalMunicipality && municipalityId.isNotEmpty) {
+  //       queryRoadworksSnapshot = await FirebaseFirestore.instance
+  //           .collection('localMunicipalities')
+  //           .doc(municipalityId)
+  //           .collection('faultReporting')
+  //           .where('faultType', isEqualTo: 'Roadworks')
+  //           .get();
+  //     } else if (districtId.isNotEmpty && municipalityId.isNotEmpty) {
+  //       queryRoadworksSnapshot = await FirebaseFirestore.instance
+  //           .collection('districts')
+  //           .doc(districtId)
+  //           .collection('municipalities')
+  //           .doc(municipalityId)
+  //           .collection('faultReporting')
+  //           .where('faultType', isEqualTo: 'Roadworks')
+  //           .get();
+  //     } else {
+  //       print("Error: Invalid municipality or district IDs.");
+  //       return;
+  //     }
+  //
+  //     _similarFaultResults = queryRoadworksSnapshot.docs;
+  //     if (_similarFaultResults.isEmpty) {
+  //       print('No Roadworks faults found');
+  //     }
+  //
+  //     // Additional logic like calculating distances or handling the data can be added here
+  //
+  //     setState(() {
+  //       _similarFaultResults = queryRoadworksSnapshot.docs;
+  //     });
+  //   } catch (e) {
+  //     print('Error fetching Roadworks faults: $e');
+  //   }
+  // }
 
   Future<double> calculateDistance(
-      double lat1,
-      double lon1,
-      double lat2,
-      double lon2,
-      ) async {
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) async {
     try {
       double distanceInMeters = await Geolocator.distanceBetween(
         lat1,
@@ -661,7 +1186,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     }
   }
 
-  void toggleVisibilityNotification(){
+  void toggleVisibilityNotification() {
     setState(() {
       visNotification = !visNotification;
     });
@@ -682,15 +1207,15 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           addressLocation = LatLng(latitude, longitude);
           print('$addressLocation this is the change');
         }
-
       } catch (e) {
         print('Address incorrect with no latlng to calculate');
       }
     } else {
       ///for web version
-      final apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
+      const apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
       final encodedAddress = Uri.encodeComponent(address);
-      final url = 'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey&libraries=maps,drawing,visualization,places,routes&callback=initMap';
+      final url =
+          'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey&libraries=maps,drawing,visualization,places,routes&callback=initMap';
 
       final response = await http.get(Uri.parse(url));
 
@@ -705,7 +1230,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           addressLocation = LatLng(latitude, longitude);
           print('$addressLocation this is the change');
         }
-
       } else {
         print('Address incorrect with no latlng to calculate');
       }
@@ -727,7 +1251,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           addressLocation2 = LatLng(latitude, longitude);
           print('$addressLocation2 this is the change');
         }
-
       } catch (e) {
         print('Address incorrect with no latlng to calculate');
       }
@@ -735,7 +1258,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
       ///for web version
       final apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
       final encodedAddress = Uri.encodeComponent(address);
-      final url = 'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey&libraries=maps,drawing,visualization,places,routes&callback=initMap';
+      final url =
+          'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey&libraries=maps,drawing,visualization,places,routes&callback=initMap';
 
       final response = await http.get(Uri.parse(url));
 
@@ -750,13 +1274,11 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
           addressLocation2 = LatLng(latitude, longitude);
           print('$addressLocation2 this is the change');
         }
-
       } else {
         print('Address incorrect with no latlng to calculate');
       }
     }
   }
-
 
   _onSearchChanged() async {
     searchResultsList();
@@ -766,162 +1288,160 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   searchResultsList() async {
     var showResults = [];
     int dropdownNo = 1;
-    if(_searchController.text != "") {
-        getFaultStream();
-        for(var faultSnapshot in _allFaultResults){
-          ///Need to build a property model that retrieves property data entirely from the db
-          var address = faultSnapshot['address'].toString().toLowerCase();
-          var stage = faultSnapshot['faultStage'];
 
-          if(dropdownValue == 'Filter Fault Stage'){
-              if(address.contains(_searchController.text.toLowerCase())) {
-                showResults.add(faultSnapshot);
-              }
-          } else if(dropdownValue == 'Stage 1'){
-            dropdownNo = 1;
-            if(stage == dropdownNo) {
-              if(address.contains(_searchController.text.toLowerCase())) {
-                showResults.add(faultSnapshot);
-              }
-            }
-          } else if(dropdownValue == 'Stage 2'){
-            dropdownNo = 2;
-            if(stage == dropdownNo) {
-              if(address.contains(_searchController.text.toLowerCase())) {
-                showResults.add(faultSnapshot);
-              }
-            }
-          } else if(dropdownValue == 'Stage 3'){
-            dropdownNo = 3;
-            if(stage == dropdownNo) {
-              if(address.contains(_searchController.text.toLowerCase())) {
-                showResults.add(faultSnapshot);
-              }
-            }
-          } else if(dropdownValue == 'Stage 4'){
-            dropdownNo = 4;
-            if(stage == dropdownNo) {
-              if(address.contains(_searchController.text.toLowerCase())) {
-                showResults.add(faultSnapshot);
-              }
-            }
-          } else if(dropdownValue == 'Stage 5'){
-            dropdownNo = 5;
-            if(stage == dropdownNo) {
-              if(address.contains(_searchController.text.toLowerCase())) {
-                showResults.add(faultSnapshot);
-              }
-            }
-          }
+    // If there is a search text, fetch the relevant faults based on the user's role and selection
+    if (_searchController.text != "") {
+      if (isLocalMunicipality) {
+        await fetchFaultsForLocalMunicipality(); // Fetch faults for the local municipality
+      } else if (!isLocalMunicipality &&
+          selectedMunicipality == "Select Municipality") {
+        await fetchFaultsForAllMunicipalities(); // Fetch faults for all municipalities in the district
+      } else {
+        await fetchFaultsByMunicipality(
+            selectedMunicipality!); // Fetch faults for the selected municipality
+      }
 
-        }
-      // getFaultStream();
-      // for(var faultSnapshot in _allFaultResults){
-      //   ///Need to build a property model that retrieves property data entirely from the db
-      //   var address = faultSnapshot['address'].toString().toLowerCase();
-      //
-      //   if(address.contains(_searchController.text.toLowerCase())) {
-      //     showResults.add(faultSnapshot);
-      //   }
-      // }
-    } else if (dropdownValue != 'Filter Fault Stage') {
-      getFaultStream();
-      for(var faultSnapshot in _allFaultResults){
-        ///Need to build a property model that retrieves property data entirely from the db
+      // Filtering logic
+      for (var faultSnapshot in _allFaultResults) {
         var address = faultSnapshot['address'].toString().toLowerCase();
         var stage = faultSnapshot['faultStage'];
 
-        if(dropdownValue == 'Stage 1'){
-          dropdownNo = 1;
-          if(stage == dropdownNo) {
-            if(address.contains(_searchController.text.toLowerCase())) {
-              showResults.add(faultSnapshot);
-            } else {
-              showResults.add(faultSnapshot);
-            }
+        if (dropdownValue == 'Filter Fault Stage') {
+          if (address.contains(_searchController.text.toLowerCase())) {
+            showResults.add(faultSnapshot);
           }
-        } else if(dropdownValue == 'Stage 2'){
-          dropdownNo = 2;
-          if(stage == dropdownNo) {
-            if(address.contains(_searchController.text.toLowerCase())) {
-              showResults.add(faultSnapshot);
-            } else {
-              showResults.add(faultSnapshot);
-            }
+        } else if (dropdownValue == 'Stage 1' && stage == 1) {
+          if (address.contains(_searchController.text.toLowerCase())) {
+            showResults.add(faultSnapshot);
           }
-        } else if(dropdownValue == 'Stage 3'){
-          dropdownNo = 3;
-          if(stage == dropdownNo) {
-            if(address.contains(_searchController.text.toLowerCase())) {
-              showResults.add(faultSnapshot);
-            } else {
-              showResults.add(faultSnapshot);
-            }
+        } else if (dropdownValue == 'Stage 2' && stage == 2) {
+          if (address.contains(_searchController.text.toLowerCase())) {
+            showResults.add(faultSnapshot);
           }
-        } else if(dropdownValue == 'Stage 4'){
-          dropdownNo = 4;
-          if(stage == dropdownNo) {
-            if(address.contains(_searchController.text.toLowerCase())) {
-              showResults.add(faultSnapshot);
-            } else {
-              showResults.add(faultSnapshot);
-            }
+        } else if (dropdownValue == 'Stage 3' && stage == 3) {
+          if (address.contains(_searchController.text.toLowerCase())) {
+            showResults.add(faultSnapshot);
           }
-        } else if(dropdownValue == 'Stage 5'){
-          dropdownNo = 5;
-          if(stage == dropdownNo) {
-            if(address.contains(_searchController.text.toLowerCase())) {
-              showResults.add(faultSnapshot);
-            } else {
-              showResults.add(faultSnapshot);
-            }
+        } else if (dropdownValue == 'Stage 4' && stage == 4) {
+          if (address.contains(_searchController.text.toLowerCase())) {
+            showResults.add(faultSnapshot);
+          }
+        } else if (dropdownValue == 'Stage 5' && stage == 5) {
+          if (address.contains(_searchController.text.toLowerCase())) {
+            showResults.add(faultSnapshot);
           }
         }
       }
+    } else if (dropdownValue != 'Filter Fault Stage') {
+      if (isLocalMunicipality) {
+        await fetchFaultsForLocalMunicipality();
+      } else if (!isLocalMunicipality &&
+          selectedMunicipality == "Select Municipality") {
+        await fetchFaultsForAllMunicipalities();
+      } else {
+        await fetchFaultsByMunicipality(selectedMunicipality!);
+      }
+
+      // Filtering logic for when there is no search text but the dropdown filter is active
+      for (var faultSnapshot in _allFaultResults) {
+        var address = faultSnapshot['address'].toString().toLowerCase();
+        var stage = faultSnapshot['faultStage'];
+
+        if (dropdownValue == 'Stage 1' && stage == 1) {
+          showResults.add(faultSnapshot);
+        } else if (dropdownValue == 'Stage 2' && stage == 2) {
+          showResults.add(faultSnapshot);
+        } else if (dropdownValue == 'Stage 3' && stage == 3) {
+          showResults.add(faultSnapshot);
+        } else if (dropdownValue == 'Stage 4' && stage == 4) {
+          showResults.add(faultSnapshot);
+        } else if (dropdownValue == 'Stage 5' && stage == 5) {
+          showResults.add(faultSnapshot);
+        }
+      }
     } else {
-      getFaultStream();
+      if (isLocalMunicipality) {
+        await fetchFaultsForLocalMunicipality();
+      } else if (!isLocalMunicipality &&
+          selectedMunicipality == "Select Municipality") {
+        await fetchFaultsForAllMunicipalities();
+      } else {
+        await fetchFaultsByMunicipality(selectedMunicipality!);
+      }
+
       showResults = List.from(_allFaultResults);
     }
-    setState(() {
-      _allFaultResults = showResults;
-    });
+
+    // Update the state with the filtered results
+    if (mounted) {
+      setState(() {
+        _allFaultResults = showResults;
+      });
+    }
   }
 
   searchUnallocatedResultsList() async {
     var showResults = [];
     int dropdownNo = 1;
-    if(_searchController.text != "") {
-      // getFaultStream();
-      // for(var faultSnapshot in _allFaultResults){
-      //   ///Need to build a property model that retrieves property data entirely from the db
-      //   var address = faultSnapshot['address'].toString().toLowerCase();
-      //
-      //   if(address.contains(_searchController.text.toLowerCase())) {
-      //     showResults.add(faultSnapshot);
-      //   }
-      // }
+
+    // If there is search text, fetch relevant faults
+    if (_searchController.text != "") {
+      // You may add specific search functionality for unallocated faults here if needed
     } else if (dropdownValue != 'Filter Fault Stage') {
-      getFaultStream();
-      for(var faultSnapshot in _unassignedFaultResults){
-        ///Need to build a property model that retrieves property data entirely from the db
+      // Fetch unallocated faults based on user's role
+      if (isLocalMunicipality) {
+        await fetchFaultsForLocalMunicipality(); // Fetch faults for the local municipality
+      } else if (!isLocalMunicipality &&
+          selectedMunicipality == "Select Municipality") {
+        await fetchFaultsForAllMunicipalities(); // Fetch faults for all municipalities in the district
+      } else {
+        await fetchFaultsByMunicipality(
+            selectedMunicipality!); // Fetch faults for the selected municipality
+      }
+
+      // Filter results based on the selected dropdown stage
+      for (var faultSnapshot in _unassignedFaultResults) {
         var address = faultSnapshot['address'].toString().toLowerCase();
         var stage = faultSnapshot['faultStage'];
 
-        if(dropdownValue == 'Stage 1'){
-          dropdownNo = 1;
-          if(stage == dropdownNo) {
-            if(address.contains(_searchController.text.toLowerCase())) {
-              showResults.add(faultSnapshot);
-            } else {
-              showResults.add(faultSnapshot);
-            }
+        if (dropdownValue == 'Stage 1' && stage == 1) {
+          if (address.contains(_searchController.text.toLowerCase())) {
+            showResults.add(faultSnapshot);
+          } else {
+            showResults.add(faultSnapshot);
+          }
+        } else if (dropdownValue == 'Stage 2' && stage == 2) {
+          if (address.contains(_searchController.text.toLowerCase())) {
+            showResults.add(faultSnapshot);
+          } else {
+            showResults.add(faultSnapshot);
+          }
+        } else if (dropdownValue == 'Stage 3' && stage == 3) {
+          if (address.contains(_searchController.text.toLowerCase())) {
+            showResults.add(faultSnapshot);
+          } else {
+            showResults.add(faultSnapshot);
+          }
+        } else if (dropdownValue == 'Stage 4' && stage == 4) {
+          if (address.contains(_searchController.text.toLowerCase())) {
+            showResults.add(faultSnapshot);
+          } else {
+            showResults.add(faultSnapshot);
+          }
+        } else if (dropdownValue == 'Stage 5' && stage == 5) {
+          if (address.contains(_searchController.text.toLowerCase())) {
+            showResults.add(faultSnapshot);
+          } else {
+            showResults.add(faultSnapshot);
           }
         } else {
-          getFaultStream();
-          showResults = List.from(_unassignedFaultResults);
+          showResults = List.from(
+              _unassignedFaultResults); // Default to all unassigned faults if no dropdown filter
         }
       }
     }
+
+    // Update the state with the filtered results
     setState(() {
       _unassignedFaultResults = showResults;
     });
@@ -930,56 +1450,61 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
   stageResultsList() async {
     var showResults = [];
     int dropdownNo = 1;
-    if(dropdownValue != 'Filter Fault Stage') {
-      getFaultStream();
-      for(var faultSnapshot in _allFaultResults){
-        ///Need to build a property model that retrieves property data entirely from the db
+
+    if (dropdownValue != 'Filter Fault Stage') {
+      // Fetch faults based on the user's role and selection
+      if (isLocalMunicipality) {
+        await fetchFaultsForLocalMunicipality(); // Fetch faults for the local municipality
+      } else if (!isLocalMunicipality &&
+          selectedMunicipality == "Select Municipality") {
+        await fetchFaultsForAllMunicipalities(); // Fetch faults for all municipalities in the district
+      } else {
+        await fetchFaultsByMunicipality(
+            selectedMunicipality!); // Fetch faults for the selected municipality
+      }
+
+      // Filter results based on the selected stage
+      for (var faultSnapshot in _allFaultResults) {
         var stage = faultSnapshot['faultStage'];
 
-        if(dropdownValue == 'Stage 1'){
-          dropdownNo = 1;
-          if(stage == dropdownNo) {
-            showResults.add(faultSnapshot);
-          }
-        } else if(dropdownValue == 'Stage 2'){
-          dropdownNo = 2;
-          if(stage == dropdownNo) {
-            showResults.add(faultSnapshot);
-          }
-        } else if(dropdownValue == 'Stage 3'){
-          dropdownNo = 3;
-          if(stage == dropdownNo) {
-            showResults.add(faultSnapshot);
-          }
-        } else if(dropdownValue == 'Stage 4'){
-          dropdownNo = 4;
-          if(stage == dropdownNo) {
-            showResults.add(faultSnapshot);
-          }
-        } else if(dropdownValue == 'Stage 5'){
-          dropdownNo = 5;
-          if(stage == dropdownNo) {
-            showResults.add(faultSnapshot);
-          }
+        if (dropdownValue == 'Stage 1' && stage == 1) {
+          showResults.add(faultSnapshot);
+        } else if (dropdownValue == 'Stage 2' && stage == 2) {
+          showResults.add(faultSnapshot);
+        } else if (dropdownValue == 'Stage 3' && stage == 3) {
+          showResults.add(faultSnapshot);
+        } else if (dropdownValue == 'Stage 4' && stage == 4) {
+          showResults.add(faultSnapshot);
+        } else if (dropdownValue == 'Stage 5' && stage == 5) {
+          showResults.add(faultSnapshot);
         }
       }
     } else {
-      getFaultStream();
+      // If no filter is applied, fetch all faults and display them
+      if (isLocalMunicipality) {
+        await fetchFaultsForLocalMunicipality();
+      } else if (!isLocalMunicipality &&
+          selectedMunicipality == "Select Municipality") {
+        await fetchFaultsForAllMunicipalities();
+      } else {
+        await fetchFaultsByMunicipality(selectedMunicipality!);
+      }
       showResults = List.from(_allFaultResults);
     }
+
+    // Update the state with the filtered results
     setState(() {
       _allFaultResults = showResults;
     });
   }
 
-
   void checkRole() {
     getUsersStream();
-    if(myUserRole == 'Admin'|| myUserRole == 'Administrator'){
+    if (myUserRole == 'Admin' || myUserRole == 'Administrator') {
       adminAcc = true;
       managerAcc = false;
       employeeAcc = false;
-    } else if(myUserRole == 'Manager'){
+    } else if (myUserRole == 'Manager') {
       adminAcc = false;
       managerAcc = true;
       employeeAcc = false;
@@ -988,128 +1513,207 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
       managerAcc = false;
       employeeAcc = true;
     }
-
   }
 
-  getUsersStream() async{
-    var data = await FirebaseFirestore.instance.collection('users').get();
-    _allUserRolesResults = data.docs;
-    getUserDetails();
+  getUsersStream() async {
+    QuerySnapshot data;
+
+    try {
+      if (isLocalMunicipality) {
+        // Fetch users for local municipality
+        if (municipalityId.isEmpty) {
+          print("Error: Municipality ID is empty for local municipality.");
+          return;
+        }
+
+        data = await FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .collection('users')
+            .get();
+      } else {
+        // District-based user: fetch users from all municipalities under the district
+        if (municipalityId.isEmpty) {
+          print(
+              "No specific municipalityId found, fetching users from all municipalities under district: $districtId");
+
+          // Use collectionGroup to search across all municipalities under the district
+          data = await FirebaseFirestore.instance
+              .collectionGroup(
+                  'users') // Search across all municipalities' users under the district
+              .where('districtId', isEqualTo: districtId)
+              .get();
+        } else {
+          // Fetch users for the specific municipality
+          data = await FirebaseFirestore.instance
+              .collection('districts')
+              .doc(districtId)
+              .collection('municipalities')
+              .doc(municipalityId)
+              .collection('users')
+              .get();
+        }
+      }
+
+      if (data.docs.isEmpty) {
+        print("No users found for this query.");
+      }
+
+      _allUserRolesResults = data.docs;
+      getUserDetails(); // Process the user details after fetching
+    } catch (e) {
+      print("Error fetching user data: $e");
+    }
   }
 
   getUserDetails() async {
-    for (var userSnapshot in _allUserRolesResults) {
-      ///Need to build a property model that retrieves property data entirely from the db
-      var userEmail = userSnapshot['email'].toString();
-      var role = userSnapshot['userRole'].toString();
-      var userName = userSnapshot['userName'].toString();
-      var firstName = userSnapshot['firstName'].toString();
-      var lastName = userSnapshot['lastName'].toString();
-      var userDepartment = userSnapshot['deptName'].toString();
+    try {
+      for (var userSnapshot in _allUserRolesResults) {
+        Map<String, dynamic> userData =
+            userSnapshot.data() as Map<String, dynamic>;
 
-      _allUserNames.add(userName);
-      _allUserByNames.add('$firstName $lastName');
+        // Safely retrieve user fields
+        var userEmail = userData['email'] ?? '';
+        var role = userData['userRole'] ?? 'Unknown';
+        var userName = userData['userName'] ?? 'Unknown';
+        var firstName = userData['firstName'] ?? 'Unknown';
+        var lastName = userData['lastName'] ?? 'Unknown';
+        var userDepartment = userData['deptName'] ?? 'Unknown';
 
-      if (userEmail == myUserEmail) {
-        myUserRole = role;
-        print('My Role is::: $myUserRole');
-        myDepartment = userDepartment;
-        print('My Department is::: $myDepartment');
+        // Add user data to lists
+        _allUserNames.add(userName);
+        _allUserByNames.add('$firstName $lastName');
 
-        if(myUserRole == 'Admin'|| myUserRole == 'Administrator'){
-          adminAcc = true;
-          managerAcc = false;
-          employeeAcc = false;
-        } else if(myUserRole == 'Service Provider'){
-          adminAcc = true;
-          managerAcc = false;
-          employeeAcc = false;
-        } else if(myUserRole == 'Manager'){
-          adminAcc = false;
-          managerAcc = true;
-          employeeAcc = false;
-        } else {
-          adminAcc = false;
-          managerAcc = false;
-          employeeAcc = true;
+        // Check if the current user is the logged-in user
+        if (userEmail == myUserEmail) {
+          myUserRole = role;
+          myDepartment = userDepartment;
+
+          print('My Role is::: $myUserRole');
+          print('My Department is::: $myDepartment');
+
+          // Assign role-based access
+          if (myUserRole == 'Admin' || myUserRole == 'Administrator') {
+            adminAcc = true;
+            managerAcc = false;
+            employeeAcc = false;
+          } else if (myUserRole == 'Manager') {
+            adminAcc = false;
+            managerAcc = true;
+            employeeAcc = false;
+          } else {
+            adminAcc = false;
+            managerAcc = false;
+            employeeAcc = true;
+          }
+
+          // Fetch similar faults based on department
+          fetchSimilarFaultsBasedOnDepartment();
         }
-
-        if(myDepartment=="Water & Sanitation"){
-          getSimilarFaultStreamWater();
-        } else if (myDepartment=="Waste Managment"){
-          getSimilarFaultStreamWaste();
-        } else if (myDepartment=="Electricity"){
-          getSimilarFaultStreamElectricity();
-        } else if (myDepartment=="Roadworks"){
-          getSimilarFaultStreamRoad();
-        } else if (myDepartment=="Service Provider") {
-          getSimilarFaultStreamWater();
-          getSimilarFaultStreamWaste();
-          getSimilarFaultStreamElectricity();
-          getSimilarFaultStreamRoad();
-        }
-
       }
+
+      getUserDepartmentDetails(); // Additional method to fetch department details
+    } catch (e) {
+      print("Error in getUserDetails: $e");
     }
-    getUserDepartmentDetails();
+  }
+
+  void fetchSimilarFaultsBasedOnDepartment() {
+    if (myDepartment == "Water & Sanitation") {
+      getSimilarFaultStreamWater();
+    // } else if (myDepartment == "Waste Management") {
+    //   getSimilarFaultStreamWaste();
+    // } else if (myDepartment == "Roadworks") {
+    //   getSimilarFaultStreamRoad();
+    } else if (myDepartment == "Service Provider") {
+      getSimilarFaultStreamWater();
+      // getSimilarFaultStreamWaste();
+      // getSimilarFaultStreamRoad();
+    }
   }
 
   getUserDepartmentDetails() async {
+    try {
+      QuerySnapshot data;
 
-    var data = await FirebaseFirestore.instance.collection('users').get();
-    _allUserResults = data.docs;
-
-    for (var userSnapshot in _allUserResults) {
-      ///Need to build a property model that retrieves property data entirely from the db
-      var userEmail = userSnapshot['email'].toString();
-      var role = userSnapshot['userRole'].toString();
-      var userName = userSnapshot['userName'].toString();
-      var firstName = userSnapshot['firstName'].toString();
-      var lastName = userSnapshot['lastName'].toString();
-      var userDepartment = userSnapshot['deptName'].toString();
-
-      if (role == 'Manager'){
-        if(userDepartment==myDepartment){
-          _managerUserNames.add(userName);
-          print('Manager to list::: $userName');
-          autoManager = userName;
+      if (isLocalMunicipality) {
+        // Handle for local municipality users
+        if (municipalityId.isNotEmpty) {
+          data = await FirebaseFirestore.instance
+              .collection('localMunicipalities')
+              .doc(municipalityId)
+              .collection('users')
+              .get();
+        } else {
+          print("Error: Municipality ID is empty for local municipality.");
+          return;
         }
-        else if ((myDepartment != 'Water & Sanitation' && myDepartment != 'Waste Management' && myDepartment != 'Electricity' && myDepartment != 'Roadworks')) {
-          _managerUserNames.add(userName);
-          print('Manager to list::: $userName');
-        }
-
-
-      } else if (role == 'Employee'){
-        if(userDepartment==myDepartment ){
-          _employeesUserNames.add(userName);
-          print('Employee to list::: $userName');
-        }
-        else if ((myDepartment != 'Water & Sanitation' && myDepartment != 'Waste Management' && myDepartment != 'Electricity' && myDepartment != 'Roadworks')) {
-          _employeesUserNames.add(userName);
-          print('Employee to list::: $userName');
+      } else {
+        // Handle for district-based municipality users
+        if (districtId.isNotEmpty) {
+          // Since municipalityId might be empty, we avoid it in this query
+          data = await FirebaseFirestore.instance
+              .collectionGroup('users')
+              .where('districtId', isEqualTo: districtId)
+              .get();
+        } else {
+          print("Error: District ID is empty.");
+          return;
         }
       }
+
+      _allUserResults = data.docs;
+
+      for (var userSnapshot in _allUserResults) {
+        var userEmail = userSnapshot['email'].toString();
+        var role = userSnapshot.data().containsKey('userRole')
+            ? userSnapshot['userRole'].toString()
+            : 'Unknown';
+        var userName = userSnapshot.data().containsKey('userName')
+            ? userSnapshot['userName'].toString()
+            : 'Unknown';
+        var firstName = userSnapshot['firstName'].toString();
+        var lastName = userSnapshot['lastName'].toString();
+        var userDepartment = userSnapshot.data().containsKey('deptName')
+            ? userSnapshot['deptName'].toString()
+            : 'Unknown';
+
+        if (role == 'Manager') {
+          if (userDepartment == myDepartment) {
+            _managerUserNames.add(userName);
+            autoManager = userName;
+          }
+        } else if (role == 'Employee') {
+          if (userDepartment == myDepartment) {
+            _employeesUserNames.add(userName);
+          }
+        }
+      }
+      _employeesUserNames = _employeesUserNames.toSet().toList();
+
+      print("User details fetched successfully.");
+    } catch (e) {
+      print("Error fetching user department details: $e");
     }
   }
 
-  Future<Widget> _getImage(BuildContext context, String imageName) async{
+  Future<Widget> _getImage(BuildContext context, String imageName) async {
     Image image;
     final value = await FireStorageService.loadImage(context, imageName);
 
     final imageUrl = await storageRef.child(imageName).getDownloadURL();
 
     ///Check what the app is running on
-    if(defaultTargetPlatform == TargetPlatform.android){
-      image =Image.network(
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      image = Image.network(
         value.toString(),
         fit: BoxFit.fill,
         width: double.infinity,
         height: double.infinity,
       );
-    }else{
+    } else {
       // print('The url is::: $imageUrl');
-      image =Image.network(
+      image = Image.network(
         imageUrl,
         fit: BoxFit.fitHeight,
         width: double.infinity,
@@ -1127,10 +1731,15 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
         borderRadius: BorderRadius.circular(12),
         color: Colors.white,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8,),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 8,
+      ),
       child: Row(
         children: [
-          const SizedBox(width: 6,),
+          const SizedBox(
+            width: 6,
+          ),
           Text(
             faultDat,
             style: const TextStyle(
@@ -1142,2153 +1751,2172 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     );
   }
 
+  String getFaultStageText(int stage) {
+    switch (stage) {
+      case 1:
+        return "Initial Report";
+      case 2:
+        return "In Progress";
+      case 3:
+        return "Escalated";
+      case 4:
+        return "Resolved";
+      case 5:
+        return "Closed";
+      default:
+        return "Unknown";
+    }
+  }
+
+  Color getFaultStageColor(int stage) {
+    switch (stage) {
+      case 1:
+        return Colors.deepOrange;
+      case 2:
+        return Colors.orange;
+      case 3:
+        return Colors.orangeAccent;
+      case 4:
+        return Colors.greenAccent;
+      case 5:
+        return Colors.lightGreen;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  void _callReporter(Map<String, dynamic> fault) {
+    String reporterPhone = fault['reporterContact'] ?? '';
+
+    if (reporterPhone.isNotEmpty) {
+      final Uri tel = Uri.parse('tel:$reporterPhone');
+      launchUrl(tel);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No reporter contact found')),
+      );
+    }
+  }
+
+  // void _updateReport(Map<String, dynamic> fault) {
+  //   // Logic to update the fault report (can include form submission, editing fields, etc.)
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) => UpdateFaultScreen(
+  //         faultData: fault,
+  //       ),
+  //     ),
+  //   );
+  // }
+
   Widget faultCard() {
     if (_allFaultResults.isNotEmpty) {
-      return _isLoading
-          ? const Center(child: CircularProgressIndicator(),)
-          : ListView.builder(
-        itemCount: _allFaultResults.length,
-        itemBuilder: (context, index) {
-          String status;
-          if (_allFaultResults[index]['faultResolved'] == false) {
-            status = "Pending";
-          } else {
-            status = "Completed";
-          }
-
-          // if(_closeFaultResults.isNotEmpty){
-          //   for(int i = 0; i <= _closeFaultResults.length; i++){
-          //     if(_allFaultResults[index]['address'] == _closeFaultResults[i]){
-          //       print('Should display notif on ::: ${_allFaultResults[index]['address']}');
-          //       toggleVisibilityNotification();
-          //     }else{
-          //       visNotification = false;
-          //     }
-          //   }
-          // }
-
-          if(_allFaultResults[index]['attendeeAllocated'] == ''){
-            visNotification = true;
-          } else {
-            visNotification = false;
-          }
-
-
-
-          if (_allFaultResults[index]['faultResolved'] == false) {
-            if(myDepartment == _allFaultResults[index]['faultType']){
-              return Card(
-                margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Fault Information',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                            ),
-                            Visibility(
-                                visible: visNotification,
-                                child: const Icon(
-                                  Icons.notification_important,
-                                  color: Colors.red,)),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10,),
-                      Text(
-                        'Reference Number: ${_allFaultResults[index]['ref']}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['accountNumber'] != "")...[
-                            Text(
-                              'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Text(
-                        'Street Address of Fault: ${_allFaultResults[index]['address']}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Text(
-                        'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['faultStage'] == 1)...[
-                            Text(
-                              'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            if(_allFaultResults[index]['faultStage'] == 2) ...[
-                              Text(
-                                'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
-                              ),
-                              const SizedBox(height: 5,),
-                            ] else
-                              if(_allFaultResults[index]['faultStage'] == 3) ...[
-                                Text(
-                                  'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
-                                ),
-                                const SizedBox(height: 5,),
-                              ] else
-                                if(_allFaultResults[index]['faultStage'] == 4) ...[
-                                  Text(
-                                    'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.greenAccent),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else
-                                  if(_allFaultResults[index]['faultStage'] == 5) ...[
-                                    Text(
-                                      'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
-                                    ),
-                                    const SizedBox(height: 5,),
-                                  ] else
-                                    ...[
-                                    ],
-                        ],
-                      ),
-                      Text(
-                        'Fault Type: ${_allFaultResults[index]['faultType']}',
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['faultDescription'] != "")...[
-                            Text(
-                              'Fault Description: ${_allFaultResults[index]['faultDescription']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['adminComment'] != "")...[
-                            Text(
-                              'Admin Comment: ${_allFaultResults[index]['adminComment']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['reallocationComment'] != "")...[
-                            Text(
-                              'Reason fault reallocated: ${_allFaultResults[index]['reallocationComment']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['managerAllocated'] != "")...[
-                            Text(
-                              'Manager of fault: ${_allFaultResults[index]['managerAllocated']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['attendeeAllocated'] != "")...[
-                            Text(
-                              'Attendee Allocated: ${_allFaultResults[index]['attendeeAllocated']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['attendeeCom1'] != "")...[
-                            Text(
-                              'Attendee Comment: ${_allFaultResults[index]['attendeeCom1']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['managerCom1'] != "")...[
-                            Text(
-                              'Manager Comment: ${_allFaultResults[index]['managerCom1']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['attendeeCom2'] != "")...[
-                            Text(
-                              'Attendee Followup Comment: ${_allFaultResults[index]['attendeeCom2']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['managerCom2'] != "")...[
-                            Text(
-                              'Manager Final/Additional Comment: ${_allFaultResults[index]['managerCom2']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['attendeeCom3'] != "")...[
-                            Text(
-                              'Attendee Final Comment: ${_allFaultResults[index]['attendeeCom3']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['managerCom3'] != "")...[
-                            Text(
-                              'Manager Final Comment: ${_allFaultResults[index]['managerCom3']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Text(
-                        'Resolve State: $status',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-
-                      const SizedBox(height: 5,),
-                      Center(
-                        child: BasicIconButtonGrey(
-                          onPress: () async {
-                            imageName = 'files/faultImages/${_allFaultResults[index]['dateReported']}/${_allFaultResults[index]['address']}';
-                            dateReported = _allFaultResults[index]['dateReported'];
-
-                            Navigator.push(context, MaterialPageRoute(builder: (context) =>
-                                ImageZoomFaultPage(imageName: imageName, dateReported: dateReported)));
-                          },
-                          labelText: 'View Fault Image',
-                          fSize: 14,
-                          faIcon: const FaIcon(Icons.zoom_in,),
-                          fgColor: Colors.grey,
-                          btSize: const Size(100, 38),
-                        ),
-                      ),
-                      Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              BasicIconButtonGrey(
-                                onPress: () async {
-                                  accountNumberRep = _allFaultResults[index]['accountNumber'];
-                                  locationGivenRep = _allFaultResults[index]['address'];
-
-                                  Navigator.push(context, MaterialPageRoute(
-                                      builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                  ));
-                                },
-                                labelText: 'Location',
-                                fSize: 14,
-                                faIcon: const FaIcon(Icons.map,),
-                                fgColor: Colors.green,
-                                btSize: const Size(50, 38),
-                              ),
-                              BasicIconButtonGrey(
-                                onPress: () async {
-                                  showDialog(
-                                      barrierDismissible: false,
-                                      context: context,
-                                      builder: (context) {
-                                        return
-                                          AlertDialog(
-                                            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
-                                            title: const Text("Call Reporter!"),
-                                            content: const Text("Would you like to call the individual who logged the fault?"),
-                                            actions: [
-                                              IconButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(Icons.cancel, color: Colors.red,),
-                                              ),
-                                              IconButton(
-                                                onPressed: () {
-                                                  reporterCellGiven = _allFaultResults[index]['reporterContact'];
-
-                                                  final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                                  launchUrl(_tel);
-
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(Icons.done, color: Colors.green,),
-                                              ),
-                                            ],
-                                          );
-                                      });
-                                },
-                                labelText: 'Call User',
-                                fSize: 14,
-                                faIcon: const FaIcon(Icons.call,),
-                                fgColor: Colors.orange,
-                                btSize: const Size(50, 38),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              Visibility(
-                                visible: adminAcc,
-                                child: Center(
-                                  child: BasicIconButtonGrey(
-                                    onPress: () async {
-                                      _reassignDept(_allFaultResults[index]);
-                                    },
-                                    labelText: 'Reallocate Department',
-                                    fSize: 14,
-                                    faIcon: const FaIcon(Icons.compare_arrows,),
-                                    fgColor: Colors.blue,
-                                    btSize: const Size(50, 38),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          // const SizedBox(height: 5,),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Visibility(
-                                visible: (_allFaultResults[index]['faultStage'] == 2 || _allFaultResults[index]['faultStage'] == 3) && (managerAcc || employeeAcc),
-                                child: BasicIconButtonGrey(
-                                  onPress: () async {
-                                    faultStage = _allFaultResults[index]['faultStage'];
-                                    ///working on
-                                    _returnFaultToAdmin(_allFaultResults[index]);
-                                  },
-                                  labelText: 'Return',
-                                  fSize: 14,
-                                  faIcon: const FaIcon(Icons.error_outline,),
-                                  fgColor: Colors.orangeAccent,
-                                  btSize: const Size(50, 38),
-                                ),
-                              ),
-                              Visibility(
-                                visible: adminAcc,
-                                child: BasicIconButtonGrey(
-                                  onPress: () async {
-                                    _reassignFault(_allFaultResults[index]);
-                                  },
-                                  labelText: 'Reassign',
-                                  fSize: 14,
-                                  faIcon: const FaIcon(Icons.update,),
-                                  fgColor: Theme.of(context).primaryColor,
-                                  btSize: const Size(50, 38),
-                                ),
-                              ),
-                              BasicIconButtonGrey(
-                                onPress: () async {
-                                  faultStage = _allFaultResults[index]['faultStage'];
-                                  _updateReport(_allFaultResults[index]);
-                                },
-                                labelText: 'Update',
-                                fSize: 14,
-                                faIcon: const FaIcon(Icons.edit,),
-                                fgColor: Colors.blue,
-                                btSize: const Size(50, 38),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            } else if(myDepartment == 'Service Provider' || myDepartment == 'Developer'){
-              return Card(
-                margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Fault Information',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                            ),
-                            Visibility(
-                                visible: visNotification,
-                                child: const Icon(
-                                  Icons.notification_important,
-                                  color: Colors.red,)),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10,),
-                      Text(
-                        'Reference Number: ${_allFaultResults[index]['ref']}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['accountNumber'] != "")...[
-                            Text(
-                              'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Text(
-                        'Street Address of Fault: ${_allFaultResults[index]['address']}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Text(
-                        'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['faultStage'] == 1)...[
-                            Text(
-                              'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            if(_allFaultResults[index]['faultStage'] == 2) ...[
-                              Text(
-                                'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
-                              ),
-                              const SizedBox(height: 5,),
-                            ] else
-                              if(_allFaultResults[index]['faultStage'] == 3) ...[
-                                Text(
-                                  'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
-                                ),
-                                const SizedBox(height: 5,),
-                              ] else
-                                if(_allFaultResults[index]['faultStage'] == 4) ...[
-                                  Text(
-                                    'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else
-                                  if(_allFaultResults[index]['faultStage'] == 5) ...[
-                                    Text(
-                                      'Fault Stage: ${_allFaultResults[index]['faultStage'].toString()}',
-                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
-                                    ),
-                                    const SizedBox(height: 5,),
-                                  ] else
-                                    ...[
-                                    ],
-                        ],
-                      ),
-                      Text(
-                        'Fault Type: ${_allFaultResults[index]['faultType']}',
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['faultDescription'] != "")...[
-                            Text(
-                              'Fault Description: ${_allFaultResults[index]['faultDescription']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['adminComment'] != "")...[
-                            Text(
-                              'Admin Comment: ${_allFaultResults[index]['adminComment']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['reallocationComment'] != "")...[
-                            Text(
-                              'Reason fault reallocated: ${_allFaultResults[index]['reAllocationComment']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['managerAllocated'] != "")...[
-                            Text(
-                              'Manager of fault: ${_allFaultResults[index]['managerAllocated']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['attendeeAllocated'] != "")...[
-                            Text(
-                              'Attendee Allocated: ${_allFaultResults[index]['attendeeAllocated']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['attendeeCom1'] != "")...[
-                            Text(
-                              'Attendee Comment: ${_allFaultResults[index]['attendeeCom1']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['managerCom1'] != "")...[
-                            Text(
-                              'Manager Comment: ${_allFaultResults[index]['managerCom1']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['attendeeCom2'] != "")...[
-                            Text(
-                              'Attendee Followup Comment: ${_allFaultResults[index]['attendeeCom2']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['managerCom2'] != "")...[
-                            Text(
-                              'Manager Final/Additional Comment: ${_allFaultResults[index]['managerCom2']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['attendeeCom3'] != "")...[
-                            Text(
-                              'Attendee Final Comment: ${_allFaultResults[index]['attendeeCom3']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_allFaultResults[index]['managerCom3'] != "")...[
-                            Text(
-                              'Manager Final Comment: ${_allFaultResults[index]['managerCom3']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Text(
-                        'Resolve State: $status',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-
-                      const SizedBox(height: 5,),
-                      Center(
-                        child: BasicIconButtonGrey(
-                          onPress: () async {
-                            imageName = 'files/faultImages/${_allFaultResults[index]['dateReported']}/${_allFaultResults[index]['address']}';
-                            dateReported = _allFaultResults[index]['dateReported'];
-
-                            Navigator.push(context, MaterialPageRoute(builder: (context) =>
-                                ImageZoomFaultPage(imageName: imageName, dateReported: dateReported)));
-                          },
-                          labelText: 'View Fault Image',
-                          fSize: 14,
-                          faIcon: const FaIcon(Icons.zoom_in,),
-                          fgColor: Colors.grey,
-                          btSize: const Size(100, 38),
-                        ),
-                      ),
-                      Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              BasicIconButtonGrey(
-                                onPress: () async {
-                                  accountNumberRep = _allFaultResults[index]['accountNumber'];
-                                  locationGivenRep = _allFaultResults[index]['address'];
-
-                                  Navigator.push(context, MaterialPageRoute(
-                                      builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                  ));
-                                },
-                                labelText: 'Location',
-                                fSize: 14,
-                                faIcon: const FaIcon(Icons.map,),
-                                fgColor: Colors.green,
-                                btSize: const Size(50, 38),
-                              ),
-                              BasicIconButtonGrey(
-                                onPress: () async {
-                                  showDialog(
-                                      barrierDismissible: false,
-                                      context: context,
-                                      builder: (context) {
-                                        return
-                                          AlertDialog(
-                                            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
-                                            title: const Text("Call Reporter!"),
-                                            content: const Text("Would you like to call the individual who logged the fault?"),
-                                            actions: [
-                                              IconButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(Icons.cancel, color: Colors.red,),
-                                              ),
-                                              IconButton(
-                                                onPressed: () {
-                                                  reporterCellGiven = _allFaultResults[index]['reporterContact'];
-
-                                                  final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                                  launchUrl(_tel);
-
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(Icons.done, color: Colors.green,),
-                                              ),
-                                            ],
-                                          );
-                                      });
-                                },
-                                labelText: 'Call User',
-                                fSize: 14,
-                                faIcon: const FaIcon(Icons.call,),
-                                fgColor: Colors.orange,
-                                btSize: const Size(50, 38),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              Visibility(
-                                visible: adminAcc,
-                                child: Center(
-                                  child: BasicIconButtonGrey(
-                                    onPress: () async {
-                                      _reassignDept(_allFaultResults[index]);
-                                    },
-                                    labelText: 'Department Reallocation',
-                                    fSize: 14,
-                                    faIcon: const FaIcon(Icons.compare_arrows,),
-                                    fgColor: Colors.blue,
-                                    btSize: const Size(50, 38),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          // const SizedBox(height: 5,),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Visibility(
-                                visible: (_allFaultResults[index]['faultStage'] == 2 || _allFaultResults[index]['faultStage'] == 3) && (managerAcc || employeeAcc),
-                                child: BasicIconButtonGrey(
-                                  onPress: () async {
-                                    faultStage = _allFaultResults[index]['faultStage'];
-                                    _returnFaultToAdmin(_allFaultResults[index]);
-                                  },
-                                  labelText: 'Return',
-                                  fSize: 14,
-                                  faIcon: const FaIcon(Icons.error_outline,),
-                                  fgColor: Colors.orangeAccent,
-                                  btSize: const Size(50, 38),
-                                ),
-                              ),
-                              Visibility(
-                                visible: adminAcc,
-                                child: BasicIconButtonGrey(
-                                  onPress: () async {
-                                    _reassignFault(_allFaultResults[index]);
-                                  },
-                                  labelText: 'Reassign',
-                                  fSize: 14,
-                                  faIcon: const FaIcon(Icons.update,),
-                                  fgColor: Theme.of(context).primaryColor,
-                                  btSize: const Size(50, 38),
-                                ),
-                              ),
-                              BasicIconButtonGrey(
-                                onPress: () async {
-                                  faultStage = _allFaultResults[index]['faultStage'];
-                                  _updateReport(_allFaultResults[index]);
-                                },
-                                labelText: 'Update',
-                                fSize: 14,
-                                faIcon: const FaIcon(Icons.edit,),
-                                fgColor: Colors.blue,
-                                btSize: const Size(50, 38),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            } else {
-              return const SizedBox();
-            }
-          }
+      return GestureDetector(
+        onTap: () {
+          // Refocus when tapping within the tab content
+          faultFocusNode.requestFocus();
         },
+        child: KeyboardListener(
+          focusNode: faultFocusNode,
+          onKeyEvent: (KeyEvent event) {
+            if (event is KeyDownEvent) {
+              final double pageScrollAmount =
+                  _allFaultsScrollController.position.viewportDimension;
+
+              if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                _allFaultsScrollController.animateTo(
+                  _allFaultsScrollController.offset + 50,
+                  duration: const Duration(milliseconds: 100),
+                  curve: Curves.easeIn,
+                );
+              } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                _allFaultsScrollController.animateTo(
+                  _allFaultsScrollController.offset - 50,
+                  duration: const Duration(milliseconds: 100),
+                  curve: Curves.easeIn,
+                );
+              } else if (event.logicalKey == LogicalKeyboardKey.pageDown) {
+                _allFaultsScrollController.animateTo(
+                  _allFaultsScrollController.offset + pageScrollAmount,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeIn,
+                );
+              } else if (event.logicalKey == LogicalKeyboardKey.pageUp) {
+                _allFaultsScrollController.animateTo(
+                  _allFaultsScrollController.offset - pageScrollAmount,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeIn,
+                );
+              }
+            }
+          },
+          child: Scrollbar(
+            controller: _allFaultsScrollController,
+            thickness: 12, // Customize the thickness of the scrollbar
+            radius: const Radius.circular(8), // Rounded edges for the scrollbar
+            thumbVisibility: true,
+            trackVisibility: true, // Makes the track visible as well
+            interactive: true,
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    controller: _allFaultsScrollController,
+                    shrinkWrap: true,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: _allFaultResults.length,
+                    itemBuilder: (context, index) {
+                      if (index >= _allFaultResults.length) {
+                        // Ensure index does not exceed the bounds
+                        return const SizedBox();
+                      }
+
+                      var fault =
+                          (_allFaultResults[index] as QueryDocumentSnapshot)
+                              .data() as Map<String, dynamic>;
+                      if (fault.isEmpty) {
+                        return const SizedBox(); // Skip empty faults
+                      }
+                      String status = (fault['faultResolved'] == false)
+                          ? "Pending"
+                          : "Completed";
+                      bool showNotification = (fault['attendeeAllocated'] == '' ||
+                          fault['faultStage'] == 1 ||
+                          fault['faultResolved'] == false);
+
+                      var faultAddress = (fault['address'] != null &&
+                              fault['address'].isNotEmpty)
+                          ? fault['address']
+                          : 'No address provided';
+                      var faultType = (fault['faultType'] != null &&
+                              fault['faultType'].isNotEmpty)
+                          ? fault['faultType']
+                          : 'No fault type provided';
+
+                      // Convert dateReported to a formatted string if it's a Timestamp
+                      var dateReported;
+                      if (fault['dateReported'] is Timestamp) {
+                        dateReported = DateFormat('yyyy-MM-dd – kk:mm').format(
+                          fault['dateReported'].toDate(),
+                        );
+                      } else {
+                        dateReported =
+                            fault['dateReported']; // If it's already a string
+                      }
+
+                      // Clean the address to remove invalid characters
+                      String cleanedAddress =
+                          faultAddress.replaceAll(RegExp(r'[\/:*?"<>|]'), '');
+
+                      // Render card only if the fault is related to the user's department
+                      if (myDepartment == fault['faultType']) {
+                        return Card(
+                          margin:
+                              const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Center(
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment
+                                        .center, // Align items vertically in the center
+                                    children: [
+                                      Visibility(
+                                        visible: showNotification,
+                                        child: const Column(
+                                          // Use Column to stack notification and text vertically
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Icon(Icons.notification_important,
+                                                color: Colors.red),
+                                            SizedBox(width: 5),
+                                            Text(
+                                              'Attention needed!',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.red,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      // Centralize "Fault Information" again
+                                      const Expanded(
+                                        child: Center(
+                                          // This centers the "Fault Information" text
+                                          child: Text(
+                                            'Fault Information',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                            textAlign: TextAlign
+                                                .center, // Ensure text is centered
+                                          ),
+                                        ),
+                                      ),
+                                      Visibility(
+                                        visible: visNotification,
+                                        child: const Icon(
+                                          Icons.notification_important,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Reference Number: ${fault['ref']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5),
+                                if (fault['accountNumber'] != "") ...[
+                                  Text(
+                                    'Reporter Account Number: ${fault['accountNumber']}',
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5),
+                                ],
+
+                                Text(
+                                  'Street Address of Fault: $faultAddress',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5),
+
+                                Text(
+                                  'Fault Type: $faultType',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  'Date of Fault Report: $dateReported',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5),
+
+                                if (fault['faultDescription'] != "") ...[
+                                  Text(
+                                    'Fault Description: ${fault['faultDescription']}',
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5),
+                                ],
+
+                                if (fault['managerAllocated'] != "") ...[
+                                  Text(
+                                    'Manager Allocated: ${fault['managerAllocated']}',
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5),
+                                ],
+
+                                if (fault['attendeeAllocated'] != "") ...[
+                                  Text(
+                                    'Attendee Allocated: ${fault['attendeeAllocated']}',
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5),
+                                ],
+
+                                // Comments Section (Manager and Attendee Comments)
+                                if (fault['managerCom1'] != "") ...[
+                                  Text(
+                                    'Manager Comment: ${fault['managerCom1']}',
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5),
+                                ],
+                                if (fault['attendeeCom1'] != "") ...[
+                                  Text(
+                                    'Attendee Comment: ${fault['attendeeCom1']}',
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5),
+                                ],
+                                if (fault['managerCom2'] != "") ...[
+                                  Text(
+                                    'Manager Follow-up Comment: ${fault['managerCom2']}',
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5),
+                                ],
+                                if (fault['attendeeCom2'] != "") ...[
+                                  Text(
+                                    'Attendee Follow-up Comment: ${fault['attendeeCom2']}',
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5),
+                                ],
+                                if (fault['managerReturnCom'] != "") ...[
+                                  Text(
+                                    'Reason for return: ${fault['managerReturnCom']}',
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5),
+                                ],
+                                if (fault['adminComment'] != null &&
+                                    fault['adminComment'].isNotEmpty) ...[
+                                  Text(
+                                    'Admin Comment: ${fault['adminComment']}',
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w400),
+                                  ),
+                                  const SizedBox(height: 5),
+                                ],
+
+                                Text(
+                                  'Resolve State: $status',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5),
+
+                                Text(
+                                  'Fault Stage: ${fault['faultStage'].toString()}',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: getFaultStageColor(
+                                          fault['faultStage'])),
+                                ),
+                                const SizedBox(height: 5),
+                                Center(
+                                  child: Column(
+                                    children: [
+                                      // First Row with "View Fault Image", "Location", "Call User"
+                                      Wrap(
+                                        alignment: WrapAlignment.center,
+                                        spacing: 10.0, // Space between buttons
+                                        runSpacing:
+                                            10.0, // Space between rows when wrapped
+                                        children: [
+                                          BasicIconButtonGrey(
+                                            onPress: () async {
+                                              try {
+                                                if (!isLocalUser &&
+                                                    !isLocalMunicipality) {
+                                                  if (selectedMunicipality ==
+                                                          null ||
+                                                      selectedMunicipality ==
+                                                          "Select Municipality") {
+                                                    Fluttertoast.showToast(
+                                                      msg:
+                                                          "Please select a municipality first!",
+                                                      toastLength:
+                                                          Toast.LENGTH_SHORT,
+                                                      gravity:
+                                                          ToastGravity.CENTER,
+                                                    );
+                                                    return;
+                                                  }
+                                                }
+
+                                                String municipalityContext =
+                                                    isLocalMunicipality ||
+                                                            isLocalUser
+                                                        ? municipalityId
+                                                        : selectedMunicipality!;
+
+                                                if (municipalityContext.isEmpty) {
+                                                  Fluttertoast.showToast(
+                                                    msg:
+                                                        "Invalid municipality selection or missing municipality.",
+                                                    toastLength:
+                                                        Toast.LENGTH_SHORT,
+                                                    gravity: ToastGravity.CENTER,
+                                                  );
+                                                  return;
+                                                }
+                                                String dateReported =
+                                                    fault['dateReported'];
+
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        ImageZoomFaultPage(
+                                                      imageName: cleanedAddress,
+                                                      dateReported: dateReported,
+                                                      municipalityId:
+                                                          selectedMunicipality ??
+                                                              '',
+                                                      isLocalMunicipality:
+                                                          isLocalMunicipality,
+                                                      districtId: districtId,
+                                                      isLocalUser: isLocalUser,
+                                                    ),
+                                                  ),
+                                                );
+                                              } catch (e) {
+                                                Fluttertoast.showToast(
+                                                  msg:
+                                                      "Error: Unable to view fault image.",
+                                                  toastLength: Toast.LENGTH_SHORT,
+                                                  gravity: ToastGravity.CENTER,
+                                                );
+                                              }
+                                            },
+                                            labelText: 'View Fault Image',
+                                            fSize: 14,
+                                            faIcon: const FaIcon(Icons.zoom_in),
+                                            fgColor: Colors.grey,
+                                            btSize: const Size(100, 38),
+                                          ),
+                                          BasicIconButtonGrey(
+                                            onPress: () async {
+                                              try {
+                                                if (!isLocalUser &&
+                                                    !isLocalMunicipality) {
+                                                  if (selectedMunicipality ==
+                                                          null ||
+                                                      selectedMunicipality ==
+                                                          "Select Municipality") {
+                                                    Fluttertoast.showToast(
+                                                      msg:
+                                                          "Please select a municipality first!",
+                                                      toastLength:
+                                                          Toast.LENGTH_SHORT,
+                                                      gravity:
+                                                          ToastGravity.CENTER,
+                                                    );
+                                                    return;
+                                                  }
+                                                }
+
+                                                String municipalityContext =
+                                                    isLocalMunicipality ||
+                                                            isLocalUser
+                                                        ? municipalityId
+                                                        : selectedMunicipality!;
+
+                                                if (municipalityContext.isEmpty) {
+                                                  Fluttertoast.showToast(
+                                                    msg:
+                                                        "Invalid municipality selection or missing municipality.",
+                                                    toastLength:
+                                                        Toast.LENGTH_SHORT,
+                                                    gravity: ToastGravity.CENTER,
+                                                  );
+                                                  return;
+                                                }
+
+                                                accountNumberRep =
+                                                    fault['accountNumber'];
+                                                locationGivenRep =
+                                                    fault['address'];
+
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        MapScreenProp(
+                                                      propAddress:
+                                                          locationGivenRep,
+                                                      propAccNumber:
+                                                          accountNumberRep,
+                                                    ),
+                                                  ),
+                                                );
+                                              } catch (e) {
+                                                Fluttertoast.showToast(
+                                                  msg:
+                                                      "Error: Unable to view location.",
+                                                  toastLength: Toast.LENGTH_SHORT,
+                                                  gravity: ToastGravity.CENTER,
+                                                );
+                                              }
+                                            },
+                                            labelText: 'Location',
+                                            fSize: 14,
+                                            faIcon: const FaIcon(Icons.map),
+                                            fgColor: Colors.green,
+                                            btSize: const Size(50, 38),
+                                          ),
+                                          BasicIconButtonGrey(
+                                            onPress: () async {
+                                              try {
+                                                if (!isLocalUser &&
+                                                    !isLocalMunicipality) {
+                                                  if (selectedMunicipality ==
+                                                          null ||
+                                                      selectedMunicipality ==
+                                                          "Select Municipality") {
+                                                    Fluttertoast.showToast(
+                                                      msg:
+                                                          "Please select a municipality first!",
+                                                      toastLength:
+                                                          Toast.LENGTH_SHORT,
+                                                      gravity:
+                                                          ToastGravity.CENTER,
+                                                    );
+                                                    return;
+                                                  }
+                                                }
+
+                                                String reporterContact =
+                                                    fault['reporterContact'];
+                                                showDialog(
+                                                  barrierDismissible: false,
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return AlertDialog(
+                                                      shape:
+                                                          const RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.all(
+                                                                Radius.circular(
+                                                                    16)),
+                                                      ),
+                                                      title: const Text(
+                                                          "Call Reporter!"),
+                                                      content: const Text(
+                                                          "Would you like to call the individual who logged the fault?"),
+                                                      actions: [
+                                                        IconButton(
+                                                          onPressed: () {
+                                                            Navigator.of(context)
+                                                                .pop();
+                                                          },
+                                                          icon: const Icon(
+                                                              Icons.cancel,
+                                                              color: Colors.red),
+                                                        ),
+                                                        IconButton(
+                                                          onPressed: () {
+                                                            final Uri tel = Uri.parse(
+                                                                'tel:$reporterContact');
+                                                            launchUrl(tel);
+                                                            Navigator.of(context)
+                                                                .pop();
+                                                          },
+                                                          icon: const Icon(
+                                                              Icons.done,
+                                                              color:
+                                                                  Colors.green),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+                                              } catch (e) {
+                                                Fluttertoast.showToast(
+                                                  msg:
+                                                      "Error: Unable to call reporter.",
+                                                  toastLength: Toast.LENGTH_SHORT,
+                                                  gravity: ToastGravity.CENTER,
+                                                );
+                                              }
+                                            },
+                                            labelText: 'Call User',
+                                            fSize: 14,
+                                            faIcon: const FaIcon(Icons.call),
+                                            fgColor: Colors.orange,
+                                            btSize: const Size(50, 38),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(
+                                          height:
+                                              10), // Add space between the rows
+                                      // Second Row with "Reassign", "Update", and "Reallocate Department"
+                                      Wrap(
+                                        alignment: WrapAlignment.center,
+                                        spacing: 10.0,
+                                        runSpacing: 10.0,
+                                        children: [
+                                          if (adminAcc) ...[
+                                            BasicIconButtonGrey(
+                                              onPress: () async {
+                                                if (!isLocalUser &&
+                                                    !isLocalMunicipality) {
+                                                  if (selectedMunicipality ==
+                                                          null ||
+                                                      selectedMunicipality ==
+                                                          "Select Municipality") {
+                                                    Fluttertoast.showToast(
+                                                      msg:
+                                                          "Please select a municipality first!",
+                                                      toastLength:
+                                                          Toast.LENGTH_SHORT,
+                                                      gravity:
+                                                          ToastGravity.CENTER,
+                                                    );
+                                                    return;
+                                                  }
+                                                }
+
+                                                String municipalityContext =
+                                                    isLocalMunicipality ||
+                                                            isLocalUser
+                                                        ? municipalityId
+                                                        : selectedMunicipality!;
+
+                                                if (municipalityContext.isEmpty) {
+                                                  Fluttertoast.showToast(
+                                                    msg:
+                                                        "Invalid municipality selection or missing municipality.",
+                                                    toastLength:
+                                                        Toast.LENGTH_SHORT,
+                                                    gravity: ToastGravity.CENTER,
+                                                  );
+                                                  return;
+                                                }
+                                                _reassignFault(
+                                                    _allFaultResults[index]);
+                                              },
+                                              labelText: 'Reassign',
+                                              fSize: 14,
+                                              faIcon: const FaIcon(Icons.update),
+                                              fgColor:
+                                                  Theme.of(context).primaryColor,
+                                              btSize: const Size(50, 38),
+                                            ),
+                                          ],
+                                          BasicIconButtonGrey(
+                                            onPress: () async {
+                                              if (!isLocalUser &&
+                                                  !isLocalMunicipality) {
+                                                if (selectedMunicipality ==
+                                                        null ||
+                                                    selectedMunicipality ==
+                                                        "Select Municipality") {
+                                                  Fluttertoast.showToast(
+                                                    msg:
+                                                        "Please select a municipality first!",
+                                                    toastLength:
+                                                        Toast.LENGTH_SHORT,
+                                                    gravity: ToastGravity.CENTER,
+                                                  );
+                                                  return;
+                                                }
+                                              }
+
+                                              String municipalityContext =
+                                                  isLocalMunicipality ||
+                                                          isLocalUser
+                                                      ? municipalityId
+                                                      : selectedMunicipality!;
+
+                                              if (municipalityContext.isEmpty) {
+                                                Fluttertoast.showToast(
+                                                  msg:
+                                                      "Invalid municipality selection or missing municipality.",
+                                                  toastLength: Toast.LENGTH_SHORT,
+                                                  gravity: ToastGravity.CENTER,
+                                                );
+                                                return;
+                                              }
+                                              if (_allFaultResults[index] !=
+                                                  null) {
+                                                faultStage =
+                                                    _allFaultResults[index]
+                                                        ['faultStage'];
+                                                _updateReport(
+                                                    _allFaultResults[index]);
+                                              } else {
+                                                Fluttertoast.showToast(
+                                                  msg:
+                                                      'Error: No fault data available for update.',
+                                                  gravity: ToastGravity.CENTER,
+                                                );
+                                              }
+                                            },
+                                            labelText: 'Update',
+                                            fSize: 14,
+                                            faIcon: const FaIcon(Icons.edit),
+                                            fgColor: Colors.blue,
+                                            btSize: const Size(50, 38),
+                                          ),
+                                          // if (adminAcc) ...[
+                                          //   BasicIconButtonGrey(
+                                          //     onPress: () {
+                                          //       if (!isLocalUser &&
+                                          //           !isLocalMunicipality) {
+                                          //         if (selectedMunicipality ==
+                                          //                 null ||
+                                          //             selectedMunicipality ==
+                                          //                 "Select Municipality") {
+                                          //           Fluttertoast.showToast(
+                                          //             msg:
+                                          //                 "Please select a municipality first!",
+                                          //             toastLength:
+                                          //                 Toast.LENGTH_SHORT,
+                                          //             gravity:
+                                          //                 ToastGravity.CENTER,
+                                          //           );
+                                          //           return;
+                                          //         }
+                                          //       }
+                                          //
+                                          //       String municipalityContext =
+                                          //           isLocalMunicipality ||
+                                          //                   isLocalUser
+                                          //               ? municipalityId
+                                          //               : selectedMunicipality!;
+                                          //
+                                          //       if (municipalityContext.isEmpty) {
+                                          //         Fluttertoast.showToast(
+                                          //           msg:
+                                          //               "Invalid municipality selection or missing municipality.",
+                                          //           toastLength:
+                                          //               Toast.LENGTH_SHORT,
+                                          //           gravity: ToastGravity.CENTER,
+                                          //         );
+                                          //         return;
+                                          //       }
+                                          //       _reassignDept(
+                                          //           _allFaultResults[index]);
+                                          //     },
+                                          //     labelText: 'Reallocate Department',
+                                          //     fSize: 14,
+                                          //     faIcon: const FaIcon(
+                                          //         Icons.compare_arrows),
+                                          //     fgColor: Colors.blue,
+                                          //     btSize: const Size(50, 38),
+                                          //   ),
+                                          // ],
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        );
+                      } else {
+                        return const SizedBox();
+                      }
+                    },
+                  ),
+          ),
+        ),
       );
     }
-    return const Center(
-      child: CircularProgressIndicator(),
-    );
+    return const Center(child: CircularProgressIndicator());
   }
+
+  // Widget faultCard() {
+  //   if (_allFaultResults.isNotEmpty) {
+  //     return _isLoading
+  //         ? const Center(
+  //       child: CircularProgressIndicator(),
+  //     )
+  //         : ListView.builder(
+  //       itemCount: _allFaultResults.length,
+  //       itemBuilder: (context, index) {
+  //         if (index >= _allFaultResults.length) {
+  //           // Ensure index does not exceed the bounds
+  //           return const SizedBox();
+  //         }
+  //
+  //         var fault = _allFaultResults[index];
+  //         String status =
+  //         (fault['faultResolved'] == false) ? "Pending" : "Completed";
+  //         bool showNotification = (fault['attendeeAllocated'] == '' ||
+  //             fault['faultStage'] == 1 ||
+  //             fault['faultResolved'] == false);
+  //
+  //         var faultAddress =
+  //         (fault['address'] != null && fault['address'].isNotEmpty)
+  //             ? fault['address']
+  //             : 'No address provided';
+  //         var faultType = (fault['faultType'] != null &&
+  //             fault['faultType'].isNotEmpty)
+  //             ? fault['faultType']
+  //             : 'No fault type provided';
+  //
+  //         // Convert dateReported to a formatted string if it's a Timestamp
+  //         var dateReported;
+  //         if (fault['dateReported'] is Timestamp) {
+  //           dateReported = DateFormat('yyyy-MM-dd – kk:mm').format(
+  //             fault['dateReported'].toDate(),
+  //           );
+  //         } else {
+  //           dateReported =
+  //           fault['dateReported']; // If it's already a string
+  //         }
+  //
+  //         // Clean the address to remove invalid characters
+  //         String cleanedAddress =
+  //         faultAddress.replaceAll(RegExp(r'[\/:*?"<>|]'), '');
+  //
+  //         // Render card only if the fault is related to the user's department
+  //         if (myDepartment == fault['faultType']) {
+  //           return Card(
+  //             margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+  //             child: Padding(
+  //               padding: const EdgeInsets.all(20.0),
+  //               child: Column(
+  //                 mainAxisAlignment: MainAxisAlignment.center,
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 children: [
+  //                   Center(
+  //                     child: Row(
+  //                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                       children: [
+  //                         Visibility(
+  //                           visible: showNotification,
+  //                           child: const Row(
+  //                             mainAxisAlignment: MainAxisAlignment.end,
+  //                             children: [
+  //                               Icon(
+  //                                 Icons.notification_important,
+  //                                 color: Colors.red,
+  //                               ),
+  //                               SizedBox(width: 5),
+  //                               Text(
+  //                                 'Attention needed!',
+  //                                 style: TextStyle(
+  //                                     fontSize: 14,
+  //                                     color: Colors.red,
+  //                                     fontWeight: FontWeight.bold),
+  //                               ),
+  //                             ],
+  //                           ),
+  //                         ),
+  //                         const Text(
+  //                           'Fault Information',
+  //                           style: TextStyle(
+  //                               fontSize: 16,
+  //                               fontWeight: FontWeight.w700),
+  //                         ),
+  //                         Visibility(
+  //                           visible: visNotification,
+  //                           child: const Icon(
+  //                             Icons.notification_important,
+  //                             color: Colors.red,
+  //                           ),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ),
+  //                   const SizedBox(height: 10),
+  //                   Text(
+  //                     'Reference Number: ${_allFaultResults[index]['ref']}',
+  //                     style: const TextStyle(
+  //                         fontSize: 16, fontWeight: FontWeight.w400),
+  //                   ),
+  //                   const SizedBox(height: 5),
+  //                   if (_allFaultResults[index]['accountNumber'] !=
+  //                       "") ...[
+  //                     Text(
+  //                       'Reporter Account Number: ${_allFaultResults[index]['accountNumber']}',
+  //                       style: const TextStyle(
+  //                           fontSize: 16, fontWeight: FontWeight.w400),
+  //                     ),
+  //                     const SizedBox(height: 5),
+  //                   ],
+  //
+  //                   // Fault Address
+  //                   Text(
+  //                     'Street Address of Fault: ${faultAddress}',
+  //                     style: const TextStyle(
+  //                         fontSize: 16, fontWeight: FontWeight.w400),
+  //                   ),
+  //                   const SizedBox(height: 5),
+  //
+  //                   // Fault Type
+  //                   Text(
+  //                     'Fault Type: ${faultType}',
+  //                     style: const TextStyle(
+  //                         fontSize: 16, fontWeight: FontWeight.w400),
+  //                   ),
+  //                   const SizedBox(height: 5),
+  //                   Text(
+  //                     'Date of Fault Report: ${_allFaultResults[index]['dateReported']}',
+  //                     style: const TextStyle(
+  //                         fontSize: 16, fontWeight: FontWeight.w400),
+  //                   ),
+  //                   const SizedBox(height: 5),
+  //
+  //                   // Fault Description
+  //                   Column(
+  //                     children: [
+  //                       if (fault['faultDescription'] != "") ...[
+  //                         Text(
+  //                           'Fault Description: ${fault['faultDescription']}',
+  //                           style: const TextStyle(
+  //                               fontSize: 16,
+  //                               fontWeight: FontWeight.w400),
+  //                         ),
+  //                         const SizedBox(height: 5),
+  //                       ]
+  //                     ],
+  //                   ),
+  //
+  //                   // Manager Allocated
+  //                   Column(
+  //                     children: [
+  //                       if (fault['managerAllocated'] != "") ...[
+  //                         Text(
+  //                           'Manager Allocated: ${fault['managerAllocated']}',
+  //                           style: const TextStyle(
+  //                               fontSize: 16,
+  //                               fontWeight: FontWeight.w400),
+  //                         ),
+  //                         const SizedBox(height: 5),
+  //                       ]
+  //                     ],
+  //                   ),
+  //
+  //                   // Attendee Allocated
+  //                   Column(
+  //                     children: [
+  //                       if (fault['attendeeAllocated'] != "") ...[
+  //                         Text(
+  //                           'Attendee Allocated: ${fault['attendeeAllocated']}',
+  //                           style: const TextStyle(
+  //                               fontSize: 16,
+  //                               fontWeight: FontWeight.w400),
+  //                         ),
+  //                         const SizedBox(height: 5),
+  //                       ]
+  //                     ],
+  //                   ),
+  //
+  //                   // Manager and Attendee Comments
+  //                   Column(
+  //                     children: [
+  //                       if (fault['managerCom1'] != "") ...[
+  //                         Text(
+  //                           'Manager Comment: ${fault['managerCom1']}',
+  //                           style: const TextStyle(
+  //                               fontSize: 16,
+  //                               fontWeight: FontWeight.w400),
+  //                         ),
+  //                         const SizedBox(height: 5),
+  //                       ]
+  //                     ],
+  //                   ),
+  //                   Column(
+  //                     children: [
+  //                       if (fault['attendeeCom1'] != "") ...[
+  //                         Text(
+  //                           'Attendee Comment: ${fault['attendeeCom1']}',
+  //                           style: const TextStyle(
+  //                               fontSize: 16,
+  //                               fontWeight: FontWeight.w400),
+  //                         ),
+  //                         const SizedBox(height: 5),
+  //                       ]
+  //                     ],
+  //                   ),
+  //
+  //                   // Follow-up Comments (if any)
+  //                   Column(
+  //                     children: [
+  //                       if (fault['managerCom2'] != "") ...[
+  //                         Text(
+  //                           'Manager Follow-up Comment: ${fault['managerCom2']}',
+  //                           style: const TextStyle(
+  //                               fontSize: 16,
+  //                               fontWeight: FontWeight.w400),
+  //                         ),
+  //                         const SizedBox(height: 5),
+  //                       ]
+  //                     ],
+  //                   ),
+  //                   Column(
+  //                     children: [
+  //                       if (fault['attendeeCom2'] != "") ...[
+  //                         Text(
+  //                           'Attendee Follow-up Comment: ${fault['attendeeCom2']}',
+  //                           style: const TextStyle(
+  //                               fontSize: 16,
+  //                               fontWeight: FontWeight.w400),
+  //                         ),
+  //                         const SizedBox(height: 5),
+  //                       ]
+  //                     ],
+  //                   ),
+  //
+  //                   // Final Comments (if any)
+  //                   Column(
+  //                     children: [
+  //                       if (fault['managerCom3'] != "") ...[
+  //                         Text(
+  //                           'Manager Final Comment: ${fault['managerCom3']}',
+  //                           style: const TextStyle(
+  //                               fontSize: 16,
+  //                               fontWeight: FontWeight.w400),
+  //                         ),
+  //                         const SizedBox(height: 5),
+  //                       ]
+  //                     ],
+  //                   ),
+  //                   Column(
+  //                     children: [
+  //                       if (fault['attendeeCom3'] != "") ...[
+  //                         Text(
+  //                           'Attendee Final Comment: ${fault['attendeeCom3']}',
+  //                           style: const TextStyle(
+  //                               fontSize: 16,
+  //                               fontWeight: FontWeight.w400),
+  //                         ),
+  //                         const SizedBox(height: 5),
+  //                       ]
+  //                     ],
+  //                   ),
+  //                   Column(
+  //                     children: [
+  //                       if (fault['managerReturnCom'] != "") ...[
+  //                         Text(
+  //                           'Reason for return: ${fault['managerReturnCom']}',
+  //                           style: const TextStyle(
+  //                               fontSize: 16,
+  //                               fontWeight: FontWeight.w400),
+  //                         ),
+  //                         const SizedBox(height: 5),
+  //                       ]
+  //                     ],
+  //                   ),
+  //                   Column(
+  //                     children: [
+  //                       if (fault['adminComment'] != null &&
+  //                           fault['adminComment'].isNotEmpty) ...[
+  //                         Text(
+  //                           'Admin Comment: ${fault['adminComment']}',
+  //                           style: const TextStyle(
+  //                               fontSize: 16,
+  //                               fontWeight: FontWeight.w400),
+  //                         ),
+  //                         const SizedBox(height: 5),
+  //                       ]
+  //                     ],
+  //                   ),
+  //
+  //                   // Resolve State
+  //                   Text(
+  //                     'Resolve State: $status',
+  //                     style: const TextStyle(
+  //                         fontSize: 16, fontWeight: FontWeight.w400),
+  //                   ),
+  //                   const SizedBox(height: 5),
+  //
+  //                   // Fault Stage Color based on stage
+  //                   Text(
+  //                     'Fault Stage: ${fault['faultStage'].toString()}',
+  //                     style: TextStyle(
+  //                         fontSize: 16,
+  //                         fontWeight: FontWeight.w500,
+  //                         color: getFaultStageColor(fault['faultStage'])),
+  //                   ),
+  //                   const SizedBox(height: 5),
+  //
+  //                   // Buttons for viewing image, location, and calling user
+  //                   Center(
+  //                     child: Column(
+  //                       mainAxisAlignment: MainAxisAlignment.center,
+  //                       crossAxisAlignment: CrossAxisAlignment.center,
+  //                       children: [
+  //                         Row(
+  //                           mainAxisAlignment: MainAxisAlignment.center,
+  //                           crossAxisAlignment: CrossAxisAlignment.center,
+  //                           children: [
+  //                             BasicIconButtonGrey(
+  //                               onPress: () async {
+  //                                 String dateReported =
+  //                                 fault['dateReported'];
+  //
+  //                                 Navigator.push(
+  //                                   context,
+  //                                   MaterialPageRoute(
+  //                                     builder: (context) =>
+  //                                         ImageZoomFaultPage(
+  //                                             imageName: cleanedAddress,
+  //                                             dateReported: dateReported),
+  //                                   ),
+  //                                 );
+  //                               },
+  //                               labelText: 'View Fault Image',
+  //                               fSize: 14,
+  //                               faIcon: const FaIcon(Icons.zoom_in),
+  //                               fgColor: Colors.grey,
+  //                               btSize: const Size(100, 38),
+  //                             ),
+  //                             BasicIconButtonGrey(
+  //                               onPress: () async {
+  //                                 accountNumberRep =
+  //                                 _allFaultResults[index]
+  //                                 ['accountNumber'];
+  //                                 locationGivenRep =
+  //                                 _allFaultResults[index]['address'];
+  //
+  //                                 Navigator.push(
+  //                                     context,
+  //                                     MaterialPageRoute(
+  //                                         builder: (context) =>
+  //                                             MapScreenProp(
+  //                                               propAddress:
+  //                                               locationGivenRep,
+  //                                               propAccNumber:
+  //                                               accountNumberRep,
+  //                                             )));
+  //                               },
+  //                               labelText: 'Location',
+  //                               fSize: 14,
+  //                               faIcon: const FaIcon(Icons.map),
+  //                               fgColor: Colors.green,
+  //                               btSize: const Size(50, 38),
+  //                             ),
+  //                             BasicIconButtonGrey(
+  //                               onPress: () async {
+  //                                 showDialog(
+  //                                   barrierDismissible: false,
+  //                                   context: context,
+  //                                   builder: (context) {
+  //                                     return AlertDialog(
+  //                                       shape:
+  //                                       const RoundedRectangleBorder(
+  //                                           borderRadius:
+  //                                           BorderRadius.all(
+  //                                               Radius.circular(
+  //                                                   16))),
+  //                                       title:
+  //                                       const Text("Call Reporter!"),
+  //                                       content: const Text(
+  //                                           "Would you like to call the individual who logged the fault?"),
+  //                                       actions: [
+  //                                         IconButton(
+  //                                           onPressed: () {
+  //                                             Navigator.of(context).pop();
+  //                                           },
+  //                                           icon: const Icon(
+  //                                             Icons.cancel,
+  //                                             color: Colors.red,
+  //                                           ),
+  //                                         ),
+  //                                         IconButton(
+  //                                           onPressed: () {
+  //                                             reporterCellGiven =
+  //                                             _allFaultResults[index]
+  //                                             ['reporterContact'];
+  //                                             final Uri tel = Uri.parse(
+  //                                                 'tel:${reporterCellGiven
+  //                                                     .toString()}');
+  //                                             launchUrl(tel);
+  //                                             Navigator.of(context).pop();
+  //                                           },
+  //                                           icon: const Icon(
+  //                                             Icons.done,
+  //                                             color: Colors.green,
+  //                                           ),
+  //                                         ),
+  //                                       ],
+  //                                     );
+  //                                   },
+  //                                 );
+  //                               },
+  //                               labelText: 'Call User',
+  //                               fSize: 14,
+  //                               faIcon: const FaIcon(Icons.call),
+  //                               fgColor: Colors.orange,
+  //                               btSize: const Size(50, 38),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                         Row(
+  //                           mainAxisAlignment: MainAxisAlignment.center,
+  //                           crossAxisAlignment: CrossAxisAlignment.center,
+  //                           children: [
+  //                             if (adminAcc) ...[
+  //                               BasicIconButtonGrey(
+  //                                 onPress: () async {
+  //                                   _reassignFault(
+  //                                       _allFaultResults[index]);
+  //                                 },
+  //                                 labelText: 'Reassign',
+  //                                 fSize: 14,
+  //                                 faIcon: const FaIcon(Icons.update),
+  //                                 fgColor: Theme
+  //                                     .of(context)
+  //                                     .primaryColor,
+  //                                 btSize: const Size(50, 38),
+  //                               ),
+  //                             ],
+  //                             BasicIconButtonGrey(
+  //                               onPress: () async {
+  //                                 if (_allFaultResults[index] != null) {
+  //                                   faultStage = _allFaultResults[index]
+  //                                   ['faultStage'];
+  //                                   _updateReport(_allFaultResults[
+  //                                   index]); // Ensure documentSnapshot is not null here
+  //                                 } else {
+  //                                   Fluttertoast.showToast(
+  //                                       msg:
+  //                                       'Error: No fault data available for update.',
+  //                                       gravity: ToastGravity.CENTER);
+  //                                 }
+  //                               },
+  //                               labelText: 'Update',
+  //                               fSize: 14,
+  //                               faIcon: const FaIcon(Icons.edit),
+  //                               fgColor: Colors.blue,
+  //                               btSize: const Size(50, 38),
+  //                             ),
+  //                             if (adminAcc) ...[
+  //                               Center(
+  //                                 child: BasicIconButtonGrey(
+  //                                   onPress: () {
+  //                                     _reassignDept(
+  //                                         _allFaultResults[index]);
+  //                                   },
+  //                                   labelText: 'Reallocate Department',
+  //                                   fSize: 14,
+  //                                   faIcon: const FaIcon(
+  //                                       Icons.compare_arrows),
+  //                                   fgColor: Colors.blue,
+  //                                   btSize: const Size(50, 38),
+  //                                 ),
+  //                               ),
+  //                             ],
+  //                           ],
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           );
+  //         } else {
+  //           return const SizedBox();
+  //         }
+  //       },
+  //     );
+  //   }
+  //   return const Center(
+  //     child: CircularProgressIndicator(),
+  //   );
+  // }
 
   Widget unassignedFaultCard() {
-    if (_unassignedFaultResults.isNotEmpty) {
-      return _isLoading
-          ? const Center(child: CircularProgressIndicator(),)
-          : ListView.builder(
-        itemCount: _unassignedFaultResults.length,
-        itemBuilder: (context, index) {
-          String status;
-          if (_unassignedFaultResults[index]['faultResolved'] == false) {
-            status = "Pending";
-          } else {
-            status = "Completed";
-          }
+    List unassignedResults =
+        _allFaultResults.where((fault) => fault['faultStage'] == 1).toList();
 
-          // if(_closeFaultResults.isNotEmpty){
-          //   for(int i = 0; i <= _closeFaultResults.length; i++){
-          //     if(_allFaultResults[index]['address'] == _closeFaultResults[i]){
-          //       print('Should display notif on ::: ${_allFaultResults[index]['address']}');
-          //       toggleVisibilityNotification();
-          //     }else{
-          //       visNotification = false;
-          //     }
-          //   }
-          // }
+    if (unassignedResults.isNotEmpty) {
 
-          if(_unassignedFaultResults[index]['attendeeAllocated'] == ''){
-            visNotification = true;
-          } else {
-            visNotification = false;
-          }
-
-          if (_unassignedFaultResults[index]['faultResolved'] == false) {
-            if(myDepartment == _unassignedFaultResults[index]['faultType'] && _unassignedFaultResults[index]['faultStage'] == 1 && _unassignedFaultResults[index]['attendeeAllocated'] == '' ){
-              return Card(
-                margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Fault Information',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                            ),
-                            Visibility(
-                                visible: visNotification,
-                                child: const Icon(
-                                  Icons.notification_important,
-                                  color: Colors.red,)),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10,),
-                      Text(
-                        'Reference Number: ${_unassignedFaultResults[index]['ref']}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['accountNumber'] != "")...[
-                            Text(
-                              'Reporter Account Number: ${_unassignedFaultResults[index]['accountNumber']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Text(
-                        'Street Address of Fault: ${_unassignedFaultResults[index]['address']}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Text(
-                        'Date of Fault Report: ${_unassignedFaultResults[index]['dateReported']}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['faultStage'] == 1)...[
-                            Text(
-                              'Fault Stage: ${_unassignedFaultResults[index]['faultStage'].toString()}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            if(_unassignedFaultResults[index]['faultStage'] == 2) ...[
-                              Text(
-                                'Fault Stage: ${_unassignedFaultResults[index]['faultStage'].toString()}',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
-                              ),
-                              const SizedBox(height: 5,),
-                            ] else
-                              if(_unassignedFaultResults[index]['faultStage'] == 3) ...[
-                                Text(
-                                  'Fault Stage: ${_unassignedFaultResults[index]['faultStage'].toString()}',
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
-                                ),
-                                const SizedBox(height: 5,),
-                              ] else
-                                if(_unassignedFaultResults[index]['faultStage'] == 4) ...[
-                                  Text(
-                                    'Fault Stage: ${_unassignedFaultResults[index]['faultStage'].toString()}',
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.greenAccent),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else
-                                  if(_unassignedFaultResults[index]['faultStage'] == 5) ...[
-                                    Text(
-                                      'Fault Stage: ${_unassignedFaultResults[index]['faultStage'].toString()}',
-                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
-                                    ),
-                                    const SizedBox(height: 5,),
-                                  ] else
-                                    ...[
-                                    ],
-                        ],
-                      ),
-                      Text(
-                        'Fault Type: ${_unassignedFaultResults[index]['faultType']}',
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['faultDescription'] != "")...[
-                            Text(
-                              'Fault Description: ${_unassignedFaultResults[index]['faultDescription']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['adminComment'] != "")...[
-                            Text(
-                              'Admin Comment: ${_unassignedFaultResults[index]['adminComment']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['reallocationComment'] != "")...[
-                            Text(
-                              'Reason fault reallocated: ${_unassignedFaultResults[index]['reallocationComment']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['managerAllocated'] != "")...[
-                            Text(
-                              'Manager of fault: ${_unassignedFaultResults[index]['managerAllocated']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['attendeeAllocated'] != "")...[
-                            Text(
-                              'Attendee Allocated: ${_unassignedFaultResults[index]['attendeeAllocated']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['attendeeCom1'] != "")...[
-                            Text(
-                              'Attendee Comment: ${_unassignedFaultResults[index]['attendeeCom1']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['managerCom1'] != "")...[
-                            Text(
-                              'Manager Comment: ${_unassignedFaultResults[index]['managerCom1']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['attendeeCom2'] != "")...[
-                            Text(
-                              'Attendee Followup Comment: ${_unassignedFaultResults[index]['attendeeCom2']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['managerCom2'] != "")...[
-                            Text(
-                              'Manager Final/Additional Comment: ${_unassignedFaultResults[index]['managerCom2']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['attendeeCom3'] != "")...[
-                            Text(
-                              'Attendee Final Comment: ${_unassignedFaultResults[index]['attendeeCom3']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['managerCom3'] != "")...[
-                            Text(
-                              'Manager Final Comment: ${_unassignedFaultResults[index]['managerCom3']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Text(
-                        'Resolve State: $status',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-
-                      const SizedBox(height: 5,),
-                      Center(
-                        child: BasicIconButtonGrey(
-                          onPress: () async {
-                            imageName = 'files/faultImages/${_unassignedFaultResults[index]['dateReported']}/${_unassignedFaultResults[index]['address']}';
-                            dateReported = _unassignedFaultResults[index]['dateReported'];
-
-                            Navigator.push(context, MaterialPageRoute(builder: (context) =>
-                                ImageZoomFaultPage(imageName: imageName, dateReported: dateReported)));
-                          },
-                          labelText: 'View Fault Image',
-                          fSize: 14,
-                          faIcon: const FaIcon(Icons.zoom_in,),
-                          fgColor: Colors.grey,
-                          btSize: const Size(100, 38),
-                        ),
-                      ),
-                      Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              BasicIconButtonGrey(
-                                onPress: () async {
-                                  accountNumberRep = _unassignedFaultResults[index]['accountNumber'];
-                                  locationGivenRep = _unassignedFaultResults[index]['address'];
-
-                                  Navigator.push(context, MaterialPageRoute(
-                                      builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                  ));
-                                },
-                                labelText: 'Location',
-                                fSize: 14,
-                                faIcon: const FaIcon(Icons.map,),
-                                fgColor: Colors.green,
-                                btSize: const Size(50, 38),
-                              ),
-                              BasicIconButtonGrey(
-                                onPress: () async {
-                                  showDialog(
-                                      barrierDismissible: false,
-                                      context: context,
-                                      builder: (context) {
-                                        return
-                                          AlertDialog(
-                                            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
-                                            title: const Text("Call Reporter!"),
-                                            content: const Text("Would you like to call the individual who logged the fault?"),
-                                            actions: [
-                                              IconButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(Icons.cancel, color: Colors.red,),
-                                              ),
-                                              IconButton(
-                                                onPressed: () {
-                                                  reporterCellGiven = _unassignedFaultResults[index]['reporterContact'];
-
-                                                  final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                                  launchUrl(_tel);
-
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(Icons.done, color: Colors.green,),
-                                              ),
-                                            ],
-                                          );
-                                      });
-                                },
-                                labelText: 'Call User',
-                                fSize: 14,
-                                faIcon: const FaIcon(Icons.call,),
-                                fgColor: Colors.orange,
-                                btSize: const Size(50, 38),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              Visibility(
-                                visible: adminAcc,
-                                child: Center(
-                                  child: BasicIconButtonGrey(
-                                    onPress: () async {
-                                      _reassignDept(_unassignedFaultResults[index]);
-                                    },
-                                    labelText: 'Reallocate Department',
-                                    fSize: 14,
-                                    faIcon: const FaIcon(Icons.compare_arrows,),
-                                    fgColor: Colors.blue,
-                                    btSize: const Size(50, 38),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          // const SizedBox(height: 5,),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Visibility(
-                                visible: (_unassignedFaultResults[index]['faultStage'] == 2 || _unassignedFaultResults[index]['faultStage'] == 3) && (managerAcc || employeeAcc),
-                                child: BasicIconButtonGrey(
-                                  onPress: () async {
-                                    faultStage = _unassignedFaultResults[index]['faultStage'];
-                                    ///working on
-                                    _returnFaultToAdmin(_unassignedFaultResults[index]);
-                                  },
-                                  labelText: 'Return',
-                                  fSize: 14,
-                                  faIcon: const FaIcon(Icons.error_outline,),
-                                  fgColor: Colors.orangeAccent,
-                                  btSize: const Size(50, 38),
-                                ),
-                              ),
-                              Visibility(
-                                visible: adminAcc,
-                                child: BasicIconButtonGrey(
-                                  onPress: () async {
-                                    _reassignFault(_unassignedFaultResults[index]);
-                                  },
-                                  labelText: 'Reassign',
-                                  fSize: 14,
-                                  faIcon: const FaIcon(Icons.update,),
-                                  fgColor: Theme.of(context).primaryColor,
-                                  btSize: const Size(50, 38),
-                                ),
-                              ),
-                              BasicIconButtonGrey(
-                                onPress: () async {
-                                  faultStage = _unassignedFaultResults[index]['faultStage'];
-                                  _updateReport(_unassignedFaultResults[index]);
-                                },
-                                labelText: 'Update',
-                                fSize: 14,
-                                faIcon: const FaIcon(Icons.edit,),
-                                fgColor: Colors.blue,
-                                btSize: const Size(50, 38),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            } else if(_unassignedFaultResults[index]['faultResolved'] == false && (myDepartment == 'Service Provider' || myDepartment == 'Developer') && _unassignedFaultResults[index]['faultStage'] == 1 && _unassignedFaultResults[index]['attendeeAllocated'] == '' ){
-              return Card(
-                margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Fault Information',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                            ),
-                            Visibility(
-                                visible: visNotification,
-                                child: const Icon(
-                                  Icons.notification_important,
-                                  color: Colors.red,)),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10,),
-                      Text(
-                        'Reference Number: ${_unassignedFaultResults[index]['ref']}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['accountNumber'] != "")...[
-                            Text(
-                              'Reporter Account Number: ${_unassignedFaultResults[index]['accountNumber']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Text(
-                        'Street Address of Fault: ${_unassignedFaultResults[index]['address']}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Text(
-                        'Date of Fault Report: ${_unassignedFaultResults[index]['dateReported']}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['faultStage'] == 1)...[
-                            Text(
-                              'Fault Stage: ${_unassignedFaultResults[index]['faultStage'].toString()}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.deepOrange),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            if(_unassignedFaultResults[index]['faultStage'] == 2) ...[
-                              Text(
-                                'Fault Stage: ${_unassignedFaultResults[index]['faultStage'].toString()}',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orange),
-                              ),
-                              const SizedBox(height: 5,),
-                            ] else
-                              if(_unassignedFaultResults[index]['faultStage'] == 3) ...[
-                                Text(
-                                  'Fault Stage: ${_unassignedFaultResults[index]['faultStage'].toString()}',
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.orangeAccent),
-                                ),
-                                const SizedBox(height: 5,),
-                              ] else
-                                if(_unassignedFaultResults[index]['faultStage'] == 4) ...[
-                                  Text(
-                                    'Fault Stage: ${_unassignedFaultResults[index]['faultStage'].toString()}',
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
-                                  ),
-                                  const SizedBox(height: 5,),
-                                ] else
-                                  if(_unassignedFaultResults[index]['faultStage'] == 5) ...[
-                                    Text(
-                                      'Fault Stage: ${_unassignedFaultResults[index]['faultStage'].toString()}',
-                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.lightGreen),
-                                    ),
-                                    const SizedBox(height: 5,),
-                                  ] else
-                                    ...[
-                                    ],
-                        ],
-                      ),
-                      Text(
-                        'Fault Type: ${_unassignedFaultResults[index]['faultType']}',
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5,),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['faultDescription'] != "")...[
-                            Text(
-                              'Fault Description: ${_unassignedFaultResults[index]['faultDescription']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['adminComment'] != "")...[
-                            Text(
-                              'Admin Comment: ${_unassignedFaultResults[index]['adminComment']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['reallocationComment'] != "")...[
-                            Text(
-                              'Reason fault reallocated: ${_unassignedFaultResults[index]['reAllocationComment']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['managerAllocated'] != "")...[
-                            Text(
-                              'Manager of fault: ${_unassignedFaultResults[index]['managerAllocated']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['attendeeAllocated'] != "")...[
-                            Text(
-                              'Attendee Allocated: ${_unassignedFaultResults[index]['attendeeAllocated']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['attendeeCom1'] != "")...[
-                            Text(
-                              'Attendee Comment: ${_unassignedFaultResults[index]['attendeeCom1']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['managerCom1'] != "")...[
-                            Text(
-                              'Manager Comment: ${_unassignedFaultResults[index]['managerCom1']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['attendeeCom2'] != "")...[
-                            Text(
-                              'Attendee Followup Comment: ${_unassignedFaultResults[index]['attendeeCom2']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['managerCom2'] != "")...[
-                            Text(
-                              'Manager Final/Additional Comment: ${_unassignedFaultResults[index]['managerCom2']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['attendeeCom3'] != "")...[
-                            Text(
-                              'Attendee Final Comment: ${_unassignedFaultResults[index]['attendeeCom3']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          if(_unassignedFaultResults[index]['managerCom3'] != "")...[
-                            Text(
-                              'Manager Final Comment: ${_unassignedFaultResults[index]['managerCom3']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                          ] else
-                            ...[
-                            ],
-                        ],
-                      ),
-                      Text(
-                        'Resolve State: $status',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-
-                      const SizedBox(height: 5,),
-                      Center(
-                        child: BasicIconButtonGrey(
-                          onPress: () async {
-                            imageName = 'files/faultImages/${_unassignedFaultResults[index]['dateReported']}/${_unassignedFaultResults[index]['address']}';
-                            dateReported = _unassignedFaultResults[index]['dateReported'];
-
-                            Navigator.push(context, MaterialPageRoute(builder: (context) =>
-                                ImageZoomFaultPage(imageName: imageName, dateReported: dateReported)));
-                          },
-                          labelText: 'View Fault Image',
-                          fSize: 14,
-                          faIcon: const FaIcon(Icons.zoom_in,),
-                          fgColor: Colors.grey,
-                          btSize: const Size(100, 38),
-                        ),
-                      ),
-                      Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              BasicIconButtonGrey(
-                                onPress: () async {
-                                  accountNumberRep = _unassignedFaultResults[index]['accountNumber'];
-                                  locationGivenRep = _unassignedFaultResults[index]['address'];
-
-                                  Navigator.push(context, MaterialPageRoute(
-                                      builder: (context) => MapScreenProp(propAddress: locationGivenRep, propAccNumber: accountNumberRep,)
-                                  ));
-                                },
-                                labelText: 'Location',
-                                fSize: 14,
-                                faIcon: const FaIcon(Icons.map,),
-                                fgColor: Colors.green,
-                                btSize: const Size(50, 38),
-                              ),
-                              BasicIconButtonGrey(
-                                onPress: () async {
-                                  showDialog(
-                                      barrierDismissible: false,
-                                      context: context,
-                                      builder: (context) {
-                                        return
-                                          AlertDialog(
-                                            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
-                                            title: const Text("Call Reporter!"),
-                                            content: const Text("Would you like to call the individual who logged the fault?"),
-                                            actions: [
-                                              IconButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(Icons.cancel, color: Colors.red,),
-                                              ),
-                                              IconButton(
-                                                onPressed: () {
-                                                  reporterCellGiven = _unassignedFaultResults[index]['reporterContact'];
-
-                                                  final Uri _tel = Uri.parse('tel:${reporterCellGiven.toString()}');
-                                                  launchUrl(_tel);
-
-                                                  Navigator.of(context).pop();
-                                                },
-                                                icon: const Icon(Icons.done, color: Colors.green,),
-                                              ),
-                                            ],
-                                          );
-                                      });
-                                },
-                                labelText: 'Call User',
-                                fSize: 14,
-                                faIcon: const FaIcon(Icons.call,),
-                                fgColor: Colors.orange,
-                                btSize: const Size(50, 38),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              Visibility(
-                                visible: adminAcc,
-                                child: Center(
-                                  child: BasicIconButtonGrey(
-                                    onPress: () async {
-                                      _reassignDept(_unassignedFaultResults[index]);
-                                    },
-                                    labelText: 'Department Reallocation',
-                                    fSize: 14,
-                                    faIcon: const FaIcon(Icons.compare_arrows,),
-                                    fgColor: Colors.blue,
-                                    btSize: const Size(50, 38),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          // const SizedBox(height: 5,),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Visibility(
-                                visible: (_unassignedFaultResults[index]['faultStage'] == 2 || _unassignedFaultResults[index]['faultStage'] == 3) && (managerAcc || employeeAcc),
-                                child: BasicIconButtonGrey(
-                                  onPress: () async {
-                                    faultStage = _unassignedFaultResults[index]['faultStage'];
-                                    ///working on
-                                    _returnFaultToAdmin(_unassignedFaultResults[index]);
-                                  },
-                                  labelText: 'Return',
-                                  fSize: 14,
-                                  faIcon: const FaIcon(Icons.error_outline,),
-                                  fgColor: Colors.orangeAccent,
-                                  btSize: const Size(50, 38),
-                                ),
-                              ),
-                              Visibility(
-                                visible: adminAcc,
-                                child: BasicIconButtonGrey(
-                                  onPress: () async {
-                                    _reassignFault(_unassignedFaultResults[index]);
-                                  },
-                                  labelText: 'Reassign',
-                                  fSize: 14,
-                                  faIcon: const FaIcon(Icons.update,),
-                                  fgColor: Theme.of(context).primaryColor,
-                                  btSize: const Size(50, 38),
-                                ),
-                              ),
-                              BasicIconButtonGrey(
-                                onPress: () async {
-                                  faultStage = _unassignedFaultResults[index]['faultStage'];
-                                  _updateReport(_unassignedFaultResults[index]);
-                                },
-                                labelText: 'Update',
-                                fSize: 14,
-                                faIcon: const FaIcon(Icons.edit,),
-                                fgColor: Colors.blue,
-                                btSize: const Size(50, 38),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            } else {
-              return const SizedBox();
-            }
-          }
+      return GestureDetector(
+        onTap: () {
+          // Refocus when tapping within the tab content
+          noFaultFocusNode.requestFocus();
         },
-      );
-    }
-    return const Center(
-      child: CircularProgressIndicator(),
-    );
-  }
+        child: KeyboardListener(
+          focusNode: noFaultFocusNode,
+          onKeyEvent: (KeyEvent event) {
+            if (event is KeyDownEvent) {
+              final double pageScrollAmount =
+                  _unassignedFaultsScrollController.position.viewportDimension;
 
-  //This class is for updating the report stages by the manager and the handler to comment through phases of the report
-  Future<void> _updateReport([DocumentSnapshot? documentSnapshot]) async {
+              if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                _unassignedFaultsScrollController.animateTo(
+                  _unassignedFaultsScrollController.offset + 50,
+                  duration: const Duration(milliseconds: 100),
+                  curve: Curves.easeIn,
+                );
+              } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                _unassignedFaultsScrollController.animateTo(
+                  _unassignedFaultsScrollController.offset - 50,
+                  duration: const Duration(milliseconds: 100),
+                  curve: Curves.easeIn,
+                );
+              } else if (event.logicalKey == LogicalKeyboardKey.pageDown) {
+                _unassignedFaultsScrollController.animateTo(
+                  _unassignedFaultsScrollController.offset + pageScrollAmount,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeIn,
+                );
+              } else if (event.logicalKey == LogicalKeyboardKey.pageUp) {
+                _unassignedFaultsScrollController.animateTo(
+                  _unassignedFaultsScrollController.offset - pageScrollAmount,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeIn,
+                );
+              }
+            }
+          },
+          child: Scrollbar(
+            controller: _unassignedFaultsScrollController,
+            thickness: 12, // Customize the thickness of the scrollbar
+            radius: const Radius.circular(8), // Rounded edges for the scrollbar
+            thumbVisibility: true,
+            trackVisibility: true, // Makes the track visible as well
+            interactive: true,
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    controller: _unassignedFaultsScrollController,
+                    shrinkWrap: true,
+                    itemCount: unassignedResults.length,
+                    itemBuilder: (context, index) {
+                      if (index >= unassignedResults.length) {
+                        return const SizedBox();
+                      }
 
-    String dropdownValue = 'Select Department...';
-    dropdownValue = documentSnapshot?['faultType'];
-    String dropdownValue2 = 'Assign User...';
-    String dropdownValue3 = 'Assign User...';
-    print('Default manager pulled ::::${_managerUserNames[0]}');
+                      var fault = unassignedResults[index];
+                      String status = (fault['faultResolved'] == false)
+                          ? "Pending"
+                          : "Completed";
+                      bool showNotification = (fault['attendeeAllocated'] == '' ||
+                          fault['faultStage'] == 1 ||
+                          fault['faultResolved'] == false);
 
-    // if(documentSnapshot?['managerAllocated'] != "" && documentSnapshot?['managerAllocated'] != "Service Provider" && documentSnapshot?['managerAllocated'] != "Developer" ){
-    //   dropdownValue2 = documentSnapshot?['managerAllocated'];
-    // }
-    // if(documentSnapshot?['attendeeAllocated'] != "" && documentSnapshot?['attendeeAllocated'] != "Service Provider" && documentSnapshot?['attendeeAllocated'] != "Developer" ){
-    //   dropdownValue3 = documentSnapshot?['attendeeAllocated'];
-    // }
+                      var faultAddress = (fault['address'] != null &&
+                              fault['address'].isNotEmpty)
+                          ? fault['address']
+                          : 'No address provided';
+                      var faultType = (fault['faultType'] != null &&
+                              fault['faultType'].isNotEmpty)
+                          ? fault['faultType']
+                          : 'No fault type provided';
 
-    //This checks the current state of the fault stage 5 is resolve stage
-    int stageNum = documentSnapshot!['faultStage'];
-    if (stageNum == 1) {
-      visStage1 = true;
-      visStage2 = false;
-      visStage3 = false;
-      visStage4 = false;
-      visStage5 = false;
-    } else if (stageNum == 2) {
-      visStage1 = false;
-      visStage2 = true;
-      visStage3 = false;
-      visStage4 = false;
-      visStage5 = false;
-    } else if (stageNum == 3) {
-      visStage1 = false;
-      visStage2 = false;
-      visStage3 = true;
-      visStage4 = false;
-      visStage5 = false;
-    } else if (stageNum == 4) {
-      visStage1 = false;
-      visStage2 = false;
-      visStage3 = false;
-      visStage4 = true;
-      visStage5 = false;
-    } else if (stageNum == 5) {
-      visStage1 = false;
-      visStage2 = false;
-      visStage3 = false;
-      visStage4 = false;
-      visStage5 = true;
-    }
+                      var dateReported;
+                      if (fault['dateReported'] is Timestamp) {
+                        dateReported = DateFormat('yyyy-MM-dd – kk:mm').format(
+                          fault['dateReported'].toDate(),
+                        );
+                      } else {
+                        dateReported =
+                            fault['dateReported']; // If it's already a string
+                      }
 
-    _accountNumberController.text = documentSnapshot['accountNumber'];
-    _addressController.text = documentSnapshot['address'];
-    _descriptionController.text = documentSnapshot['faultDescription'];
-    _commentController.text = '';
-    _depAllocationController.text = documentSnapshot['depAllocated'];
-    _faultResolvedController = documentSnapshot['faultResolved'];
+                      String cleanedAddress =
+                          faultAddress.replaceAll(RegExp(r'[\/:*?"<>|]'), '');
 
-    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
-    void _createBottomSheet() async{
-      showModalBottomSheet(
-          context: context,
-          builder: await showModalBottomSheet(
-              isScrollControlled: true,
-              context: context,
-              builder: (BuildContext ctx) {
-                return StatefulBuilder(
-                  builder: (BuildContext context, StateSetter setState) {
-                    return SingleChildScrollView(
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                            top: 20,
-                            left: 20,
-                            right: 20,
-                            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Visibility(
-                              visible: visStage1 && employeeAcc,
-                              child: const Text('Only Administrators may assign faults.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700 ),),
-                            ),
-                            Visibility(
-                              visible: (visStage2 || visStage3 ||visStage4 ||visStage5) && adminAcc,
-                              child: const Text('Awaiting Attendee & Manager processing.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700 ),),
-                            ),
-                            // Visibility(
-                            //   visible: visStage1 && adminAcc,
-                            //   child: const Text('Department Allocation'),
-                            // ),
-                            // Visibility(
-                            //   visible: visStage1 && adminAcc,
-                            //   child: DropdownButtonFormField <String>(
-                            //     value: dropdownValue,
-                            //     items: _deptName.toSet()
-                            //         .map<DropdownMenuItem<String>>((String value) {
-                            //       return DropdownMenuItem<String>(
-                            //         value: value,
-                            //         child: Text(value, style: const TextStyle(fontSize: 16),),
-                            //       );
-                            //     }).toList(),
-                            //     onChanged: (String? newValue) {
-                            //       setState(() {
-                            //         dropdownValue = newValue!;
-                            //       });
-                            //     },
-                            //   ),
-                            // ),
-
-                            Visibility(
-                              visible: visStage1 && adminAcc,
-                              child: const Text('Assign To'),
-                            ),
-                            Visibility(
-                              visible: visStage1 && adminAcc,
-                              child: DropdownButtonFormField <String>(
-                                value: dropdownValue3,
-                                items: _employeesUserNames.toSet()
-                                    .map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value, style: const TextStyle(fontSize: 16),),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    dropdownValue3 = newValue!;
-                                  });
-                                },
-                              ),
-                            ),
-
-                            Visibility(
-                              // visible: visStage1 && adminAcc,
-                              visible: visHide,
-                              child: const Text('Department Manager Allocated'),
-                            ),
-                            Visibility(
-                              // visible: visStage1 && adminAcc,
-                              visible: visHide,
-                              child: DropdownButtonFormField <String>(
-                                value: dropdownValue2,
-                                items: _managerUserNames.toSet()
-                                    .map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value, style: const TextStyle(fontSize: 16),),
-                                  );
-                                }).toSet().toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    dropdownValue2 = newValue!;
-                                  });
-                                },
-                              ),
-                            ),
-
-
-                            Visibility(
-                              visible: (visStage1 || visStage2 || visStage4 || visStage5) && adminAcc,
-                              child: TextField(
-                                keyboardType: TextInputType.text,
-                                controller: _commentController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Comment...',),
-                              ),
-                            ),
-                            Visibility(
-                              visible: (visStage2 || visStage3 || visStage5) && managerAcc,
-                              child: TextField(
-                                keyboardType: TextInputType.text,
-                                controller: _commentController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Comment...',),
-                              ),
-                            ),
-                            Visibility(
-                              visible: (visStage2 || visStage3 || visStage5) && employeeAcc,
-                              child: TextField(
-                                keyboardType: TextInputType.text,
-                                controller: _commentController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Comment...',),
-                              ),
-                            ),
-                            const SizedBox(height: 10,),
-                            Visibility(
-                              visible: (visStage3 || visStage4 || visStage5) && managerAcc,
-                              child:
-                              Container(
-                                height: 50,
-                                padding: const EdgeInsets.only(left: 0.0, right: 25.0),
+                      return Card(
+                        margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Center(
                                 child: Row(
-                                  children: <Widget>[
-                                    const Text('Fault Resolved?', style: TextStyle(fontSize: 16, fontWeight:FontWeight.w400 ),),
-                                    const SizedBox(width: 5,),
-                                    Checkbox(
-                                      checkColor: Colors.white,
-                                      fillColor: MaterialStateProperty.all<Color>(Colors.green),
-                                      value: _faultResolvedController,
-                                      onChanged: (bool? value) async {
-                                        setState(() {
-                                          _faultResolvedController = value!;
-                                        });
-                                      },
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment
+                                      .center, // Align items vertically in the center
+                                  children: [
+                                    Visibility(
+                                      visible: showNotification,
+                                      child: const Column(
+                                        // Use Column to stack notification and text vertically
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Icon(Icons.notification_important,
+                                              color: Colors.red),
+                                          SizedBox(width: 5),
+                                          Text(
+                                            'Attention needed!',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.red,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    // Centralize "Fault Information" again
+                                    const Expanded(
+                                      child: Center(
+                                        // This centers the "Fault Information" text
+                                        child: Text(
+                                          'Fault Information',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                          textAlign: TextAlign
+                                              .center, // Ensure text is centered
+                                        ),
+                                      ),
+                                    ),
+                                    Visibility(
+                                      visible: visNotification,
+                                      child: const Icon(
+                                        Icons.notification_important,
+                                        color: Colors.red,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
+
+                              const SizedBox(height: 10),
+                              Text(
+                                'Reference Number: ${fault['ref']}',
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5),
+                              if (fault['accountNumber'] != "") ...[
+                                Text(
+                                  'Reporter Account Number: ${fault['accountNumber']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5),
+                              ],
+                              Text(
+                                'Street Address of Fault: $faultAddress',
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                'Fault Type: $faultType',
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                'Date of Fault Report: $dateReported',
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5),
+
+                              // Fault Description Section
+                              if (fault['faultDescription'] != "") ...[
+                                Text(
+                                  'Fault Description: ${fault['faultDescription']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5),
+                              ],
+
+                              // Manager Allocated Section
+                              if (fault['managerAllocated'] != "") ...[
+                                Text(
+                                  'Manager Allocated: ${fault['managerAllocated']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5),
+                              ],
+
+                              // Attendee Allocated Section
+                              if (fault['attendeeAllocated'] != "") ...[
+                                Text(
+                                  'Attendee Allocated: ${fault['attendeeAllocated']}',
+                                  style: const TextStyle(
+                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                ),
+                                const SizedBox(height: 5),
+                              ],
+
+                              Text(
+                                'Resolve State: $status',
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                'Fault Stage: ${fault['faultStage'].toString()}',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color:
+                                        getFaultStageColor(fault['faultStage'])),
+                              ),
+                              const SizedBox(height: 10),
+
+                              // Wrap the action buttons to prevent overflow on small screens
+                              Center(
+                                child: Wrap(
+                                  spacing: 8.0,
+                                  runSpacing: 10.0,
+                                  alignment: WrapAlignment.center,
+                                  children: [
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        if (!isLocalUser &&
+                                            !isLocalMunicipality) {
+                                          if (selectedMunicipality == null ||
+                                              selectedMunicipality ==
+                                                  "Select Municipality") {
+                                            Fluttertoast.showToast(
+                                              msg:
+                                                  "Please select a municipality first!",
+                                              toastLength: Toast.LENGTH_SHORT,
+                                              gravity: ToastGravity.CENTER,
+                                            );
+                                            return;
+                                          }
+                                        }
+
+                                        String municipalityContext =
+                                            isLocalMunicipality || isLocalUser
+                                                ? municipalityId
+                                                : selectedMunicipality!;
+
+                                        if (municipalityContext.isEmpty) {
+                                          Fluttertoast.showToast(
+                                            msg:
+                                                "Invalid municipality selection or missing municipality.",
+                                            toastLength: Toast.LENGTH_SHORT,
+                                            gravity: ToastGravity.CENTER,
+                                          );
+                                          return;
+                                        }
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                ImageZoomFaultPage(
+                                              imageName: cleanedAddress,
+                                              dateReported: dateReported,
+                                              isLocalMunicipality:
+                                                  isLocalMunicipality,
+                                              districtId: districtId,
+                                              municipalityId: municipalityId,
+                                              isLocalUser: isLocalUser,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      labelText: 'View Fault Image',
+                                      fSize: 14,
+                                      faIcon: const FaIcon(Icons.zoom_in),
+                                      fgColor: Colors.grey,
+                                      btSize: const Size(90,
+                                          38), // Adjusted size to fit smaller screens
+                                    ),
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        if (!isLocalUser &&
+                                            !isLocalMunicipality) {
+                                          if (selectedMunicipality == null ||
+                                              selectedMunicipality ==
+                                                  "Select Municipality") {
+                                            Fluttertoast.showToast(
+                                              msg:
+                                                  "Please select a municipality first!",
+                                              toastLength: Toast.LENGTH_SHORT,
+                                              gravity: ToastGravity.CENTER,
+                                            );
+                                            return;
+                                          }
+                                        }
+
+                                        String municipalityContext =
+                                            isLocalMunicipality || isLocalUser
+                                                ? municipalityId
+                                                : selectedMunicipality!;
+
+                                        if (municipalityContext.isEmpty) {
+                                          Fluttertoast.showToast(
+                                            msg:
+                                                "Invalid municipality selection or missing municipality.",
+                                            toastLength: Toast.LENGTH_SHORT,
+                                            gravity: ToastGravity.CENTER,
+                                          );
+                                          return;
+                                        }
+                                        accountNumberRep = fault['accountNumber'];
+                                        locationGivenRep = fault['address'];
+
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => MapScreenProp(
+                                              propAddress: locationGivenRep,
+                                              propAccNumber: accountNumberRep,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      labelText: 'Location',
+                                      fSize: 14,
+                                      faIcon: const FaIcon(Icons.map),
+                                      fgColor: Colors.green,
+                                      btSize: const Size(90,
+                                          38), // Adjusted size to fit smaller screens
+                                    ),
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        if (!isLocalUser &&
+                                            !isLocalMunicipality) {
+                                          if (selectedMunicipality == null ||
+                                              selectedMunicipality ==
+                                                  "Select Municipality") {
+                                            Fluttertoast.showToast(
+                                              msg:
+                                                  "Please select a municipality first!",
+                                              toastLength: Toast.LENGTH_SHORT,
+                                              gravity: ToastGravity.CENTER,
+                                            );
+                                            return;
+                                          }
+                                        }
+
+                                        String municipalityContext =
+                                            isLocalMunicipality || isLocalUser
+                                                ? municipalityId
+                                                : selectedMunicipality!;
+
+                                        if (municipalityContext.isEmpty) {
+                                          Fluttertoast.showToast(
+                                            msg:
+                                                "Invalid municipality selection or missing municipality.",
+                                            toastLength: Toast.LENGTH_SHORT,
+                                            gravity: ToastGravity.CENTER,
+                                          );
+                                          return;
+                                        }
+                                        showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              shape: const RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.all(
+                                                      Radius.circular(16))),
+                                              title: const Text("Call Reporter!"),
+                                              content: const Text(
+                                                  "Would you like to call the individual who logged the fault?"),
+                                              actions: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.cancel,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () {
+                                                    reporterCellGiven =
+                                                        fault['reporterContact'];
+                                                    final Uri tel = Uri.parse(
+                                                        'tel:${reporterCellGiven.toString()}');
+                                                    launchUrl(tel);
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  icon: const Icon(Icons.done,
+                                                      color: Colors.green),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                      },
+                                      labelText: 'Call User',
+                                      fSize: 14,
+                                      faIcon: const FaIcon(Icons.call),
+                                      fgColor: Colors.orange,
+                                      btSize: const Size(90,
+                                          38), // Adjusted size to fit smaller screens
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ),
+      );
+    } else {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+  }
+
+  Future<void> _updateReport([DocumentSnapshot? documentSnapshot]) async {
+    if (documentSnapshot != null) {
+      // Print and verify the values of districtId, municipalityId, and documentSnapshot.id
+      print("districtId: $districtId");
+      print("municipalityId: $municipalityId");
+      print("documentSnapshot.id: ${documentSnapshot.id}");
+
+      // Ensure districtId and municipalityId are non-empty for non-local municipality cases
+      String municipalityContext = isLocalMunicipality || isLocalUser
+          ? municipalityId
+          : selectedMunicipality!;
+
+      if (municipalityContext.isEmpty) {
+        print("Error: municipalityContext is empty.");
+        return;
+      }
+
+      DocumentReference faultDocRef;
+
+      // Construct path based on municipality type
+      if (isLocalMunicipality) {
+        faultDocRef = FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityContext)
+            .collection('faultReporting')
+            .doc(documentSnapshot.id);
+      } else {
+        faultDocRef = FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .doc(municipalityContext)
+            .collection('faultReporting')
+            .doc(documentSnapshot.id);
+      }
+
+      print('Updating document path: ${faultDocRef.path}');
+
+      print('Updating document path: ${faultDocRef.path}');
+      // Initialize dropdown values and fields
+      String dropdownValue = 'Water and Sanitation';
+      dropdownValue = documentSnapshot['faultType'];
+      String? dropdownValue3 = _employeesUserNames.isNotEmpty && _employeesUserNames.contains(_employeesUserNames.first)
+          ? _employeesUserNames.first
+          : null;
+
+
+      print('Updating fault with ID: ${documentSnapshot.id}');
+
+      // Set the visibility of stages based on the current fault stage
+      int stageNum = documentSnapshot['faultStage'];
+      visStage1 = stageNum == 1;
+      visStage2 = stageNum == 2;
+      visStage3 = stageNum == 3;
+      visStage4 = stageNum == 4;
+      visStage5 = stageNum == 5;
+
+      print('Fault Stage: $stageNum');
+
+      // Populate fields with current fault data
+      _accountNumberController.text = documentSnapshot['accountNumber'];
+      _addressController.text = documentSnapshot['address'];
+      _descriptionController.text = documentSnapshot['faultDescription'];
+      _commentController.text = '';
+      _depAllocationController.text = documentSnapshot['depAllocated'];
+      _faultResolvedController = documentSnapshot['faultResolved'];
+
+      // Display the update dialog
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Dialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Update Fault',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Display admin comment if available
+                        if (documentSnapshot['adminComment'] != null &&
+                            documentSnapshot['adminComment'].isNotEmpty) ...[
+                          Text(
+                            'Admin Comment: ${documentSnapshot['adminComment']}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
                             ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            Row(
-                              children: [
-                                Visibility(
-                                  visible: (visStage1 && adminAcc) || ((visStage3 || visStage5) && managerAcc) || ((visStage2 || visStage4) && employeeAcc),
-                                  child: ElevatedButton(
-                                    child: const Text('Update'),
-                                    onPressed: () async {
-                                      final String depSelected = dropdownValue;
-                                      final String attendeeAllocated = dropdownValue3;
-                                      // String managerAllocated = dropdownValue2;
-                                      String managerAllocated = _managerUserNames[0];
-                                      final String userComment = _commentController.text;
-                                      final bool faultResolved = _faultResolvedController;
+                          ),
+                          const SizedBox(height: 10),
+                        ],
 
-                                      if (faultStage == 1 && adminAcc) {
-                                        if (autoManager != ''){
-                                          managerAllocated = autoManager;
-                                        }
-                                        if((_commentController.text != '' || _commentController.text.isNotEmpty) && (dropdownValue3 != 'Assign User...' && dropdownValue != 'Select Department...')){ ///dropdownValue2 != 'Assign User...' &&
-                                          await _faultData
-                                              .doc(documentSnapshot.id)
-                                              .update({
-                                            "depAllocated": depSelected,
-                                            "attendeeAllocated": attendeeAllocated,
-                                            "managerAllocated": managerAllocated,
-                                            "adminComment": userComment,
-                                            "faultStage": 2,
-                                          });
-
-                                          dropdownValue = 'Select Department...';
-                                          dropdownValue2 = 'Assign User...';
-                                          dropdownValue3 = 'Assign User...';
-                                          _commentController.text = '';
-                                          _faultResolvedController = false;
-
-                                          visStage1 = false;
-                                          visStage2 = false;
-                                          visStage3 = false;
-                                          visStage4 = false;
-                                          visStage4 = false;
-
-                                          Navigator.of(context).pop();
-
-                                        } else if (dropdownValue == 'Select Department...'){
-                                          Fluttertoast.showToast(msg: 'Please allocate the fault to the correct department before continuing', gravity: ToastGravity.CENTER);
-                                        } else  if (dropdownValue3 == 'Assign User...'){
-                                          Fluttertoast.showToast(msg: 'Please assign attendee to the fault and comment to the attendee before continuing', gravity: ToastGravity.CENTER);
-                                        }
-
-                                      } else if (faultStage == 2) {
-                                        if(employeeAcc){
-                                          await _faultData
-                                              .doc(documentSnapshot.id)
-                                              .update({
-                                            "attendeeCom1": userComment,
-                                            "faultStage": 3,
-                                          });
-
-                                          _commentController.text = '';
-                                          _depAllocationController.text = '';
-                                          dropdownValue = '';
-                                          _faultResolvedController = false;
-                                          _dateReportedController.text = '';
-
-                                          visStage1 = false;
-                                          visStage2 = false;
-                                          visStage3 = false;
-                                          visStage4 = false;
-                                          visStage5 = false;
-
-                                          if(context.mounted)Navigator.of(context).pop();
-                                        } else if (managerAcc){
-                                          await _faultData
-                                              .doc(documentSnapshot.id)
-                                              .update({
-                                            "managerCom1": userComment,
-                                            "faultStage": 3,
-                                          });
-
-                                          _commentController.text = '';
-                                          _depAllocationController.text = '';
-                                          dropdownValue = '';
-                                          _faultResolvedController = false;
-                                          _dateReportedController.text = '';
-
-                                          visStage1 = false;
-                                          visStage2 = false;
-                                          visStage3 = false;
-                                          visStage4 = false;
-                                          visStage5 = false;
-
-                                          if(context.mounted)Navigator.of(context).pop();
-                                        } else{
-                                          Fluttertoast.showToast(msg: 'Please give a comment of information before continuing', gravity: ToastGravity.CENTER);
-                                        }
-
-                                      } else if (faultStage == 3) {
-                                        if(employeeAcc){
-                                          await _faultData
-                                              .doc(documentSnapshot.id)
-                                              .update({
-                                            "attendeeCom2": userComment,
-                                            "faultStage": 4,
-                                          });
-
-                                          _commentController.text = '';
-                                          _depAllocationController.text = '';
-                                          dropdownValue = '';
-                                          _faultResolvedController = false;
-                                          _dateReportedController.text = '';
-
-                                          visStage1 = false;
-                                          visStage2 = false;
-                                          visStage3 = false;
-                                          visStage4 = false;
-                                          visStage5 = false;
-
-                                          if(context.mounted)Navigator.of(context).pop();
-                                        } else if (managerAcc){
-                                          await _faultData
-                                              .doc(documentSnapshot.id)
-                                              .update({
-                                            "managerCom2": userComment,
-                                            "faultStage": 3,
-                                          });
-
-                                          _commentController.text = '';
-                                          _depAllocationController.text = '';
-                                          dropdownValue = '';
-                                          _faultResolvedController = false;
-                                          _dateReportedController.text = '';
-
-                                          visStage1 = false;
-                                          visStage2 = false;
-                                          visStage3 = false;
-                                          visStage4 = false;
-                                          visStage5 = false;
-
-                                          if(context.mounted)Navigator.of(context).pop();
-                                        } else{
-                                          Fluttertoast.showToast(msg: 'Please give a comment of information before continuing', gravity: ToastGravity.CENTER);
-                                        }
-
-                                      } else if (faultStage == 4) {
-                                        if((_commentController.text != '' || _commentController.text.isNotEmpty) && faultResolved == true){
-                                          await _faultData
-                                              .doc(documentSnapshot.id)
-                                              .update({
-                                            "managerCom2": userComment,
-                                            "faultResolved": faultResolved,
-                                            "faultStage": 5,
-                                          });
-
-                                          _commentController.text = '';
-                                          _depAllocationController.text = '';
-                                          dropdownValue = '';
-                                          _faultResolvedController = false;
-                                          _dateReportedController.text = '';
-
-                                          visStage1 = false;
-                                          visStage2 = false;
-                                          visStage3 = false;
-                                          visStage4 = false;
-                                          visStage5 = false;
-
-                                          if(context.mounted)Navigator.of(context).pop();
-                                        } else if ((_commentController.text != '' || _commentController.text.isNotEmpty) && faultResolved == true){
-                                          await _faultData
-                                              .doc(documentSnapshot.id)
-                                              .update({
-                                            "managerCom2": userComment,
-                                            "faultResolved": faultResolved,
-                                            "faultStage": 3,
-                                          });
-
-                                          _commentController.text = '';
-                                          _depAllocationController.text = '';
-                                          dropdownValue = '';
-                                          _faultResolvedController = false;
-                                          _dateReportedController.text = '';
-
-                                          visStage1 = false;
-                                          visStage2 = false;
-                                          visStage3 = false;
-                                          visStage4 = false;
-                                          visStage5 = false;
-
-                                          if(context.mounted)Navigator.of(context).pop();
-                                        } else {
-                                          Fluttertoast.showToast(msg: 'Please give a comment to what you are doing before continuing', gravity: ToastGravity.CENTER);
-                                        }
-
-
-                                      } else if (faultStage == 5) {
-                                        await _faultData
-                                            .doc(documentSnapshot.id)
-                                            .update({
-                                          "managerCom3": userComment,
-                                          "faultResolved": faultResolved,
-                                          "faultStage": 6,
-                                        });
-
-                                        _commentController.text = '';
-                                        _depAllocationController.text = '';
-                                        dropdownValue = '';
-                                        _faultResolvedController = false;
-                                        _dateReportedController.text = '';
-
-                                        visStage1 = false;
-                                        visStage2 = false;
-                                        visStage3 = false;
-                                        visStage4 = false;
-                                        visStage5 = false;
-
-                                        if(context.mounted)Navigator.of(context).pop();
-
-                                      }
-                                    },
+                        // Approve and Complete button for admin in Stage 4
+                        if (faultStage == 4 && adminAcc)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  backgroundColor: Colors.orange,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 15),
+                                  textStyle: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ],
-                            )
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }));
+                                onPressed: () async {
+                                  await _returnFaultToAdmin(documentSnapshot);
+                                },
+                                child: const Text('Admin Options'),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  backgroundColor: Colors.red,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 15),
+                                  textStyle: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: const Text('Cancel'),
+                              ),
+                            ],
+                          ),
+                        // Manager updating in Stage 3
+                        if (faultStage == 3 && managerAcc) ...[
+                          TextField(
+                            controller: _commentController,
+                            decoration: const InputDecoration(
+                              labelText:
+                                  'Add Comment before Moving to Stage 4...',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.green,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            onPressed: () async {
+                              if (_commentController.text.isNotEmpty) {
+                                await faultDocRef.update({
+                                  "managerCom2": _commentController.text,
+                                  "faultResolved": false,
+                                  "faultStage": 4,
+                                });
+
+                                _commentController.clear();
+                                dropdownValue = 'Select Department...';
+                                dropdownValue3 = 'Assign User...';
+                                _faultResolvedController = false;
+                                visStage1 = visStage2 =
+                                    visStage3 = visStage4 = visStage5 = false;
+
+                                if (context.mounted)
+                                  Navigator.of(context).pop();
+                              } else {
+                                _showToast(
+                                    'Please provide a comment before updating the fault.');
+                              }
+                            },
+                            child: const Text('Update'),
+                          ),
+                        ],
+
+                        // Employee updating in Stage 2
+                        if (faultStage == 2 && employeeAcc) ...[
+                          TextField(
+                            controller: _commentController,
+                            decoration: const InputDecoration(
+                              labelText:
+                                  'Add Comment to Confirm Fault Assignment...',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.green,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 15),
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            onPressed: () async {
+                              if (_commentController.text.isNotEmpty) {
+                                await faultDocRef.update({
+                                  "attendeeCom1": _commentController.text,
+                                  "faultStage": 3,
+                                });
+
+                                _commentController.clear();
+                                dropdownValue = 'Select Department...';
+                                dropdownValue3 = 'Assign User...';
+                                _faultResolvedController = false;
+                                visStage1 = visStage2 =
+                                    visStage3 = visStage4 = visStage5 = false;
+
+                                if (context.mounted)
+                                  Navigator.of(context).pop();
+                              } else {
+                                _showToast(
+                                    'Please provide a comment before confirming assignment.');
+                              }
+                            },
+                            child: const Text('Confirm Assignment'),
+                          ),
+                        ],
+
+                        // Admin assigning department in Stage 1
+                        if (faultStage == 1 && adminAcc) ...[
+                          DropdownButtonFormField<String>(
+                            value: dropdownValue,
+                            decoration: InputDecoration(
+                              labelText: 'Water and Sanitation',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                            ),
+                            items: <String>[
+                            //  'Select Department...',
+                              'Water & Sanitation',
+                              // 'Roadworks',
+                              // 'Waste Management'
+                            ].map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                dropdownValue = newValue!;
+                                getUserDepartmentDetails();
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            value: dropdownValue3,
+                            decoration: InputDecoration(
+                              labelText: 'Assign User',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                            ),
+                            items: _employeesUserNames
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                dropdownValue3 = newValue!;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _commentController,
+                            decoration: const InputDecoration(
+                              labelText: 'Comment...',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: Colors.green,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 15),
+                                    textStyle: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  onPressed: () async {
+                                    if (_commentController.text.isNotEmpty &&
+                                        dropdownValue3 != null &&
+                                        dropdownValue3 != 'Assign User...' &&
+                                        dropdownValue == 'Water & Sanitation') {
+                                      try {
+                                        await faultDocRef.update({
+                                          "faultStage": 2,
+                                          "depAllocated": dropdownValue,
+                                          "attendeeAllocated": dropdownValue3,
+                                          "adminComment": _commentController.text,
+                                        });
+                                        print("Update successful: Fault stage updated to 2.");
+                                      } catch (e) {
+                                        print("Update failed: $e");
+                                      }
+
+
+                                      _commentController.clear();
+                                      dropdownValue = 'Water & Sanitation';
+                                      dropdownValue3 = null;
+                                      _faultResolvedController = false;
+                                      visStage1 = visStage2 = visStage3 =
+                                          visStage4 = visStage5 = false;
+
+                                      if (context.mounted) {
+                                        Navigator.of(context).pop();
+                                      }
+                                    } else {
+                                      _showToast(
+                                          'Please allocate the fault and provide a comment.');
+                                    }
+                                  },
+                                  child: const Text('Assign'),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: Colors.red,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 15),
+                                    textStyle: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: const Text('Cancel'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      );
     }
+  }
 
-    _createBottomSheet();
-
+  // Utility function to show toast
+  void _showToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      gravity: ToastGravity.CENTER,
+    );
   }
 
   Future<void> _reassignFault([DocumentSnapshot? documentSnapshot]) async {
+    if (documentSnapshot == null) return;
+    String municipalityContext = isLocalMunicipality || isLocalUser
+        ? municipalityId
+        : selectedMunicipality!;
 
-    String dropdownValue = 'Select Department...';
-    dropdownValue = documentSnapshot?['faultType'];
-    String dropdownValue2 = 'Assign User...';
-    String dropdownValue3 = 'Assign User...';
-    _commentController.text = '';
+    if (municipalityContext.isEmpty) {
+      print("Error: municipalityContext is empty.");
+      return;
+    }
+    // Create the DocumentReference based on municipality type
+    DocumentReference faultDocRef;
+    if (isLocalMunicipality) {
+      faultDocRef = FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityContext)
+          .collection('faultReporting')
+          .doc(documentSnapshot.id);
+    } else {
+      faultDocRef = FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityContext)
+          .collection('faultReporting')
+          .doc(documentSnapshot.id);
+    }
+
+    print('Reassigning fault with ID: ${documentSnapshot.id}');
+    print('Fault document path: ${faultDocRef.path}');
+
+    // Initialize dropdowns and text field for reallocation
+    String dropdownValue = 'Water and Sanitation';
+    dropdownValue = documentSnapshot['faultType'];
+    String? dropdownValue3 = _employeesUserNames.isNotEmpty && _employeesUserNames.contains(_employeesUserNames.first)
+        ? _employeesUserNames.first
+        : null;
+    _commentController.clear();
 
     //This checks the current state of the fault stage 5 is resolve stage
-    int stageNum = documentSnapshot!['faultStage'];
+    int stageNum = documentSnapshot['faultStage'];
     if (stageNum == 1) {
       visStage1 = true;
       visStage2 = false;
@@ -3321,186 +3949,231 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
       visStage5 = true;
     }
 
-    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
-    void _createBottomSheet() async{
-      showModalBottomSheet(
-          context: context,
-          builder: await showModalBottomSheet(
-              isScrollControlled: true,
-              context: context,
-              builder: (BuildContext ctx) {
-                return StatefulBuilder(
-                  builder: (BuildContext context, StateSetter setState) {
-                    return SingleChildScrollView(
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                            top: 20,
-                            left: 20,
-                            right: 20,
-                            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Visibility(
-                            //   visible: adminAcc,
-                            //   child: const Text('Department Allocation'),
-                            // ),
-                            // Visibility(
-                            //   visible: adminAcc,
-                            //   child: DropdownButtonFormField <String>(
-                            //     value: dropdownValue,
-                            //     items: _deptName.toSet()
-                            //         .map<DropdownMenuItem<String>>((String value) {
-                            //       return DropdownMenuItem<String>(
-                            //         value: value,
-                            //         child: Text(value, style: const TextStyle(fontSize: 16),),
-                            //       );
-                            //     }).toList(),
-                            //     onChanged: (String? newValue) {
-                            //       setState(() {
-                            //         dropdownValue = newValue!;
-                            //       });
-                            //     },
-                            //   ),
-                            // ),
+    // Creating an alert dialog instead of a bottom sheet
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              // Customizing the background color
+              backgroundColor: Colors.grey[50],
 
-                            // Visibility(
-                            //   visible: adminAcc,
-                            //   child: const Text('Manager Allocation'),
-                            // ),
-                            // Visibility(
-                            //   visible: adminAcc,
-                            //   child: DropdownButtonFormField <String>(
-                            //     value: dropdownValue2,
-                            //     items: _managerUserNames.toSet()
-                            //         .map<DropdownMenuItem<String>>((String value) {
-                            //       return DropdownMenuItem<String>(
-                            //         value: value,
-                            //         child: Text(value, style: const TextStyle(fontSize: 16),),
-                            //       );
-                            //     }).toList(),
-                            //     onChanged: (String? newValue) {
-                            //       setState(() {
-                            //         dropdownValue2 = newValue!;
-                            //       });
-                            //     },
-                            //   ),
-                            // ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0),
+              ),
 
-                            Visibility(
-                              visible: adminAcc,
-                              child: const Text('Reassign To'),
-                            ),
-                            Visibility(
-                              visible: adminAcc,
-                              child: DropdownButtonFormField <String>(
-                                value: dropdownValue3,
-                                items: _employeesUserNames.toSet()
-                                    .map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value, style: const TextStyle(fontSize: 16),),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    dropdownValue3 = newValue!;
-                                  });
-                                },
-                              ),
-                            ),
+              title: const Text(
+                'Reassign Fault',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black, // Customize title font color
+                ),
+              ),
 
-                            Visibility(
-                              visible: adminAcc,
-                              child: TextField(
-                                keyboardType: TextInputType.text,
-                                controller: _commentController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Reason for reallocation...',),
-                              ),
-                            ),
-
-                            const SizedBox(height: 10,),
-                            ElevatedButton(
-                              child: const Text('Reassign'),
-                              onPressed: () async {
-                                final String userComment = _commentController.text;
-                                // final String depSelected = dropdownValue;
-                                // final String managerAllocated = dropdownValue2;
-                                final String attendeeAllocated = dropdownValue3;
-
-                                if (_deptManagerController.text != '' ||
-                                    _deptManagerController.text.isNotEmpty) {
-                                  await _faultData
-                                      .doc(documentSnapshot.id)
-                                      .update({
-                                    "reallocationComment": userComment,
-                                    // "depAllocated": depSelected,
-                                    // "managerAllocated": managerAllocated,
-                                    "attendeeAllocated": attendeeAllocated,
-                                    "faultResolved": false,
-                                    "faultStage": 2,
-                                  });
-                                }
-                                // else if (dropdownValue2 == 'Assign User...') {
-                                //   Fluttertoast.showToast(
-                                //       msg: 'Please allocate the fault to a new manager if necessary!',
-                                //       gravity: ToastGravity.CENTER);
-                                // }
-                                else if (dropdownValue3 == 'Assign User...') {
-                                  Fluttertoast.showToast(
-                                      msg: 'Please allocate the fault to a new fault attendee!',
-                                      gravity: ToastGravity.CENTER);
-                                }
-                                else if (_commentController.text != '' ||
-                                    _commentController.text.isNotEmpty) {
-                                  Fluttertoast.showToast(
-                                      msg: 'Please provide reasoning for your reallocation!',
-                                      gravity: ToastGravity.CENTER);
-                                }
-                                else {
-                                  Fluttertoast.showToast(
-                                      msg: 'Please allocate the fault to a new attendee or manager and explain your reallocation!',
-                                      gravity: ToastGravity.CENTER);
-                                }
-
-                                _commentController.text = '';
-                                _depAllocationController.text = '';
-                                dropdownValue = 'Select Department...';
-                                _faultResolvedController = false;
-                                _dateReportedController.text = '';
-
-                                visStage1 = false;
-                                visStage2 = false;
-                                visStage3 = false;
-                                visStage4 = false;
-                                visStage4 = false;
-
-                                Navigator.of(context).pop();
-                              },
-                            )
-                          ],
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.6, // Set the width
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Customize visibility and text
+                      Visibility(
+                        visible: adminAcc,
+                        child: const Text(
+                          'Reassign To',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black, // Customize font color
+                          ),
                         ),
                       ),
-                    );
+
+                      // Custom dropdown
+                      Visibility(
+                        visible: adminAcc,
+                        child: DropdownButtonFormField<String>(
+                          dropdownColor: Colors.grey[50],
+                          // Customize dropdown background color
+                          value: dropdownValue3,
+                          items: _employeesUserNames
+                              .toSet()
+                              .map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(
+                                value,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors
+                                      .black, // Customize dropdown text color
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              dropdownValue3 = newValue!;
+                            });
+                          },
+                        ),
+                      ),
+
+                      // Custom TextField for reason input
+                      Visibility(
+                        visible: adminAcc,
+                        child: TextField(
+                          style: const TextStyle(color: Colors.black),
+                          // Customize input text color
+                          keyboardType: TextInputType.text,
+                          controller: _commentController,
+                          decoration: const InputDecoration(
+                            labelText: 'Reason for reallocation...',
+                            labelStyle: TextStyle(
+                              color: Colors.black, // Customize label text color
+                            ),
+                            focusedBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.black),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              actions: [
+                // Custom button styles
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.green,
+                    // Customize text color
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  child: const Text('Reassign'),
+                    onPressed: () async {
+                      final String userComment = _commentController.text;
+                      final String? attendeeAllocated = dropdownValue3;
+
+                      if (attendeeAllocated == null || attendeeAllocated == 'Assign User...') {
+                        Fluttertoast.showToast(
+                          msg: 'Please allocate the fault to a new fault attendee!',
+                          gravity: ToastGravity.CENTER,
+                        );
+                        return;
+                      }
+
+                      if (userComment.isEmpty) {
+                        Fluttertoast.showToast(
+                          msg: 'Please provide reasoning for your reallocation!',
+                          gravity: ToastGravity.CENTER,
+                        );
+                        return;
+                      }
+
+                      try {
+                        await faultDocRef.update({
+                          "reallocationComment": userComment,
+                          "attendeeAllocated": attendeeAllocated,
+                          "faultResolved": false,
+                          "faultStage": 2,
+                        });
+                        print("Reassignment successful: Fault updated to stage 2.");
+                        Fluttertoast.showToast(
+                          msg: 'Fault reassigned successfully!',
+                          gravity: ToastGravity.CENTER,
+                        );
+                        await fetchFaultsForAllMunicipalities();
+                        if(mounted){// Or the specific function you use
+                        setState(() {});}
+                      } catch (e) {
+                        print("Error during reassignment: $e");
+                        Fluttertoast.showToast(
+                          msg: 'Failed to reassign the fault.',
+                          gravity: ToastGravity.CENTER,
+                        );
+                      }
+
+                      // Clear fields after update
+                      _commentController.clear();
+                      _depAllocationController.text = '';
+                      dropdownValue = 'Select Department...';
+                      dropdownValue3 = 'Assign User...';
+                      _faultResolvedController = false;
+
+                      visStage1 = visStage2 = visStage3 = visStage4 = visStage5 = false;
+
+                      Navigator.of(context).pop(); // Close the dialog
+                    }
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.red,
+                    // Customize text color
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  child: const Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
                   },
-                );
-              }));
-    }
-
-    _createBottomSheet();
-
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _managersReassignWorker([DocumentSnapshot? documentSnapshot]) async {
+    if (documentSnapshot == null) return;
+    String municipalityContext = isLocalMunicipality || isLocalUser
+        ? municipalityId
+        : selectedMunicipality!;
 
-    String dropdownValue = 'Select Department...';
-    // String dropdownValue = documentSnapshot?['faultType'];
-    String dropdownValue2 = 'Assign User...';
+    if (municipalityContext.isEmpty) {
+      print("Error: municipalityContext is empty.");
+      return;
+    }
+    // Create the DocumentReference based on municipality type
+    DocumentReference faultDocRef;
+    if (isLocalMunicipality) {
+      faultDocRef = FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityContext)
+          .collection('faultReporting')
+          .doc(documentSnapshot.id);
+    } else {
+      faultDocRef = FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityContext)
+          .collection('faultReporting')
+          .doc(documentSnapshot.id);
+    }
 
-    //This checks the current state of the fault stage 5 is resolve stage
-    int stageNum = documentSnapshot!['faultStage'];
+    print('Reassigning fault with ID: ${documentSnapshot.id}');
+    print('Fault document path: ${faultDocRef.path}');
+
+    // Initialize dropdowns and text field for reallocation
+    String dropdownValue = 'Water and Sanitation';
+    dropdownValue = documentSnapshot['faultType'];
+    String? dropdownValue2 = _employeesUserNames.isNotEmpty && _employeesUserNames.contains(_employeesUserNames.first)
+        ? _employeesUserNames.first
+        : null;
+
+    // Check the current state of the fault stage 5 is resolve stage
+    int stageNum = documentSnapshot['faultStage'];
     if (stageNum == 1) {
       visStage1 = true;
       visStage2 = false;
@@ -3533,6 +4206,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
       visStage5 = true;
     }
 
+    // Populate initial values
     _accountNumberController.text = documentSnapshot['accountNumber'];
     _addressController.text = documentSnapshot['address'];
     _descriptionController.text = documentSnapshot['faultDescription'];
@@ -3542,166 +4216,259 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
     _faultResolvedController = documentSnapshot['faultResolved'];
     _dateReportedController.text = documentSnapshot['dateReported'];
 
-    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
-    void _createBottomSheet() async{
-      showModalBottomSheet(
-          context: context,
-          builder: await showModalBottomSheet(
-              isScrollControlled: true,
-              context: context,
-              builder: (BuildContext ctx) {
-                return StatefulBuilder(
-                  builder: (BuildContext context, StateSetter setState) {
-                    return SingleChildScrollView(
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                            top: 20,
-                            left: 20,
-                            right: 20,
-                            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Visibility(
-                              visible: (visStage1) && employeeAcc,
-                              child: const Text('Only Administrators may assign this fault.'),
-                            ),
-
-                            Visibility(
-                              visible: managerAcc,
-                              child: const Text('Return fault to administrator'),
-                            ),
-                            Visibility(
-                              visible: adminAcc && visStage1,
-                              child: DropdownButtonFormField <String>(
-                                value: dropdownValue2,
-                                items: _employeesUserNames.toSet()
-                                    .map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value, style: const TextStyle(fontSize: 16),),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    dropdownValue2 = newValue!;
-                                  });
-                                },
-                              ),
-                            ),
-
-                            Visibility(
-                              visible: employeeAcc,
-                              child: const Text('Return fault to manager'),
-                            ),
-                            Visibility(
-                              visible: (visStage2 || visStage3 ) && (managerAcc || employeeAcc),
-                              child: TextField(
-                                keyboardType: TextInputType.text,
-                                controller: _commentController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Reason for return',),
-                              ),
-                            ),
-                            const SizedBox(height: 10,),
-
-                            Visibility(
-                              visible: (visStage2 || visStage3 || visStage4 || visStage5) && managerAcc,
-                              child: ElevatedButton(
-                                child: const Text('Return Fault'),
-                                onPressed: () async {
-                                  final String userComment = _commentController.text;
-
-                                  if (_commentController.text != '' ||
-                                      _commentController.text.isNotEmpty) {
-                                    await _faultData
-                                        .doc(documentSnapshot.id)
-                                        .update({
-                                      "managerReturnCom": userComment,
-                                      "faultStage": 1,
-                                    });
-                                  } else {
-                                    Fluttertoast.showToast(
-                                        msg: 'Please explain why you want to return this fault to the admin to reassign',
-                                        gravity: ToastGravity.CENTER);
-                                  }
-
-                                  _commentController.text = '';
-                                  _depAllocationController.text = '';
-                                  dropdownValue = 'Select Department...';
-                                  _faultResolvedController = false;
-                                  _dateReportedController.text = '';
-
-                                  visStage1 = false;
-                                  visStage2 = false;
-                                  visStage3 = false;
-                                  visStage4 = false;
-                                  visStage4 = false;
-
-                                  Navigator.of(context).pop();
-                                },
-                              ),
-                            ),//button for managers to return a fault if it cannot be handled
-
-                            Visibility(
-                              visible: (visStage3 || visStage4 ) && employeeAcc,
-                              child: ElevatedButton(
-                                child: const Text('Return to manager'),
-                                onPressed: () async {
-                                  final String userComment = _commentController.text;
-
-                                  if (_commentController.text != '' ||
-                                      _commentController.text.isNotEmpty) {
-                                    await _faultData
-                                        .doc(documentSnapshot.id)
-                                        .update({
-                                      "attendeeReturnCom": userComment,
-                                      "faultStage": 2,
-                                    });
-                                  } else {
-                                    Fluttertoast.showToast(
-                                        msg: 'Please explain why you want to return this fault to your manager to reassign',
-                                        gravity: ToastGravity.CENTER);
-                                  }
-
-                                  _commentController.text = '';
-                                  _depAllocationController.text = '';
-                                  dropdownValue = 'Select Department...';
-                                  _faultResolvedController = false;
-                                  _dateReportedController.text = '';
-
-                                  visStage1 = false;
-                                  visStage2 = false;
-                                  visStage3 = false;
-                                  visStage4 = false;
-                                  visStage4 = false;
-
-                                  Navigator.of(context).pop();
-                                },
-                              ),
-                            )
-                          ],
+    // Show AlertDialog instead of a BottomSheet
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              backgroundColor: Colors.grey[50],
+              // Match background color
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0), // Rounded corners
+              ),
+              title: const Text(
+                'Reassign Fault Worker',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black, // Title font color
+                ),
+              ),
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.6, // Set width
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Visibility(
+                        visible: (visStage1) && employeeAcc,
+                        child: const Text(
+                          'Only Administrators may assign this fault.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black, // Text font color
+                          ),
                         ),
                       ),
-                    );
+                      Visibility(
+                        visible: managerAcc,
+                        child: const Text(
+                          'Return fault to administrator',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black, // Text font color
+                          ),
+                        ),
+                      ),
+                      Visibility(
+                        visible: adminAcc && visStage1,
+                        child: DropdownButtonFormField<String>(
+                          dropdownColor: Colors.grey[50], // Dropdown background
+                          value: dropdownValue2,
+                          items: _employeesUserNames
+                              .toSet()
+                              .map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(
+                                value,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black, // Dropdown text color
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              dropdownValue2 = newValue!;
+                            });
+                          },
+                        ),
+                      ),
+                      Visibility(
+                        visible: employeeAcc,
+                        child: const Text(
+                          'Return fault to manager',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black, // Text font color
+                          ),
+                        ),
+                      ),
+                      Visibility(
+                        visible: (visStage2 || visStage3) &&
+                            (managerAcc || employeeAcc),
+                        child: TextField(
+                          style: const TextStyle(color: Colors.black),
+                          // Input text color
+                          keyboardType: TextInputType.text,
+                          controller: _commentController,
+                          decoration: const InputDecoration(
+                            labelText: 'Reason for return',
+                            labelStyle: TextStyle(
+                              color: Colors.black, // Label text color
+                            ),
+                            focusedBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.black),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                // Custom button styles for manager's return fault button
+                Visibility(
+                  visible: (visStage2 || visStage3 || visStage4 || visStage5) &&
+                      managerAcc,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.green,
+                      // Customize text and background color
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                    ),
+                    child: const Text('Return Fault'),
+                    onPressed: () async {
+                      final String userComment = _commentController.text;
+
+                      if (userComment.isNotEmpty) {
+                        await faultDocRef.update({
+                          "managerReturnCom": userComment,
+                          "faultStage": 1,
+                        });
+                      } else {
+                        Fluttertoast.showToast(
+                          msg:
+                              'Please explain why you want to return this fault to the admin.',
+                          gravity: ToastGravity.CENTER,
+                        );
+                      }
+
+                      _resetFormFields();
+                      Navigator.of(context).pop(); // Close the dialog
+                    },
+                  ),
+                ),
+                // Custom button styles for employee's return fault button
+                Visibility(
+                  visible: (visStage3 || visStage4) && employeeAcc,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.orange,
+                      // Customize text and background color
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                    ),
+                    child: const Text('Return to manager'),
+                    onPressed: () async {
+                      final String userComment = _commentController.text;
+
+                      if (userComment.isNotEmpty) {
+                        await faultDocRef.update({
+                          "attendeeReturnCom": userComment,
+                          "faultStage": 2,
+                        });
+                      } else {
+                        Fluttertoast.showToast(
+                          msg:
+                              'Please explain why you want to return this fault to your manager.',
+                          gravity: ToastGravity.CENTER,
+                        );
+                      }
+
+                      _resetFormFields();
+                      Navigator.of(context).pop(); // Close the dialog
+                    },
+                  ),
+                ),
+                // Cancel button
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.red,
+                    // Customize text and background color
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  child: const Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
                   },
-                );
-              }));
-    }
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
-    _createBottomSheet();
+  void _resetFormFields() {
+    _commentController.text = '';
+    _depAllocationController.text = '';
+    _dateReportedController.text = '';
+    dropdownValue = 'Select Department...';
+    _faultResolvedController = false;
 
+    visStage1 = false;
+    visStage2 = false;
+    visStage3 = false;
+    visStage4 = false;
+    visStage5 = false;
   }
 
   Future<void> _returnFaultToAdmin([DocumentSnapshot? documentSnapshot]) async {
+    if (documentSnapshot == null) return;
+    String municipalityContext = isLocalMunicipality || isLocalUser
+        ? municipalityId
+        : selectedMunicipality!;
 
-    String dropdownValue = 'Select Department...';
-    // String dropdownValue = documentSnapshot?['faultType'];
-    String dropdownValue2 = 'Assign User...';
+    if (municipalityContext.isEmpty) {
+      print("Error: municipalityContext is empty.");
+      return;
+    }
+    // Create the DocumentReference based on municipality type
+    DocumentReference faultDocRef;
+    if (isLocalMunicipality) {
+      faultDocRef = FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityContext)
+          .collection('faultReporting')
+          .doc(documentSnapshot.id);
+    } else {
+      faultDocRef = FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityContext)
+          .collection('faultReporting')
+          .doc(documentSnapshot.id);
+    }
 
-    //This checks the current state of the fault stage 5 is resolve stage
-    int stageNum = documentSnapshot!['faultStage'];
+    print('Reassigning fault with ID: ${documentSnapshot.id}');
+    print('Fault document path: ${faultDocRef.path}');
+
+    // Initialize dropdowns and text field for reallocation
+    String dropdownValue = 'Water and Sanitation';
+    dropdownValue = documentSnapshot['faultType'];
+    String? dropdownValue2 = _employeesUserNames.isNotEmpty && _employeesUserNames.contains(_employeesUserNames.first)
+        ? _employeesUserNames.first
+        : null;
+
+    // Check the current state of the fault stage 5 is resolve stage
+    int stageNum = documentSnapshot['faultStage'];
     if (stageNum == 1) {
       visStage1 = true;
       visStage2 = false;
@@ -3734,293 +4501,401 @@ class _FaultTaskScreenState extends State<FaultTaskScreen> {
       visStage5 = true;
     }
 
+    // Populate initial values
     _accountNumberController.text = documentSnapshot['accountNumber'];
     _addressController.text = documentSnapshot['address'];
     _descriptionController.text = documentSnapshot['faultDescription'];
     _deptManagerController.text = documentSnapshot['managerAllocated'];
-    _commentController.text = '';
     _depAllocationController.text = documentSnapshot['depAllocated'];
     _faultResolvedController = documentSnapshot['faultResolved'];
     _dateReportedController.text = documentSnapshot['dateReported'];
 
-    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
-    void _createBottomSheet() async{
-      showModalBottomSheet(
-          context: context,
-          builder: await showModalBottomSheet(
-              isScrollControlled: true,
-              context: context,
-              builder: (BuildContext ctx) {
-                return StatefulBuilder(
-                  builder: (BuildContext context, StateSetter setState) {
-                    return SingleChildScrollView(
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                            top: 20,
-                            left: 20,
-                            right: 20,
-                            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+    // Show AlertDialog instead of a BottomSheet
+    final TextEditingController _commentController = TextEditingController();
 
-                            Visibility(
-                              visible: managerAcc,
-                              child: const Text('Return fault to administrator'),
-                            ),
-
-                            Visibility(
-                              visible: employeeAcc,
-                              child: const Text('Return fault to manager'),
-                            ),
-
-                            Visibility(
-                              visible: (visStage2 || visStage3 ) && (managerAcc || employeeAcc),
-                              child: TextField(
-                                keyboardType: TextInputType.text,
-                                controller: _commentController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Reason for returning fault',),
-                              ),
-                            ),
-                            const SizedBox(height: 10,),
-
-                            Visibility(
-                              visible: (visStage2 || visStage3 || visStage4 || visStage5) && managerAcc,
-                              child: ElevatedButton(
-                                child: const Text('Return Fault'),
-                                onPressed: () async {
-                                  final String userComment = _commentController.text;
-
-                                  if (_commentController.text != '' ||
-                                      _commentController.text.isNotEmpty) {
-                                    await _faultData
-                                        .doc(documentSnapshot.id)
-                                        .update({
-                                      "managerReturnCom": userComment,
-                                      "faultStage": 1,
-                                    });
-                                  } else {
-                                    Fluttertoast.showToast(
-                                        msg: 'Please explain why you want to return this fault to the admin to reassign',
-                                        gravity: ToastGravity.CENTER);
-                                  }
-
-                                  _commentController.text = '';
-                                  _depAllocationController.text = '';
-                                  dropdownValue = 'Select Department...';
-                                  _faultResolvedController = false;
-                                  _dateReportedController.text = '';
-
-                                  visStage1 = false;
-                                  visStage2 = false;
-                                  visStage3 = false;
-                                  visStage4 = false;
-                                  visStage4 = false;
-
-                                  Navigator.of(context).pop();
-                                },
-                              ),
-                            ),//button for managers to return a fault if it cannot be handled
-
-                            Visibility(
-                              visible: (visStage3 || visStage4 ) && employeeAcc,
-                              child: ElevatedButton(
-                                child: const Text('Return to manager'),
-                                onPressed: () async {
-                                  final String userComment = _commentController.text;
-
-                                  if (_commentController.text != '' ||
-                                      _commentController.text.isNotEmpty) {
-                                    await _faultData
-                                        .doc(documentSnapshot.id)
-                                        .update({
-                                      "attendeeReturnCom": userComment,
-                                      "faultStage": 2,
-                                    });
-                                  } else {
-                                    Fluttertoast.showToast(
-                                        msg: 'Please explain why you want to return this fault to your manager to reassign',
-                                        gravity: ToastGravity.CENTER);
-                                  }
-
-                                  _commentController.text = '';
-                                  _depAllocationController.text = '';
-                                  dropdownValue = 'Select Department...';
-                                  _faultResolvedController = false;
-                                  _dateReportedController.text = '';
-
-                                  visStage1 = false;
-                                  visStage2 = false;
-                                  visStage3 = false;
-                                  visStage4 = false;
-                                  visStage4 = false;
-
-                                  Navigator.of(context).pop();
-                                },
-                              ),
-                            )
-                          ],
+    // Show AlertDialog for fault actions
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              backgroundColor: Colors.grey[50],
+              // Custom background color
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0), // Rounded corners
+              ),
+              title: const Text(
+                'Fault Actions',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black, // Customize title font color
+                ),
+              ),
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.6, // Set width
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Reason for returning fault',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black, // Text font color
                         ),
                       ),
-                    );
+                      const SizedBox(height: 10),
+                      // TextField for adding the reason to return the fault
+                      TextField(
+                        controller: _commentController,
+                        style: const TextStyle(color: Colors.black),
+                        // Input text color
+                        decoration: const InputDecoration(
+                          labelText: 'Provide a comment',
+                          labelStyle: TextStyle(
+                            color: Colors.black, // Label text color
+                          ),
+                          border: OutlineInputBorder(),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                                color: Colors.black), // Focused border color
+                          ),
+                        ),
+                        maxLines: 4,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                // Custom button styles for Return to Stage 3
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.orange,
+                    // Customize text and background color
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  onPressed: () async {
+                    final String userComment = _commentController.text;
+
+                    if (userComment.isNotEmpty) {
+                      // Update the fault stage to 3 and save the manager's comment
+                      await faultDocRef.update({
+                        "managerReturnCom": userComment, // Save the comment
+                        "faultStage": 3, // Set to Stage 3
+                      });
+
+                      // Close the dialog after successful update
+                      Navigator.of(context).pop();
+                    } else {
+                      Fluttertoast.showToast(
+                        msg:
+                            'Please provide a comment before returning the fault to Stage 3.',
+                        gravity: ToastGravity.CENTER,
+                      );
+                    }
                   },
-                );
-              }));
-    }
+                  child: const Text('Return to Stage 3'),
+                ),
 
-    _createBottomSheet();
+                // Custom button styles for Approve & Complete
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.green,
+                    // Customize text and background color
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  onPressed: () async {
+                    final String adminComment = _commentController.text;
 
+                    if (adminComment.isNotEmpty) {
+                      // Update the fault to mark as completed and move to Stage 5
+                      await faultDocRef.update({
+                        "adminComment": adminComment,
+                        "faultStage": 5, // Set to Stage 5 (Completed)
+                        "faultResolved": true, // Mark as resolved
+                      });
+
+                      // Close the dialog after successful update
+                      Navigator.of(context).pop();
+                    } else {
+                      Fluttertoast.showToast(
+                        msg:
+                            'Please provide a comment before completing the fault.',
+                        gravity: ToastGravity.CENTER,
+                      );
+                    }
+                  },
+                  child: const Text('Approve & Complete'),
+                ),
+
+                // Custom button styles for Cancel
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.red,
+                    // Customize text and background color
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context)
+                        .pop(); // Close the dialog without any action
+                  },
+                  child: const Text('Cancel'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _reassignDept([DocumentSnapshot? documentSnapshot]) async {
+    // Ensure that documentSnapshot is not null
+    if (documentSnapshot == null) {
+      print("Error: DocumentSnapshot is null.");
+      Fluttertoast.showToast(
+        msg: "Error: Fault data is missing.",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+      );
+      return;
+    }
 
-    String dropdownValue = 'Select Department...';
+    // Check that the document ID is not empty
+    if (documentSnapshot.id.isEmpty) {
+      print("Error: Document ID is empty.");
+      Fluttertoast.showToast(
+        msg: "Error: Fault document has no valid ID.",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+      );
+      return;
+    }
+
+    // Get the municipalityId from the dropdown if necessary
+    String? selectedMunicipalityId = isLocalMunicipality || isLocalUser
+        ? municipalityId
+        : selectedMunicipality; // Fetch from dropdown if necessary
+
+    if (selectedMunicipalityId == null || selectedMunicipalityId.isEmpty) {
+      print("Error: Municipality ID is empty or null.");
+      Fluttertoast.showToast(
+        msg: "Please select a municipality first!",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+      );
+      return;
+    }
+
+    String? dropdownValue; // Initialize dropdownValue as null
     _commentController.text = '';
 
-    //This checks the current state of the fault stage 5 is resolve stage
-    int stageNum = documentSnapshot!['faultStage'];
-    if (stageNum == 1) {
-      visStage1 = true;
-      visStage2 = false;
-      visStage3 = false;
-      visStage4 = false;
-      visStage5 = false;
-    } else if (stageNum == 2) {
-      visStage1 = false;
-      visStage2 = true;
-      visStage3 = false;
-      visStage4 = false;
-      visStage5 = false;
-    } else if (stageNum == 3) {
-      visStage1 = false;
-      visStage2 = false;
-      visStage3 = true;
-      visStage4 = false;
-      visStage5 = false;
-    } else if (stageNum == 4) {
-      visStage1 = false;
-      visStage2 = false;
-      visStage3 = false;
-      visStage4 = true;
-      visStage5 = false;
-    } else if (stageNum == 5) {
-      visStage1 = false;
-      visStage2 = false;
-      visStage3 = false;
-      visStage4 = false;
-      visStage5 = true;
+    // Fetch the departments collection from the nested path
+    CollectionReference deptRef;
+
+    // Handle local vs district municipality
+    if (isLocalMunicipality) {
+      deptRef = FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(selectedMunicipalityId)
+          .collection('departments');
+    } else {
+      deptRef = FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(selectedMunicipalityId)
+          .collection('departments');
     }
 
-    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
-    void _createBottomSheet() async{
-      showModalBottomSheet(
-          context: context,
-          builder: await showModalBottomSheet(
-              isScrollControlled: true,
-              context: context,
-              builder: (BuildContext ctx) {
-                return StatefulBuilder(
-                  builder: (BuildContext context, StateSetter setState) {
-                    return SingleChildScrollView(
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                            top: 20,
-                            left: 20,
-                            right: 20,
-                            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Visibility(
-                              visible: adminAcc,
-                              child: const Text('Department Allocation'),
-                            ),
-                            Visibility(
-                              visible: adminAcc,
-                              child: DropdownButtonFormField <String>(
-                                value: dropdownValue,
-                                items: _deptName.toSet()
-                                    .map<DropdownMenuItem<String>>((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value, style: const TextStyle(fontSize: 16),),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    dropdownValue = newValue!;
-                                  });
-                                },
-                              ),
-                            ),
-                            Visibility(
-                              visible: adminAcc,
-                              child: TextField(
-                                keyboardType: TextInputType.text,
-                                controller: _commentController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Reason for changing department...',),
-                              ),
-                            ),
+    List<String> deptList = [];
+    try {
+      // Fetch department list from Firestore
+      QuerySnapshot querySnapshot = await deptRef.get();
+      print(
+          'Documents in departments collection: ${querySnapshot.docs.length}');
 
-                            const SizedBox(height: 10,),
-                            ElevatedButton(
-                              child: const Text('Send to Department'),
-                              onPressed: () async {
-                                final String userComment = _commentController.text;
-                                final String depSelected = dropdownValue;
+      for (var result in querySnapshot.docs) {
+        print(
+            'Department Name: ${result['deptName']}'); // Ensure 'deptName' field exists
+        deptList.add(result['deptName']);
+      }
 
-                                if (dropdownValue != 'Select Department...' && (_commentController.text != '' ||
-                                _commentController.text.isNotEmpty)) {
-                                  await _faultData
-                                      .doc(documentSnapshot.id)
-                                      .update({
-                                    "departmentSwitchComment": userComment,
-                                    "faultType": depSelected,
-                                    "depAllocated": depSelected,
-                                    "faultResolved": false,
-                                    "faultStage": 1,
-                                  });
-                                } else if (_commentController.text != '' ||
-                                    _commentController.text.isNotEmpty) {
-                                  Fluttertoast.showToast(
-                                      msg: 'Please provide reasoning for switching department!',
-                                      gravity: ToastGravity.CENTER);
-                                } else {
-                                  Fluttertoast.showToast(
-                                      msg: 'Please select the department you wish to transfer this fault to!',
-                                      gravity: ToastGravity.CENTER);
-                                }
+      if (deptList.isEmpty) {
+        print('No departments found.');
+      } else {
+        print('Department list length: ${deptList.length}');
+      }
+    } catch (e) {
+      print('Error fetching departments: $e');
+    }
 
-                                _commentController.text = '';
-                                _depAllocationController.text = '';
-                                dropdownValue = 'Select Department...';
-                                _faultResolvedController = false;
-                                _dateReportedController.text = '';
-
-                                visStage1 = false;
-                                visStage2 = false;
-                                visStage3 = false;
-                                visStage4 = false;
-                                visStage4 = false;
-
-                                Navigator.of(context).pop();
-                              },
-                            )
-                          ],
+    // Show AlertDialog for department reassignment
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              backgroundColor: Colors.grey[50],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0),
+              ),
+              title: const Text(
+                'Reassign to Department',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              content: SingleChildScrollView(
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Visibility(
+                        visible: adminAcc,
+                        child: const Text(
+                          'Department Allocation',
+                          style: TextStyle(fontSize: 16, color: Colors.black),
                         ),
                       ),
-                    );
+                      Visibility(
+                        visible: adminAcc,
+                        child: DropdownButtonFormField<String>(
+                          dropdownColor: Colors.grey[50],
+                          hint: const Text(
+                            'Select Department...',
+                            style: TextStyle(color: Colors.black),
+                          ),
+                          value: dropdownValue,
+                          items: deptList
+                              .map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(
+                                value,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              dropdownValue = newValue!;
+                            });
+                          },
+                        ),
+                      ),
+                      Visibility(
+                        visible: adminAcc,
+                        child: TextField(
+                          style: const TextStyle(color: Colors.black),
+                          keyboardType: TextInputType.text,
+                          controller: _commentController,
+                          decoration: const InputDecoration(
+                            labelText: 'Reason for changing department...',
+                            labelStyle: TextStyle(color: Colors.black),
+                            focusedBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: Colors.black),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  child: const Text('Send to Department'),
+                  onPressed: () async {
+                    final String userComment = _commentController.text;
+                    final String? depSelected = dropdownValue;
+
+                    // Initialize _faultData with correct path
+                    CollectionReference _faultData = isLocalMunicipality
+                        ? FirebaseFirestore.instance
+                            .collection('localMunicipalities')
+                            .doc(selectedMunicipalityId)
+                            .collection('faultReporting')
+                        : FirebaseFirestore.instance
+                            .collection('districts')
+                            .doc(districtId)
+                            .collection('municipalities')
+                            .doc(selectedMunicipalityId)
+                            .collection('faultReporting');
+
+                    if (depSelected != null && userComment.isNotEmpty) {
+                      await _faultData.doc(documentSnapshot.id).update({
+                        "departmentSwitchComment": userComment,
+                        "faultType": depSelected,
+                        "depAllocated": depSelected,
+                        "faultResolved": false,
+                        "faultStage": 1,
+                      });
+                    } else if (userComment.isEmpty) {
+                      Fluttertoast.showToast(
+                        msg:
+                            'Please provide reasoning for switching department!',
+                        gravity: ToastGravity.CENTER,
+                      );
+                    } else {
+                      Fluttertoast.showToast(
+                        msg:
+                            'Please select the department you wish to transfer this fault to!',
+                        gravity: ToastGravity.CENTER,
+                      );
+                    }
+
+                    _resetFormFields();
+                    Navigator.of(context).pop(); // Close the dialog
                   },
-                );
-              }));
-    }
-
-    _createBottomSheet();
-
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.red,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  child: const Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
-
 }

@@ -13,7 +13,7 @@ import 'package:municipal_services/code/DisplayPages/display_info.dart';
 import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
 
 class ConfigPage extends StatefulWidget{
-  const ConfigPage({super.key});
+  const ConfigPage({super.key,});
 
   @override
   State<ConfigPage> createState() => _ConfigPageState();
@@ -36,9 +36,44 @@ class FireStorageService extends ChangeNotifier{
 }
 
 class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
-
+  String districtId='';
+  String municipalityId='';
   @override
   void initState() {
+    _usersList = FirebaseFirestore.instance
+        .collection('districts')
+        .doc(districtId)
+        .collection('municipalities')
+        .doc(municipalityId)
+        .collection('users');
+
+    _deptInfo = FirebaseFirestore.instance
+        .collection('districts')
+        .doc(districtId)
+        .collection('municipalities')
+        .doc(municipalityId)
+        .collection('departments');
+
+    _roles = FirebaseFirestore.instance
+        .collection('districts')
+        .doc(districtId)
+        .collection('municipalities')
+        .doc(municipalityId)
+        .collection('roles');
+
+    _deptRoles = FirebaseFirestore.instance
+        .collection('districts')
+        .doc(districtId)
+        .collection('municipalities')
+        .doc(municipalityId)
+        .collection('departmentRoles');
+
+    _version = FirebaseFirestore.instance
+        .collection('districts')
+        .doc(districtId)
+        .collection('municipalities')
+        .doc(municipalityId)
+        .collection('version');
     countUsersResult();
     countDeptResult();
     countRoleResult();
@@ -85,21 +120,26 @@ class _ConfigPageState extends State<ConfigPage> with TickerProviderStateMixin{
   String dropdownValue3 = 'Select Version...';
   int numVersion = 0;
 
-  final CollectionReference _usersList =
-  FirebaseFirestore.instance.collection('users');
-
-  final CollectionReference _deptInfo =
-  FirebaseFirestore.instance.collection('departments');
-
-  final CollectionReference _roles =
-  FirebaseFirestore.instance.collection('roles');
-
-  final CollectionReference _deptRoles =
-  FirebaseFirestore.instance.collection('departmentRoles');
-
-  final CollectionReference _version =
-  FirebaseFirestore.instance.collection('version');
-
+  // final CollectionReference _usersList =
+  // FirebaseFirestore.instance.collection('users');
+  //
+  // final CollectionReference _deptInfo =
+  // FirebaseFirestore.instance.collection('departments');
+  //
+  // final CollectionReference _roles =
+  // FirebaseFirestore.instance.collection('roles');
+  //
+  // final CollectionReference _deptRoles =
+  // FirebaseFirestore.instance.collection('departmentRoles');
+  //
+  // final CollectionReference _version =
+  // FirebaseFirestore.instance.collection('version');
+// Firebase references
+  late final CollectionReference _usersList;
+  late final CollectionReference _deptInfo;
+  late final CollectionReference _roles;
+  late final CollectionReference _deptRoles;
+  late final CollectionReference _version;
   String selectedDept = "0";
   String selectedRole = "0";
 

@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.municipal_tracker_msunduzi">
+    package="www.cyberfox.co.za.Municipal_Services">
 
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
@@ -8,6 +8,8 @@
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
 
     <uses-feature android:name="android.hardware.touchscreen"
         android:required="false" />
@@ -24,7 +26,18 @@
         android:label="Municipal Services"
         android:name="${applicationName}"
         android:largeHeap="true"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:requestLegacyExternalStorage="true">
+       <provider
+           android:name="vn.hunghd.flutterdownloader.DownloadedFileProvider"
+           android:authorities="${applicationId}.flutter_downloader.provider"
+           android:exported="false"
+           android:grantUriPermissions="true">
+           <meta-data
+               android:name="android.support.FILE_PROVIDER_PATHS"
+               android:resource="@xml/flutter_downloader_file_paths"/>
+       </provider>
+
        <meta-data android:name="com.google.android.geo.API_KEY"
            android:value="AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY"/>
         <activity

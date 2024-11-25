@@ -8,7 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:municipal_services/code/AuthGoogle/auth_page_google.dart';
 
 class AdminDetails extends StatefulWidget{
-  const AdminDetails({super.key});
+  final String districtId;
+  final String municipalityId;
+  const AdminDetails({super.key, required this.districtId, required this.municipalityId});
 
   @override
   State<AdminDetails> createState() => _AdminDetailsState();
@@ -42,14 +44,24 @@ class _AdminDetailsState extends State<AdminDetails> {
   final _cellNumberController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  final CollectionReference _usersList =
-  FirebaseFirestore.instance.collection('users');
+  late CollectionReference _usersList;
 
   String userPass = '';
   String addressPass = '';
 
   bool visShow = true;
   bool visHide = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _usersList = FirebaseFirestore.instance
+        .collection('districts')
+        .doc(widget.districtId)
+        .collection('municipalities')
+        .doc(widget.municipalityId)
+        .collection('users');
+  }
 
   //this widget is for displaying a user information with an icon next to it, NB. the icon is to make it look good
   Widget adminUserField(String dbData) {
@@ -306,6 +318,13 @@ class _AdminDetailsState extends State<AdminDetails> {
                           labelText: 'Phone Number'),
                     ),
                   ),
+                  Visibility(
+                    visible: visShow,
+                    child: TextField(
+                      controller: _passwordController,
+                      decoration: const InputDecoration(labelText: 'User Password'),
+                    ),
+                  ),
                   const SizedBox(
                     height: 20,
                   ),
@@ -318,12 +337,11 @@ class _AdminDetailsState extends State<AdminDetails> {
                         final String lastName = _lastNameController.text;
                         final String email = _userEmailController.text;
                         final String cellNumber = _cellNumberController.text;
+                        final String password = _passwordController.text;
                         const bool official = true;
 
                         if (userName != null) {
-                          await _usersList
-                              .doc(documentSnapshot!.id)
-                              .update({
+                          await _usersList.add({
                             "userName": userName,
                             "adminRoll": userRoll,
                             "firstName": firstName,
@@ -332,6 +350,8 @@ class _AdminDetailsState extends State<AdminDetails> {
                             "cellNumber": cellNumber,
                             "official": official,
                           });
+
+                          register(email, password);
 
                           _userNameController.text = '';
                           _userRollController.text = '';

@@ -25,7 +25,9 @@ import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
 import 'package:municipal_services/code/Reusable/push_notification_message.dart';
 
 class NoticeConfigArcScreen extends StatefulWidget {
-  const NoticeConfigArcScreen({Key? key}) : super(key: key);
+  const NoticeConfigArcScreen({
+    super.key,
+  });
 
   @override
   State<NoticeConfigArcScreen> createState() => _NoticeConfigArcScreenState();
@@ -40,12 +42,16 @@ String userID = uid as String;
 String userEmail = email as String;
 
 class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
-
+  String? userEmail;
+  String districtId = '';
+  String municipalityId = '';
+  bool isLocalMunicipality = false;
+  CollectionReference? _listNotifications;
   final CollectionReference _listUserTokens =
-  FirebaseFirestore.instance.collection('UserToken');
+      FirebaseFirestore.instance.collection('UserToken');
 
-  final CollectionReference _listNotifications =
-  FirebaseFirestore.instance.collection('Notifications');
+  // final CollectionReference _listNotifications =
+  // FirebaseFirestore.instance.collection('Notifications');
 
   final _headerController = TextEditingController();
   final _messageController = TextEditingController();
@@ -53,7 +59,8 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
   late bool _noticeReadController;
 
   ///Methods and implementation for push notifications with firebase and specific device token saving
-  late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
   TextEditingController username = TextEditingController();
   TextEditingController title = TextEditingController();
   TextEditingController body = TextEditingController();
@@ -61,7 +68,8 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
 
   ///This was made for testing a default message
   String title2 = "Outstanding Utilities Payment";
-  String body2 = "Make sure you pay utilities before the end of this month or your services will be disconnected";
+  String body2 =
+      "Make sure you pay utilities before the end of this month or your services will be disconnected";
 
   String token = '';
   String notifyToken = '';
@@ -75,6 +83,7 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
 
   @override
   void initState() {
+    fetchUserDetails();
     checkAdmin();
     super.initState();
   }
@@ -87,19 +96,68 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
     super.dispose();
   }
 
+  Future<void> fetchUserDetails() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        userEmail = user.email;
+
+        QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+            .collectionGroup('users')
+            .where('email', isEqualTo: userEmail)
+            .limit(1)
+            .get();
+
+        if (userSnapshot.docs.isNotEmpty) {
+          var userDoc = userSnapshot.docs.first;
+          final data = userDoc.data() as Map<String, dynamic>?;
+
+          if (data != null && data.containsKey('isLocalMunicipality')) {
+            isLocalMunicipality = data['isLocalMunicipality'] ?? false;
+          }
+
+          if (isLocalMunicipality) {
+            municipalityId = userDoc.reference.parent.parent?.id ?? '';
+          } else {
+            districtId = userDoc.reference.parent.parent?.parent.id ?? '';
+            municipalityId = userDoc.reference.parent.parent?.id ?? '';
+          }
+
+          setState(() {
+            _listNotifications = FirebaseFirestore.instance
+                .collection(
+                    isLocalMunicipality ? 'localMunicipalities' : 'districts')
+                .doc(isLocalMunicipality ? municipalityId : districtId)
+                .collection('municipalities')
+                .doc(municipalityId)
+                .collection('Notifications');
+          });
+        }
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+    }
+  }
+
   User? user = FirebaseAuth.instance.currentUser;
 
   void checkAdmin() {
     getUsersStream();
-    if(userRole == 'Admin'|| userRole == 'Administrator'){
+    if (userRole == 'Admin' || userRole == 'Administrator') {
       adminAcc = true;
     } else {
       adminAcc = false;
     }
   }
 
-  getUsersStream() async{
-    var data = await FirebaseFirestore.instance.collection('users').get();
+  Future<void> getUsersStream() async {
+    var data = await FirebaseFirestore.instance
+        .collection(isLocalMunicipality ? 'localMunicipalities' : 'districts')
+        .doc(isLocalMunicipality ? municipalityId : districtId)
+        .collection('municipalities')
+        .doc(municipalityId)
+        .collection('users')
+        .get();
     setState(() {
       _allUserRolesResults = data.docs;
     });
@@ -133,7 +191,10 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
         borderRadius: BorderRadius.circular(12),
         color: Colors.white,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8,),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 8,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -150,7 +211,7 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
   }
 
   //this widget is for displaying users phone numbers with the hidden stored device token
-  Widget userAndTokenCard(CollectionReference<Object?> tokenDataStream){
+  Widget userAndTokenCard(CollectionReference<Object?> tokenDataStream) {
     return Expanded(
       child: StreamBuilder<QuerySnapshot>(
         stream: tokenDataStream.snapshots(),
@@ -160,12 +221,13 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
               itemCount: streamSnapshot.data!.docs.length,
               itemBuilder: (context, index) {
                 final DocumentSnapshot documentSnapshot =
-                streamSnapshot.data!.docs[index];
+                    streamSnapshot.data!.docs[index];
 
-                if(((documentSnapshot.id.trim()).toLowerCase()).contains((_searchBarController.text.trim()).toLowerCase())){
-                  if(documentSnapshot.id.contains('+27')){
+                if (((documentSnapshot.id.trim()).toLowerCase()).contains(
+                    (_searchBarController.text.trim()).toLowerCase())) {
+                  if (documentSnapshot.id.contains('+27')) {
                     return Card(
-                      margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,10.0),
+                      margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Column(
@@ -179,7 +241,9 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
                                     fontSize: 18, fontWeight: FontWeight.w700),
                               ),
                             ),
-                            const SizedBox(height: 10,),
+                            const SizedBox(
+                              height: 10,
+                            ),
                             noticeItemField(documentSnapshot.id),
                             Visibility(
                               visible: false,
@@ -189,7 +253,9 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
                                     fontSize: 16, fontWeight: FontWeight.w400),
                               ),
                             ),
-                            const SizedBox(height: 10,),
+                            const SizedBox(
+                              height: 10,
+                            ),
                             Column(
                               children: [
                                 Row(
@@ -202,45 +268,53 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
                                             barrierDismissible: false,
                                             context: context,
                                             builder: (context) {
-                                              return
-                                                AlertDialog(
-                                                  shape: const RoundedRectangleBorder(
-                                                      borderRadius:
-                                                      BorderRadius.all(Radius.circular(16))),
-                                                  title: const Text("Call User!"),
-                                                  content: const Text(
-                                                      "Would you like to call the user directly?"),
-                                                  actions: [
-                                                    IconButton(
-                                                      onPressed: () {
-                                                        Navigator.of(context).pop();
-                                                      },
-                                                      icon: const Icon(
-                                                        Icons.cancel,
-                                                        color: Colors.red,
-                                                      ),
+                                              return AlertDialog(
+                                                shape:
+                                                    const RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.all(
+                                                                Radius.circular(
+                                                                    16))),
+                                                title: const Text("Call User!"),
+                                                content: const Text(
+                                                    "Would you like to call the user directly?"),
+                                                actions: [
+                                                  IconButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                    icon: const Icon(
+                                                      Icons.cancel,
+                                                      color: Colors.red,
                                                     ),
-                                                    IconButton(
-                                                      onPressed: () {
-                                                        String cellGiven = documentSnapshot.id;
+                                                  ),
+                                                  IconButton(
+                                                    onPressed: () {
+                                                      String cellGiven =
+                                                          documentSnapshot.id;
 
-                                                        final Uri _tel = Uri.parse('tel:${cellGiven.toString()}');
-                                                        launchUrl(_tel);
+                                                      final Uri _tel = Uri.parse(
+                                                          'tel:${cellGiven.toString()}');
+                                                      launchUrl(_tel);
 
-                                                        Navigator.of(context).pop();
-                                                      },
-                                                      icon: const Icon(
-                                                        Icons.done,
-                                                        color: Colors.green,
-                                                      ),
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                    icon: const Icon(
+                                                      Icons.done,
+                                                      color: Colors.green,
                                                     ),
-                                                  ],
-                                                );
+                                                  ),
+                                                ],
+                                              );
                                             });
                                       },
                                       labelText: 'Call User',
                                       fSize: 14,
-                                      faIcon: const FaIcon(Icons.call,),
+                                      faIcon: const FaIcon(
+                                        Icons.call,
+                                      ),
                                       fgColor: Colors.green,
                                       btSize: const Size(50, 38),
                                     ),
@@ -251,7 +325,9 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
                                       },
                                       labelText: 'Notify User',
                                       fSize: 14,
-                                      faIcon: const FaIcon(Icons.edit,),
+                                      faIcon: const FaIcon(
+                                        Icons.edit,
+                                      ),
                                       fgColor: Theme.of(context).primaryColor,
                                       btSize: const Size(50, 38),
                                     ),
@@ -272,8 +348,7 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
           }
           return const Padding(
             padding: EdgeInsets.all(10.0),
-            child: Center(
-                child: CircularProgressIndicator()),
+            child: Center(child: CircularProgressIndicator()),
           );
         },
       ),
@@ -281,7 +356,7 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
   }
 
   //this widget is for displaying all notifications already sent to users phone numbers
-  Widget userNotificationCard(CollectionReference<Object?> noticeDataStream){
+  Widget userNotificationCard(CollectionReference<Object?> noticeDataStream) {
     return Expanded(
       child: StreamBuilder<QuerySnapshot>(
         stream: noticeDataStream.orderBy('date', descending: true).snapshots(),
@@ -291,12 +366,13 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
               itemCount: streamSnapshot.data!.docs.length,
               itemBuilder: (context, index) {
                 final DocumentSnapshot documentSnapshot =
-                streamSnapshot.data!.docs[index];
+                    streamSnapshot.data!.docs[index];
 
-                if(((documentSnapshot['user'])).contains((_searchBarController.text.trim()).toLowerCase())){
-                  if(documentSnapshot['user'].contains('+27')){
+                if (((documentSnapshot['user'])).contains(
+                    (_searchBarController.text.trim()).toLowerCase())) {
+                  if (documentSnapshot['user'].contains('+27')) {
                     return Card(
-                      margin: const EdgeInsets.fromLTRB(10.0,5.0,10.0,10.0),
+                      margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Column(
@@ -310,25 +386,31 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
                                     fontSize: 18, fontWeight: FontWeight.w700),
                               ),
                             ),
-                            const SizedBox(height: 10,),
+                            const SizedBox(
+                              height: 10,
+                            ),
                             const Text(
                               'User number:',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w500),
                             ),
                             noticeItemField(documentSnapshot['user']),
                             const Text(
                               'Notice Header:',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w500),
                             ),
                             noticeItemField(documentSnapshot['title']),
                             const Text(
                               'Notice Details:',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w500),
                             ),
                             noticeItemField(documentSnapshot['body']),
                             const Text(
                               'Date Notice Sent:',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w500),
                             ),
                             noticeItemField(documentSnapshot['date']),
                             Column(
@@ -343,61 +425,73 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
                                             barrierDismissible: false,
                                             context: context,
                                             builder: (context) {
-                                              return
-                                                AlertDialog(
-                                                  shape: const RoundedRectangleBorder(
-                                                      borderRadius:
-                                                      BorderRadius.all(Radius.circular(16))),
-                                                  title: const Text("Call User!"),
-                                                  content: const Text(
-                                                      "Would you like to call the user directly?"),
-                                                  actions: [
-                                                    IconButton(
-                                                      onPressed: () {
-                                                        Navigator.of(context).pop();
-                                                      },
-                                                      icon: const Icon(
-                                                        Icons.cancel,
-                                                        color: Colors.red,
-                                                      ),
+                                              return AlertDialog(
+                                                shape:
+                                                    const RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.all(
+                                                                Radius.circular(
+                                                                    16))),
+                                                title: const Text("Call User!"),
+                                                content: const Text(
+                                                    "Would you like to call the user directly?"),
+                                                actions: [
+                                                  IconButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                    icon: const Icon(
+                                                      Icons.cancel,
+                                                      color: Colors.red,
                                                     ),
-                                                    IconButton(
-                                                      onPressed: () {
-                                                        String cellGiven = documentSnapshot['user'];
+                                                  ),
+                                                  IconButton(
+                                                    onPressed: () {
+                                                      String cellGiven =
+                                                          documentSnapshot[
+                                                              'user'];
 
-                                                        final Uri _tel = Uri.parse('tel:$cellGiven');
-                                                        launchUrl(_tel);
+                                                      final Uri _tel =
+                                                          Uri.parse(
+                                                              'tel:$cellGiven');
+                                                      launchUrl(_tel);
 
-                                                        Navigator.of(context).pop();
-                                                      },
-                                                      icon: const Icon(
-                                                        Icons.done,
-                                                        color: Colors.green,
-                                                      ),
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                    icon: const Icon(
+                                                      Icons.done,
+                                                      color: Colors.green,
                                                     ),
-                                                  ],
-                                                );
+                                                  ),
+                                                ],
+                                              );
                                             });
                                       },
                                       labelText: 'Call User',
                                       fSize: 14,
-                                      faIcon: const FaIcon(Icons.call,),
+                                      faIcon: const FaIcon(
+                                        Icons.call,
+                                      ),
                                       fgColor: Colors.green,
                                       btSize: const Size(50, 38),
                                     ),
-
                                   ],
                                 ),
                                 BasicIconButtonGrey(
                                   onPress: () async {
                                     notifyToken = documentSnapshot['token'];
-                                    if((documentSnapshot['user'].toString()).contains('+27')){
+                                    if ((documentSnapshot['user'].toString())
+                                        .contains('+27')) {
                                       _notifyThisUser(documentSnapshot);
                                     }
                                   },
                                   labelText: 'Re-Send Notice',
                                   fSize: 14,
-                                  faIcon: const FaIcon(Icons.edit,),
+                                  faIcon: const FaIcon(
+                                    Icons.edit,
+                                  ),
                                   fgColor: Theme.of(context).primaryColor,
                                   btSize: const Size(50, 38),
                                 ),
@@ -416,8 +510,7 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
           }
           return const Padding(
             padding: EdgeInsets.all(10.0),
-            child: Center(
-                child: CircularProgressIndicator()),
+            child: Center(child: CircularProgressIndicator()),
           );
         },
       ),
@@ -425,7 +518,6 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
   }
 
   Future<void> _notifyThisUser([DocumentSnapshot? documentSnapshot]) async {
-
     if (documentSnapshot != null) {
       username.text = documentSnapshot['user'];
       title.text = documentSnapshot['title'];
@@ -433,112 +525,120 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
     }
 
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
-    void _createBottomSheet() async{
+    void _createBottomSheet() async {
       // Future<void> future =
       if (!context.mounted) {
         showModalBottomSheet(
-          context: context,
-          builder: await showModalBottomSheet(
-              isScrollControlled: true,
-              context: context,
-              builder: (BuildContext ctx) {
-                return StatefulBuilder(
-                  builder: (BuildContext context, StateSetter setState) {
-                    return SingleChildScrollView(
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                            top: 20,
-                            left: 20,
-                            right: 20,
-                            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Visibility(
-                              visible: visShow,
-                              child: TextField(
-                                controller: title,
-                                decoration: const InputDecoration(
-                                    labelText: 'Message Header'),
+            context: context,
+            builder: await showModalBottomSheet(
+                isScrollControlled: true,
+                context: context,
+                builder: (BuildContext ctx) {
+                  return StatefulBuilder(
+                    builder: (BuildContext context, StateSetter setState) {
+                      return SingleChildScrollView(
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                              top: 20,
+                              left: 20,
+                              right: 20,
+                              bottom:
+                                  MediaQuery.of(ctx).viewInsets.bottom + 20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Visibility(
+                                visible: visShow,
+                                child: TextField(
+                                  controller: title,
+                                  decoration: const InputDecoration(
+                                      labelText: 'Message Header'),
+                                ),
                               ),
-                            ),
-                            Visibility(
-                              visible: visShow,
-                              child: TextField(
-                                controller: body,
-                                decoration: const InputDecoration(
-                                    labelText: 'Message'),
+                              Visibility(
+                                visible: visShow,
+                                child: TextField(
+                                  controller: body,
+                                  decoration: const InputDecoration(
+                                      labelText: 'Message'),
+                                ),
                               ),
-                            ),
+                              const SizedBox(
+                                height: 10,
+                              ),
+                              ElevatedButton(
+                                child: const Text('Send Notification'),
+                                onPressed: () async {
+                                  DateTime now = DateTime.now();
+                                  String formattedDate =
+                                      DateFormat('yyyy-MM-dd – kk:mm')
+                                          .format(now);
 
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            ElevatedButton(
-                              child: const Text('Send Notification'),
-                              onPressed: () async {
+                                  final String tokenSelected = notifyToken;
+                                  final String? userNumber =
+                                      documentSnapshot?['user'];
+                                  final String notificationTitle = title.text;
+                                  final String notificationBody = body.text;
+                                  final String notificationDate = formattedDate;
+                                  const bool readStatus = false;
 
-                                DateTime now = DateTime.now();
-                                String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+                                  if (tokenSelected != null &&
+                                      notificationTitle.isNotEmpty &&
+                                      notificationBody.isNotEmpty) {
+                                    // Add notification data to Firestore
+                                    await _listNotifications?.add({
+                                      "token": tokenSelected,
+                                      "user": userNumber,
+                                      "title": notificationTitle,
+                                      "body": notificationBody,
+                                      "read": readStatus,
+                                      "date": formattedDate,
+                                    });
 
-                                final String tokenSelected = notifyToken;
-                                final String? userNumber = documentSnapshot?['user'];
-                                final String notificationTitle = title.text;
-                                final String notificationBody = body.text;
-                                final String notificationDate = formattedDate;
-                                const bool readStatus = false;
-
-                                  if (tokenSelected != null) {
-                                    if(title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty) {
-                                      await _listNotifications.add({
-                                        "token": tokenSelected,
-                                        "user": userNumber,
-                                        "title": notificationTitle,
-                                        "body": notificationBody,
-                                        "read": readStatus,
-                                        "date": notificationDate,
-                                      });
-
-                                      ///It can be changed to the firebase notification
-                                      String titleText = title.text;
-                                      String bodyText = body.text;
-
-                                      ///gets users phone token to send notification to this phone
-                                      if (userNumber != "") {
-                                        DocumentSnapshot snap = await FirebaseFirestore.instance.collection("UserToken").doc(userNumber).get();
-                                        String token = snap['token'];
-                                        print('The phone number is retrieved as ::: $userNumber');
-                                        print('The token is retrieved as ::: $token');
-                                        sendPushMessage(token, titleText, bodyText);
-                                      }
-                                    } else {
-                                      Fluttertoast.showToast(msg: 'Please Fill Header and Details of the Notification!', gravity: ToastGravity.CENTER);
+                                    // Log and send the push notification
+                                    if (userNumber != null &&
+                                        userNumber.isNotEmpty) {
+                                      DocumentSnapshot snap =
+                                          await FirebaseFirestore.instance
+                                              .collection("UserToken")
+                                              .doc(userNumber)
+                                              .get();
+                                      String token = snap['token'];
+                                      sendPushMessage(token, notificationTitle,
+                                          notificationBody);
                                     }
+
+                                    // Clear the input fields
+                                    title.clear();
+                                    body.clear();
+                                    username.clear();
+                                    _headerController.clear();
+                                    _messageController.clear();
+
+                                    // Close the bottom sheet if context is still valid
+                                    if (context.mounted)
+                                      Navigator.of(context).pop();
+                                  } else {
+                                    Fluttertoast.showToast(
+                                      msg:
+                                          'Please fill both the header and the message details!',
+                                      gravity: ToastGravity.CENTER,
+                                    );
                                   }
-
-                                  username.text =  '';
-                                  title.text =  '';
-                                  body.text =  '';
-                                  _headerController.text =  '';
-                                  _messageController.text =  '';
-
-                                  if(context.mounted)Navigator.of(context).pop();
-
-                                }
-                            )
-                          ],
+                                },
+                              )
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                );
-              }));
+                      );
+                    },
+                  );
+                }));
       }
     }
 
     _createBottomSheet();
-
   }
 
   @override
@@ -546,14 +646,19 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Notification Archive',style: TextStyle(color: Colors.white),),
+        title: const Text(
+          'Notification Archive',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-
       body: Column(
         children: [
-          const SizedBox(height: 10,),
+          const SizedBox(
+            height: 10,
+          ),
+
           ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
           ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
 
@@ -585,14 +690,14 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
 
           /// Search bar
           Padding(
-            padding: const EdgeInsets.fromLTRB(10.0,5.0,10.0,5.0),
+            padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
             child: SearchBar(
               controller: _searchBarController,
               padding: const MaterialStatePropertyAll<EdgeInsets>(
                   EdgeInsets.symmetric(horizontal: 16.0)),
               leading: const Icon(Icons.search),
               hintText: "Search by Phone Number...",
-              onChanged: (value) async{
+              onChanged: (value) async {
                 setState(() {
                   searchText = value;
                   print('this is the input text ::: $searchText');
@@ -600,13 +705,13 @@ class _NoticeConfigArcScreenState extends State<NoticeConfigArcScreen> {
               },
             ),
           ),
+
           /// Search bar end
 
           ///made the listview card a reusable widget
           // userAndTokenCard(_listUserTokens),
 
-          userNotificationCard(_listNotifications),
-
+          userNotificationCard(_listNotifications!),
         ],
       ),
     );

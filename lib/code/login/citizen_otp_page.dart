@@ -1,12 +1,19 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:municipal_services/code/DisplayPages/dashboard.dart';
 import 'package:municipal_services/code/login/login_page.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../DisplayPages/prop_selection.dart';
+import '../Models/property.dart';
+
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -34,11 +41,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   int screenState = 0;
 
   Color blue = const Color(0xff8cccff);
-
+  bool _isLoadingProperties = false;
   @override
   initState(){
     super.initState();
     checkText();
+  }
+  @override
+  void dispose() {
+    print('dispose called on this widget.');
+    super.dispose();
   }
 
   void checkText() {
@@ -48,6 +60,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }else{
       topText = 20;
       botText = 40;
+    }
+  }
+  Future<void> clearFirestoreCacheIfNeeded() async {
+    // You can use shared preferences or a similar solution to track if the cache was cleared already
+    // For example, using shared preferences:
+    final prefs = await SharedPreferences.getInstance();
+    bool cacheCleared = prefs.getBool('cacheCleared') ?? false;
+
+    if (!cacheCleared) {
+      try {
+       // await FirebaseFirestore.instance.terminate();
+        await FirebaseFirestore.instance.clearPersistence();
+       // await FirebaseFirestore.instance.enablePersistence();
+        print("Firestore cache cleared.");
+        // Mark cache as cleared
+        prefs.setBool('cacheCleared', true);
+      } catch (e) {
+        print("Error clearing Firestore cache: $e");
+      }
     }
   }
 
@@ -111,21 +142,170 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Future<void> verifyOTP() async {
-    await FirebaseAuth.instance.signInWithCredential(
-      PhoneAuthProvider.credential(
-        verificationId: verID,
-        smsCode: otpPin,
-      ),
-    ).whenComplete(() {
+  // Future<void> verifyOTP() async {
+  //   await FirebaseAuth.instance.signInWithCredential(
+  //     PhoneAuthProvider.credential(
+  //       verificationId: verID,
+  //       smsCode: otpPin,
+  //     ),
+  //   ).whenComplete(() {
+  //
+  //     Navigator.of(context).pushReplacement(
+  //       MaterialPageRoute(
+  //         builder: (context) => const MainMenu(),
+  //       ),
+  //     );
+  //   });
+  // }
+  // Future<void> verifyOTP() async {
+  //   await FirebaseAuth.instance.signInWithCredential(
+  //     PhoneAuthProvider.credential(
+  //       verificationId: verID,
+  //       smsCode: otpPin,
+  //     ),
+  //   ).whenComplete(() {
+  //
+  //     Navigator.of(context).pushReplacement(
+  //       MaterialPageRoute(
+  //         builder: (context) => const PropertySelectionScreen(properties: [],),
+  //       ),
+  //     );
+  //   });
+  // }
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const MainMenu(),
-        ),
-      );
+
+  Future<void> verifyOTP() async {
+    print('Starting OTP verification...');
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+
+      try {
+        setState(() {
+          _isLoadingProperties = true;
+        });
+        // Perform OTP verification
+        await FirebaseAuth.instance.signInWithCredential(
+          PhoneAuthProvider.credential(
+            verificationId: verID,
+            smsCode: otpPin,
+          ),
+        );
+        print('OTP verification successful.');
+
+        // Get the user's phone number
+        String? userPhone = FirebaseAuth.instance.currentUser?.phoneNumber;
+
+        if (userPhone != null) {
+          print('Clearing Firestore cache...');
+          await clearFirestoreCacheIfNeeded();
+          print('Cache cleared.');
+
+          // Fetch properties associated with this phone number
+          print('Fetching properties...');
+          List<Property> properties = await fetchUserProperties(userPhone);
+          print('Properties fetched: ${properties.length}');
+
+          // Log each property explicitly
+          for (var property in properties) {
+            print('Property: ${property.address}, Account No: ${property.accountNo}, Is Local Municipality: ${property.isLocalMunicipality}');
+          }
+          bool isLocalMunicipality = properties.isNotEmpty && properties.first.isLocalMunicipality;
+
+          // Navigate to the PropertySelectionScreen using GetX
+          print('Navigating to PropertySelectionScreen...');
+          Get.off(() =>
+              PropertySelectionScreen(
+                properties: properties,
+                userPhoneNumber: userPhone,
+                isLocalMunicipality: isLocalMunicipality,
+              ));
+        } else {
+          print('Error: User phone number is null.');
+        }
+      } catch (e) {
+        print('Error during OTP verification: $e');
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoadingProperties = false;
+          });
+        }
+      }
     });
   }
+
+
+
+
+// Fetch user's properties from Firestore
+  Future<List<Property>> fetchUserProperties(String userPhone) async {
+    List<Property> properties = [];
+    try {
+      print('Starting to fetch properties for phone number: $userPhone');
+
+      // Step 1: Check Firestore instance
+      FirebaseFirestore firestore = FirebaseFirestore.instance;
+      print('Firestore instance initialized: $firestore');
+
+      // Step 2: Execute the collectionGroup query to get properties linked to the phone number
+      print('Running collectionGroup query...');
+      final propertiesSnapshot = await firestore
+          .collectionGroup('properties')
+          .where('cellNumber', isEqualTo: userPhone)
+          .get();
+
+      print('Query completed. Found ${propertiesSnapshot.docs.length} documents.');
+
+      // Step 3: Loop through each document found and process based on isLocalMunicipality
+      for (var propertyDoc in propertiesSnapshot.docs) {
+        print('Processing document with ID: ${propertyDoc.id}');
+        try {
+          Property property = Property.fromSnapshot(propertyDoc);
+          properties.add(property);
+          print('Property added: ${property.address} - Account No: ${property.accountNo}, Local Municipality: ${property.isLocalMunicipality}');
+
+          // Add conditional logic if necessary based on whether it is a local municipality
+          if (property.isLocalMunicipality) {
+            print("This property is managed by a local municipality, districtId is not required.");
+          } else {
+            print("This property belongs to a district-managed municipality.");
+          }
+        } catch (e) {
+          print('Error converting document to Property: $e');
+        }
+      }
+
+      if (properties.isEmpty) {
+        print('No properties found for the phone number.');
+      } else {
+        print('Successfully fetched ${properties.length} properties.');
+      }
+    } catch (e) {
+      print('Error fetching properties: $e');
+    }
+
+    return properties;
+  }
+
+  Future<bool> getIsLocalMunicipality() async {
+    // Add your logic here to determine if the user is part of a local municipality
+    // For example, fetching from Firestore or using some other method
+    User? user = FirebaseAuth.instance.currentUser;
+
+    // Assume we are getting the user's municipality data from Firestore
+    DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user?.uid)
+        .get();
+
+    if (userSnapshot.exists) {
+      return userSnapshot['isLocalMunicipality'] ?? false; // Fetch and return the field
+    } else {
+      return false; // Default to false if the field is not found
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -143,7 +323,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Scaffold(
         backgroundColor: blue,
         resizeToAvoidBottomInset: false,
-        body: SizedBox(
+        body: _isLoadingProperties
+            ? const Center(child: CircularProgressIndicator())
+            : SizedBox(
           height: screenHeight,
           width: screenWidth,
           child: Stack(
@@ -219,10 +401,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               //
                               // } else
                               if(phoneController.text.isEmpty) {
-                                  showSnackBarText("Phone number is still empty!");
+                                showSnackBarText("Phone number is still empty!");
                               } else {
-                                  showSnackBarText("Now verifying your phone number!");
-                                  verifyPhone(countryDial + phoneController.text);
+                                showSnackBarText("Now verifying your phone number!");
+                                verifyPhone(countryDial + phoneController.text);
                               }
                             } else {
                               if(otpPin.length >= 6) {
@@ -264,10 +446,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                             GestureDetector(
-                              onTap:() {
+                              onTap:() async{
+                                bool isLocalMunicipality = await getIsLocalMunicipality();
                                 Navigator.push(context,
                                     MaterialPageRoute(builder: (context) =>
-                                        const LoginPage()));
+                                    LoginPage(isLocalMunicipality: isLocalMunicipality)));
                               },
                               child: const Text(
                                 ' Login Here',
@@ -292,6 +475,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void showSnackBarText(String text) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(text),

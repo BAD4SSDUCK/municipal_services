@@ -11,7 +11,7 @@ import 'package:get/get.dart';
 
 class PropertiesData extends GetxController {
 
-  Rx<Property> _propertiesData = Property(0,'', '', 0, '', 0, '', '', '', '', '', '', 0, 0, '', '').obs;
+  Rx<Property> _propertiesData = Property(0,'', '', 0, '', 0, '', '', '', '',   0, 0, '', '').obs;
   Property get properties => _propertiesData.value;
 
   Rx<User> _currentUser = User(0,'', '', '', '', '', '','',false).obs;

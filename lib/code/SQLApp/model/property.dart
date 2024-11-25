@@ -10,8 +10,8 @@ class Property{
   int areaCode;
   String cellNumber;
   int eBill;
-  String electricityMeterNumber;
-  String electricityMeterReading;
+  // String electricityMeterNumber;
+  // String electricityMeterReading;
   String waterMeterNumber;
   String waterMeterReading;
   String firstName;
@@ -28,8 +28,8 @@ class Property{
       this.areaCode,
       this.cellNumber,
       this.eBill,
-      this.electricityMeterNumber,
-      this.electricityMeterReading,
+      // this.electricityMeterNumber,
+      // this.electricityMeterReading,
       this.waterMeterNumber,
       this.waterMeterReading,
       this.firstName,
@@ -47,8 +47,8 @@ class Property{
     int.parse(json["areaCode"]),
     json["cellNumber"],
     int.parse(json["eBill"]),
-    json["electricityMeterNumber"],
-    json["electricityMeterReading"],
+    // json["electricityMeterNumber"],
+    // json["electricityMeterReading"],
     json["waterMeterNumber"],
     json["waterMeterReading"],
     json["firstName"],
@@ -67,8 +67,8 @@ class Property{
         'areaCode': areaCode.toString(),
         'cellNumber': cellNumber,
         'eBill': eBill.toString(),
-        'electricityMeterNumber': electricityMeterNumber,
-        'electricityMeterReading': electricityMeterReading,
+        // 'electricityMeterNumber': electricityMeterNumber,
+        // 'electricityMeterReading': electricityMeterReading,
         'waterMeterNumber': waterMeterNumber,
         'waterMeterReading': waterMeterReading,
         'firstName': firstName,

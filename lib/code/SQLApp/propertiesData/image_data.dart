@@ -14,7 +14,7 @@ import 'package:municipal_services/code/SQLApp/propertiesData/image_preferences.
 
 class ImageData extends GetxController {
 
-  Rx<MeterImage> _imageData = MeterImage(0, 0, '', File(''), File(''), DateTime.now()).obs;
+  Rx<MeterImage> _imageData = MeterImage(0, 0, '', File(''),  DateTime.now()).obs;
   MeterImage get meterImageData => _imageData.value;
 
   Rx<User> _currentUser = User(0,'', '', '', '', '', '','',false).obs;

@@ -11,7 +11,7 @@ import 'package:uuid/uuid.dart';
 
 
 class AddPropertyDetails extends StatefulWidget {
-  const AddPropertyDetails({Key? key}) : super(key: key);
+  const AddPropertyDetails({super.key,});
 
   @override
   State<AddPropertyDetails> createState() => _AddPropertyDetailsState();
@@ -23,19 +23,20 @@ final uid = user?.uid;
 String userID = uid as String;
 
 class _AddPropertyDetailsState extends State<AddPropertyDetails> {
-
   final _firstNameController = TextEditingController();
   final _secondNameController = TextEditingController();
   final _addressController = TextEditingController();
   final _areaCodeController = TextEditingController();
   final _idNumberController = TextEditingController();
   final _accountNumberController = TextEditingController();
-  final _meterNumberController = TextEditingController();
-  final _meterReadingController = TextEditingController();
+  // final _meterNumberController = TextEditingController();
+  // final _meterReadingController = TextEditingController();
   final _waterMeterController = TextEditingController();
   final _waterMeterReadingController = TextEditingController();
   final _cellNumberController = TextEditingController();
-
+  final  _wardController = TextEditingController();
+  final _districtIdController=TextEditingController();
+  final _municipalityIDController=TextEditingController();
   final _userIDController = userID;
 
   @override
@@ -46,11 +47,13 @@ class _AddPropertyDetailsState extends State<AddPropertyDetails> {
     _areaCodeController.dispose();
     _idNumberController.dispose();
     _accountNumberController.dispose();
-    _meterNumberController.dispose();
-    _meterReadingController.dispose();
+    // _meterNumberController.dispose();
+    // _meterReadingController.dispose();
     _waterMeterController.dispose();
     _waterMeterReadingController.dispose();
     _cellNumberController.dispose();
+    _districtIdController.dispose();
+    _municipalityIDController.dispose();
     super.dispose();
   }
 
@@ -69,28 +72,41 @@ class _AddPropertyDetailsState extends State<AddPropertyDetails> {
       },
     );
 
-    addPropertyDetails(
-      _firstNameController.text.trim(),
-      _secondNameController.text.trim(),
-      _cellNumberController.text.trim(),
-      _addressController.text.trim(),
-      int.parse(_areaCodeController.text.trim()),
-      _idNumberController.text.trim(),
-      _accountNumberController.text.trim(),
-      _meterNumberController.text.trim(),
-      _meterReadingController.text.trim(),
-      _waterMeterController.text.trim(),
-      _waterMeterReadingController.text.trim(),
-      _userIDController,
-    );
+    if (fieldsNotEmptyConfirmed()) {
+      await addPropertyDetails(
+        _firstNameController.text.trim(),
+        _secondNameController.text.trim(),
+        _cellNumberController.text.trim(),
+        _addressController.text.trim(),
+        int.parse(_areaCodeController.text.trim()),
+        _idNumberController.text.trim(),
+        _accountNumberController.text.trim(),
+        // _meterNumberController.text.trim(),
+        // _meterReadingController.text.trim(),
+        _waterMeterController.text.trim(),
+        _waterMeterReadingController.text.trim(),
+        _wardController.text.trim(),
+        _districtIdController.text.trim(),
+        _municipalityIDController.text.trim(),
+        _userIDController,
+      );
 
-    Navigator.of(context).pop();
+      if (context.mounted) Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Please make sure all fields are filled!'),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.all(20.0),
+        duration: Duration(seconds: 5),
+      ));
+    }
   }
 
   bool fieldsNotEmptyConfirmed(){
     if (_areaCodeController.text.isNotEmpty && _firstNameController.text.isNotEmpty && _secondNameController.text.isNotEmpty && _cellNumberController.text.isNotEmpty &&
         _addressController.text.isNotEmpty && _areaCodeController.text.isNotEmpty && _idNumberController.text.isNotEmpty && _accountNumberController.text.isNotEmpty &&
-        _meterNumberController.text.isNotEmpty){
+       _districtIdController.text.isNotEmpty&&_municipalityIDController.text.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Details are now being saved!'),
         behavior: SnackBarBehavior.floating,
@@ -99,47 +115,48 @@ class _AddPropertyDetailsState extends State<AddPropertyDetails> {
       ));
       return true;
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Makes sure all fields are filled!'),
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.all(20.0),
-        duration: Duration(seconds: 5),
-      ));
       return false;
     }
   }
 
-  Future addPropertyDetails(String firstName, String lastName, String cellNumber,  String address, int areaCode, String idNumber, String accountNumber, String meterNumber, String meterReading, String waterMeterNumber, String waterMeterReading, String userid) async{
+  Future<void> addPropertyDetails(String firstName, String lastName, String cellNumber,  String address, int areaCode, String idNumber, String accountNumber,  String waterMeterNumber, String waterMeterReading, String userid,String ward,String districtId,String municipalityId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .collection('properties')
+          .add({
+        'firstName': firstName,
+        'lastName': lastName,
+        'cellNumber': cellNumber,
+        'address': address,
+        'districtId': districtId,
+        'municipalityId': municipalityId,
+        'areaCode': areaCode,
+        'idNumber': idNumber,
+        'accountNumber': accountNumber,
+        // 'meter_number': meterNumber,
+        // 'meter_reading': meterReading,
+        'water_meter_number': waterMeterNumber,
+        'water_meter_reading': waterMeterReading,
+        'ward':ward,
+        'userId': userid,
+      });
 
-    if(fieldsNotEmptyConfirmed() == false){
-      Navigator.of(context).pop();
+      if (context.mounted) Navigator.of(context).pop();
+    } catch (e) {
+      print('Failed to add property: $e');
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Please make sure the area code is entered'),
+        content: Text('Failed to add property. Please try again.'),
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.all(20.0),
         duration: Duration(seconds: 5),
       ));
-
-    } else {
-      await FirebaseFirestore.instance.collection('properties').add({
-        'first name': firstName,
-        'last name': lastName,
-        'cell number': cellNumber,
-        'address' : address,
-        'area code' : areaCode,
-        'id number': idNumber,
-        'account number': accountNumber,
-        'meter number': meterNumber,
-        'meter reading': meterReading,
-        'water meter number': waterMeterNumber,
-        'water meter reading': waterMeterReading,
-        'user id':userid,
-
-      });
-
-      if(context.mounted)Navigator.of(context).pop();
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -300,49 +317,49 @@ class _AddPropertyDetailsState extends State<AddPropertyDetails> {
 
                 const SizedBox(height: 10,),
 
-                Padding(
-                  padding:  const EdgeInsets.symmetric(horizontal: 25.0),
-                  child: TextField(
-                    controller: _meterNumberController,
-                    decoration: InputDecoration(
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.white),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.green),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      hintText: 'Meter Number',
-                      fillColor: Colors.grey[200],
-                      filled: true,
-                    ),
-                  ),
-                ),
+                // Padding(
+                //   padding:  const EdgeInsets.symmetric(horizontal: 25.0),
+                //   child: TextField(
+                //     controller: _meterNumberController,
+                //     decoration: InputDecoration(
+                //       enabledBorder: OutlineInputBorder(
+                //         borderSide: const BorderSide(color: Colors.white),
+                //         borderRadius: BorderRadius.circular(12),
+                //       ),
+                //       focusedBorder: OutlineInputBorder(
+                //         borderSide: const BorderSide(color: Colors.green),
+                //         borderRadius: BorderRadius.circular(12),
+                //       ),
+                //       hintText: 'Meter Number',
+                //       fillColor: Colors.grey[200],
+                //       filled: true,
+                //     ),
+                //   ),
+                // ),
+                //
+                // const SizedBox(height: 10,),
 
-                const SizedBox(height: 10,),
-
-                Padding(
-                  padding:  const EdgeInsets.symmetric(horizontal: 25.0),
-                  child: TextField(
-                    controller: _meterReadingController,
-                    decoration: InputDecoration(
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.white),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.green),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      hintText: 'Meter Reading',
-                      fillColor: Colors.grey[200],
-                      filled: true,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 10,),
+                // Padding(
+                //   padding:  const EdgeInsets.symmetric(horizontal: 25.0),
+                //   child: TextField(
+                //     controller: _meterReadingController,
+                //     decoration: InputDecoration(
+                //       enabledBorder: OutlineInputBorder(
+                //         borderSide: const BorderSide(color: Colors.white),
+                //         borderRadius: BorderRadius.circular(12),
+                //       ),
+                //       focusedBorder: OutlineInputBorder(
+                //         borderSide: const BorderSide(color: Colors.green),
+                //         borderRadius: BorderRadius.circular(12),
+                //       ),
+                //       hintText: 'Meter Reading',
+                //       fillColor: Colors.grey[200],
+                //       filled: true,
+                //     ),
+                //   ),
+                // ),
+                //
+                // const SizedBox(height: 10,),
 
                 Padding(
                   padding:  const EdgeInsets.symmetric(horizontal: 25.0),
@@ -410,7 +427,67 @@ class _AddPropertyDetailsState extends State<AddPropertyDetails> {
 
                 const SizedBox(height: 10,),
 
+                Padding(
+                  padding:  const EdgeInsets.symmetric(horizontal: 25.0),
+                  child: TextField(
+                    controller: _wardController,
+                    decoration: InputDecoration(
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.green),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      hintText: 'Ward Number',
+                      fillColor: Colors.grey[200],
+                      filled: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10,),
 
+                Padding(
+                  padding:  const EdgeInsets.symmetric(horizontal: 25.0),
+                  child: TextField(
+                    controller: _wardController,
+                    decoration: InputDecoration(
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.green),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      hintText: 'District',
+                      fillColor: Colors.grey[200],
+                      filled: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10,),
+
+                Padding(
+                  padding:  const EdgeInsets.symmetric(horizontal: 25.0),
+                  child: TextField(
+                    controller: _wardController,
+                    decoration: InputDecoration(
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.white),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.green),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      hintText: 'Municipality',
+                      fillColor: Colors.grey[200],
+                      filled: true,
+                    ),
+                  ),
+                ),
                 // login button
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),

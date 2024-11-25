@@ -1,18 +1,21 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'forgot_pw_page.dart';
 import 'package:municipal_services/code/DisplayPages/dashboard_official.dart';
 
 class LoginPage extends StatefulWidget{
-
+  final bool isLocalMunicipality;
   //final VoidCallback showRegisterPage;
 
-  const LoginPage({Key? key, //required this.showRegisterPage
+  const LoginPage({Key? key, required this.isLocalMunicipality, //required this.showRegisterPage
   }) : super(key: key);
 
   @override
@@ -26,6 +29,197 @@ class _LoginPageState extends State<LoginPage>{
   // text controllers
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  // Future signIn() async{
+  //
+  //   //loading circle
+  //   showDialog(
+  //     context: context,
+  //     builder: (context){
+  //       return const Center(child: CircularProgressIndicator());
+  //     },
+  //   );
+  //
+  //   // try {
+  //   //   await FirebaseAuth.instance.signInWithEmailAndPassword(
+  //   //     email: _emailController.text.trim(),
+  //   //     password: _passwordController.text.trim(),
+  //   //   ).whenComplete(() {
+  //   //
+  //   //     Navigator.of(context).pushReplacement(
+  //   //       MaterialPageRoute(
+  //   //         builder: (context) => const HomeManagerScreen(),
+  //   //       ),
+  //   //     );
+  //   //   });
+  //   try {
+  //     UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+  //       email: _emailController.text.trim(),
+  //       password: _passwordController.text.trim(),
+  //     );
+  //
+  //     // Fetch districtId and municipalityId dynamically
+  //     String userId = userCredential.user?.uid ?? '';
+  //
+  //     String? districtId;
+  //     String? municipalityId;
+  //
+  //     // Query all districts and municipalities to find the user
+  //     final districtsSnapshot = await FirebaseFirestore.instance.collection('districts').get();
+  //     for (var districtDoc in districtsSnapshot.docs) {
+  //       final municipalitiesSnapshot = await districtDoc.reference.collection('municipalities').get();
+  //       for (var municipalityDoc in municipalitiesSnapshot.docs) {
+  //         final userDoc = await municipalityDoc.reference.collection('users').doc(userId).get();
+  //         if (userDoc.exists) {
+  //           districtId = districtDoc.id;
+  //           municipalityId = municipalityDoc.id;
+  //           break;
+  //         }
+  //       }
+  //       if (districtId != null && municipalityId != null) {
+  //         break;
+  //       }
+  //     }
+  //
+  //     if (districtId != null && municipalityId != null) {
+  //       if (context.mounted) {
+  //         Navigator.of(context).pushReplacement(
+  //           MaterialPageRoute(
+  //             builder: (context) => HomeManagerScreen(
+  //               districtId: districtId!,
+  //               municipalityId: municipalityId!,
+  //             ),
+  //           ),
+  //         );
+  //       }
+  //     } else {
+  //       throw Exception('User document does not exist in any municipality');
+  //     }
+  //     if(context.mounted)Navigator.of(context).pop();
+  //
+  //   } on FirebaseAuthException catch (e) {
+  //
+  //     authProblems errorType;
+  //     if(Platform.isAndroid){
+  //       switch(e.message){
+  //         case 'There is no user record corresponding to this identifier. The user may have been deleted.':
+  //           errorType = authProblems.userNotFound;
+  //           Fluttertoast.showToast(msg: "There is no user record corresponding to this email. The user may have been deleted.",gravity: ToastGravity.CENTER);
+  //           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+  //             content: Text('There is no user record corresponding to this identifier. The user may have been deleted.'),
+  //             behavior: SnackBarBehavior.floating,
+  //             margin: EdgeInsets.all(20.0),
+  //             duration: Duration(seconds: 5),
+  //           ));
+  //           break;
+  //         case 'The password is invalid or the user does not have a password.':
+  //           errorType = authProblems.passwordNotValid;
+  //           Fluttertoast.showToast(msg: "The password is invalid or the user does not have a password.",gravity: ToastGravity.CENTER);
+  //           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+  //             content: Text('The password was incorrect. Enter correct password or reset your password.'),
+  //             behavior: SnackBarBehavior.floating,
+  //             margin: EdgeInsets.all(20.0),
+  //             duration: Duration(seconds: 5),
+  //           ));
+  //           break;
+  //         case 'A network error (such as timeout, interrupted connection or unreachable host) has occurred.':
+  //           errorType = authProblems.networkError;
+  //           Fluttertoast.showToast(msg: "A network error (such as timeout, interrupted connection or unreachable host) has occurred.",gravity: ToastGravity.CENTER);
+  //           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+  //             content: Text('The internet connection has timed out. Connect to the internet to login'),
+  //             behavior: SnackBarBehavior.floating,
+  //             margin: EdgeInsets.all(20.0),
+  //             duration: Duration(seconds: 5),
+  //           ));
+  //           break;
+  //         default:
+  //           print('Case ${e.message} is not yet implemented');
+  //       }
+  //     } else if (Platform.isIOS) {
+  //       switch (e.code) {
+  //         case 'Error 17011':
+  //           errorType = authProblems.userNotFound;
+  //           break;
+  //         case 'Error 17009':
+  //           errorType = authProblems.passwordNotValid;
+  //           break;
+  //         case 'Error 17020':
+  //           errorType = authProblems.networkError;
+  //           break;
+  //       // ...
+  //         default:
+  //           print('Case ${e.message} is not yet implemented');
+  //       }
+  //     }
+  //   }
+  //
+  //   if(context.mounted)Navigator.of(context).pop();
+  // }
+  // Future signIn() async {
+  //   // Show loading circle
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => const Center(child: CircularProgressIndicator()),
+  //   );
+  //
+  //   try {
+  //     UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+  //       email: _emailController.text.trim(),
+  //       password: _passwordController.text.trim(),
+  //     );
+  //
+  //     // Fetch districtId and municipalityId dynamically using collectionGroup
+  //     String? userEmail = userCredential.user?.email;
+  //     print('User Email: $userEmail');
+  //
+  //     if (userEmail != null) {
+  //       QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+  //           .collectionGroup('users')
+  //           .where('email', isEqualTo: userEmail)
+  //           .limit(1)
+  //           .get();
+  //
+  //       print('User Snapshot Docs Length: ${userSnapshot.docs.length}');
+  //
+  //       if (userSnapshot.docs.isNotEmpty) {
+  //         var userDoc = userSnapshot.docs.first;
+  //
+  //         // Extract districtId and municipalityId from the document reference path
+  //         DocumentReference userDocRef = userDoc.reference;
+  //         String municipalityId = userDocRef.parent.parent!.id;
+  //         String districtId = userDocRef.parent.parent!.parent!.parent!.id;
+  //
+  //         print("Full document path: ${userDocRef.path}");
+  //         print("District ID: $districtId");
+  //         print("Municipality ID: $municipalityId");
+  //
+  //         // Navigate to HomeManagerScreen with the correct IDs
+  //         if (context.mounted) {
+  //           Navigator.of(context).pushReplacement(
+  //             MaterialPageRoute(
+  //               builder: (context) => HomeManagerScreen(
+  //
+  //               ),
+  //             ),
+  //           );
+  //         }
+  //       } else {
+  //         throw Exception('User document does not exist in any municipality');
+  //       }
+  //
+  //     }
+  //
+  //     if (context.mounted) Navigator.of(context).pop(); // Close loading indicator
+  //   } on FirebaseAuthException catch (e) {
+  //     if (context.mounted) Navigator.of(context).pop(); // Close loading indicator
+  //
+  //     // Handle FirebaseAuthException and show relevant error messages
+  //     _handleAuthException(e);
+  //   } catch (e) {
+  //     if (context.mounted) Navigator.of(context).pop(); // Close loading indicator
+  //     print('Error: $e');
+  //   }
+  // }
 
   Future signIn() async{
 
@@ -41,17 +235,38 @@ class _LoginPageState extends State<LoginPage>{
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
-      ).whenComplete(() {
+      ).whenComplete(() async {
+        // Fetch user details
+        User? user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          // Fetch user data from Firestore
+          QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+              .collectionGroup('users')
+              .where('email', isEqualTo: user.email)
+              .limit(1)
+              .get();
 
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const HomeManagerScreen(),
-          ),
-        );
+          if (userSnapshot.docs.isNotEmpty) {
+            var userDoc = userSnapshot.docs.first;
+
+            // Check if the user belongs to a local municipality
+            bool isLocalMunicipality = userDoc['isLocalMunicipality'] ?? false;
+
+            // Navigate to HomeManagerScreen with the isLocalMunicipality flag
+            Get.off(() => HomeManagerScreen(
+              isLocalMunicipality: isLocalMunicipality,  // Pass flag to HomeManagerScreen
+            ));
+          } else {
+            // If no user document is found, show an error message
+            Fluttertoast.showToast(
+              msg: "User document not found.",
+              gravity: ToastGravity.CENTER,
+            );
+          }
+        }
       });
 
-      if(context.mounted)Navigator.of(context).pop();
-
+      if (context.mounted) Navigator.of(context).pop();
     } on FirebaseAuthException catch (e) {
 
       authProblems errorType;
@@ -110,6 +325,50 @@ class _LoginPageState extends State<LoginPage>{
 
     if(context.mounted)Navigator.of(context).pop();
   }
+  void _handleAuthException(FirebaseAuthException e) {
+    String errorMessage;
+    if (Platform.isAndroid) {
+      switch (e.message) {
+        case 'There is no user record corresponding to this identifier. The user may have been deleted.':
+          errorMessage = "No user record found for this email. The user may have been deleted.";
+          break;
+        case 'The password is invalid or the user does not have a password.':
+          errorMessage = "Invalid password. Please try again or reset your password.";
+          break;
+        case 'A network error (such as timeout, interrupted connection or unreachable host) has occurred.':
+          errorMessage = "Network error. Please check your connection and try again.";
+          break;
+        default:
+          errorMessage = "Login failed. Please try again.";
+      }
+    } else if (Platform.isIOS) {
+      switch (e.code) {
+        case 'Error 17011':
+          errorMessage = "No user record found for this email.";
+          break;
+        case 'Error 17009':
+          errorMessage = "Invalid password.";
+          break;
+        case 'Error 17020':
+          errorMessage = "Network error.";
+          break;
+        default:
+          errorMessage = "Login failed. Please try again.";
+      }
+    } else {
+      errorMessage = "An unexpected error occurred.";
+    }
+
+    Fluttertoast.showToast(msg: errorMessage, gravity: ToastGravity.CENTER);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(errorMessage),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(20.0),
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -129,7 +388,7 @@ class _LoginPageState extends State<LoginPage>{
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Image.asset('assets/images/logo.png',height: 200,width: 300,),
-                Image.asset('assets/images/Coat_of_arms_South_Africa.png',height: 200,width: 300,),
+                const ResponsiveLogo(),
                 const SizedBox(height: 10,),
                 Text(
                   'Welcome!',
@@ -286,6 +545,32 @@ class _LoginPageState extends State<LoginPage>{
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class ResponsiveLogo extends StatelessWidget {
+  const ResponsiveLogo({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Get the screen width and height
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Set a base logo size that scales based on the screen dimensions
+    double logoWidth = screenWidth * 0.3; // Set to 30% of screen width
+    double logoHeight = logoWidth * (687 / 550); // Maintain new aspect ratio (550x687)
+
+    return Center(
+      child: Container(
+        width: logoWidth,
+        height: logoHeight,
+        child: FittedBox(
+          fit: BoxFit.contain,  // Ensures the image scales within the container
+          child: Image.asset('assets/images/umdm.png'),
         ),
       ),
     );

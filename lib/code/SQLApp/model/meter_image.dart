@@ -12,7 +12,7 @@ class MeterImage{
   int id;
   String address;
   int uid;
-  File electricImage;
+  // File electricImage;
   File waterImage;
   DateTime uploadDate; ///format to be changed from string to datetime with formatting to only month matching the mySql db format
 
@@ -20,7 +20,7 @@ class MeterImage{
       this.id,
       this.uid,
       this.address,
-      this.electricImage,
+      // this.electricImage,
       this.waterImage,
       this.uploadDate,
       );
@@ -29,7 +29,7 @@ class MeterImage{
     int.parse(json["id"]),
     int.parse(json["uid"]),
     json["address"],
-    json["electricImage"],///find out for files
+    // json["electricImage"],///find out for files
     json["waterImage"],///find out for files
     json["uploadDate"],///format to be changed from string to datetime with formatting to only month matching the mySql db format
   );
@@ -39,7 +39,7 @@ class MeterImage{
         'id': id.toString(),
         'uid': uid.toString(),
         'address': address,
-        'electricImage': electricImage,
+        // 'electricImage': electricImage,
         'waterImage': waterImage,
         'uploadDate': uploadDate,///format to be changed from string to datetime with formatting to only month matching the mySql db format
       };

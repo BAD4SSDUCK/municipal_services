@@ -26,8 +26,7 @@ import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
 import 'package:municipal_services/code/Reusable/push_notification_message.dart';
 
 class NoticeConfigDisconScreen extends StatefulWidget {
-  const NoticeConfigDisconScreen({Key? key, required this.userNumber}) : super(key: key);
-
+  const NoticeConfigDisconScreen({super.key, required this.userNumber,});
   final String userNumber;
 
   @override
@@ -43,12 +42,16 @@ String userID = uid as String;
 String userEmail = email as String;
 
 class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
+  CollectionReference? _listNotifications;
+   CollectionReference? _listUserTokens;
+  String? userEmail;
+  String districtId='';
+  String municipalityId='';
+  // final CollectionReference _listUserTokens =
+  // FirebaseFirestore.instance.collection('UserToken');
 
-  final CollectionReference _listUserTokens =
-  FirebaseFirestore.instance.collection('UserToken');
-
-  final CollectionReference _listNotifications =
-  FirebaseFirestore.instance.collection('Notifications');
+  // final CollectionReference _listNotifications =
+  // FirebaseFirestore.instance.collection('Notifications');
 
   final _headerController = TextEditingController();
   final _messageController = TextEditingController();
@@ -86,6 +89,8 @@ class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
 
   @override
   void initState() {
+   fetchUserDetails();
+
     _isLoading = true;
     Future.delayed(const Duration(seconds: 3),(){
       setState(() {
@@ -98,14 +103,65 @@ class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
     super.initState();
   }
 
+
+  Future<void> fetchUserDetails() async {
+    try {
+      print("Fetching user details...");
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        userEmail = user.email;
+        print("User email: $userEmail");
+
+        QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+            .collectionGroup('users')
+            .where('email', isEqualTo: userEmail)
+            .limit(1)
+            .get();
+
+        if (userSnapshot.docs.isNotEmpty) {
+          var userDoc = userSnapshot.docs.first;
+
+          // Correct path traversal to retrieve the districtId and municipalityId
+          final userPathSegments = userDoc.reference.path.split('/');
+          districtId = userPathSegments[1]; // Should be the second segment
+          municipalityId = userPathSegments[3]; // Should be the fourth segment
+
+          print("Corrected District ID: $districtId");
+          print("Corrected Municipality ID: $municipalityId");
+
+          setState(() {
+            _listUserTokens= FirebaseFirestore.instance
+                .collection('districts')
+                .doc(districtId)
+                .collection('municipalities')
+                .doc(municipalityId)
+                .collection('UserToken');
+
+            _listNotifications= FirebaseFirestore.instance
+                .collection('districts')
+                .doc(districtId)
+                .collection('municipalities')
+                .doc(municipalityId)
+                .collection('Notifications');
+          });
+        } else {
+          print("No user document found for the provided email.");
+        }
+      } else {
+        print("No current user found.");
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+    }
+  }
   void countResult() async {
     _searchBarController.text = widget.userNumber;
     searchText = widget.userNumber;
 
-    var query = _listUserTokens.where("token");
-    var snapshot = await query.get();
-    var count = snapshot.size;
-    numTokens = snapshot.size;
+    var query = _listUserTokens?.where("token");
+    var snapshot = await query?.get();
+    var count = snapshot?.size;
+    numTokens = snapshot!.size;
     print('Records are ::: $count');
     print('num tokens are ::: $numTokens');
   }
@@ -134,11 +190,19 @@ class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
     }
   }
 
-  getUsersStream() async{
-    var data = await FirebaseFirestore.instance.collection('users').get();
-    setState(() {
-      _allUserRolesResults = data.docs;
-    });
+  Future<void> getUsersStream() async {
+    var data = await FirebaseFirestore.instance
+        .collection('districts')
+        .doc(districtId)
+        .collection('municipalities')
+        .doc(municipalityId)
+        .collection('users')
+        .get();
+    if (context.mounted) {
+      setState(() {
+        _allUserRolesResults = data.docs;
+      });
+    }
     getUserDetails();
   }
 
@@ -548,7 +612,7 @@ class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
                                   final bool readStatus = _noticeReadController;
 
                                   if (title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty) {
-                                    await _listNotifications.doc(documentSnapshot?.id).update({
+                                    await _listNotifications?.doc(documentSnapshot?.id).update({
                                       "token": tokenSelected,
                                       "user": userNumber,
                                       "title": notificationTitle,
@@ -661,7 +725,7 @@ class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
                                     const bool readStatus = false;
 
                                     if (title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty) {
-                                      await _listNotifications.add({
+                                      await _listNotifications?.add({
                                         "token": tokenSelected,
                                         "user": userNumber,
                                         "title": notificationTitle,
@@ -763,7 +827,7 @@ class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
                                   const bool readStatus = false;
 
                                   if (title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty) {
-                                    await _listNotifications.add({
+                                    await _listNotifications?.add({
                                       "token": tokenSelected,
                                       "user": userNumber,
                                       "title": notificationTitle,
@@ -869,7 +933,7 @@ class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
                               const bool readStatus = false;
 
                               if (title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty) {
-                                await _listNotifications.add({
+                                await _listNotifications?.add({
                                   "token": tokenSelected,
                                   "user": userNumber,
                                   "title": notificationTitle,
@@ -936,7 +1000,7 @@ class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
                     usersNumbers = [];
                     usersTokens = [];
                     Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => const NoticeConfigArcScreen()));
+                        MaterialPageRoute(builder: (context) =>  NoticeConfigArcScreen()));
                   },
                   icon: const Icon(
                     Icons.history_outlined, color: Colors.white,)),),
@@ -976,7 +1040,7 @@ class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
                   const SizedBox(height: 10,),
 
                   ///made the listview card a reusable widget
-                  userAndTokenCard(_listUserTokens),
+                  userAndTokenCard(_listUserTokens!),
 
                 ],
               ),
@@ -1011,7 +1075,7 @@ class _NoticeConfigDisconScreenState extends State<NoticeConfigDisconScreen> {
                       /// Search bar end
 
                       ///made the listview card a reusable widget
-                      userAndTokenCardSearch(_listUserTokens),
+                      userAndTokenCardSearch(_listUserTokens!),
 
                     ],
                   ),

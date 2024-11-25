@@ -42,7 +42,7 @@ import 'dashboard_of_fragments_sql.dart';
 
 
 class HomeManagerScreen extends StatefulWidget {
-  const HomeManagerScreen({Key? key}) : super(key: key);
+  const HomeManagerScreen({super.key,});
 
   @override
   State<StatefulWidget> createState() =>_HomeManagerScreenState();
@@ -52,7 +52,8 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
 
   bool loading = true;
   late List pdfList;
-
+  bool hasUnreadMessages = false;
+  bool hasUnreadCouncilMessages=false;
   Future fetchAllPdf() async{
     final response = await http.get(Uri.parse(API.pdfDBList));
     if (response.statusCode==200){
@@ -78,6 +79,27 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
   bool visShow = true;
   bool visHide = false;
 
+  Future<bool> determineIfCouncillor(String userPhone) async {
+    try {
+      // Replace with your logic to check if the user is a councillor
+      QuerySnapshot councillorCheck = await FirebaseFirestore.instance
+          .collectionGroup('councillors')
+          .where('councillorPhone', isEqualTo: userPhone)
+          .limit(1)
+          .get();
+      return councillorCheck.docs.isNotEmpty;
+    } catch (e) {
+      print("Error checking councillor status: $e");
+      return false;
+    }
+  }
+
+  void updateUnreadBadgeStatus(bool hasUnread) {
+    setState(() {
+      hasUnreadMessages = hasUnread;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     Get.put(LocationController());
@@ -86,21 +108,34 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
+
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    String userPhone = currentUser?.phoneNumber ?? '';
     return Container(
-      ///When a background image is created this section will display it on the dashboard instead of just a grey colour with no background
       decoration: const BoxDecoration(
         image: DecorationImage(
             image: AssetImage("assets/images/greyscale.jpg"),
             fit: BoxFit.cover),
       ),
       child: Scaffold(
-        backgroundColor: Colors.transparent,//Colors.grey,
-        ///App bar removed for aesthetic
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(''),
           backgroundColor: Colors.black87,
         ),
-        drawer: const NavDrawer(),
+        drawer: FutureBuilder<bool>(
+          future: determineIfCouncillor(userPhone),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              bool isCouncillor = snapshot.data ?? false;
+              return NavDrawer(
+                userPhone: userPhone,
+                isCouncillor: isCouncillor,
+              );
+            }
+            return const SizedBox.shrink(); // Show nothing until the status is known
+          },
+        ),
         body: SingleChildScrollView(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -108,11 +143,9 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
               Expanded(
                 flex: 1,
                 child: Column(
-                  // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  //  crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
                     const SizedBox(height: 20),
-                    Image.asset('assets/images/logo.png', height: 180, width: 180,),
+                    Image.asset('assets/images/logo.png', height: 180, width: 180),
                     const SizedBox(height: 20),
                     Column(
                       children: [
@@ -134,7 +167,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   fgColor: Colors.purple,
                                   btSize: const Size(130, 120),
                                 ),
-                                const SizedBox(width: 20,),
+                                const SizedBox(width: 20),
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
@@ -150,7 +183,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                             ),
                           ),
                         ),
-                        const SizedBox(height: 5,),
+                        const SizedBox(height: 5),
                         Visibility(
                           visible: visShow,
                           child: Center(
@@ -158,18 +191,47 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                ElevatedIconButton(
-                                  onPress: () async {
-                                    Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => ChatList()));
-                                  },
-                                  labelText: 'Chat\nList',
-                                  fSize: 18,
-                                  faIcon: const FaIcon(Icons.mark_chat_unread),
-                                  fgColor: Colors.green,
-                                  btSize: const Size(130, 120),
+                                Stack(
+                                  children: [
+                                    ElevatedIconButton(
+                                      onPress: () async {
+                                        Navigator.push(context,
+                                            MaterialPageRoute(builder: (context) => ChatList()));
+                                      },
+                                      labelText: 'Chat\nList',
+                                      fSize: 18,
+                                      faIcon: const FaIcon(Icons.mark_chat_unread),
+                                      fgColor: Colors.green,
+                                      btSize: const Size(130, 120),
+                                    ),
+                                    if (hasUnreadMessages) // Show badge if there are unread messages
+                                      Positioned(
+                                        right: 0,
+                                        top: 0,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(3),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          constraints: const BoxConstraints(
+                                            minWidth: 16,
+                                            minHeight: 16,
+                                          ),
+                                          child: const Text(
+                                            '!',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                                const SizedBox(width: 20,),
+                                const SizedBox(width: 20),
                                 ElevatedIconButton(
                                   onPress: () async {
                                     Navigator.push(context,
@@ -185,7 +247,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                             ),
                           ),
                         ),
-                        const SizedBox(height: 5,),
+                        const SizedBox(height: 5),
                         Visibility(
                           visible: visShow,
                           child: Center(
@@ -194,7 +256,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 ElevatedIconButton(
-                                  onPress: (){
+                                  onPress: () {
                                     // ProfileFragmentScreen().signOutUser();
                                   },
                                   labelText: 'Logout',
@@ -203,12 +265,11 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                                   fgColor: Colors.red,
                                   btSize: const Size(130, 120),
                                 ),
-                                const SizedBox(width: 20,),
+                                const SizedBox(width: 20),
                                 ElevatedIconButton(
                                   onPress: () async {
-
                                     // Navigator.push(context,
-                                        // MaterialPageRoute(builder: (context) => PropertyFragmentScreenAll()));
+                                    // MaterialPageRoute(builder: (context) => PropertyFragmentScreenAll()));
                                   },
                                   labelText: 'Reading\nCapture',
                                   fSize: 16,
@@ -223,7 +284,8 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
                       ],
                     ),
                     const SizedBox(height: 20),
-                    const Text('Copyright Cyberfox ',
+                    const Text(
+                      'Copyright Cyberfox ',
                       style: TextStyle(
                         color: Colors.white,
                         backgroundColor: Colors.white10,
@@ -242,9 +304,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen>{
     );
   }
 
-  ///pdf view loader getting file name onPress/onTap that passes filename to this class
   void openPDF(BuildContext context, File file) => Navigator.of(context).push(
     MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
   );
-
 }

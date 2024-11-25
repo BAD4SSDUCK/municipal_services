@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +10,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:municipal_services/code/DisplayPages/dashboard_official.dart';
+import 'package:municipal_services/code/DisplayPages/display_all_capture.dart';
 
 import 'package:municipal_services/code/ImageUploading/image_upload_meter.dart';
 import 'package:municipal_services/code/ImageUploading/image_upload_water.dart';
@@ -18,12 +21,27 @@ import 'package:municipal_services/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_services/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
 
+import '../DisplayPages/log_screen.dart';
 
 class ImageZoomPage extends StatefulWidget {
-  const ImageZoomPage({Key? key, required this.imageName, required this.addressSnap}) : super(key: key);
+  const ImageZoomPage({
+    super.key,
+    required this.imageName,
+    required this.addressSnap,
+    this.municipalityUserEmail,
+    required this.isLocalMunicipality, // Add this to handle local municipality logic
+    required this.districtId,
+    required this.municipalityId,
+    required this.isLocalUser,
+  });
 
   final String imageName;
   final String addressSnap;
+  final String? municipalityUserEmail;
+  final bool isLocalMunicipality; // New property
+  final String districtId; // Required for district municipalities
+  final String municipalityId;
+  final bool isLocalUser;
 
   @override
   _ImageZoomPageState createState() => _ImageZoomPageState();
@@ -41,7 +59,7 @@ DateTime now = DateTime.now();
 
 String accountNumber = ' ';
 String locationGiven = ' ';
-String eMeterNumber = ' ';
+// String eMeterNumber = ' ';
 String accountNumberW = ' ';
 String locationGivenW = ' ';
 String wMeterNumber = ' ';
@@ -53,42 +71,75 @@ bool imgUploadCheck = false;
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
 
-class FireStorageService extends ChangeNotifier{
+class FireStorageService extends ChangeNotifier {
   FireStorageService();
-  static Future<String> loadImage(BuildContext context, String image) async{
+  static Future<String> loadImage(BuildContext context, String image) async {
     return await FirebaseStorage.instance.ref().child(image).getDownloadURL();
   }
 }
 
-Future<Widget> _getImage(BuildContext context, String imageName) async{
-  Image image;
-  final value = await FireStorageService.loadImage(context, imageName);
-  image =Image.network(
-    value.toString(),
-    fit: BoxFit.fill,
-  );
-  return image;
+Future<String> _getImageW(BuildContext context, String imagePath) async {
+  try {
+    final ref = FirebaseStorage.instance.ref().child(imagePath);
+    final imageUrl = await ref.getDownloadURL();
+    print('Image URL: $imageUrl');
+    return imageUrl;
+  } catch (e) {
+    print('Error fetching image: $e');
+    throw Exception('Error fetching image: $e');
+  }
 }
 
-Future<Widget> _getImageW(BuildContext context, String imageName2) async{
-  Image image2;
-  final value = await FireStorageService.loadImage(context, imageName2);
-  image2 =Image.network(
-    value.toString(),
-    fit: BoxFit.fill,
-  );
-  return image2;
-}
+Future<String> fetchPropertyAddress(String phoneNumber, String meterNumber,
+    bool isLocalMunicipality, String districtId, String municipalityId) async {
+  try {
+    QuerySnapshot querySnapshot;
 
+    if (isLocalMunicipality) {
+      // Query for local municipalities
+      querySnapshot = await FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId)
+          .collection('properties')
+          .where('cellNumber', isEqualTo: phoneNumber)
+          .where('water_meter_number',
+              isEqualTo: meterNumber) // Filter by meter number
+          .limit(1)
+          .get();
+    } else {
+      // Query for district municipalities
+      querySnapshot = await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .collection('properties')
+          .where('cellNumber', isEqualTo: phoneNumber)
+          .where('water_meter_number',
+              isEqualTo: meterNumber) // Filter by meter number
+          .limit(1)
+          .get();
+    }
+
+    if (querySnapshot.docs.isNotEmpty) {
+      // Correctly return the address of the matched property
+      return querySnapshot.docs.first['address'];
+    } else {
+      throw Exception('No property found for this meter number.');
+    }
+  } catch (e) {
+    print('Error fetching property address: $e');
+    throw Exception('Failed to fetch property address.');
+  }
+}
 
 class _ImageZoomPageState extends State<ImageZoomPage> {
-
   // text fields' controllers
   final _accountNumberController = TextEditingController();
   final _addressController = TextEditingController();
   final _areaCodeController = TextEditingController();
-  final _meterNumberController = TextEditingController();
-  final _meterReadingController = TextEditingController();
+  // final _meterNumberController = TextEditingController();
+  // final _meterReadingController = TextEditingController();
   final _waterMeterController = TextEditingController();
   final _waterMeterReadingController = TextEditingController();
   final _cellNumberController = TextEditingController();
@@ -97,44 +148,261 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
   final _idNumberController = TextEditingController();
 
   final _userIDController = userID;
-
-  String formattedMonth = DateFormat.MMMM().format(now);//format for full Month by name
-  String formattedDateMonth = DateFormat.MMMMd().format(now);//format for Day Month only
+  String? userEmail;
+  String districtId = '';
+  String municipalityId = '';
+  bool isLocalUser = true;
+  bool isLocalMunicipality = false;
+  String? selectedMunicipality; // For district users to select a municipality
+  List<String> municipalities = []; // List of municipalities
+  bool isLoading = true;
+  String formattedMonth =
+      DateFormat.MMMM().format(now); //format for full Month by name
+  String formattedDateMonth =
+      DateFormat.MMMMd().format(now); //format for Day Month only
+  bool _meterReadingUpdatedFirst = false;
+  bool _imageUploadedFirst = false;
 
   String dropdownValue = 'Select Month';
-  List<String> dropdownMonths = ['Select Month','January','February','March','April','May','June','July','August','September','October','November','December'];
-
-  final CollectionReference _propList =
-  FirebaseFirestore.instance.collection('properties');
-
-  Future<void> updateImgCheckE(bool imgCheck, [DocumentSnapshot? documentSnapshot]) async{
-    if (documentSnapshot != null) {
-      await _propList
-          .doc(documentSnapshot.id)
-          .update({
-        "imgStateE": imgCheck,
-      });
-    }
-
+  List<String> dropdownMonths = [
+    'Select Month',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December'
+  ];
+  CollectionReference? _propList;
+  @override
+  void initState() {
+    super.initState();
+    fetchUserDetails();
+    print('ImageZoomPage Init:');
+    print('Municipality Email: ${widget.municipalityUserEmail}');
+    print('District ID: ${widget.districtId}');
+    print('Municipality ID: ${widget.municipalityId}');
   }
 
-  Future<void> updateImgCheckW(bool imgCheck, [DocumentSnapshot? documentSnapshot]) async{
-    if (documentSnapshot != null) {
-      await _propList
-          .doc(documentSnapshot.id)
-          .update({
-        "imgStateW": imgCheck,
-      });
-    }
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
+  Future<void> fetchUserDetails() async {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        print(
+            'Fetching properties for ${widget.isLocalMunicipality ? "local" : "district"} municipality.');
+
+        if (widget.isLocalMunicipality) {
+          _propList = FirebaseFirestore.instance
+              .collection('localMunicipalities')
+              .doc(widget.municipalityId)
+              .collection('properties');
+          print(
+              'Query Path: localMunicipalities/${widget.municipalityId}/properties');
+        } else {
+          _propList = FirebaseFirestore.instance
+              .collection('districts')
+              .doc(widget.districtId)
+              .collection('municipalities')
+              .doc(widget.municipalityId)
+              .collection('properties');
+          print(
+              'Query Path: districts/${widget.districtId}/municipalities/${widget.municipalityId}/properties');
+        }
+
+        // Execute a test query with the provided address to ensure the path is correct
+        final snapshot = await _propList!
+            .where('address', isEqualTo: widget.addressSnap)
+            .limit(1)
+            .get();
+
+        if (snapshot.docs.isNotEmpty) {
+          print('Test Query Result: ${snapshot.docs.first.data()}');
+        } else {
+          print(
+              'No matching property found with address: ${widget.addressSnap}');
+        }
+
+        setState(() {
+          print('Initialized _propList or loaded municipality list');
+        });
+      } else {
+        print("No current user found.");
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+    }
+  }
+
+  // Future<void> updateImgCheckE(bool imgCheck,
+  //     [DocumentSnapshot? documentSnapshot]) async {
+  //   if (documentSnapshot != null) {
+  //     await _propList?.doc(documentSnapshot.id).update({
+  //       "imgStateE": imgCheck,
+  //     });
+  //   }
+  // }
+
+  Future<void> updateImgCheckW(bool imgCheck,
+      [DocumentSnapshot? documentSnapshot]) async {
+    if (documentSnapshot != null) {
+      try {
+        await _propList?.doc(documentSnapshot.id).update({
+          "imgStateW": imgCheck,
+        });
+        print(
+            'Updated imgStateW to $imgCheck for document: ${documentSnapshot.id}');
+      } catch (e) {
+        print('Error updating imgStateW: $e');
+      }
+    }
+  }
+
+  // Future<void> ensureDocumentExists(String cellNumber, String districtId, String municipalityId, String propertyAddress) async {
+  //   print('ensureDocumentExists called with: cellNumber = $cellNumber, districtId = $districtId, municipalityId = $municipalityId, propertyAddress = $propertyAddress');  // Add this to check if method is called
+  //
+  //   DocumentReference actionLogRef;
+  //
+  //   if (widget.isLocalMunicipality) {
+  //     actionLogRef = FirebaseFirestore.instance
+  //         .collection('localMunicipalities')
+  //         .doc(widget.municipalityId)
+  //         .collection('actionLogs')
+  //         .doc(cellNumber)
+  //         .collection(widget.addressSnap)
+  //         .doc();
+  //   } else {
+  //     actionLogRef = FirebaseFirestore.instance
+  //         .collection('districts')
+  //         .doc(widget.districtId)
+  //         .collection('municipalities')
+  //         .doc(widget.municipalityId)
+  //         .collection('actionLogs')
+  //         .doc(cellNumber)
+  //         .collection(widget.addressSnap)
+  //         .doc();
+  //   }
+  //
+  // }
+
+  // Future<void> logEMeterReadingUpdate(
+  //     String cellNumber,
+  //     String propertyAddress,
+  //     String municipalityUserEmail,
+  //     String districtId,
+  //     String municipalityId,
+  //     Map<String, dynamic> details) async {
+  //
+  //   print('logEMeterReadingUpdate called');  // Add this to check if the method is invoked
+  //
+  //   // Sanitize the property address to ensure it's valid for Firestore paths
+  //
+  //   // Ensure the document exists before logging
+  //   try {
+  //     await ensureDocumentExists(cellNumber, districtId, municipalityId, propertyAddress);
+  //     print('ensureDocumentExists success');
+  //   } catch (e) {
+  //     print('Error in ensureDocumentExists: $e');
+  //   }
+  //
+  //   // Construct the correct path for logging
+  //   DocumentReference actionLogRef = FirebaseFirestore.instance
+  //       .collection('districts')
+  //       .doc(districtId)
+  //       .collection('municipalities')
+  //       .doc(municipalityId)
+  //       .collection('actionLogs')
+  //       .doc(cellNumber)
+  //       .collection(propertyAddress)
+  //       .doc();  // Auto-generate document ID for the action
+  //
+  //   try {
+  //     await actionLogRef.set({
+  //       'actionType': 'Electricity Meter Reading Update',
+  //       'uploader': municipalityUserEmail,
+  //       'details': details,
+  //       'address': propertyAddress,
+  //       'timestamp': FieldValue.serverTimestamp(),
+  //       'description': '$municipalityUserEmail updated electricity meter readings for property at $propertyAddress',
+  //     });
+  //     print('Action log entry created successfully');
+  //   } catch (e) {
+  //     print('Error creating action log entry: $e');
+  //   }
+  //
+  // }
+
+  Future<void> logWMeterReadingUpdate(
+      String cellNumber,
+      String propertyAddress,
+      String municipalityUserEmail,
+      String districtId,
+      String municipalityId,
+      Map<String, dynamic> details) async {
+    print(
+        'logWMeterReadingUpdate called with: cellNumber = $cellNumber, propertyAddress = $propertyAddress, municipalityUserEmail = $municipalityUserEmail');
+    // Ensure the document exists before logging
+    //await ensureDocumentExists(cellNumber, districtId, municipalityId, propertyAddress);
+
+    DocumentReference actionLogRef;
+
+    if (widget.isLocalMunicipality) {
+      actionLogRef = FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(widget.municipalityId)
+          .collection('actionLogs')
+          .doc(cellNumber)
+          .collection(widget.addressSnap)
+          .doc();
+    } else {
+      actionLogRef = FirebaseFirestore.instance
+          .collection('districts')
+          .doc(widget.districtId)
+          .collection('municipalities')
+          .doc(widget.municipalityId)
+          .collection('actionLogs')
+          .doc(cellNumber)
+          .collection(widget.addressSnap)
+          .doc();
+    }
+    print(
+        'Logging action for water meter reading update. MunicipalityUserEmail: ${widget.municipalityUserEmail}');
+
+    try {
+      await actionLogRef.set({
+        'actionType': 'Water Meter Reading Update',
+        'uploader': municipalityUserEmail.isNotEmpty
+            ? municipalityUserEmail
+            : 'Unknown',
+        'details': details,
+        'address': propertyAddress,
+        'timestamp': FieldValue.serverTimestamp(),
+        'description':
+            '$municipalityUserEmail updated water meter readings for property at $propertyAddress',
+      });
+      print('Action logged successfully in path: ${actionLogRef.path}');
+    } catch (e) {
+      print('Error logging water meter reading update: $e');
+    }
   }
 
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
     _accountNumberController.text = '';
     _addressController.text = '';
     _areaCodeController.text = '';
-    _meterNumberController.text = '';
-    _meterReadingController.text = '';
+    // _meterNumberController.text = '';
+    // _meterReadingController.text = '';
     _waterMeterController.text = '';
     _waterMeterReadingController.text = '';
     _cellNumberController.text = '';
@@ -148,7 +416,10 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
         builder: (BuildContext ctx) {
           return SingleChildScrollView(
             child: Padding(
-              padding: EdgeInsets.only(top: 20, left: 20, right: 20,
+              padding: EdgeInsets.only(
+                  top: 20,
+                  left: 20,
+                  right: 20,
                   bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -158,65 +429,74 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                     visible: visibilityState1,
                     child: TextField(
                       controller: _accountNumberController,
-                      decoration: const InputDecoration(labelText: 'Account Number'),
+                      decoration:
+                          const InputDecoration(labelText: 'Account Number'),
                     ),
                   ),
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
                       controller: _addressController,
-                      decoration: const InputDecoration(labelText: 'Street Address'),
+                      decoration:
+                          const InputDecoration(labelText: 'Street Address'),
                     ),
                   ),
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
-                      keyboardType:
-                      const TextInputType.numberWithOptions(),
+                      keyboardType: const TextInputType.numberWithOptions(),
                       controller: _areaCodeController,
-                      decoration: const InputDecoration(labelText: 'Area Code',),
+                      decoration: const InputDecoration(
+                        labelText: 'Area Code',
+                      ),
                     ),
                   ),
-                  Visibility(
-                    visible: visibilityState1,
-                    child: TextField(
-                      controller: _meterNumberController,
-                      decoration: const InputDecoration(labelText: 'Meter Number'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState1,
-                    child: TextField(
-                      controller: _meterReadingController,
-                      decoration: const InputDecoration(labelText: 'Meter Reading'),
-                    ),
-                  ),
+                  // Visibility(
+                  //   visible: visibilityState1,
+                  //   child: TextField(
+                  //     controller: _meterNumberController,
+                  //     decoration:
+                  //         const InputDecoration(labelText: 'Meter Number'),
+                  //   ),
+                  // ),
+                  // Visibility(
+                  //   visible: visibilityState1,
+                  //   child: TextField(
+                  //     controller: _meterReadingController,
+                  //     decoration:
+                  //         const InputDecoration(labelText: 'Meter Reading'),
+                  //   ),
+                  // ),
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
                       controller: _waterMeterController,
-                      decoration: const InputDecoration(labelText: 'Water Meter Number'),
+                      decoration: const InputDecoration(
+                          labelText: 'Water Meter Number'),
                     ),
                   ),
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
                       controller: _waterMeterReadingController,
-                      decoration: const InputDecoration(labelText: 'Water Meter Reading'),
+                      decoration: const InputDecoration(
+                          labelText: 'Water Meter Reading'),
                     ),
                   ),
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
                       controller: _cellNumberController,
-                      decoration: const InputDecoration(labelText: 'Phone Number'),
+                      decoration:
+                          const InputDecoration(labelText: 'Phone Number'),
                     ),
                   ),
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
                       controller: _firstNameController,
-                      decoration: const InputDecoration(labelText: 'First Name'),
+                      decoration:
+                          const InputDecoration(labelText: 'First Name'),
                     ),
                   ),
                   Visibility(
@@ -239,37 +519,39 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                   ElevatedButton(
                     child: const Text('Create'),
                     onPressed: () async {
-                      final String accountNumber = _accountNumberController.text;
+                      final String accountNumber =
+                          _accountNumberController.text;
                       final String address = _addressController.text;
                       final String areaCode = _areaCodeController.text;
-                      final String meterNumber = _meterNumberController.text;
-                      final String meterReading = _meterReadingController.text;
-                      final String waterMeterNumber = _waterMeterController.text;
-                      final String waterMeterReading = _waterMeterReadingController.text;
+                      // final String meterNumber = _meterNumberController.text;
+                      // final String meterReading = _meterReadingController.text;
+                      final String waterMeterNumber =
+                          _waterMeterController.text;
+                      final String waterMeterReading =
+                          _waterMeterReadingController.text;
                       final String cellNumber = _cellNumberController.text;
                       final String firstName = _firstNameController.text;
                       final String lastName = _lastNameController.text;
                       final String idNumber = _idNumberController.text;
                       if (accountNumber != null) {
-
-                        await _propList.add({
-                          "account number": accountNumber,
+                        await _propList?.add({
+                          "accountNumber": accountNumber,
                           "address": address,
-                          "area code": areaCode,
-                          "meter number": meterNumber,
-                          "meter reading": meterReading,
-                          "water meter number": waterMeterNumber,
-                          "water meter reading": waterMeterReading,
-                          "cell number": cellNumber,
-                          "first name": firstName,
-                          "last name": lastName,
-                          "id number": idNumber
+                          "areaCode": areaCode,
+                          // "meter_number": meterNumber,
+                          // "meter_reading": meterReading,
+                          "water_meter_number": waterMeterNumber,
+                          "water_meter_reading": waterMeterReading,
+                          "cellNumber": cellNumber,
+                          "firstName": firstName,
+                          "lastName": lastName,
+                          "idNumber": idNumber
                         });
                         _accountNumberController.text = '';
                         _addressController.text = '';
                         _areaCodeController.text = '';
-                        _meterNumberController.text = '';
-                        _meterReadingController.text = '';
+                        // _meterNumberController.text = '';
+                        // _meterReadingController.text = '';
                         _waterMeterController.text = '';
                         _waterMeterReadingController.text = '';
                         _cellNumberController.text = '';
@@ -277,7 +559,7 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                         _lastNameController.text = '';
                         _idNumberController.text = '';
 
-                        if(context.mounted)Navigator.of(context).pop();
+                        if (context.mounted) Navigator.of(context).pop();
                       }
                     },
                   )
@@ -291,19 +573,21 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
   /// on update the only info necessary to change should be meter reading
   Future<void> _update([DocumentSnapshot? documentSnapshot]) async {
     if (documentSnapshot != null) {
-      _accountNumberController.text = documentSnapshot['account number'];
+      _accountNumberController.text = documentSnapshot['accountNumber'];
       _addressController.text = documentSnapshot['address'];
-      _areaCodeController.text = documentSnapshot['area code'].toString();
-      _meterNumberController.text = documentSnapshot['meter number'];
-      _meterReadingController.text = documentSnapshot['meter reading'];
-      _waterMeterController.text = documentSnapshot['water meter number'];
-      _waterMeterReadingController.text = documentSnapshot['water meter reading'];
-      _cellNumberController.text = documentSnapshot['cell number'];
-      _firstNameController.text = documentSnapshot['first name'];
-      _lastNameController.text = documentSnapshot['last name'];
-      _idNumberController.text = documentSnapshot['id number'];
-      userID = documentSnapshot['user id'];
+      _areaCodeController.text = documentSnapshot['areaCode'].toString();
+      // _meterNumberController.text = documentSnapshot['meter_number'];
+      // _meterReadingController.text = documentSnapshot['meter_reading'];
+      _waterMeterController.text = documentSnapshot['water_meter_number'];
+      _waterMeterReadingController.text =
+          documentSnapshot['water_meter_reading'];
+      _cellNumberController.text = documentSnapshot['cellNumber'];
+      _firstNameController.text = documentSnapshot['firstName'];
+      _lastNameController.text = documentSnapshot['lastName'];
+      _idNumberController.text = documentSnapshot['idNumber'];
+      userID = documentSnapshot['userID'];
     }
+
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
     await showModalBottomSheet(
         isScrollControlled: true,
@@ -315,179 +599,6 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                   top: 20,
                   left: 20,
                   right: 20,
-                  bottom: MediaQuery
-                      .of(ctx)
-                      .viewInsets
-                      .bottom + 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _accountNumberController,
-                      decoration: const InputDecoration(labelText: 'Account Number'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _addressController,
-                      decoration: const InputDecoration(labelText: 'Street Address'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      keyboardType:
-                      const TextInputType.numberWithOptions(),
-                      controller: _areaCodeController,
-                      decoration: const InputDecoration(labelText: 'Area Code',),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _meterNumberController,
-                      decoration: const InputDecoration(labelText: 'Electricity Meter Number'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState1,
-                    child: TextField(
-                      maxLength: 5,
-                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                      keyboardType: TextInputType.number,
-                      controller: _meterReadingController,
-                      decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _waterMeterController,
-                      decoration: const InputDecoration(labelText: 'Water Meter Number'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState1,
-                    child: TextField(
-                      maxLength: 8,
-                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                      keyboardType: TextInputType.number,
-                      controller: _waterMeterReadingController,
-                      decoration: const InputDecoration(labelText: 'Water Meter Reading'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _cellNumberController,
-                      decoration: const InputDecoration(labelText: 'Phone Number'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _firstNameController,
-                      decoration: const InputDecoration(labelText: 'First Name'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _lastNameController,
-                      decoration: const InputDecoration(labelText: 'Last Name'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _idNumberController,
-                      decoration: const InputDecoration(labelText: 'ID Number'),
-                    ),
-                  ),
-                  const SizedBox(height: 20,),
-                  ElevatedButton(
-                    child: const Text('Update'),
-                    onPressed: () async {
-                      final String accountNumber = _accountNumberController.text;
-                      final String address = _addressController.text;
-                      final int areaCode = int.parse(_areaCodeController.text);
-                      final String meterNumber = _meterNumberController.text;
-                      final String meterReading = _meterReadingController.text;
-                      final String waterMeterNumber = _waterMeterController.text;
-                      final String waterMeterReading = _waterMeterReadingController.text;
-                      final String cellNumber = _cellNumberController.text;
-                      final String firstName = _firstNameController.text;
-                      final String lastName = _lastNameController.text;
-                      final String idNumber = _idNumberController.text;
-
-                      if (accountNumber != null) {
-                        await _propList
-                            .doc(documentSnapshot!.id)
-                            .update({
-                          "account number": accountNumber,
-                          "address": address,
-                          "area code": areaCode,
-                          "meter number": meterNumber,
-                          "meter reading": meterReading,
-                          "water meter number": waterMeterNumber,
-                          "water meter reading": waterMeterReading,
-                          "cell number": cellNumber,
-                          "first name": firstName,
-                          "last name": lastName,
-                          "id number": idNumber,
-                          "user id" : userID,
-                        });
-
-                        _accountNumberController.text = '';
-                        _addressController.text = '';
-                        _areaCodeController.text = '';
-                        _meterNumberController.text = '';
-                        _meterReadingController.text = '';
-                        _waterMeterController.text = '';
-                        _waterMeterReadingController.text = '';
-                        _cellNumberController.text = '';
-                        _firstNameController.text = '';
-                        _lastNameController.text = '';
-                        _idNumberController.text = '';
-
-                        if(context.mounted)Navigator.of(context).pop();
-                      }
-                    },
-                  )
-                ],
-              ),
-            ),
-          );
-        });
-  }
-
-  Future<void> _updateE([DocumentSnapshot? documentSnapshot]) async {
-    if (documentSnapshot != null) {
-      _accountNumberController.text = documentSnapshot['account number'];
-      _addressController.text = documentSnapshot['address'];
-      _areaCodeController.text = documentSnapshot['area code'].toString();
-      _meterNumberController.text = documentSnapshot['meter number'];
-      _meterReadingController.text = documentSnapshot['meter reading'];
-      _waterMeterController.text = documentSnapshot['water meter number'];
-      _waterMeterReadingController.text = documentSnapshot['water meter reading'];
-      _cellNumberController.text = documentSnapshot['cell number'];
-      _firstNameController.text = documentSnapshot['first name'];
-      _lastNameController.text = documentSnapshot['last name'];
-      _idNumberController.text = documentSnapshot['id number'];
-      userID = documentSnapshot['user id'];
-    }
-    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
-    await showModalBottomSheet(
-        isScrollControlled: true,
-        context: context,
-        builder: (BuildContext ctx) {
-          return SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.only(top: 20, left: 20, right: 20,
                   bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -497,257 +608,53 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                     visible: visibilityState2,
                     child: TextField(
                       controller: _accountNumberController,
-                      decoration: const InputDecoration(labelText: 'Account Number'),
+                      decoration:
+                          const InputDecoration(labelText: 'Account Number'),
                     ),
                   ),
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
                       controller: _addressController,
-                      decoration: const InputDecoration(labelText: 'Street Address'),
+                      decoration:
+                          const InputDecoration(labelText: 'Street Address'),
                     ),
                   ),
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
-                      keyboardType:
-                      const TextInputType.numberWithOptions(),
+                      keyboardType: const TextInputType.numberWithOptions(),
                       controller: _areaCodeController,
-                      decoration: const InputDecoration(labelText: 'Area Code',),
+                      decoration: const InputDecoration(
+                        labelText: 'Area Code',
+                      ),
                     ),
                   ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _meterNumberController,
-                      decoration: const InputDecoration(labelText: 'Electricity Meter Number'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState1,
-                    child: TextField(
-                      maxLength: 5,
-                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                      keyboardType: TextInputType.number,
-                      controller: _meterReadingController,
-                      decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
-                    ),
-                  ),
+                  // Visibility(
+                  //   visible: visibilityState2,
+                  //   child: TextField(
+                  //     controller: _meterNumberController,
+                  //     decoration: const InputDecoration(
+                  //         labelText: 'Electricity Meter Number'),
+                  //   ),
+                  // ),
+                  // Visibility(
+                  //   visible: visibilityState1,
+                  //   child: TextField(
+                  //     maxLength: 5,
+                  //     maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                  //     keyboardType: TextInputType.number,
+                  //     controller: _meterReadingController,
+                  //     decoration: const InputDecoration(
+                  //         labelText: 'Electricity Meter Reading'),
+                  //   ),
+                  // ),
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
                       controller: _waterMeterController,
-                      decoration: const InputDecoration(labelText: 'Water Meter Number'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      keyboardType: TextInputType.number,
-                      controller: _waterMeterReadingController,
-                      decoration: const InputDecoration(labelText: 'Water Meter Reading'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _cellNumberController,
-                      decoration: const InputDecoration(labelText: 'Phone Number'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _firstNameController,
-                      decoration: const InputDecoration(labelText: 'First Name'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _lastNameController,
-                      decoration: const InputDecoration(labelText: 'Last Name'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _idNumberController,
-                      decoration: const InputDecoration(labelText: 'ID Number'),
-                    ),
-                  ),
-                  const SizedBox(height: 20,),
-                  ElevatedButton(
-                    child: const Text('Update'),
-                    onPressed: () async {
-                      final String accountNumber = _accountNumberController.text;
-                      final String address = _addressController.text;
-                      final int areaCode = int.parse(_areaCodeController.text);
-                      final String meterNumber = _meterNumberController.text;
-                      final String meterReading = _meterReadingController.text;
-                      final String waterMeterNumber = _waterMeterController.text;
-                      final String waterMeterReading = _waterMeterReadingController.text;
-                      final String cellNumber = _cellNumberController.text;
-                      final String firstName = _firstNameController.text;
-                      final String lastName = _lastNameController.text;
-                      final String idNumber = _idNumberController.text;
-
-                      if (accountNumber != null) {
-                        await _propList
-                            .doc(documentSnapshot!.id)
-                            .update({
-                          "account number": accountNumber,
-                          "address": address,
-                          "area code": areaCode,
-                          "meter number": meterNumber,
-                          "meter reading": meterReading,
-                          "water meter number": waterMeterNumber,
-                          "water meter reading": waterMeterReading,
-                          "cell number": cellNumber,
-                          "first name": firstName,
-                          "last name": lastName,
-                          "id number": idNumber,
-                          "user id" : userID,
-                        });
-
-                        await FirebaseFirestore.instance
-                            .collection('consumption').doc(formattedMonth)
-                            .collection('address').doc(address).set({
-                          "address": address,
-                          "meter reading": meterReading,
-                          "water meter reading": waterMeterReading,
-                        });
-
-                        _accountNumberController.text = '';
-                        _addressController.text = '';
-                        _areaCodeController.text = '';
-                        _meterNumberController.text = '';
-                        _meterReadingController.text = '';
-                        _waterMeterController.text = '';
-                        _waterMeterReadingController.text = '';
-                        _cellNumberController.text = '';
-                        _firstNameController.text = '';
-                        _lastNameController.text = '';
-                        _idNumberController.text = '';
-
-                        if(context.mounted)Navigator.of(context).pop();
-                        ///Added open the image upload straight after inputting the meter reading
-                        if(context.mounted) {
-                          showDialog(
-                              barrierDismissible: false,
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: const Text("Upload Electricity Meter"),
-                                  content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                  actions: [
-                                    IconButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      icon: const Icon(
-                                        Icons.cancel,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                    IconButton(
-                                      onPressed: () async {
-                                        Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                        Navigator.push(context,
-                                            MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: cellNumber, meterNumber: meterNumber,)));
-                                      },
-                                      icon: const Icon(
-                                        Icons.done,
-                                        color: Colors.green,
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              });
-                        }
-
-                        Fluttertoast.showToast(msg: "Reading updated!");
-                      }
-                    },
-                  )
-                ],
-              ),
-            ),
-          );
-        });
-  }
-
-  Future<void> _updateW([DocumentSnapshot? documentSnapshot]) async {
-    if (documentSnapshot != null) {
-      _accountNumberController.text = documentSnapshot['account number'];
-      _addressController.text = documentSnapshot['address'];
-      _areaCodeController.text = documentSnapshot['area code'].toString();
-      _meterNumberController.text = documentSnapshot['meter number'];
-      _meterReadingController.text = documentSnapshot['meter reading'];
-      _waterMeterController.text = documentSnapshot['water meter number'];
-      _waterMeterReadingController.text = documentSnapshot['water meter reading'];
-      _cellNumberController.text = documentSnapshot['cell number'];
-      _firstNameController.text = documentSnapshot['first name'];
-      _lastNameController.text = documentSnapshot['last name'];
-      _idNumberController.text = documentSnapshot['id number'];
-      userID = documentSnapshot['user id'];
-    }
-    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
-    await showModalBottomSheet(
-        isScrollControlled: true,
-        context: context,
-        builder: (BuildContext ctx) {
-          return SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.only(top: 20, left: 20, right: 20,
-                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _accountNumberController,
-                      decoration: const InputDecoration(labelText: 'Account Number'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _addressController,
-                      decoration: const InputDecoration(labelText: 'Street Address'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      keyboardType:
-                      const TextInputType.numberWithOptions(),
-                      controller: _areaCodeController,
-                      decoration: const InputDecoration(labelText: 'Area Code',),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _meterNumberController,
-                      decoration: const InputDecoration(labelText: 'Electricity Meter Number'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      keyboardType: TextInputType.number,
-                      controller: _meterReadingController,
-                      decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _waterMeterController,
-                      decoration: const InputDecoration(labelText: 'Water Meter Number'),
+                      decoration: const InputDecoration(
+                          labelText: 'Water Meter Number'),
                     ),
                   ),
                   Visibility(
@@ -757,21 +664,24 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                       maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       keyboardType: TextInputType.number,
                       controller: _waterMeterReadingController,
-                      decoration: const InputDecoration(labelText: 'Water Meter Reading'),
+                      decoration: const InputDecoration(
+                          labelText: 'Water Meter Reading'),
                     ),
                   ),
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
                       controller: _cellNumberController,
-                      decoration: const InputDecoration(labelText: 'Phone Number'),
+                      decoration:
+                          const InputDecoration(labelText: 'Phone Number'),
                     ),
                   ),
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
                       controller: _firstNameController,
-                      decoration: const InputDecoration(labelText: 'First Name'),
+                      decoration:
+                          const InputDecoration(labelText: 'First Name'),
                     ),
                   ),
                   Visibility(
@@ -794,49 +704,42 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                   ElevatedButton(
                     child: const Text('Update'),
                     onPressed: () async {
-                      final String accountNumber = _accountNumberController.text;
+                      final String accountNumber =
+                          _accountNumberController.text;
                       final String address = _addressController.text;
                       final int areaCode = int.parse(_areaCodeController.text);
-                      final String meterNumber = _meterNumberController.text;
-                      final String meterReading = _meterReadingController.text;
-                      final String waterMeterNumber = _waterMeterController.text;
-                      final String waterMeterReading = _waterMeterReadingController.text;
+                      // final String meterNumber = _meterNumberController.text;
+                      // final String meterReading = _meterReadingController.text;
+                      final String waterMeterNumber =
+                          _waterMeterController.text;
+                      final String waterMeterReading =
+                          _waterMeterReadingController.text;
                       final String cellNumber = _cellNumberController.text;
                       final String firstName = _firstNameController.text;
                       final String lastName = _lastNameController.text;
                       final String idNumber = _idNumberController.text;
 
                       if (accountNumber != null) {
-                        await _propList
-                            .doc(documentSnapshot!.id)
-                            .update({
-                          "account number": accountNumber,
+                        await _propList?.doc(documentSnapshot!.id).update({
+                          "accountNumber": accountNumber,
                           "address": address,
-                          "area code": areaCode,
-                          "meter number": meterNumber,
-                          "meter reading": meterReading,
-                          "water meter number": waterMeterNumber,
-                          "water meter reading": waterMeterReading,
-                          "cell number": cellNumber,
-                          "first name": firstName,
-                          "last name": lastName,
-                          "id number": idNumber,
-                          "user id" : userID,
-                        });
-
-                        await FirebaseFirestore.instance
-                            .collection('consumption').doc(formattedMonth)
-                            .collection('address').doc(address).set({
-                          "address": address,
-                          "meter reading": meterReading,
-                          "water meter reading": waterMeterReading,
+                          "areaCode": areaCode,
+                          // "meter_number": meterNumber,
+                          // "meter_reading": meterReading,
+                          "water_meter_number": waterMeterNumber,
+                          "water_meter_reading": waterMeterReading,
+                          "cellNumber": cellNumber,
+                          "firstName": firstName,
+                          "lastName": lastName,
+                          "idNumber": idNumber,
+                          "userID": userID,
                         });
 
                         _accountNumberController.text = '';
                         _addressController.text = '';
                         _areaCodeController.text = '';
-                        _meterNumberController.text = '';
-                        _meterReadingController.text = '';
+                        // _meterNumberController.text = '';
+                        // _meterReadingController.text = '';
                         _waterMeterController.text = '';
                         _waterMeterReadingController.text = '';
                         _cellNumberController.text = '';
@@ -844,40 +747,7 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                         _lastNameController.text = '';
                         _idNumberController.text = '';
 
-                        if(context.mounted)Navigator.of(context).pop();
-                        ///Added open the image upload straight after inputting the meter reading
-                        if(context.mounted) {
-                          showDialog(
-                              barrierDismissible: false,
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: const Text("Upload Water Meter"),
-                                  content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                  actions: [
-                                    IconButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      icon: const Icon(
-                                        Icons.cancel,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                    IconButton(
-                                      onPressed: () async {
-                                        Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                        Navigator.push(context,
-                                            MaterialPageRoute(builder: (context) => ImageUploadWater(userNumber: cellNumber, meterNumber: waterMeterNumber,)));
-                                      },
-                                      icon: const Icon(
-                                        Icons.done,
-                                        color: Colors.green,
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              });}
+                        if (context.mounted) Navigator.of(context).pop();
                       }
                     },
                   )
@@ -888,8 +758,524 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
         });
   }
 
+  // Future<void> _updateE([DocumentSnapshot? documentSnapshot]) async {
+  //   if (documentSnapshot != null) {
+  //     _accountNumberController.text = documentSnapshot['accountNumber'];
+  //     _addressController.text = documentSnapshot['address'];
+  //     _areaCodeController.text = documentSnapshot['areaCode'].toString();
+  //     _meterNumberController.text = documentSnapshot['meter_number'];
+  //     _meterReadingController.text = documentSnapshot['meter_reading'];
+  //     _waterMeterController.text = documentSnapshot['water_meter_number'];
+  //     _waterMeterReadingController.text =
+  //         documentSnapshot['water_meter_reading'];
+  //     _cellNumberController.text = documentSnapshot['cellNumber'];
+  //     _firstNameController.text = documentSnapshot['firstName'];
+  //     _lastNameController.text = documentSnapshot['lastName'];
+  //     _idNumberController.text = documentSnapshot['idNumber'];
+  //     userID = documentSnapshot['userID'];
+  //   }
+  //
+  //   /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
+  //   await showModalBottomSheet(
+  //       isScrollControlled: true,
+  //       context: context,
+  //       builder: (BuildContext ctx) {
+  //         return SingleChildScrollView(
+  //           child: Padding(
+  //             padding: EdgeInsets.only(
+  //                 top: 20,
+  //                 left: 20,
+  //                 right: 20,
+  //                 bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+  //             child: Column(
+  //               mainAxisSize: MainAxisSize.min,
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Visibility(
+  //                   visible: visibilityState2,
+  //                   child: TextField(
+  //                     controller: _accountNumberController,
+  //                     decoration:
+  //                         const InputDecoration(labelText: 'Account Number'),
+  //                   ),
+  //                 ),
+  //                 Visibility(
+  //                   visible: visibilityState2,
+  //                   child: TextField(
+  //                     controller: _addressController,
+  //                     decoration:
+  //                         const InputDecoration(labelText: 'Street Address'),
+  //                   ),
+  //                 ),
+  //                 Visibility(
+  //                   visible: visibilityState2,
+  //                   child: TextField(
+  //                     keyboardType: const TextInputType.numberWithOptions(),
+  //                     controller: _areaCodeController,
+  //                     decoration: const InputDecoration(
+  //                       labelText: 'Area Code',
+  //                     ),
+  //                   ),
+  //                 ),
+  //                 Visibility(
+  //                   visible: visibilityState2,
+  //                   child: TextField(
+  //                     controller: _meterNumberController,
+  //                     decoration: const InputDecoration(
+  //                         labelText: 'Electricity Meter Number'),
+  //                   ),
+  //                 ),
+  //                 Visibility(
+  //                   visible: visibilityState1,
+  //                   child: TextField(
+  //                     maxLength: 5,
+  //                     maxLengthEnforcement: MaxLengthEnforcement.enforced,
+  //                     keyboardType: TextInputType.number,
+  //                     controller: _meterReadingController,
+  //                     decoration: const InputDecoration(
+  //                         labelText: 'Electricity Meter Reading'),
+  //                   ),
+  //                 ),
+  //                 Visibility(
+  //                   visible: visibilityState2,
+  //                   child: TextField(
+  //                     controller: _waterMeterController,
+  //                     decoration: const InputDecoration(
+  //                         labelText: 'Water Meter Number'),
+  //                   ),
+  //                 ),
+  //                 Visibility(
+  //                   visible: visibilityState2,
+  //                   child: TextField(
+  //                     keyboardType: TextInputType.number,
+  //                     controller: _waterMeterReadingController,
+  //                     decoration: const InputDecoration(
+  //                         labelText: 'Water Meter Reading'),
+  //                   ),
+  //                 ),
+  //                 Visibility(
+  //                   visible: visibilityState2,
+  //                   child: TextField(
+  //                     controller: _cellNumberController,
+  //                     decoration:
+  //                         const InputDecoration(labelText: 'Phone Number'),
+  //                   ),
+  //                 ),
+  //                 Visibility(
+  //                   visible: visibilityState2,
+  //                   child: TextField(
+  //                     controller: _firstNameController,
+  //                     decoration:
+  //                         const InputDecoration(labelText: 'First Name'),
+  //                   ),
+  //                 ),
+  //                 Visibility(
+  //                   visible: visibilityState2,
+  //                   child: TextField(
+  //                     controller: _lastNameController,
+  //                     decoration: const InputDecoration(labelText: 'Last Name'),
+  //                   ),
+  //                 ),
+  //                 Visibility(
+  //                   visible: visibilityState2,
+  //                   child: TextField(
+  //                     controller: _idNumberController,
+  //                     decoration: const InputDecoration(labelText: 'ID Number'),
+  //                   ),
+  //                 ),
+  //                 const SizedBox(
+  //                   height: 20,
+  //                 ),
+  //                 ElevatedButton(
+  //                   child: const Text('Update'),
+  //                   onPressed: () async {
+  //                     final String accountNumber =
+  //                         _accountNumberController.text;
+  //                     final String address = _addressController.text;
+  //                     final int areaCode = int.parse(_areaCodeController.text);
+  //                     final String meterNumber = _meterNumberController.text;
+  //                     final String meterReading = _meterReadingController.text;
+  //                     final String waterMeterNumber =
+  //                         _waterMeterController.text;
+  //                     final String waterMeterReading =
+  //                         _waterMeterReadingController.text;
+  //                     final String cellNumber = _cellNumberController.text;
+  //                     final String firstName = _firstNameController.text;
+  //                     final String lastName = _lastNameController.text;
+  //                     final String idNumber = _idNumberController.text;
+  //
+  //                     // if (accountNumber != null) {
+  //                     //   await _propList
+  //                     //       .doc(documentSnapshot!.id)
+  //                     //       .update({
+  //                     //     "account number": accountNumber,
+  //                     //     "address": address,
+  //                     //     "area code": areaCode,
+  //                     //     "meter number": meterNumber,
+  //                     //     "meter reading": meterReading,
+  //                     //     "water meter number": waterMeterNumber,
+  //                     //     "water meter reading": waterMeterReading,
+  //                     //     "cell number": cellNumber,
+  //                     //     "first name": firstName,
+  //                     //     "last name": lastName,
+  //                     //     "id number": idNumber,
+  //                     //     "user id" : userID,
+  //                     //   });
+  //                     //
+  //                     //   await FirebaseFirestore.instance
+  //                     //       .collection('consumption').doc(formattedMonth)
+  //                     //       .collection('address').doc(address).set({
+  //                     //     "address": address,
+  //                     //     "meter reading": meterReading,
+  //                     //     "water meter reading": waterMeterReading,
+  //                     //   });
+  //                     Map<String, dynamic> updateDetails = {
+  //                       "accountNumber": accountNumber,
+  //                       "address": address,
+  //                       "areaCode": areaCode,
+  //                       "meter_number": meterNumber,
+  //                       "meter_reading": meterReading,
+  //                       "water_meter_number": waterMeterNumber,
+  //                       "water_meter_reading": waterMeterReading,
+  //                       "cellNumber": cellNumber,
+  //                       "firstName": firstName,
+  //                       "lastName": lastName,
+  //                       "idNumber": idNumber,
+  //                       "userID": userID,
+  //                     };
+  //                     if (accountNumber.isNotEmpty) {
+  //                       await documentSnapshot?.reference.update(updateDetails);
+  //
+  //                       // Log the update action using the municipalityUserEmail from the ImageZoomPage
+  //                       await logEMeterReadingUpdate(
+  //                           documentSnapshot?['cellNumber'],address,
+  //                           widget.municipalityUserEmail ?? "Unknown",
+  //                           districtId,
+  //                           municipalityId,
+  //                           updateDetails);
+  //
+  //                       Navigator.pop(context);
+  //                       ScaffoldMessenger.of(context)
+  //                           .showSnackBar(const SnackBar(
+  //                         content: Text("Meter readings updated successfully"),
+  //                         duration: Duration(seconds: 2),
+  //                       ));
+  //                     } else {
+  //                       // Handle the case where account number is not entered
+  //                       ScaffoldMessenger.of(context)
+  //                           .showSnackBar(const SnackBar(
+  //                         content: Text("Please fill in all required fields."),
+  //                         duration: Duration(seconds: 2),
+  //                       ));
+  //                       await FirebaseFirestore.instance
+  //                           .collection('consumption')
+  //                           .doc(formattedMonth)
+  //                           .collection('address')
+  //                           .doc(address)
+  //                           .set({
+  //                         "address": address,
+  //                         "meter_reading": meterReading,
+  //                         "water_meter_reading": waterMeterReading,
+  //                       });
+  //
+  //                       _accountNumberController.text = '';
+  //                       _addressController.text = '';
+  //                       _areaCodeController.text = '';
+  //                       _meterNumberController.text = '';
+  //                       _meterReadingController.text = '';
+  //                       _waterMeterController.text = '';
+  //                       _waterMeterReadingController.text = '';
+  //                       _cellNumberController.text = '';
+  //                       _firstNameController.text = '';
+  //                       _lastNameController.text = '';
+  //                       _idNumberController.text = '';
+  //
+  //                       if (context.mounted) Navigator.of(context).pop();
+  //
+  //                       ///Added open the image upload straight after inputting the meter reading
+  //                       // if(context.mounted) {
+  //                       //   showDialog(
+  //                       //       barrierDismissible: false,
+  //                       //       context: context,
+  //                       //       builder: (context) {
+  //                       //         return AlertDialog(
+  //                       //           title: const Text("Upload Electricity Meter"),
+  //                       //           content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+  //                       //           actions: [
+  //                       //             IconButton(
+  //                       //               onPressed: () {
+  //                       //                 Navigator.pop(context);
+  //                       //               },
+  //                       //               icon: const Icon(
+  //                       //                 Icons.cancel,
+  //                       //                 color: Colors.red,
+  //                       //               ),
+  //                       //             ),
+  //                       //             IconButton(
+  //                       //               onPressed: () async {
+  //                       //                 Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+  //                       //                 Navigator.push(context,
+  //                       //                     MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: cellNumber, meterNumber: meterNumber,)));
+  //                       //               },
+  //                       //               icon: const Icon(
+  //                       //                 Icons.done,
+  //                       //                 color: Colors.green,
+  //                       //               ),
+  //                       //             ),
+  //                       //           ],
+  //                       //         );
+  //                       //       });
+  //                       // }
+  //
+  //                       Fluttertoast.showToast(msg: "Reading updated!");
+  //                     }
+  //                   },
+  //                 )
+  //               ],
+  //             ),
+  //           ),
+  //         );
+  //       });
+  // }
+
+  Future<void> _updateW([DocumentSnapshot? documentSnapshot]) async {
+    if (documentSnapshot != null) {
+      _accountNumberController.text = documentSnapshot['accountNumber'];
+      _addressController.text = documentSnapshot['address'];
+      _areaCodeController.text = documentSnapshot['areaCode'].toString();
+      // _meterNumberController.text = documentSnapshot['meter_number'];
+      // _meterReadingController.text = documentSnapshot['meter_reading'];
+      _waterMeterController.text = documentSnapshot['water_meter_number'];
+      _waterMeterReadingController.text =
+          documentSnapshot['water_meter_reading'];
+      _cellNumberController.text = documentSnapshot['cellNumber'];
+      _firstNameController.text = documentSnapshot['firstName'];
+      _lastNameController.text = documentSnapshot['lastName'];
+      _idNumberController.text = documentSnapshot['idNumber'];
+      userID = documentSnapshot['userID'];
+    }
+
+    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
+    await showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      builder: (BuildContext ctx) {
+        return SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+                top: 20,
+                left: 20,
+                right: 20,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Visibility(
+                  visible: visibilityState2,
+                  child: TextField(
+                    controller: _accountNumberController,
+                    decoration:
+                        const InputDecoration(labelText: 'Account Number'),
+                  ),
+                ),
+                Visibility(
+                  visible: visibilityState2,
+                  child: TextField(
+                    controller: _addressController,
+                    decoration:
+                        const InputDecoration(labelText: 'Street Address'),
+                  ),
+                ),
+                Visibility(
+                  visible: visibilityState2,
+                  child: TextField(
+                    keyboardType: const TextInputType.numberWithOptions(),
+                    controller: _areaCodeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Area Code',
+                    ),
+                  ),
+                ),
+                // Visibility(
+                //   visible: visibilityState2,
+                //   child: TextField(
+                //     controller: _meterNumberController,
+                //     decoration: const InputDecoration(
+                //         labelText: 'Electricity Meter Number'),
+                //   ),
+                // ),
+                // Visibility(
+                //   visible: visibilityState2,
+                //   child: TextField(
+                //     keyboardType: TextInputType.number,
+                //     controller: _meterReadingController,
+                //     decoration: const InputDecoration(
+                //         labelText: 'Electricity Meter Reading'),
+                //   ),
+                // ),
+                Visibility(
+                  visible: visibilityState2,
+                  child: TextField(
+                    controller: _waterMeterController,
+                    decoration:
+                        const InputDecoration(labelText: 'Water Meter Number'),
+                  ),
+                ),
+                Visibility(
+                  visible: visibilityState1,
+                  child: TextField(
+                    maxLength: 8,
+                    maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                    keyboardType: TextInputType.number,
+                    controller: _waterMeterReadingController,
+                    decoration:
+                        const InputDecoration(labelText: 'Water Meter Reading'),
+                  ),
+                ),
+                Visibility(
+                  visible: visibilityState2,
+                  child: TextField(
+                    controller: _cellNumberController,
+                    decoration:
+                        const InputDecoration(labelText: 'Phone Number'),
+                  ),
+                ),
+                Visibility(
+                  visible: visibilityState2,
+                  child: TextField(
+                    controller: _firstNameController,
+                    decoration: const InputDecoration(labelText: 'First Name'),
+                  ),
+                ),
+                Visibility(
+                  visible: visibilityState2,
+                  child: TextField(
+                    controller: _lastNameController,
+                    decoration: const InputDecoration(labelText: 'Last Name'),
+                  ),
+                ),
+                Visibility(
+                  visible: visibilityState2,
+                  child: TextField(
+                    controller: _idNumberController,
+                    decoration: const InputDecoration(labelText: 'ID Number'),
+                  ),
+                ),
+                const SizedBox(
+                  height: 20,
+                ),
+                ElevatedButton(
+                    child: const Text('Update'),
+                    onPressed: () async {
+                      final String accountNumber =
+                          _accountNumberController.text;
+                      final String address = _addressController.text;
+                      final int areaCode = int.parse(_areaCodeController.text);
+                      // final String meterNumber = _meterNumberController.text;
+                      // final String meterReading = _meterReadingController.text;
+                      final String waterMeterNumber =
+                          _waterMeterController.text;
+                      final String waterMeterReading =
+                          _waterMeterReadingController.text;
+                      final String cellNumber = _cellNumberController.text;
+                      final String firstName = _firstNameController.text;
+                      final String lastName = _lastNameController.text;
+                      final String idNumber = _idNumberController.text;
+
+                      // if (accountNumber != null) {
+                      //   await _propList
+                      //       .doc(documentSnapshot!.id)
+                      //       .update({
+                      //     "account number": accountNumber,
+                      //     "address": address,
+                      //     "area code": areaCode,
+                      //     "meter number": meterNumber,
+                      //     "meter reading": meterReading,
+                      //     "water meter number": waterMeterNumber,
+                      //     "water meter reading": waterMeterReading,
+                      //     "cell number": cellNumber,
+                      //     "first name": firstName,
+                      //     "last name": lastName,
+                      //     "id number": idNumber,
+                      //     "user id" : userID,
+                      //   });
+                      //
+                      //   await FirebaseFirestore.instance
+                      //       .collection('consumption').doc(formattedMonth)
+                      //       .collection('address').doc(address).set({
+                      //     "address": address,
+                      //     "meter reading": meterReading,
+                      //     "water meter reading": waterMeterReading,
+                      //   });
+
+                      Map<String, dynamic> updateDetails = {
+                        "accountNumber": accountNumber,
+                        "address": address,
+                        "areaCode": areaCode,
+                        // "meter_number": meterNumber,
+                        // "meter_reading": meterReading,
+                        "water_meter_number": waterMeterNumber,
+                        "water_meter_reading": waterMeterReading,
+                        "cellNumber": cellNumber,
+                        "firstName": firstName,
+                        "lastName": lastName,
+                        "idNumber": idNumber,
+                        "userID": userID,
+                      };
+                      if (accountNumber.isNotEmpty) {
+                        await documentSnapshot?.reference.update(updateDetails);
+
+                        // Log the update action using the municipalityUserEmail from the ImageZoomPage
+                        await logWMeterReadingUpdate(
+                            documentSnapshot?['cellNumber'],
+                            address,
+                            widget.municipalityUserEmail ?? "Unknown",
+                            districtId,
+                            municipalityId,
+                            updateDetails);
+
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          content: Text("Meter readings updated successfully"),
+                          duration: Duration(seconds: 2),
+                        ));
+                      } else {
+                        // Handle the case where account number is not entered
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          content: Text("Please fill in all required fields."),
+                          duration: Duration(seconds: 2),
+                        ));
+
+                        _accountNumberController.text = '';
+                        _addressController.text = '';
+                        _areaCodeController.text = '';
+                        // _meterNumberController.text = '';
+                        // _meterReadingController.text = '';
+                        _waterMeterController.text = '';
+                        _waterMeterReadingController.text = '';
+                        _cellNumberController.text = '';
+                        _firstNameController.text = '';
+                        _lastNameController.text = '';
+                        _idNumberController.text = '';
+
+                        if (context.mounted) Navigator.of(context).pop();
+
+                        //Added open the image upload straight after inputting the meter reading
+                      }
+                    })
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _delete(String users) async {
-    await _propList.doc(users).delete();
+    await _propList?.doc(users).delete();
     Fluttertoast.showToast(msg: "You have successfully deleted an account!");
   }
 
@@ -898,44 +1284,74 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
-        title: const Text('Readings Management',style: TextStyle(color: Colors.white),),
+        title: const Text(
+          'Readings Management',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.green,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Padding(
-        padding: const EdgeInsets.fromLTRB(0.0,10.0,0.0,10.0),
+        padding: const EdgeInsets.fromLTRB(0.0, 10.0, 0.0, 10.0),
         child: StreamBuilder<QuerySnapshot>(
-          stream: _propList.snapshots(),
+          stream: _propList?.snapshots(),
           builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-            if (streamSnapshot.hasData) {
+            if (streamSnapshot.connectionState == ConnectionState.waiting) {
+              print('Waiting for data...');
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (streamSnapshot.hasError) {
+              print('Error fetching data: ${streamSnapshot.error}');
+              return const Center(child: Text('Error fetching data.'));
+            }
+
+            if (!streamSnapshot.hasData || streamSnapshot.data!.docs.isEmpty) {
+              print('No data found for the selected property.');
+              return const Center(child: Text('No data found.'));
+            }
+
+            // If we reach this point, data is available
+            print('Data fetched successfully, rendering UI.');
+            {
               return ListView.builder(
                 ///this call is to display all details for all users but is only displaying for the current user account.
                 ///it can be changed to display all users for the staff to see if the role is set to all later on.
                 itemCount: streamSnapshot.data!.docs.length,
                 itemBuilder: (context, index) {
                   final DocumentSnapshot documentSnapshot =
-                  streamSnapshot.data!.docs[index];
+                      streamSnapshot.data!.docs[index];
 
-                  eMeterNumber = documentSnapshot['meter number'];
-                  wMeterNumber = documentSnapshot['water meter number'];
-                  propPhoneNum = documentSnapshot['cell number'];
+                  // eMeterNumber = documentSnapshot['meter_number'];
+                  if (documentSnapshot['address'] == widget.addressSnap) {
+                    // Assign the water meter number only if the correct property is found
+                    wMeterNumber = documentSnapshot['water_meter_number'];
+                    propPhoneNum = documentSnapshot['cellNumber'];
 
-                  String billMessage;///A check for if payment is outstanding or not
-                  if(documentSnapshot['eBill'] != '' ||
+                    print('Correct water meter number: $wMeterNumber');
+                    print('Property phone number: $propPhoneNum');
+                  }
+
+                  String billMessage;
+
+                  ///A check for if payment is outstanding or not
+                  if (documentSnapshot['eBill'] != '' ||
                       documentSnapshot['eBill'] != 'R0,000.00' ||
                       documentSnapshot['eBill'] != 'R0.00' ||
                       documentSnapshot['eBill'] != 'R0' ||
-                      documentSnapshot['eBill'] != '0'
-                  ) {
-                    billMessage = 'Utilities bill outstanding: ${documentSnapshot['eBill']}';
+                      documentSnapshot['eBill'] != '0') {
+                    billMessage =
+                        'Utilities bill outstanding: ${documentSnapshot['eBill']}';
                   } else {
                     billMessage = 'No outstanding payments';
                   }
 
                   ///Check for only user information, this displays only for the users details and not all users in the database.
-                  if(streamSnapshot.data!.docs[index]['address'] == widget.addressSnap){
+                  if (streamSnapshot.data!.docs[index]['address'] ==
+                      widget.addressSnap) {
                     return Card(
-                      margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
+                      margin: const EdgeInsets.only(
+                          left: 10, right: 10, top: 0, bottom: 10),
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
                         child: Column(
@@ -946,13 +1362,19 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                               child: Text(
                                 'Property Information for ${documentSnapshot['address']}',
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                                style: const TextStyle(
+                                    fontSize: 17, fontWeight: FontWeight.w700),
                               ),
                             ),
-                            const SizedBox(height: 10,),
+                            const SizedBox(
+                              height: 10,
+                            ),
                             Text(
-                              'Account Number: ${documentSnapshot['account number']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, ),
+                              'Account Number: ${documentSnapshot['accountNumber']}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
                             // const SizedBox(height: 5,),
                             // Text(
@@ -964,301 +1386,509 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                             //   'Area Code: ${documentSnapshot['area code']}',
                             //   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             // ),
-                            const SizedBox(height: 10,),
-                            const Center(
-                              child: Text(
-                                'Electricity Meter Reading Photo',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                              ),
+                            const SizedBox(
+                              height: 10,
                             ),
-                            const SizedBox(height: 5,),
+                            // const Center(
+                            //   child: Text(
+                            //     'Electricity Meter Reading Photo',
+                            //     style: TextStyle(
+                            //         fontSize: 16, fontWeight: FontWeight.w700),
+                            //   ),
+                            // ),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            // FutureBuilder<String>(
+                            //     future: fetchPropertyAddress(
+                            //         propPhoneNum, eMeterNumber,districtId,municipalityId)
+                            //         .then((propertyAddress) => _getImage(
+                            //         context,
+                            //         'files/meters/$formattedMonth/$propPhoneNum/$propertyAddress/electricity/$eMeterNumber.jpg')),
+                            //     builder: (context, snapshot) {
+                            //       if (snapshot.hasData &&
+                            //           snapshot.connectionState ==
+                            //               ConnectionState.done) {
+                            //         return GestureDetector(
+                            //           onTap: () {
+                            //             final imageProvider =
+                            //                 NetworkImage(snapshot.data!);
+                            //             showImageViewer(context, imageProvider);
+                            //           },
+                            //           child: Container(
+                            //             margin:
+                            //                 const EdgeInsets.only(bottom: 5),
+                            //             height: 180,
+                            //             child: Card(
+                            //               color: Colors.white54,
+                            //               semanticContainer: true,
+                            //               clipBehavior:
+                            //                   Clip.antiAliasWithSaveLayer,
+                            //               shape: RoundedRectangleBorder(
+                            //                 borderRadius:
+                            //                     BorderRadius.circular(10.0),
+                            //               ),
+                            //               elevation: 0,
+                            //               margin: const EdgeInsets.all(10.0),
+                            //               child: Center(
+                            //                 // Ensuring the image is centered within the card
+                            //                 child: Image.network(snapshot.data!,
+                            //                     fit: BoxFit.cover),
+                            //               ),
+                            //             ),
+                            //           ),
+                            //         );
+                            //       } else if (snapshot.hasError) {
+                            //         return const Padding(
+                            //           padding: EdgeInsets.all(20.0),
+                            //           child: Center(
+                            //             child: Column(
+                            //               mainAxisSize: MainAxisSize.min,
+                            //               children: [
+                            //                 Text('Image not yet uploaded.'),
+                            //                 SizedBox(height: 10),
+                            //                 FaIcon(Icons.camera_alt),
+                            //               ],
+                            //             ),
+                            //           ),
+                            //         );
+                            //       } else {
+                            //         return Container(
+                            //           height: 180,
+                            //           margin: const EdgeInsets.all(10.0),
+                            //           child: const Center(
+                            //               child: CircularProgressIndicator()),
+                            //         );
+                            //       }
+                            //     }),
 
                             ///Image display item needs to get the reference from the firestore using the users uploaded meter connection
-                            InkWell(
-                              ///onTap allows to open image upload page if user taps on the image.
-                              ///Can be later changed to display the picture zoomed in if user taps on it.
-                              onTap: () {
-                                eMeterNumber = documentSnapshot['meter number'];
-                                propPhoneNum = documentSnapshot['cell number'];
-                                showDialog(
-                                barrierDismissible: false,
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    title: const Text("Upload Electricity Meter"),
-                                    content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                    actions: [
-                                      IconButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        icon: const Icon(
-                                          Icons.cancel,
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        onPressed: () async {
-                                          Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                          Navigator.push(context,
-                                              MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: propPhoneNum, meterNumber: eMeterNumber,)));
-                                        },
-                                        icon: const Icon(
-                                          Icons.done,
-                                          color: Colors.green,
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                });
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 5),
-                                // height: 180,
-                                child: Center(
-                                  child: Card(
-                                    color: Colors.grey,
-                                    semanticContainer: true,
-                                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                    ),
-                                    elevation: 0,
-                                    margin: const EdgeInsets.all(10.0),
-                                    child: FutureBuilder(
-                                        future: _getImage(
-                                          ///Firebase image location must be changed to display image based on the meter number
-                                            context, widget.imageName),
-                                        builder: (context, snapshot) {
-                                          if (snapshot.hasError) {
+                            // InkWell(
+                            //   ///onTap allows to open image upload page if user taps on the image.
+                            //   ///Can be later changed to display the picture zoomed in if user taps on it.
+                            //   onTap: () {
+                            //     eMeterNumber = documentSnapshot['meter number'];
+                            //     propPhoneNum = documentSnapshot['cell number'];
+                            //     showDialog(
+                            //     barrierDismissible: false,
+                            //     context: context,
+                            //     builder: (context) {
+                            //       return AlertDialog(
+                            //         title: const Text("Upload Electricity Meter"),
+                            //         content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                            //         actions: [
+                            //           IconButton(
+                            //             onPressed: () {
+                            //               Navigator.pop(context);
+                            //             },
+                            //             icon: const Icon(
+                            //               Icons.cancel,
+                            //               color: Colors.red,
+                            //             ),
+                            //           ),
+                            //           IconButton(
+                            //             onPressed: () async {
+                            //               Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                            //               Navigator.push(context,
+                            //                   MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: propPhoneNum, meterNumber: eMeterNumber,)));
+                            //             },
+                            //             icon: const Icon(
+                            //               Icons.done,
+                            //               color: Colors.green,
+                            //             ),
+                            //           ),
+                            //         ],
+                            //       );
+                            //     });
+                            //   },
+                            //   child: Container(
+                            //     margin: const EdgeInsets.only(bottom: 5),
+                            //     // height: 180,
+                            //     child: Center(
+                            //       child: Card(
+                            //         color: Colors.grey,
+                            //         semanticContainer: true,
+                            //         clipBehavior: Clip.antiAliasWithSaveLayer,
+                            //         shape: RoundedRectangleBorder(
+                            //           borderRadius: BorderRadius.circular(10.0),
+                            //         ),
+                            //         elevation: 0,
+                            //         margin: const EdgeInsets.all(10.0),
+                            //         child: FutureBuilder(
+                            //             future: _getImage(
+                            //               ///Firebase image location must be changed to display image based on the meter number
+                            //                 context, widget.imageName),
+                            //             builder: (context, snapshot) {
+                            //               if (snapshot.hasError) {
+                            //
+                            //                 // imgUploadCheck = false;
+                            //                 // updateImgCheckE(imgUploadCheck,documentSnapshot);
+                            //
+                            //                 return const Padding(
+                            //                   padding: EdgeInsets.all(20.0),
+                            //                     child: Column(
+                            //                       mainAxisSize: MainAxisSize.min,
+                            //                       children: [
+                            //                         Text('Image not yet uploaded.',),
+                            //                         SizedBox(height: 10,),
+                            //                         FaIcon(Icons.camera_alt,),
+                            //                       ],
+                            //                     ),
+                            //                 );
+                            //               }
+                            //               if (snapshot.connectionState == ConnectionState.done) {
+                            //
+                            //                 imgUploadCheck = true;
+                            //                 updateImgCheckE(imgUploadCheck,documentSnapshot);
+                            //
+                            //                 return Container(
+                            //                   child: snapshot.data,
+                            //                 );
+                            //               }
+                            //               if (snapshot.connectionState == ConnectionState.waiting) {
+                            //                 return Container(
+                            //                   child: const Padding(
+                            //                     padding: EdgeInsets.all(5.0),
+                            //                     child: CircularProgressIndicator(),
+                            //                   ),);
+                            //               }
+                            //               return Container();
+                            //             }
+                            //         ),
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
 
-                                            // imgUploadCheck = false;
-                                            // updateImgCheckE(imgUploadCheck,documentSnapshot);
-
-                                            return const Padding(
-                                              padding: EdgeInsets.all(20.0),
-                                                child: Column(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    Text('Image not yet uploaded.',),
-                                                    SizedBox(height: 10,),
-                                                    FaIcon(Icons.camera_alt,),
-                                                  ],
-                                                ),
-                                            );
-                                          }
-                                          if (snapshot.connectionState == ConnectionState.done) {
-
-                                            imgUploadCheck = true;
-                                            updateImgCheckE(imgUploadCheck,documentSnapshot);
-
-                                            return Container(
-                                              child: snapshot.data,
-                                            );
-                                          }
-                                          if (snapshot.connectionState == ConnectionState.waiting) {
-                                            return Container(
-                                              child: const Padding(
-                                                padding: EdgeInsets.all(5.0),
-                                                child: CircularProgressIndicator(),
-                                              ),);
-                                          }
-                                          return Container();
-                                        }
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            Center(
-                              child: BasicIconButtonGrey(
-                                onPress: () async {
-                                  eMeterNumber = documentSnapshot['meter number'];
-                                  propPhoneNum = documentSnapshot['cell number'];
-                                  showDialog(
-                                      barrierDismissible: false,
-                                      context: context,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: const Text("Upload Electricity Meter"),
-                                          content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                          actions: [
-                                            IconButton(
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                              },
-                                              icon: const Icon(
-                                                Icons.cancel,
-                                                color: Colors.red,
-                                              ),
-                                            ),
-                                            IconButton(
-                                              onPressed: () async {
-                                                Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                                Navigator.push(context,
-                                                    MaterialPageRoute(builder: (context) => ImageUploadMeter(userNumber: propPhoneNum, meterNumber: eMeterNumber,)));
-                                              },
-                                              icon: const Icon(
-                                                Icons.done,
-                                                color: Colors.green,
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      });
-                                },
-                                labelText: 'Photograph Electricity',
-                                fSize: 16,
-                                faIcon: const FaIcon(Icons.camera_alt,),
-                                fgColor: Colors.black38,
-                                btSize: const Size(100, 38),
-                              ),
-                            ),
-
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Electric Meter Number: ${documentSnapshot['meter number']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Electric Meter Reading: ${documentSnapshot['meter reading']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            Center(
-                              child: BasicIconButtonGrey(
-                                onPress: () async {
-                                  _updateE(documentSnapshot);
-                                },
-                                labelText: 'Capture Electricity Reading',
-                                fSize: 16,
-                                faIcon: const FaIcon(Icons.edit,),
-                                fgColor: Theme.of(context).primaryColor,
-                                btSize: const Size(100, 38),
-                              ),
-                            ),
-
-                            const SizedBox(height: 10,),
+                            // Center(
+                            //   child: BasicIconButtonGrey(
+                            //     onPress: () async {
+                            //       eMeterNumber =
+                            //           documentSnapshot['meter_number'];
+                            //       propPhoneNum =
+                            //           documentSnapshot['cellNumber'];
+                            //       showDialog(
+                            //           barrierDismissible: false,
+                            //           context: context,
+                            //           builder: (context) {
+                            //             return AlertDialog(
+                            //               title: const Text(
+                            //                   "Upload Electricity Meter"),
+                            //               content: const Text(
+                            //                   "Uploading a new image will replace current image!\n\nAre you sure?"),
+                            //               actions: [
+                            //                 IconButton(
+                            //                   onPressed: () {
+                            //                     Navigator.pop(context);
+                            //                   },
+                            //                   icon: const Icon(
+                            //                     Icons.cancel,
+                            //                     color: Colors.red,
+                            //                   ),
+                            //                 ),
+                            //                 IconButton(
+                            //                   onPressed: () async {
+                            //                     Fluttertoast.showToast(
+                            //                         msg:
+                            //                             "Uploading a new image\nwill replace current image!");
+                            //                     Navigator.push(
+                            //                         context,
+                            //                         MaterialPageRoute(
+                            //                             builder: (context) =>
+                            //                                 ImageUploadMeter(
+                            //                                   userNumber:
+                            //                                       propPhoneNum,
+                            //                                   meterNumber:
+                            //                                       eMeterNumber,
+                            //                                 municipalityUserEmail: userEmail,
+                            //                                 )));
+                            //                   },
+                            //                   icon: const Icon(
+                            //                     Icons.done,
+                            //                     color: Colors.green,
+                            //                   ),
+                            //                 ),
+                            //               ],
+                            //             );
+                            //           });
+                            //     },
+                            //     labelText: 'Photograph Electricity',
+                            //     fSize: 16,
+                            //     faIcon: const FaIcon(
+                            //       Icons.camera_alt,
+                            //     ),
+                            //     fgColor: Colors.black38,
+                            //     btSize: const Size(100, 38),
+                            //   ),
+                            // ),
+                            //
+                            // const SizedBox(
+                            //   height: 5,
+                            // ),
+                            // Text(
+                            //   'Electric Meter Number: ${documentSnapshot['meter_number']}',
+                            //   style: const TextStyle(
+                            //       fontSize: 16, fontWeight: FontWeight.w400),
+                            // ),
+                            // const SizedBox(
+                            //   height: 5,
+                            // ),
+                            // Text(
+                            //   'Electric Meter Reading: ${documentSnapshot['meter_reading']}',
+                            //   style: const TextStyle(
+                            //       fontSize: 16, fontWeight: FontWeight.w400),
+                            // ),
+                            // Center(
+                            //   child: BasicIconButtonGrey(
+                            //     onPress: () async {
+                            //       _updateE(documentSnapshot);
+                            //     },
+                            //     labelText: 'Capture Electricity Reading',
+                            //     fSize: 16,
+                            //     faIcon: const FaIcon(
+                            //       Icons.edit,
+                            //     ),
+                            //     fgColor: Theme.of(context).primaryColor,
+                            //     btSize: const Size(100, 38),
+                            //   ),
+                            // ),
+                            //
+                            // const SizedBox(
+                            //   height: 10,
+                            // ),
 
                             const Center(
                               child: Text(
                                 'Water Meter Reading Photo',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w700),
                               ),
                             ),
-                            const SizedBox(height: 5,),
-
-                            InkWell(
-                              ///onTap allows to open image upload page if user taps on the image.
-                              ///Can be later changed to display the picture zoomed in if user taps on it.
-                              onTap: () {
-                                wMeterNumber = documentSnapshot['water meter number'];
-                                propPhoneNum = documentSnapshot['cell number'];
-                                showDialog(
-                                barrierDismissible: false,
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    title: const Text("Upload Water Meter Image"),
-                                    content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
-                                    actions: [
-                                      IconButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        icon: const Icon(
-                                          Icons.cancel,
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        onPressed: () async {
-                                          propPhoneNum = documentSnapshot['water meter number'];
-                                          Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                          Navigator.push(context,
-                                              MaterialPageRoute(builder: (context) => ImageUploadWater(userNumber: propPhoneNum, meterNumber: wMeterNumber,)));
-                                        },
-                                        icon: const Icon(
-                                          Icons.done,
-                                          color: Colors.green,
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                });
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 5),
-                                // height: 180,
-                                child: Center(
-                                  child: Card(
-                                    color: Colors.grey,
-                                    semanticContainer: true,
-                                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                    ),
-                                    elevation: 0,
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            FutureBuilder<String>(
+                              future: fetchPropertyAddress(
+                                propPhoneNum,
+                                wMeterNumber,
+                                widget
+                                    .isLocalMunicipality, // The boolean indicating if it's a local municipality
+                                widget.districtId,
+                                widget.municipalityId,
+                              ),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return Container(
+                                    height: 180,
                                     margin: const EdgeInsets.all(10.0),
-                                    child: FutureBuilder(
-                                        future: _getImageW(
-                                          ///Firebase image location must be changed to display image based on the meter number
-                                            context, 'files/meters/$formattedMonth/$propPhoneNum/water/$wMeterNumber.jpg'),//$meterNumber
-                                        builder: (context, snapshot) {
-                                          if (snapshot.hasError) {
+                                    child: const Center(
+                                        child: CircularProgressIndicator()),
+                                  );
+                                } else if (snapshot.hasData) {
+                                  final String propertyAddress = snapshot.data!;
+                                  print('Property Address: $propertyAddress');
 
-                                            imgUploadCheck = false;
-                                            updateImgCheckW(imgUploadCheck,documentSnapshot);
+                                  final String imagePath =
+                                      'files/meters/$formattedMonth/$propPhoneNum/$propertyAddress/water/$wMeterNumber.jpg';
 
-                                            return const Padding(
-                                              padding: EdgeInsets.all(20.0),
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Text('Image not yet uploaded.',),
-                                                  SizedBox(height: 10,),
-                                                  FaIcon(Icons.camera_alt,),
-                                                ],
+                                  return FutureBuilder<String>(
+                                    future: _getImageW(context, imagePath),
+                                    builder: (context, imageSnapshot) {
+                                      if (imageSnapshot.hasData &&
+                                          imageSnapshot.connectionState ==
+                                              ConnectionState.done) {
+                                        return GestureDetector(
+                                          onTap: () {
+                                            final imageProvider = NetworkImage(
+                                                imageSnapshot.data!);
+                                            showImageViewer(
+                                                context, imageProvider);
+                                          },
+                                          child: Container(
+                                            margin: const EdgeInsets.only(
+                                                bottom: 5),
+                                            height: 180,
+                                            child: Card(
+                                              color: Colors.white54,
+                                              semanticContainer: true,
+                                              clipBehavior:
+                                                  Clip.antiAliasWithSaveLayer,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10.0),
                                               ),
-                                            );
-                                          }
-                                          if (snapshot.connectionState == ConnectionState.done) {
-
-                                            imgUploadCheck = true;
-                                            updateImgCheckW(imgUploadCheck,documentSnapshot);
-
-                                            return Container(
-                                              child: snapshot.data,
-                                            );
-                                          }
-                                          if (snapshot.connectionState == ConnectionState.waiting) {
-                                            return Container(
-                                              child: const Padding(
-                                                padding: EdgeInsets.all(5.0),
-                                                child: CircularProgressIndicator(),
-                                              ),);
-                                          }
-                                          return Container();
-                                        }
+                                              elevation: 0,
+                                              margin:
+                                                  const EdgeInsets.all(10.0),
+                                              child: Center(
+                                                child: Image.network(
+                                                    imageSnapshot.data!,
+                                                    fit: BoxFit.cover),
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      } else if (imageSnapshot.hasError) {
+                                        return const Padding(
+                                          padding: EdgeInsets.all(20.0),
+                                          child: Center(
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                    'No image uploaded for this meter yet.'),
+                                                SizedBox(height: 10),
+                                                FaIcon(Icons.camera_alt),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      } else {
+                                        return Container(
+                                          height: 180,
+                                          margin: const EdgeInsets.all(10.0),
+                                          child: const Center(
+                                              child:
+                                                  CircularProgressIndicator()),
+                                        );
+                                      }
+                                    },
+                                  );
+                                } else if (snapshot.hasError) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(20.0),
+                                    child: Center(
+                                      child: Text(
+                                          'Error fetching property details.'),
                                     ),
-                                  ),
-                                ),
-                              ),
+                                  );
+                                }
+
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              },
                             ),
+
+                            // InkWell(
+                            //   ///onTap allows to open image upload page if user taps on the image.
+                            //   ///Can be later changed to display the picture zoomed in if user taps on it.
+                            //   onTap: () {
+                            //     wMeterNumber = documentSnapshot['water meter number'];
+                            //     propPhoneNum = documentSnapshot['cell number'];
+                            //     showDialog(
+                            //     barrierDismissible: false,
+                            //     context: context,
+                            //     builder: (context) {
+                            //       return AlertDialog(
+                            //         title: const Text("Upload Water Meter Image"),
+                            //         content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                            //         actions: [
+                            //           IconButton(
+                            //             onPressed: () {
+                            //               Navigator.pop(context);
+                            //             },
+                            //             icon: const Icon(
+                            //               Icons.cancel,
+                            //               color: Colors.red,
+                            //             ),
+                            //           ),
+                            //           IconButton(
+                            //             onPressed: () async {
+                            //               propPhoneNum = documentSnapshot['water meter number'];
+                            //               Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
+                            //               Navigator.push(context,
+                            //                   MaterialPageRoute(builder: (context) => ImageUploadWater(userNumber: propPhoneNum, meterNumber: wMeterNumber, propertyAddress: addressSnap,districtId: districtId,municipalityId: municipalityId,)));
+                            //             },
+                            //             icon: const Icon(
+                            //               Icons.done,
+                            //               color: Colors.green,
+                            //             ),
+                            //           ),
+                            //         ],
+                            //       );
+                            //     });
+                            //   },
+                            //   child: Container(
+                            //     margin: const EdgeInsets.only(bottom: 5),
+                            //     // height: 180,
+                            //     child: Center(
+                            //       child: Card(
+                            //         color: Colors.grey,
+                            //         semanticContainer: true,
+                            //         clipBehavior: Clip.antiAliasWithSaveLayer,
+                            //         shape: RoundedRectangleBorder(
+                            //           borderRadius: BorderRadius.circular(10.0),
+                            //         ),
+                            //         elevation: 0,
+                            //         margin: const EdgeInsets.all(10.0),
+                            //         child: FutureBuilder<String?>(
+                            //             future: _getImageW(
+                            //               ///Firebase image location must be changed to display image based on the meter number
+                            //                 context, 'files/meters/$formattedMonth/$propPhoneNum/$addressSnap/water/$wMeterNumber.jpg'),//$meterNumber
+                            //             builder: (context, snapshot) {
+                            //               if (snapshot.hasError) {
+                            //
+                            //                 imgUploadCheck = false;
+                            //                 updateImgCheckW(imgUploadCheck,documentSnapshot);
+                            //
+                            //                 return const Padding(
+                            //                   padding: EdgeInsets.all(20.0),
+                            //                   child: Column(
+                            //                     mainAxisSize: MainAxisSize.min,
+                            //                     children: [
+                            //                       Text('Image not yet uploaded.',),
+                            //                       SizedBox(height: 10,),
+                            //                       FaIcon(Icons.camera_alt,),
+                            //                     ],
+                            //                   ),
+                            //                 );
+                            //               }
+                            //               if (snapshot.connectionState == ConnectionState.done) {
+                            //                 imgUploadCheck = true;
+                            //                 updateImgCheckW(imgUploadCheck, documentSnapshot);
+                            //
+                            //                 if (snapshot.data != null) {
+                            //                   return Image.network(
+                            //                     snapshot.data!, // Assuming _getImageW returns a URL
+                            //                     fit: BoxFit.cover,
+                            //                   );
+                            //                 } else {
+                            //                   return const Text('No image available.');
+                            //                 }
+                            //               }
+                            //               if (snapshot.connectionState == ConnectionState.waiting) {
+                            //                 return const Padding(
+                            //                   padding: EdgeInsets.all(5.0),
+                            //                   child: CircularProgressIndicator(),
+                            //                 );
+                            //               }
+                            //               return Container();
+                            //             }
+                            //         ),
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
 
                             Center(
                               child: BasicIconButtonGrey(
                                 onPress: () async {
-                                  wMeterNumber = documentSnapshot['water meter number'];
-                                  propPhoneNum = documentSnapshot['cell number'];
+                                  wMeterNumber =
+                                      documentSnapshot['water_meter_number'];
+                                  propPhoneNum = documentSnapshot['cellNumber'];
+                                  String propertyAddress =
+                                      documentSnapshot['address'];
+
                                   showDialog(
                                       barrierDismissible: false,
                                       context: context,
                                       builder: (context) {
                                         return AlertDialog(
-                                          title: const Text("Upload Water Meter"),
-                                          content: const Text("Uploading a new image will replace current image!\n\nAre you sure?"),
+                                          title:
+                                              const Text("Upload Water Meter"),
+                                          content: const Text(
+                                              "Uploading a new image will replace current image!\n\nAre you sure?"),
                                           actions: [
                                             IconButton(
                                               onPressed: () {
@@ -1271,9 +1901,40 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                                             ),
                                             IconButton(
                                               onPressed: () async {
-                                                Fluttertoast.showToast(msg: "Uploading a new image\nwill replace current image!");
-                                                Navigator.push(context,
-                                                    MaterialPageRoute(builder: (context) => ImageUploadWater(userNumber: propPhoneNum, meterNumber: wMeterNumber,)));
+                                                Fluttertoast.showToast(
+                                                    msg:
+                                                        "Uploading a new image\nwill replace current image!");
+
+                                                print(
+                                                    "Navigating to ImageUploadWater:");
+                                                print(
+                                                    "User Email: ${widget.municipalityUserEmail}");
+                                                print("District ID: ${widget.districtId}");
+                                                print("Municipality ID: ${widget.municipalityId}");
+                                                Navigator.pop(context);
+                                                Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            ImageUploadWater(
+                                                              userNumber:
+                                                                  propPhoneNum,
+                                                              meterNumber:
+                                                                  wMeterNumber,
+                                                              municipalityUserEmail:
+                                                                  widget
+                                                                      .municipalityUserEmail,
+                                                              propertyAddress:
+                                                                  propertyAddress, // Pass property address
+                                                              districtId: widget
+                                                                  .districtId, // Pass districtId
+                                                              municipalityId: widget
+                                                                  .municipalityId,
+                                                              isLocalMunicipality:
+                                                                  widget
+                                                                      .isLocalMunicipality,
+                                                              isLocalUser: widget.isLocalUser,
+                                                            )));
                                               },
                                               icon: const Icon(
                                                 Icons.done,
@@ -1284,130 +1945,153 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                                         );
                                       });
                                 },
-                                labelText: 'Photograph Water',
+                                labelText:
+                                    'Update water meter image and reading',
                                 fSize: 16,
-                                faIcon: const FaIcon(Icons.camera_alt,),
+                                faIcon: const FaIcon(
+                                  Icons.camera_alt,
+                                ),
                                 fgColor: Colors.black38,
                                 btSize: const Size(100, 38),
                               ),
                             ),
 
-                            const SizedBox(height: 5,),
+                            const SizedBox(
+                              height: 5,
+                            ),
                             Text(
-                              'Water Meter Number: ${documentSnapshot['water meter number']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                              'Water Meter Number: ${documentSnapshot['water_meter_number']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
                             ),
 
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Water Meter Reading: ${documentSnapshot['water meter reading']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            const SizedBox(
+                              height: 5,
                             ),
+                            Text(
+                              'Water Meter Reading: ${documentSnapshot['water_meter_reading']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+
+                            // Center(
+                            //   child: BasicIconButtonGrey(
+                            //     onPress: () async {
+                            //       _updateW(documentSnapshot);
+                            //     },
+                            //     labelText: 'Capture Water Reading',
+                            //     fSize: 16,
+                            //     faIcon: const FaIcon(
+                            //       Icons.edit,
+                            //     ),
+                            //     fgColor: Colors.black,
+                            //     btSize: const Size(100, 38),
+                            //   ),
+                            // ),
 
                             Center(
-                              child: BasicIconButtonGrey(
-                                onPress: () async {
-                                  _updateW(documentSnapshot);
-                                },
-                                labelText: 'Capture Water Reading',
-                                fSize: 16,
-                                faIcon: const FaIcon(Icons.edit,),
-                                fgColor: Theme.of(context).primaryColor,
-                                btSize: const Size(100, 38),
+                              child: Column(
+                                children: [
+                                  Wrap(
+                                    alignment: WrapAlignment.center,
+                                    spacing:
+                                        8, // Adjust the spacing between the buttons as needed
+                                    runSpacing: 4, // Spacing between rows
+                                    children: [
+                                      BasicIconButtonGrey(
+                                        onPress: () async {
+                                          String accountNumber =
+                                              documentSnapshot['accountNumber'];
+                                          String locationGiven =
+                                              documentSnapshot['address'];
+                                          Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      MapScreenProp(
+                                                        propAddress:
+                                                            locationGiven,
+                                                        propAccNumber:
+                                                            accountNumber,
+                                                      )));
+                                        },
+                                        labelText: 'Map',
+                                        fSize: 16,
+                                        faIcon: const FaIcon(
+                                          Icons.map,
+                                        ),
+                                        fgColor: Colors.green,
+                                        btSize: const Size(100, 38),
+                                      ),
+                                      BasicIconButtonGrey(
+                                        onPress: () async {
+                                          String userId =
+                                              documentSnapshot['cellNumber'];
+                                          String districtId = documentSnapshot[
+                                              'districtId']; // Get the districtId
+                                          String municipalityId =
+                                              documentSnapshot[
+                                                  'municipalityId'];
+                                          String propertyAddress = documentSnapshot[
+                                              'address']; // Fetch the property address
+
+                                          // Format the property address for Firestore path
+
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => LogScreen(
+                                                userId: userId,
+                                                districtId: districtId,
+                                                municipalityId: municipalityId,
+                                                propertyAddress:
+                                                    propertyAddress,
+                                                isLocalMunicipality:
+                                                    widget.isLocalMunicipality,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        labelText: 'Update Logs',
+                                        fSize: 16,
+                                        faIcon: const FaIcon(Icons.update),
+                                        fgColor: Colors.blue,
+                                        btSize: const Size(100, 38),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                            ),
-
-                            Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    // BasicIconButtonGrey(
-                                    //   onPress: () async {
-                                    //     Fluttertoast.showToast(
-                                    //         msg: "Now downloading your statement!\nPlease wait a few seconds!");
-                                    //
-                                    //     String accountNumberPDF = documentSnapshot['account number'];
-                                    //     print('The acc number is ::: $accountNumberPDF');
-                                    //
-                                    //     final storageRef = FirebaseStorage.instance.ref().child("pdfs/$formattedMonth");
-                                    //     final listResult = await storageRef.listAll();
-                                    //     for (var prefix in listResult.prefixes) {
-                                    //       print('The ref is ::: $prefix');
-                                    //       // The prefixes under storageRef.
-                                    //       // You can call listAll() recursively on them.
-                                    //     }
-                                    //     for (var item in listResult.items) {
-                                    //       print('The item is ::: $item');
-                                    //       // The items under storageRef.
-                                    //       if (item.toString().contains(accountNumberPDF)) {
-                                    //         final url = item.fullPath;
-                                    //         print('The url is ::: $url');
-                                    //         final file = await PDFApi.loadFirebase(url);
-                                    //         try {
-                                    //           if(context.mounted)openPDF(context, file);
-                                    //           Fluttertoast.showToast(msg: "Download Successful!");
-                                    //         } catch (e) {
-                                    //           Fluttertoast.showToast(msg: "Unable to download statement.");
-                                    //         }
-                                    //       } else {
-                                    //         Fluttertoast.showToast(msg: "Unable to download statement.");
-                                    //       }
-                                    //     }
-                                    //   },
-                                    //   labelText: 'Invoice',
-                                    //   fSize: 16,
-                                    //   faIcon: const FaIcon(Icons.picture_as_pdf,),
-                                    //   fgColor: Colors.orangeAccent,
-                                    //   btSize: const Size(100, 38),
-                                    // ),
-                                    BasicIconButtonGrey(
-                                      onPress: () async {
-                                        accountNumber = documentSnapshot['account number'];
-                                        locationGiven = documentSnapshot['address'];
-
-                                        Navigator.push(context,
-                                            MaterialPageRoute(builder: (context) => MapScreenProp(propAddress: locationGiven, propAccNumber: accountNumber,)
-                                            ));
-                                      },
-                                      labelText: 'Map',
-                                      fSize: 16,
-                                      faIcon: const FaIcon(Icons.map,),
-                                      fgColor: Colors.green,
-                                      btSize: const Size(100, 38),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+                            )
                           ],
                         ),
                       ),
                     );
-                  }///end of single user information display.
+                  }
+
+                  ///end of single user information display.
                   else {
-                    return const SizedBox(height: 0,width: 0,);
+                    return const SizedBox(
+                      height: 0,
+                      width: 0,
+                    );
                   }
                 },
               );
             }
             return const Padding(
               padding: EdgeInsets.all(10.0),
-              child: Center(
-                  child: CircularProgressIndicator()),
+              child: Center(child: CircularProgressIndicator()),
             );
           },
         ),
       ),
-
 
       //   floatingActionButton: FloatingActionButton(
       //     onPressed: () {},
       //     child: const Icon(Icons.add),
       //   ),
       //   floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat
-
     );
   }
 
@@ -1426,29 +2110,101 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
     String month12 = 'December';
 
     if (currentMonth.contains(month1)) {
-      dropdownMonths = ['Select Month', month10,month11,month12,currentMonth,];
+      dropdownMonths = [
+        'Select Month',
+        month10,
+        month11,
+        month12,
+        currentMonth,
+      ];
     } else if (currentMonth.contains(month2)) {
-      dropdownMonths = ['Select Month', month11,month12,month1,currentMonth,];
+      dropdownMonths = [
+        'Select Month',
+        month11,
+        month12,
+        month1,
+        currentMonth,
+      ];
     } else if (currentMonth.contains(month3)) {
-      dropdownMonths = ['Select Month', month12,month1,month2,currentMonth,];
+      dropdownMonths = [
+        'Select Month',
+        month12,
+        month1,
+        month2,
+        currentMonth,
+      ];
     } else if (currentMonth.contains(month4)) {
-      dropdownMonths = ['Select Month', month1,month2,month3,currentMonth,];
+      dropdownMonths = [
+        'Select Month',
+        month1,
+        month2,
+        month3,
+        currentMonth,
+      ];
     } else if (currentMonth.contains(month5)) {
-      dropdownMonths = ['Select Month', month2,month3,month4,currentMonth,];
+      dropdownMonths = [
+        'Select Month',
+        month2,
+        month3,
+        month4,
+        currentMonth,
+      ];
     } else if (currentMonth.contains(month6)) {
-      dropdownMonths = ['Select Month', month3,month4,month5,currentMonth,];
+      dropdownMonths = [
+        'Select Month',
+        month3,
+        month4,
+        month5,
+        currentMonth,
+      ];
     } else if (currentMonth.contains(month7)) {
-      dropdownMonths = ['Select Month', month4,month5,month6,currentMonth,];
+      dropdownMonths = [
+        'Select Month',
+        month4,
+        month5,
+        month6,
+        currentMonth,
+      ];
     } else if (currentMonth.contains(month8)) {
-      dropdownMonths = ['Select Month', month5,month6,month7,currentMonth,];
+      dropdownMonths = [
+        'Select Month',
+        month5,
+        month6,
+        month7,
+        currentMonth,
+      ];
     } else if (currentMonth.contains(month9)) {
-      dropdownMonths = ['Select Month', month6,month7,month8,currentMonth,];
+      dropdownMonths = [
+        'Select Month',
+        month6,
+        month7,
+        month8,
+        currentMonth,
+      ];
     } else if (currentMonth.contains(month10)) {
-      dropdownMonths = ['Select Month', month7,month8,month9,currentMonth,];
+      dropdownMonths = [
+        'Select Month',
+        month7,
+        month8,
+        month9,
+        currentMonth,
+      ];
     } else if (currentMonth.contains(month11)) {
-      dropdownMonths = ['Select Month', month8,month9,month10,currentMonth,];
+      dropdownMonths = [
+        'Select Month',
+        month8,
+        month9,
+        month10,
+        currentMonth,
+      ];
     } else if (currentMonth.contains(month12)) {
-      dropdownMonths = ['Select Month', month9,month10,month11,currentMonth,];
+      dropdownMonths = [
+        'Select Month',
+        month9,
+        month10,
+        month11,
+        currentMonth,
+      ];
     } else {
       dropdownMonths = [
         'Select Month',
@@ -1470,6 +2226,6 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
 
   ///pdf view loader getting file name onPress/onTap that passes pdf filename to this class.
   void openPDF(BuildContext context, File file) => Navigator.of(context).push(
-    MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
-  );
+        MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
+      );
 }

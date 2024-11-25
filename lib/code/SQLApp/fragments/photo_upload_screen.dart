@@ -31,7 +31,7 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
 
   File? _photo;
   final ImagePicker _picker = ImagePicker();
-  String? meterType;
+  // String? meterType;
   final PropertiesData _propertiesData = Get.put(PropertiesData());
   TextEditingController nameController = TextEditingController();
   bool buttonEnabled = true;
@@ -56,11 +56,7 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
     setState(() {
       if (pickedFile != null) {
         _photo = File(pickedFile.path);
-        if(meterType == "E"){
-          uploadEFile();
-        } else if (meterType == "W"){
           uploadWFile();
-        }
       } else {
         print('No image selected.');
       }
@@ -74,60 +70,57 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
     setState(() {
       if (pickedFile != null) {
         _photo = File(pickedFile.path);
-        if(meterType == "E"){
-          uploadEFile();
-        } else if (meterType == "W"){
+
           uploadWFile();
-        }
       } else {
         print('No image selected.');
       }
     });
   }
 
-  Future uploadEFile() async {
-
-    if (_photo == null) return;
-
-    File? imageFile = _photo;
-    List<int> imageBytes = imageFile!.readAsBytesSync();
-    String imageData = base64Encode(imageBytes);
-
-    final String photoName;
-
-    DateTime now = DateTime.now();
-    String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-
-    var data ={
-      "uid": widget.userGet,
-      "propertyAddress": widget.addressGet,
-      "electricMeterIMG": imageData,
-      "capturedFrom": Address.toString(),
-      "uploadTime": formattedDate,
-    };
-
-    try{
-      var res = await http.post(
-        Uri.parse(API.meterImgUpload),
-        body: data,
-      );
-      if(res.statusCode == 200){
-        var resBodyOfImage = jsonDecode(res.body);
-        if(resBodyOfImage['success'] == true){
-          print('reaching api');
-
-          //save user info to local storage using shared Preferences ///fix imageData
-          //await RememberImageInfo.storeImageInfo(imageData);
-
-        } else {
-          Fluttertoast.showToast(msg: "Upload connection failed. Try again with network!", gravity: ToastGravity.CENTER);
-        }
-      }
-    } catch(e) {
-      print("Error :: " + e.toString());
-      Fluttertoast.showToast(msg: e.toString(), gravity: ToastGravity.CENTER);
-    }
-  }
+  // Future uploadEFile() async {
+  //
+  //   if (_photo == null) return;
+  //
+  //   File? imageFile = _photo;
+  //   List<int> imageBytes = imageFile!.readAsBytesSync();
+  //   String imageData = base64Encode(imageBytes);
+  //
+  //   final String photoName;
+  //
+  //   DateTime now = DateTime.now();
+  //   String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+  //
+  //   var data ={
+  //     "uid": widget.userGet,
+  //     "propertyAddress": widget.addressGet,
+  //     "electricMeterIMG": imageData,
+  //     "capturedFrom": Address.toString(),
+  //     "uploadTime": formattedDate,
+  //   };
+  //
+  //   try{
+  //     var res = await http.post(
+  //       Uri.parse(API.meterImgUpload),
+  //       body: data,
+  //     );
+  //     if(res.statusCode == 200){
+  //       var resBodyOfImage = jsonDecode(res.body);
+  //       if(resBodyOfImage['success'] == true){
+  //         print('reaching api');
+  //
+  //         //save user info to local storage using shared Preferences ///fix imageData
+  //         //await RememberImageInfo.storeImageInfo(imageData);
+  //
+  //       } else {
+  //         Fluttertoast.showToast(msg: "Upload connection failed. Try again with network!", gravity: ToastGravity.CENTER);
+  //       }
+  //     }
+  //   } catch(e) {
+  //     print("Error :: " + e.toString());
+  //     Fluttertoast.showToast(msg: e.toString(), gravity: ToastGravity.CENTER);
+  //   }
+  // }
 
   Future uploadWFile() async {
 
@@ -259,64 +252,82 @@ class _PhotoUploadStateState extends State<PhotoUploadState> {
             //either an electrical meter or water meter, the upload only happens once the user specifies the meter type.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25.0),
-              child: GestureDetector(
-                onTap: buttonEnabled? () {
-                  if (_photo != null) {
-                    AlertDialog(
-                      shape: const RoundedRectangleBorder(borderRadius:
-                      BorderRadius.all(Radius.circular(16))),
-                      title: const Text("Meter Type!"),
-                      content: const Text(
-                          "Are you uploading an Electricity Meter Image \n or a Water Meter Image?"),
-                      actions: [
-                        TextButton(
-                          child: Row(
-                            children: const [
-                              Icon(
-                                Icons.power, color: Colors.yellowAccent,
-                              ),
-                              Text('Electric'),
-                            ],
-                          ),
-                          onPressed: () {
-                            meterType = "E";
-                            uploadEFile();
-                            Fluttertoast.showToast(msg: "Successfully Uploaded!\nElectric Meter Image!", gravity: ToastGravity.CENTER);
-                            Navigator.of(context).pop(context); //pops the alert dialogue box
-                            Navigator.of(context).pop(context); //pops the image upload page back to the listview
-                          },
-                        ),
-                        TextButton(
-                          child: Row(
-                            children: const [
-                              Icon(
-                                Icons.water_drop, color: Colors.blueAccent,
-                              ),
-                              Text('Water'),
-                            ],
-                          ),
-                          onPressed: () {
-                            meterType = "W";
-                            uploadWFile();
-                            Fluttertoast.showToast(msg: "Successfully Uploaded!\nWater Meter Image!", gravity: ToastGravity.CENTER);
-                            Navigator.of(context).pop(context); //pops the alert dialogue box
-                            Navigator.of(context).pop(context); //pops the image upload page back to the listview
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.cancel, color: Colors.red,
-                          ),
-                          onPressed: () {
-                            Navigator.of(context).pop(context);
-                          },
-                        ),
-                      ],
-                    );
-                  } else {
-                    Fluttertoast.showToast(msg: "Please tap on the image area and select the image to upload!", gravity: ToastGravity.CENTER);
-                  }
-                } : null,
+              // child: GestureDetector(
+              //   onTap: buttonEnabled? () {
+              //     if (_photo != null) {
+              //       AlertDialog(
+              //         shape: const RoundedRectangleBorder(borderRadius:
+              //         BorderRadius.all(Radius.circular(16))),
+              //         title: const Text("Meter Type!"),
+              //         content: const Text(
+              //             "Are you uploading an Electricity Meter Image \n or a Water Meter Image?"),
+              //         actions: [
+              //           TextButton(
+              //             child: Row(
+              //               children: const [
+              //                 Icon(
+              //                   Icons.power, color: Colors.yellowAccent,
+              //                 ),
+              //                 Text('Electric'),
+              //               ],
+              //             ),
+              //             onPressed: () {
+              //               meterType = "E";
+              //               uploadEFile();
+              //               Fluttertoast.showToast(msg: "Successfully Uploaded!\nElectric Meter Image!", gravity: ToastGravity.CENTER);
+              //               Navigator.of(context).pop(context); //pops the alert dialogue box
+              //               Navigator.of(context).pop(context); //pops the image upload page back to the listview
+              //             },
+              //           ),
+              //           TextButton(
+              //             child: Row(
+              //               children: const [
+              //                 Icon(
+              //                   Icons.water_drop, color: Colors.blueAccent,
+              //                 ),
+              //                 Text('Water'),
+              //               ],
+              //             ),
+              //             onPressed: () {
+              //               meterType = "W";
+              //               uploadWFile();
+              //               Fluttertoast.showToast(msg: "Successfully Uploaded!\nWater Meter Image!", gravity: ToastGravity.CENTER);
+              //               Navigator.of(context).pop(context); //pops the alert dialogue box
+              //               Navigator.of(context).pop(context); //pops the image upload page back to the listview
+              //             },
+              //           ),
+              //           IconButton(
+              //             icon: const Icon(
+              //               Icons.cancel, color: Colors.red,
+              //             ),
+              //             onPressed: () {
+              //               Navigator.of(context).pop(context);
+              //             },
+              //           ),
+              //         ],
+              //       );
+              //     } else {
+              //       Fluttertoast.showToast(msg: "Please tap on the image area and select the image to upload!", gravity: ToastGravity.CENTER);
+              //     }
+              //   } : null,
+                child: GestureDetector(
+                  onTap: () {
+                    if (_photo != null) {
+                      // Directly call the uploadWFile method for the water meter
+                      uploadWFile();
+                      Fluttertoast.showToast(
+                        msg: "Successfully Uploaded!\nWater Meter Image!",
+                        gravity: ToastGravity.CENTER,
+                      );
+                      // Navigate back to the previous page
+                      Navigator.of(context).pop(); // Pops the image upload page back to the listview
+                    } else {
+                      Fluttertoast.showToast(
+                        msg: "Please tap on the image area and select the image to upload!",
+                        gravity: ToastGravity.CENTER,
+                      );
+                    }
+                  },
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(

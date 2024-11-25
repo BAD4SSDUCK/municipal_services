@@ -70,6 +70,35 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:183405317738:android:1ff53810a28791f7790413",
+        "android_client_info": {
+          "package_name": "www.cyberfox.co.za.Municipal_Services"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "183405317738-98urlkb3pab86laj6pnm7kcivcnuin05.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_zBh4dUxdlf1BOjA2IRGVGhjxO-StchU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "183405317738-98urlkb3pab86laj6pnm7kcivcnuin05.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"

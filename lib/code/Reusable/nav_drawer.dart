@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -11,272 +12,388 @@ import 'package:municipal_services/code/Reusable/menu_reusable_elevated_button.d
 import 'package:municipal_services/code/EventsPages/display_events_calendar.dart';
 import 'package:municipal_services/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_services/code/DisplayPages/councillor_screen.dart';
+import 'package:provider/provider.dart';
+
+import '../Chat/chat_screen_councillors.dart';
+import '../DisplayPages/city_directory.dart';
+import '../Models/notify_provider.dart';
 
 class NavDrawer extends StatelessWidget {
-  const NavDrawer({Key? key}) : super(key: key);
+  final String userPhone;
+  final bool isCouncillor;
+
+  const NavDrawer({
+    super.key,
+    required this.userPhone,
+    required this.isCouncillor,
+  });
+
+  Stream<bool> getUnreadMessagesStream(String userPhone, bool isCouncillor) {
+    if (isCouncillor) {
+      // Stream for councillors (messages sent to them)
+      return FirebaseFirestore.instance
+          .collectionGroup('chatRoomCouncillor')
+          .snapshots()
+          .asyncMap((snapshot) async {
+        for (var councillorDoc in snapshot.docs) {
+          QuerySnapshot userChatsSnapshot =
+          await councillorDoc.reference.collection('userChats').get();
+
+          for (var userChatDoc in userChatsSnapshot.docs) {
+            QuerySnapshot unreadMessages = await userChatDoc.reference
+                .collection('messages')
+                .where('isReadByCouncillor', isEqualTo: false)
+                .where('sendBy', isNotEqualTo: userPhone)
+                .get();
+
+            if (unreadMessages.docs.isNotEmpty) {
+              return true; // Unread messages for the councillor
+            }
+          }
+        }
+        return false; // No unread messages
+      });
+    } else {
+      // Stream for regular users (messages sent to them)
+      return FirebaseFirestore.instance
+          .collectionGroup('chatRoomCouncillor')
+          .where('sendTo', isEqualTo: userPhone)
+          .snapshots()
+          .asyncMap((snapshot) async {
+        for (var chatDoc in snapshot.docs) {
+          QuerySnapshot unreadMessages = await chatDoc.reference
+              .collection('messages')
+              .where('isReadByUser', isEqualTo: false)
+              .get();
+
+          if (unreadMessages.docs.isNotEmpty) {
+            return true; // Unread messages for the regular user
+          }
+        }
+        return false; // No unread messages
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: Colors.grey[200],
-        child: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child:Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children:  <Widget>[
-              const SizedBox(height: 80,),
-              Center(child: buildHeader(context)),
-              const SizedBox(height: 50,),
-              buildMenuItems(context),
-            ],
-          ),
-        )
+      child: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            const SizedBox(height: 80),
+            Center(child: buildHeader(context)),
+            const SizedBox(height: 50),
+            // Use StreamBuilder to dynamically update menu items
+            StreamBuilder<bool>(
+              stream: getUnreadMessagesStream(userPhone, isCouncillor),
+              builder: (context, snapshot) {
+                bool hasUnreadCouncilMessages = snapshot.data ?? false;
+                return buildMenuItems(context, hasUnreadCouncilMessages);
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
-}
 
-Widget buildHeader(BuildContext context) => Container(
-  // padding: EdgeInsets.only(
-  //   top: MediaQuery.of(context).padding.top,
-  // ),
-  decoration: const BoxDecoration(
-    borderRadius: BorderRadius.all(Radius.circular(20)),
-    color: Colors.grey,),
-  // padding: EdgeInsets.only(
-  //   top: MediaQuery.of(context).padding.top,
-  // ),
-  child: Image.asset('assets/images/municipal_services.png', height: 150, width: 290,),
-);
+  Widget buildHeader(BuildContext context) =>
+      Container(
+        // padding: EdgeInsets.only(
+        //   top: MediaQuery.of(context).padding.top,
+        // ),
+        decoration: const BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+          color: Colors.grey,),
+        // padding: EdgeInsets.only(
+        //   top: MediaQuery.of(context).padding.top,
+        // ),
+        child: Image.asset(
+          'assets/images/municipal_services.png', height: 150, width: 290,),
+      );
 
 
-Widget buildMenuItems(BuildContext context) => Wrap(
-  runSpacing: 10,
-  runAlignment: WrapAlignment.end,
-  children:  <Widget>[
-    const SizedBox(height: 20,),
-    ListTile(
-      leading: const Icon(Icons.supervised_user_circle_outlined, size: 40,),
-      title: Text('Contact Councillors',
-        style: GoogleFonts.turretRoad(
-          color: Colors.black,
-          fontWeight: FontWeight.bold,
-          fontSize: 18.5,
-        ),
-      ),
-      onTap: () {
-        Navigator.push(context,
-          MaterialPageRoute(builder: (context) => const CouncillorScreen()),
-        );
-      },
-    ),
-    ListTile(
-      leading: const Icon(Icons.lightbulb, size: 40,),
-      title: Text('Load Shedding Schedule',
-        style: GoogleFonts.turretRoad(
-          color: Colors.black,
-          fontWeight: FontWeight.bold,
-          fontSize: 18,
-        ),
-      ),
-      onTap: () async {
-        final Uri _url = Uri.parse('http://www.msunduzi.gov.za/site/search/downloadencode/LOAD%20SHEDDING%20SCHEDULE%20WORD%20STAGE%201%20-%204%20%205%20-%208%20update.pdf');
-        // _launchURL(_url);
-        _launchURLExternal(_url);
-
-        //
-        // final file = await PDFApi.loadAsset('http://www.msunduzi.gov.za/site/search/downloadencode/LOAD%20SHEDDING%20SCHEDULE%20WORD%20STAGE%201%20-%204%20%205%20-%208%20update.pdf');
-        // try {
-        //   if(context.mounted)openPDF(context, file);
-        //   Fluttertoast.showToast(
-        //       msg: "Download Successful!");
-        // } catch (e) {
-        //   Fluttertoast.showToast(msg: "Unable to download statement.");
-        // }
-
-      },
-    ),
-    ListTile(
-      leading: const Icon(Icons.event_available, size: 40,),
-      title: Text('Events',
-        style: GoogleFonts.turretRoad(
-          color: Colors.black,
-          fontWeight: FontWeight.bold,
-          fontSize: 18.5,
-        ),
-      ),
-      onTap: () {
-        Navigator.push(context,
-          MaterialPageRoute(builder: (context) => const EventsCalendar()),
-        );
-      },
-    ),
-    // ListTile(
-    //   leading:  Image.asset('images/MainMenu/road_signs_icon.png'),
-    //   title: const Text('User details'),
-    //   onTap: (){
-    //     Navigator.of(context).popUntil((route) => route.isFirst);
-    //     // Navigator.push(context,
-    //     //   MaterialPageRoute(builder: (context) => const RedMenu()),
-    //     // );
-    //   },
-    // ),
-    const SizedBox(height: 80,),
-    Wrap(
-        runSpacing: 0,
-        runAlignment: WrapAlignment.spaceEvenly,
-        children:  <Widget>[
-          SizedBox(
-            height: 40,
-            child: ListTile(
-                leading: const Icon(Icons.add_call, size: 20,),
-                title: Text('Contact Municipality',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.black,
-                    fontWeight: FontWeight.normal,
-                    fontSize: 15,
-                  ),
+  Widget buildMenuItems(BuildContext context, bool hasUnreadCouncilMessages) =>
+      Wrap(
+        runSpacing: 10,
+        runAlignment: WrapAlignment.end,
+        children: <Widget>[
+          const SizedBox(height: 20),
+          // Contact Councillors menu item
+          ListTile(
+            leading: Stack(
+              children: [
+                const Icon(
+                  Icons.supervised_user_circle_outlined,
+                  size: 40,
                 ),
-                onTap: (){
-                  final Uri _tel = Uri.parse('tel:+27${0333923000}');
-                  launchUrl(_tel);
-                }
-            ),
-          ),
-          SizedBox(
-            height: 40,
-            child: ListTile(
-                leading: const Icon(Icons.error, size: 20,),
-                title: Text('Report a bug',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.black,
-                    fontWeight: FontWeight.normal,
-                    fontSize: 15,
+                if (hasUnreadCouncilMessages)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Text(
+                        '!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                onTap: (){
-                  final Uri _tel = Uri.parse('tel:+27${0333871974}');
-                  launchUrl(_tel);
-                }
+              ],
             ),
+            title: Text(
+              'Contact Councillors',
+              style: GoogleFonts.turretRoad(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 18.5,
+              ),
+            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const CouncillorScreen()),
+              );
+            },
           ),
-          // SizedBox(
-          //   height: 40,
-          //   child: ListTile(
-          //     leading: const Icon(Icons.facebook_rounded, size: 20,),
-          //     title: const Text('Cyberfox Facebook'),
-          //     onTap: () async {
-          //
-          //       ///could work but opens to facebook google play app install and not the app directly
-          //       // await LaunchApp.openApp(
-          //       //   // androidPackageName: 'com.android.chrome',
-          //       //   androidPackageName: 'com.facebook.katana',
-          //       //   appStoreLink: 'com.facebook.katana',
-          //       //   openStore: false,
-          //       // );
-          //
-          //       ///trying new method
-          //       _launchSocial(Uri.parse('fb://page/122574191145679'), Uri.parse('https://www.facebook.com/cyberfoxit'));
-          //
-          //       ///works but breaks once web view completes loading and user is not logged into facebook
-          //       // final Uri _url1 = Uri.parse("fb://facewebmodal/f?href=https://www.facebook.com/cyberfoxit");
-          //       ///new url launcher
-          //       // launchFacebook(_url1);
-          //       ///old url Launcher
-          //       // _launchURL(_url1);
-          //     },
-          //   ),
-          // ),
-          // SizedBox(
-          //   height: 50,
-          //   child: ListTile(
-          //     leading: const Icon(Icons.video_collection_rounded, size: 20,),
-          //     title: const Text('Subscribe on YouTube'),
-          //     onTap: () async {
-          //
-          //       ///could work but opens to youtube app installed and not the channel directly
-          //       // await LaunchApp.openApp(
-          //       //   // androidPackageName: 'com.android.chrome',
-          //       //   androidPackageName: 'com.google.android.youtube',
-          //       //   appStoreLink: 'com.google.android.youtube',
-          //       //   openStore: false,
-          //       // );
-          //
-          //       ///canLaunch claims depreciated but still works
-          //       const url = 'https://www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ';
-          //       if (await canLaunch(url)) {
-          //         await launch(url);
-          //       } else {
-          //         _launchSocial(Uri.parse('youtube:www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ'), Uri.parse('https://www.youtube.com/user/axed25'));
-          //         throw 'Could not launch $url';
-          //       }
-          //
-          //       // final Uri ytUrl = Uri.parse('https://www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ');
-          //       // if (await canLaunchUrl(ytUrl)) {
-          //       //   await launchUrl(ytUrl);
-          //       // } else {
-          //       //   _launchSocial(Uri.parse('youtube:www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ'), Uri.parse('https://www.youtube.com/user/axed25'));
-          //       //   throw 'Could not launch youtube app $ytUrl';
-          //       // }
-          //
-          //       //youtube:https://www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ < Cyberfox yt
-          //       // _launchSocial(Uri.parse('youtube:www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ'), Uri.parse('https://www.youtube.com/user/axed25'));
-          //
-          //       ///old method
-          //       // final Uri _url2 = Uri.parse('https://www.youtube.com/user/axed25');
-          //       // _launchURL(_url2);
-          //     },
-          //   ),
-          // ),
+          ListTile(
+            leading: const Icon(Icons.lightbulb, size: 40,),
+            title: Text('Load Shedding Schedule',
+              style: GoogleFonts.turretRoad(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            onTap: () async {
+              final Uri _url = Uri.parse(
+                  'http://www.msunduzi.gov.za/site/search/downloadencode/LOAD%20SHEDDING%20SCHEDULE%20WORD%20STAGE%201%20-%204%20%205%20-%208%20update.pdf');
+              // _launchURL(_url);
+              _launchURLExternal(_url);
 
+              //
+              // final file = await PDFApi.loadAsset('http://www.msunduzi.gov.za/site/search/downloadencode/LOAD%20SHEDDING%20SCHEDULE%20WORD%20STAGE%201%20-%204%20%205%20-%208%20update.pdf');
+              // try {
+              //   if(context.mounted)openPDF(context, file);
+              //   Fluttertoast.showToast(
+              //       msg: "Download Successful!");
+              // } catch (e) {
+              //   Fluttertoast.showToast(msg: "Unable to download statement.");
+              // }
+
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.event_available, size: 40,),
+            title: Text('Events Calendar',
+              style: GoogleFonts.turretRoad(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 18.5,
+              ),
+            ),
+            onTap: () {
+              Navigator.push(context,
+                MaterialPageRoute(builder: (context) => EventsCalendar()),
+              );
+            },
+          ),
           // ListTile(
-          //     leading: const Icon(Icons.logout, size: 20,),
-          //     title: const Text('Logout'),
-          //     onTap: (){
-          //       FirebaseAuth.instance.signOut();
-          //     }
+          //   leading:  Image.asset('images/MainMenu/road_signs_icon.png'),
+          //   title: const Text('User details'),
+          //   onTap: (){
+          //     Navigator.of(context).popUntil((route) => route.isFirst);
+          //     // Navigator.push(context,
+          //     //   MaterialPageRoute(builder: (context) => const RedMenu()),
+          //     // );
+          //   },
           // ),
-        ]
-    ),
-    const SizedBox(height: 90,),
+          ListTile(
+            leading: const Icon(Icons.people, size: 40,),
+            title: Text('Municipal Directory',
+              style: GoogleFonts.turretRoad(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 18.5,
+              ),
+            ),
+            onTap: () {
+              Navigator.push(context,
+                MaterialPageRoute(
+                    builder: (context) => EmployeeDirectoryScreen()),
+              );
+            },
+          ),
+          const SizedBox(height: 80,),
+          Wrap(
+              runSpacing: 0,
+              runAlignment: WrapAlignment.spaceEvenly,
+              children: <Widget>[
+                SizedBox(
+                  height: 40,
+                  child: ListTile(
+                      leading: const Icon(Icons.add_call, size: 20,),
+                      title: Text('Contact Municipality',
+                        style: GoogleFonts.montserrat(
+                          color: Colors.black,
+                          fontWeight: FontWeight.normal,
+                          fontSize: 15,
+                        ),
+                      ),
+                      onTap: () {
+                        final Uri _tel = Uri.parse('tel:+27${0338976700}');
+                        launchUrl(_tel);
+                      }
+                  ),
+                ),
+                SizedBox(
+                  height: 40,
+                  child: ListTile(
+                      leading: const Icon(Icons.error, size: 20,),
+                      title: Text('Report a bug',
+                        style: GoogleFonts.montserrat(
+                          color: Colors.black,
+                          fontWeight: FontWeight.normal,
+                          fontSize: 15,
+                        ),
+                      ),
+                      onTap: () {
+                        final Uri _tel = Uri.parse('tel:+27${0333871974}');
+                        launchUrl(_tel);
+                      }
+                  ),
+                ),
+                // SizedBox(
+                //   height: 40,
+                //   child: ListTile(
+                //     leading: const Icon(Icons.facebook_rounded, size: 20,),
+                //     title: const Text('Cyberfox Facebook'),
+                //     onTap: () async {
+                //
+                //       ///could work but opens to facebook google play app install and not the app directly
+                //       // await LaunchApp.openApp(
+                //       //   // androidPackageName: 'com.android.chrome',
+                //       //   androidPackageName: 'com.facebook.katana',
+                //       //   appStoreLink: 'com.facebook.katana',
+                //       //   openStore: false,
+                //       // );
+                //
+                //       ///trying new method
+                //       _launchSocial(Uri.parse('fb://page/122574191145679'), Uri.parse('https://www.facebook.com/cyberfoxit'));
+                //
+                //       ///works but breaks once web view completes loading and user is not logged into facebook
+                //       // final Uri _url1 = Uri.parse("fb://facewebmodal/f?href=https://www.facebook.com/cyberfoxit");
+                //       ///new url launcher
+                //       // launchFacebook(_url1);
+                //       ///old url Launcher
+                //       // _launchURL(_url1);
+                //     },
+                //   ),
+                // ),
+                // SizedBox(
+                //   height: 50,
+                //   child: ListTile(
+                //     leading: const Icon(Icons.video_collection_rounded, size: 20,),
+                //     title: const Text('Subscribe on YouTube'),
+                //     onTap: () async {
+                //
+                //       ///could work but opens to youtube app installed and not the channel directly
+                //       // await LaunchApp.openApp(
+                //       //   // androidPackageName: 'com.android.chrome',
+                //       //   androidPackageName: 'com.google.android.youtube',
+                //       //   appStoreLink: 'com.google.android.youtube',
+                //       //   openStore: false,
+                //       // );
+                //
+                //       ///canLaunch claims depreciated but still works
+                //       const url = 'https://www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ';
+                //       if (await canLaunch(url)) {
+                //         await launch(url);
+                //       } else {
+                //         _launchSocial(Uri.parse('youtube:www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ'), Uri.parse('https://www.youtube.com/user/axed25'));
+                //         throw 'Could not launch $url';
+                //       }
+                //
+                //       // final Uri ytUrl = Uri.parse('https://www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ');
+                //       // if (await canLaunchUrl(ytUrl)) {
+                //       //   await launchUrl(ytUrl);
+                //       // } else {
+                //       //   _launchSocial(Uri.parse('youtube:www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ'), Uri.parse('https://www.youtube.com/user/axed25'));
+                //       //   throw 'Could not launch youtube app $ytUrl';
+                //       // }
+                //
+                //       //youtube:https://www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ < Cyberfox yt
+                //       // _launchSocial(Uri.parse('youtube:www.youtube.com/channel/UCifnsFfj8hr6ATnj8hVIRfQ'), Uri.parse('https://www.youtube.com/user/axed25'));
+                //
+                //       ///old method
+                //       // final Uri _url2 = Uri.parse('https://www.youtube.com/user/axed25');
+                //       // _launchURL(_url2);
+                //     },
+                //   ),
+                // ),
 
-    ListTile(
-      leading: const Padding(
-        padding: EdgeInsets.only(left: 8.0),
-        child: Icon(Icons.label_important, size: 50,),
-      ),
-      title: Text(' Cyberfox',
-        style: GoogleFonts.saira(
-          color: Colors.black,
-          fontWeight: FontWeight.bold,
-          fontSize: 24,
-        ),
-      ),
-      trailing: const Padding(
-        padding: EdgeInsets.only(right: 15.0),
-        child: Icon(Icons.copyright, size: 30,),
-      ),
-      onTap: (){
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      },
-    ),
-    Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.max,
-      children: <Widget>[
-        Align(
-            alignment: Alignment.bottomCenter,
-            child: Image.asset(
-              'assets/images/cyberfox_logo_small.png',
-              height: 80,
-              width: 120,
-              fit: BoxFit.fitWidth,
-            )
-        )
-      ],
-    ),
-  ],
-);
+                // ListTile(
+                //     leading: const Icon(Icons.logout, size: 20,),
+                //     title: const Text('Logout'),
+                //     onTap: (){
+                //       FirebaseAuth.instance.signOut();
+                //     }
+                // ),
+              ]
+          ),
+          const SizedBox(height: 90,),
 
+          ListTile(
+            leading: const Padding(
+              padding: EdgeInsets.only(left: 8.0),
+              child: Icon(Icons.label_important, size: 50,),
+            ),
+            title: Text(' Cyberfox',
+              style: GoogleFonts.saira(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+              ),
+            ),
+            trailing: const Padding(
+              padding: EdgeInsets.only(right: 15.0),
+              child: Icon(Icons.copyright, size: 30,),
+            ),
+            onTap: () {
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
+            children: <Widget>[
+              Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Image.asset(
+                    'assets/images/cyberfox_logo_small.png',
+                    height: 80,
+                    width: 120,
+                    fit: BoxFit.fitWidth,
+                  )
+              )
+            ],
+          ),
+        ],
+      );
+}
 ///unused web view page component, left for reference
 class WebViewApp extends StatefulWidget {
   final Uri webUrl;
@@ -354,4 +471,4 @@ void openPdfFromUrl(String url) {
   debugPrint('opening Google docs with PDF url = $googleDocsUrl');
   final Uri uri = Uri.parse(googleDocsUrl);
   launchUrl(uri);
-}
+  }

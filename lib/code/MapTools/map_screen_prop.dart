@@ -31,7 +31,7 @@ class _MapScreenPropState extends State<MapScreenProp> {
   late LatLng currentLocation;
   late LatLng addressLocation;
   late bool _isLoading;
-
+  bool _cameraPositionInitialized = false;
   String location ='Null, Press Button';
   String Address = 'search';
 
@@ -43,9 +43,10 @@ class _MapScreenPropState extends State<MapScreenProp> {
     ///This is the circular loading widget in this future.delayed call
     _isLoading = true;
     Future.delayed(const Duration(seconds: 5),(){
+      if (mounted){
       setState(() {
         _isLoading = false;
-      });
+      });}
     });
 
     //Allows user's location to be captured while using the map
@@ -61,7 +62,10 @@ class _MapScreenPropState extends State<MapScreenProp> {
     setAddressLocation();
     //Set up the marker icons
     setSourceAndDestinationMarkerIcons();
-
+    _cameraPosition = const CameraPosition(
+      target: SOURCE_LOCATION,
+      zoom: 16,
+    );
     // city all position for camera default (target: LatLng(-29.601505328570788, 30.379442518631805), zoom: 16);
     //_cameraPosition = CameraPosition(target: currentLocation, zoom: 16);
   }
@@ -112,12 +116,26 @@ class _MapScreenPropState extends State<MapScreenProp> {
     return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
   }
 
-  Future<void> GetAddressFromLatLong(Position position)async {
-    List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-    print(placemarks);
-    Placemark place = placemarks[0];
-    Address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+  Future<void> GetAddressFromLatLong(Position position) async {
+    try {
+      // Attempt to retrieve the placemarks based on the position coordinates.
+      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+
+      // Check if any placemarks were found, otherwise use a default value.
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        Address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+      } else {
+        Address = "Address not available";
+        print("No placemarks found for the provided coordinates.");
+      }
+    } catch (e) {
+      // Fallback if an error occurs during the geocoding process.
+      Address = "Address not available";
+      print("Error retrieving address from coordinates: $e");
+    }
   }
+
   ///End of current user location check
 
   void setSourceAndDestinationMarkerIcons() async{
@@ -143,12 +161,15 @@ class _MapScreenPropState extends State<MapScreenProp> {
 
         if (locations.isNotEmpty) {
           Location location = locations.first;
+          addressLocation = LatLng(location.latitude, location.longitude);
+          _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
 
-          double latitude = location.latitude;
-          double longitude = location.longitude;
-
-          addressLocation = LatLng(latitude, longitude);
-
+          // Set the camera position as initialized.
+          if(mounted) {
+            setState(() {
+              _cameraPositionInitialized = true;
+            });
+          }
           showPinOnMap();
         }
 
@@ -157,7 +178,11 @@ class _MapScreenPropState extends State<MapScreenProp> {
         addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
 
         _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
-
+        if(mounted) {
+          setState(() {
+            _cameraPositionInitialized = true;
+          });
+        }
         print('This is the error:::$e');
 
         // showPinOnMap();

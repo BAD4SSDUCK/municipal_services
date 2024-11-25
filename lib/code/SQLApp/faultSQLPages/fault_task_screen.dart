@@ -18,7 +18,7 @@ class FaultTaskScreen extends StatelessWidget {
 
   final _accountNumberController = TextEditingController();
   final _addressController = TextEditingController();
-  final _eDescriptionController = TextEditingController();
+  // final _eDescriptionController = TextEditingController();
   final _wDescriptionController = TextEditingController();
   final _depAllocationController = TextEditingController();
   bool _faultResolvedController = false;
@@ -64,7 +64,7 @@ class FaultTaskScreen extends StatelessWidget {
     final int uid = _faultData.fault.uid;
     final String accountNumber = _faultData.fault.accountNumber;
     final String addressOfFault = _faultData.fault.propertyAddress;
-    final String electricityFaultDes = _faultData.fault.electricFaultDes;
+    // final String electricityFaultDes = _faultData.fault.electricFaultDes;
     final String waterFaultDes = _faultData.fault.waterFaultDes;
     final String reportedDate = _faultData.fault.dateReported;
     final String allocatedDpt = _faultData.fault.depAllocation;
@@ -74,7 +74,7 @@ class FaultTaskScreen extends StatelessWidget {
       "uid": uid.toString(),
       "accountNumber": accountNumber,
       "address": addressOfFault,
-      "electricityFaultDes": electricityFaultDes,
+      // "electricityFaultDes": electricityFaultDes,
       "waterFaultDes": waterFaultDes,
       "dateReported": reportedDate,
       "depAllocation": allocatedDpt,
@@ -141,16 +141,16 @@ class FaultTaskScreen extends StatelessWidget {
                           labelText: 'Street Address'),
                     ),
                   ),
-                  Visibility(
-                    visible: buttonVis2,
-                    child: TextField(
-                      keyboardType:
-                      const TextInputType.numberWithOptions(),
-                      controller: _eDescriptionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Electrical Fault Description',),
-                    ),
-                  ),
+                  // Visibility(
+                  //   visible: buttonVis2,
+                  //   child: TextField(
+                  //     keyboardType:
+                  //     const TextInputType.numberWithOptions(),
+                  //     controller: _eDescriptionController,
+                  //     decoration: const InputDecoration(
+                  //       labelText: 'Electrical Fault Description',),
+                  //   ),
+                  // ),
                   Visibility(
                     visible: buttonVis2,
                     child: TextField(
@@ -209,7 +209,7 @@ class FaultTaskScreen extends StatelessWidget {
 
                         _accountNumberController.text = '';
                         _addressController.text = '';
-                        _eDescriptionController.text = '';
+                        // _eDescriptionController.text = '';
                         _wDescriptionController.text = '';
                         _depAllocationController.text = '';
                         _faultResolvedController = false;

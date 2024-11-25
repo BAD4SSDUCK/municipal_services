@@ -25,7 +25,7 @@ class ReportPropertyMenu extends StatelessWidget {
   String userPass = '';
   String addressPass = '';
 
-  bool elecDesVis = true;
+  // bool elecDesVis = true;
   bool waterDesVis = false;
   bool buttonEnabled = true;
 
@@ -56,7 +56,7 @@ class ReportPropertyMenu extends StatelessWidget {
     final int uid = _currentUser.user.uid;
     String accountNumber = _propertiesData.properties.accountNumber;
     final String addressFault = _propertiesData.properties.address;
-    final String electricityFaultDes = _electricalFaultController.text;
+    // final String electricityFaultDes = _electricalFaultController.text;
     final String waterFaultDes = _waterFaultController.text;
     DateTime now = DateTime.now();
     String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
@@ -65,7 +65,7 @@ class ReportPropertyMenu extends StatelessWidget {
       "uid": uid.toString(),
       "accountNumber": accountNumber,
       "address": addressFault,
-      "electricityFaultDes": electricityFaultDes,
+      // "electricityFaultDes": electricityFaultDes,
       "waterFaultDes": waterFaultDes,
       "dateReported": formattedDate,
     };
@@ -114,14 +114,14 @@ class ReportPropertyMenu extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   //Text controllers for the properties db visibility only available for the electric and water readings
-                  Visibility(
-                    visible: elecDesVis,
-                    child: TextField(
-                      controller: _electricalFaultController,
-                      decoration: const InputDecoration(
-                          labelText: 'Electrical Fault Description'),
-                    ),
-                  ),
+                  // Visibility(
+                  //   visible: elecDesVis,
+                  //   child: TextField(
+                  //     controller: _electricalFaultController,
+                  //     decoration: const InputDecoration(
+                  //         labelText: 'Electrical Fault Description'),
+                  //   ),
+                  // ),
                   Visibility(
                     visible: waterDesVis,
                     child: TextField(
@@ -162,7 +162,7 @@ class ReportPropertyMenu extends StatelessWidget {
                             onPressed: () async {
                               _addNewFaultReport();
 
-                              _electricalFaultController.text = '';
+                              // _electricalFaultController.text = '';
                               _waterFaultController.text = '';
 
                               final Uri _tel = Uri.parse(

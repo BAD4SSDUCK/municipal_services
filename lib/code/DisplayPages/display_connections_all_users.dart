@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
@@ -27,10 +28,15 @@ import 'package:municipal_services/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
 import 'package:municipal_services/code/Reusable/push_notification_message.dart';
 import 'package:municipal_services/code/NoticePages/notice_config_screen.dart';
-
+//Connect from municipal side
 
 class UsersConnectionsAll extends StatefulWidget {
-  const UsersConnectionsAll({Key? key}) : super(key: key);
+  final String? municipalityUserEmail;
+  final String? districtId;
+  final String municipalityId;
+  final bool isLocalMunicipality;
+  final bool isLocalUser;
+  const UsersConnectionsAll({super.key, this.municipalityUserEmail, this.districtId, required this.municipalityId, required this.isLocalMunicipality, required this.isLocalUser,});
 
   @override
   _UsersConnectionsAllState createState() => _UsersConnectionsAllState();
@@ -50,7 +56,7 @@ String phoneNum = ' ';
 
 String accountNumberAll = ' ';
 String locationGivenAll = ' ';
-String eMeterNumber = ' ';
+// String eMeterNumber = ' ';
 String accountNumberW = ' ';
 String locationGivenW = ' ';
 String wMeterNumber = ' ';
@@ -71,36 +77,36 @@ class FireStorageService extends ChangeNotifier{
   }
 }
 
-Future<Widget> _getImage(BuildContext context, String imageName) async{
-  Image image;
-  final value = await FireStorageService.loadImage(context, imageName);
-
-  final imageUrl = await storageRef.child(imageName).getDownloadURL();
-  ///Check what the app is running on
-  if(defaultTargetPlatform == TargetPlatform.android){
-    image =Image.network(
-      value.toString(),
-      fit: BoxFit.fill,
-      width: double.infinity,
-      height: double.infinity,
-    );
-  }else{
-    image =Image.network(
-      imageUrl,
-      fit: BoxFit.fitHeight,
-      width: double.infinity,
-      height: double.infinity,
-    );
-  }
-  ///android version display image from firebase
-  // image =Image.network(
-  //   value.toString(),
-  //   fit: BoxFit.fill,
-  //   width: double.infinity,
-  //   height: double.infinity,
-  // );
-  return image;
-}
+// Future<Widget> _getImage(BuildContext context, String imageName) async{
+//   Image image;
+//   final value = await FireStorageService.loadImage(context, imageName);
+//
+//   final imageUrl = await storageRef.child(imageName).getDownloadURL();
+//   ///Check what the app is running on
+//   if(defaultTargetPlatform == TargetPlatform.android){
+//     image =Image.network(
+//       value.toString(),
+//       fit: BoxFit.fill,
+//       width: double.infinity,
+//       height: double.infinity,
+//     );
+//   }else{
+//     image =Image.network(
+//       imageUrl,
+//       fit: BoxFit.fitHeight,
+//       width: double.infinity,
+//       height: double.infinity,
+//     );
+//   }
+//   ///android version display image from firebase
+//   // image =Image.network(
+//   //   value.toString(),
+//   //   fit: BoxFit.fill,
+//   //   width: double.infinity,
+//   //   height: double.infinity,
+//   // );
+//   return image;
+// }
 
 Future<Widget> _getImageW(BuildContext context, String imageName2) async{
   Image image2;
@@ -127,17 +133,38 @@ Future<Widget> _getImageW(BuildContext context, String imageName2) async{
   return image2;
 }
 
-final CollectionReference _propList =
-FirebaseFirestore.instance.collection('properties');
+// final CollectionReference _propList =
+// FirebaseFirestore.instance.collection('properties');
 
 class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
+ CollectionReference? _propList;
+ String? userEmail;
+ String districtId='';
+ String municipalityId='';
+ List<String> usersTokens = [];
+ List<String> usersNumbers = [];
+ bool isLoading=false;
+ bool isLocalMunicipality=false;
+ List<String> municipalities = []; // To hold the list of municipality names
+ String? selectedMunicipality = "Select Municipality";
+ List<DocumentSnapshot> filteredProperties = [];
+ bool isLocalUser=true;
+ final FocusNode _focusNode = FocusNode();
+ final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
-    if(_searchController.text == ""){
-      getPropertyStream();
-    }
-    // getPropertyStream();
+    _focusNode.requestFocus();
+    getUsersTokenStream();
+    fetchUserDetails().then((_) {
+      if (isLocalUser) {
+        // For local municipality users, fetch properties only for their municipality
+        fetchPropertiesForLocalMunicipality();
+      } else {
+        // For district-level users, fetch properties for all municipalities
+        fetchMunicipalities(); // Fetch municipalities after user details are loaded
+      }
+    });
     _searchController.addListener(_onSearchChanged);
     checkAdmin();
     super.initState();
@@ -145,19 +172,159 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
-    getPropertyStream();
     searchText;
     super.dispose();
+  }
+
+
+ Future<void> fetchUserDetails() async {
+   try {
+     User? user = FirebaseAuth.instance.currentUser;
+     if (user != null) {
+       userEmail = user.email ?? ''; // Ensure userEmail is correctly set
+       print("User email initialized: $userEmail");
+
+       // Fetch the user document from Firestore using collectionGroup
+       QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+           .collectionGroup('users')
+           .where('email', isEqualTo: user.email)
+           .limit(1)
+           .get();
+
+       if (userSnapshot.docs.isNotEmpty) {
+         var userDoc = userSnapshot.docs.first;
+         Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+
+         var userPathSegments = userDoc.reference.path.split('/');
+
+         // Determine if the user belongs to a district or local municipality
+         if (userPathSegments.contains('districts')) {
+           // District-based municipality
+           districtId = userPathSegments[1];
+           municipalityId = userPathSegments[3];
+           isLocalMunicipality = false;
+           print("District User Detected");
+         } else if (userPathSegments.contains('localMunicipalities')) {
+           // Local municipality
+           municipalityId = userPathSegments[1];
+           districtId = ''; // No district for local municipality
+           isLocalMunicipality = true;
+           print("Local Municipality User Detected");
+         }
+
+         // Safely access the 'isLocalUser' field
+         isLocalUser = userData['isLocalUser'] ?? false;
+
+         print("After fetchUserDetails:");
+         print("districtId: $districtId");
+         print("municipalityId: $municipalityId");
+         print("isLocalMunicipality: $isLocalMunicipality");
+         print("isLocalUser: $isLocalUser");
+
+         // Set the property and notifications paths based on municipality type
+         if(mounted) {
+           setState(() {
+             if (isLocalMunicipality) {
+               _propList = FirebaseFirestore.instance
+                   .collection('localMunicipalities')
+                   .doc(municipalityId)
+                   .collection('properties');
+               _listNotifications = FirebaseFirestore.instance
+                   .collection('localMunicipalities')
+                   .doc(municipalityId)
+                   .collection('Notifications');
+             } else {
+               _propList = FirebaseFirestore.instance
+                   .collection('districts')
+                   .doc(districtId)
+                   .collection('municipalities')
+                   .doc(municipalityId)
+                   .collection('properties');
+               _listNotifications = FirebaseFirestore.instance
+                   .collection('districts')
+                   .doc(districtId)
+                   .collection('municipalities')
+                   .doc(municipalityId)
+                   .collection('Notifications');
+             }
+           });
+         }
+         // Fetch properties based on the municipality type
+         if (isLocalMunicipality) {
+           await fetchPropertiesForLocalMunicipality();
+         } else if (!isLocalMunicipality) {
+           await fetchPropertiesForAllMunicipalities();
+         } else if (municipalityId.isNotEmpty) {
+           await fetchPropertiesByMunicipality(municipalityId);
+         } else {
+           print("Error: municipalityId is empty for the local municipality user.");
+         }
+       } else {
+         print('No user document found.');
+       }
+     } else {
+       print("No current user found.");
+     }
+   } catch (e) {
+     print('Error fetching user details: $e');
+     if(mounted) {
+       setState(() {
+         isLoading = false;
+       });
+     }
+   }
+ }
+
+ Future<void> getUsersTokenStream() async {
+   Set<String> uniqueTokens = {}; // To store unique tokens
+   Set<String> uniqueAccountNumbers = {}; // To store corresponding unique account numbers
+
+   try {
+     QuerySnapshot propertiesSnapshot = await FirebaseFirestore.instance.collectionGroup('properties').get();
+
+     for (var doc in propertiesSnapshot.docs) {
+       if (doc.exists) {
+         var data = doc.data() as Map<String, dynamic>?;  // Safely cast the data
+
+         if (data != null) {
+           String? token = data['token'] as String?;
+           String? accountNumber = data['accountNumber'] as String?;
+
+           if (token != null && accountNumber != null) {
+             if (!uniqueTokens.contains(token)) {
+               uniqueTokens.add(token);
+               uniqueAccountNumbers.add(accountNumber);
+             }
+           }
+         }
+       }
+     }
+      if(mounted) {
+        setState(() {
+          usersTokens = uniqueTokens.toList();
+          usersNumbers = uniqueAccountNumbers.toList();
+          isLoading = false; // Loading complete
+        });
+      }
+   } catch (e) {
+     print('Error fetching users tokens: $e');
+     if(mounted) {
+       setState(() {
+         isLoading = false;
+       });
+     }
+   }
   }
 
   // text fields' controllers
   final _accountNumberController = TextEditingController();
   final _addressController = TextEditingController();
   final _areaCodeController = TextEditingController();
-  final _meterNumberController = TextEditingController();
-  final _meterReadingController = TextEditingController();
+  // final _meterNumberController = TextEditingController();
+  // final _meterReadingController = TextEditingController();
   final _waterMeterController = TextEditingController();
   final _waterMeterReadingController = TextEditingController();
   final _cellNumberController = TextEditingController();
@@ -171,16 +338,13 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
 
   final CollectionReference _listUserTokens =
   FirebaseFirestore.instance.collection('UserToken');
-
-  final CollectionReference _listNotifications =
-  FirebaseFirestore.instance.collection('Notifications');
-
+  //
+  // final CollectionReference _listNotifications =
+  // FirebaseFirestore.instance.collection('Notifications');
+  CollectionReference? _listNotifications;
   final _headerController = TextEditingController();
   final _messageController = TextEditingController();
   late bool _noticeReadController;
-
-  List<String> usersNumbers =[];
-  List<String> usersTokens =[];
   List<String> usersRetrieve =[];
 
   ///Methods and implementation for push notifications with firebase and specific device token saving
@@ -212,14 +376,184 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
   List _allPropertyResults = [];
   List _allPropertyReport = [];
 
-  getPropertyStream() async{
-    var data = await FirebaseFirestore.instance.collection('properties').get();
+ // Future<void> getPropertyStream() async {
+ //   try {
+ //     QuerySnapshot data;
+ //     if (isLocalMunicipality) {
+ //       data = await FirebaseFirestore.instance
+ //           .collection('localMunicipalities')
+ //           .doc(municipalityId)
+ //           .collection('properties')
+ //           .get();
+ //     } else {
+ //       data = await FirebaseFirestore.instance
+ //           .collection('districts')
+ //           .doc(districtId)
+ //           .collection('municipalities')
+ //           .doc(municipalityId)
+ //           .collection('properties')
+ //           .get();
+ //     }
+ //
+ //     if (mounted) {
+ //       setState(() {
+ //         _allPropertyResults = data.docs;
+ //       });
+ //       searchResultsList();
+ //     }
+ //   } catch (e) {
+ //     print('Error fetching property stream: $e');
+ //   }
+ // }
 
-    setState(() {
-      _allPropertyResults = data.docs;
-    });
-    searchResultsList();
-  }
+ Future<void> fetchMunicipalities() async {
+   try {
+     if (districtId.isNotEmpty) {
+       print("Fetching municipalities under district: $districtId");
+       // Fetch all municipalities under the district
+       var municipalitiesSnapshot = await FirebaseFirestore.instance
+           .collection('districts')
+           .doc(districtId)
+           .collection('municipalities')
+           .get();
+
+       print("Municipalities fetched: ${municipalitiesSnapshot.docs.length}");
+       if (mounted) {
+         setState(() {
+           if (municipalitiesSnapshot.docs.isNotEmpty) {
+             municipalities = municipalitiesSnapshot.docs
+                 .map((doc) =>
+             doc.id) // Using document ID as the municipality name
+                 .toList();
+             print("Municipalities list: $municipalities");
+           } else {
+             print("No municipalities found");
+             municipalities = []; // No municipalities found
+           }
+
+           // Ensure selectedMunicipality is "Select Municipality" by default
+           selectedMunicipality = "Select Municipality";
+           print("Selected Municipality: $selectedMunicipality");
+
+           // Fetch properties for all municipalities initially
+           fetchPropertiesForAllMunicipalities();
+         });
+       }
+     } else {
+       print("districtId is empty or null.");
+       if (mounted) {
+         setState(() {
+           municipalities = [];
+           selectedMunicipality = "Select Municipality";
+         });
+       }
+     }
+   } catch (e) {
+     print('Error fetching municipalities: $e');
+   }
+ }
+
+ Future<void> fetchPropertiesForAllMunicipalities() async {
+   try {
+     QuerySnapshot propertiesSnapshot;
+
+     print("Fetching properties for all municipalities...");
+
+     if (selectedMunicipality == null ||
+         selectedMunicipality == "Select Municipality") {
+       // Fetch properties from all municipalities in the district
+       print("Fetching properties for district: $districtId");
+       propertiesSnapshot = await FirebaseFirestore.instance
+           .collectionGroup('properties')
+           .where('districtId', isEqualTo: districtId)
+           .get();
+     } else {
+       // Fetch properties for the selected municipality
+       print("Fetching properties for municipality: $selectedMunicipality");
+       propertiesSnapshot = await FirebaseFirestore.instance
+           .collection('districts')
+           .doc(districtId)
+           .collection('municipalities')
+           .doc(selectedMunicipality)
+           .collection('properties')
+           .get();
+     }
+
+     print('Fetched ${propertiesSnapshot.docs.length} properties.');
+     if (mounted) {
+       setState(() {
+         _allPropertyResults =
+             propertiesSnapshot.docs; // Store all fetched properties
+         print('State updated, properties stored: ${_allPropertyResults.length}');
+       });
+     }
+     print('Properties fetched: ${_allPropertyResults.length}');
+   } catch (e) {
+     print('Error fetching properties: $e');
+   }
+ }
+
+ Future<void> fetchPropertiesForLocalMunicipality() async {
+   if (municipalityId.isEmpty) {
+     print("Error: municipalityId is empty. Cannot fetch properties.");
+     return;
+   }
+
+   try {
+     print("Fetching properties for local municipality: $municipalityId");
+
+     // Fetch properties only for the specific municipality the user belongs to
+     QuerySnapshot propertiesSnapshot = await FirebaseFirestore.instance
+         .collection('localMunicipalities')
+         .doc(municipalityId) // The local municipality ID for the user
+         .collection('properties')
+         .get();
+
+     // Check if any properties were fetched
+     if (propertiesSnapshot.docs.isNotEmpty) {
+       if (mounted) {
+         setState(() {
+           _allPropertyResults =
+               propertiesSnapshot.docs; // Store fetched properties
+         });
+       }
+       print('Properties fetched for local municipality: $municipalityId');
+       print(
+           'Number of properties fetched: ${propertiesSnapshot.docs.length}');
+     } else {
+       print("No properties found for local municipality: $municipalityId");
+     }
+   } catch (e) {
+     print('Error fetching properties for local municipality: $e');
+   }
+ }
+
+ Future<void> fetchPropertiesByMunicipality(String municipality) async {
+   try {
+     // Fetch properties for the selected municipality
+     QuerySnapshot propertiesSnapshot = await FirebaseFirestore.instance
+         .collection('districts')
+         .doc(districtId)
+         .collection('municipalities')
+         .doc(municipality)
+         .collection('properties')
+         .get();
+
+     // Log the properties fetched
+     print(
+         'Properties fetched for $municipality: ${propertiesSnapshot.docs.length}');
+     if (mounted) {
+       setState(() {
+         _allPropertyResults =
+             propertiesSnapshot.docs; // Store filtered properties
+         print(
+             "Number of properties fetched: ${_allPropertyResults.length}"); // Debugging to ensure properties are set
+       });
+     }
+   } catch (e) {
+     print('Error fetching properties for $municipality: $e');
+   }
+ }
 
   void checkAdmin() {
     getUsersStream();
@@ -230,57 +564,118 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
     }
   }
 
-  getUsersStream() async{
-    var data = await FirebaseFirestore.instance.collection('users').get();
-    setState(() {
-      _allUserRolesResults = data.docs;
-    });
-    getUserDetails();
-  }
+ getUsersStream() async {
+   try {
+     // Use collectionGroup to query all 'users' subcollections across districts and municipalities
+     QuerySnapshot usersSnapshot = await FirebaseFirestore.instance
+         .collectionGroup('users')
+         .get();
+     if (mounted) {
+       setState(() {
+         _allUserRolesResults = usersSnapshot.docs;
+       });
+     }
+     getUserDetails();  // Call this after fetching the user data
+   } catch (e) {
+     print('Error fetching users: $e');
+   }
+ }
 
-  getUserDetails() async {
-    for (var userSnapshot in _allUserRolesResults) {
-      ///Need to build a property model that retrieves property data entirely from the db
-      var user = userSnapshot['email'].toString();
-      var role = userSnapshot['userRole'].toString();
+ getUserDetails() async {
+   try {
+     for (var userSnapshot in _allUserRolesResults) {
+       if (userSnapshot.exists) {
+         var userData = userSnapshot.data() as Map<String, dynamic>;
+         String user = userData.containsKey('email') ? userData['email'].toString() : '';
+         String role = userData.containsKey('userRole') ? userData['userRole'].toString() : 'Unknown';
 
-      if (user == userEmail) {
-        userRole = role;
-        print('My Role is::: $userRole');
+         if (user == userEmail) {
+           userRole = role;
+           print('My Role is: $userRole');
+           if (mounted) {
+             setState(() {
+               adminAcc = (userRole == 'Admin' || userRole == 'Administrator');
+             });
+             break;
+           }// Stop loop if the matching user is found
+         }
+       }
+     }
+   } catch (e) {
+     print('Error fetching user details: $e');
+   }
+ }
 
-        if (userRole == 'Admin' || userRole == 'Administrator') {
-          adminAcc = true;
-        } else {
-          adminAcc = false;
-        }
-      }
-    }
-  }
 
-  _onSearchChanged() async {
-    searchResultsList();
-  }
-
-  searchResultsList() async {
+ _onSearchChanged() async {
+   if (_searchController.text.isEmpty) {
+     if (mounted) {
+       // If search is cleared, fetch and display all properties again
+       setState(() {
+         searchText = ''; // Clear search text
+       });
+     }
+     if (isLocalUser) {
+       await fetchPropertiesForLocalMunicipality();
+     } else {
+       await fetchPropertiesForAllMunicipalities();
+     }
+   } else {
+     // Perform search
+     searchResultsList();
+   }
+ }
+  void searchResultsList() {
     var showResults = [];
-    if(_searchController.text != "") {
-      getPropertyStream();
-      for(var propSnapshot in _allPropertyResults){
-        ///Need to build a property model that retrieves property data entirely from the db
+    if (_searchController.text != "") {
+      for (var propSnapshot in _allPropertyResults) {
         var address = propSnapshot['address'].toString().toLowerCase();
-
-        if(address.contains(_searchController.text.toLowerCase())) {
+        var number = propSnapshot['cellNumber'].toString().toLowerCase();
+        if (address.contains(_searchController.text.toLowerCase()) || number.contains(_searchController.text)) {
           showResults.add(propSnapshot);
         }
       }
     } else {
-      getPropertyStream();
       showResults = List.from(_allPropertyResults);
     }
-    setState(() {
-      _allPropertyResults = showResults;
-    });
+    if(mounted) {
+      setState(() {
+        _allPropertyResults = showResults;
+      });
+    }
   }
+
+ Future<void> openPropertyInvoice(String userNumber, String propertyAddress, String accountNumber, BuildContext context) async {
+   String formattedAddress = propertyAddress.replaceAll(RegExp(r'[/\\?%*:|"<>]'), '_');
+   String month = DateFormat('MMMM').format(DateTime.now());
+   String path = 'pdfs/$month/$userNumber/$formattedAddress/';
+
+   try {
+     final storageRef = FirebaseStorage.instance.ref().child(path);
+     final listResult = await storageRef.listAll();
+
+     if (listResult.items.isNotEmpty) {
+       var item = listResult.items.first;  // Assuming we take the first found PDF
+       String url = await item.getDownloadURL();
+
+       // Download the PDF locally
+       final directory = await getApplicationDocumentsDirectory();
+       final filePath = '${directory.path}/${item.name}';
+       final response = await Dio().download(url, filePath);
+
+       if (response.statusCode == 200) {
+         File pdfFile = File(filePath);
+         openPDF(context, pdfFile);
+       } else {
+         Fluttertoast.showToast(msg: "Failed to open PDF.");
+       }
+     } else {
+       Fluttertoast.showToast(msg: "No matching document found.");
+     }
+   } catch (e) {
+     Fluttertoast.showToast(msg: "Error opening invoice: $e");
+   }
+ }
 
   @override
   Widget build(BuildContext context) {
@@ -296,14 +691,56 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
             child: IconButton(
                 onPressed: (){
                   ///Generate Report here
-                  reportGeneration(_propList);
+                  reportGeneration();
                 },
                 icon: const Icon(Icons.file_copy_outlined, color: Colors.white,)),),
         ],
       ),
       body: Column(
         children: [
-          /// Search bar
+          if (!isLocalMunicipality && !isLocalUser)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 40),
+                child: DropdownButton<String>(
+                  value: selectedMunicipality,
+                  hint: const Text('Select Municipality'),
+                  isExpanded: true,
+                  onChanged: (String? newValue) {
+                    if (mounted) {
+                      setState(() {
+                        selectedMunicipality = newValue;
+                        if (selectedMunicipality == null ||
+                            selectedMunicipality == "Select Municipality") {
+                          fetchPropertiesForAllMunicipalities();
+                        } else {
+                          fetchPropertiesByMunicipality(newValue!);
+                        }
+                      });
+                    }
+                  },
+                  items: [
+                    const DropdownMenuItem<String>(
+                      value: "Select Municipality",
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: Text("Select Municipality"),
+                      ),
+                    ),
+                    ...municipalities.map((String municipality) {
+                      return DropdownMenuItem<String>(
+                        value: municipality,
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: Text(municipality),
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ),
+            ),/// Search bar
           Padding(
             padding: const EdgeInsets.fromLTRB(10.0,10.0,10.0,10.0),
             child: SearchBar(
@@ -311,12 +748,14 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
               padding: const MaterialStatePropertyAll<EdgeInsets>(
                   EdgeInsets.symmetric(horizontal: 16.0)),
               leading: const Icon(Icons.search),
-              hintText: "Search by Address...",
+              hintText: "Search",
               onChanged: (value) async{
-                setState(() {
-                  searchText = value;
-                  print('this is the input text ::: $searchText');
-                });
+                if(mounted) {
+                  setState(() {
+                    searchText = value;
+                    print('this is the input text ::: $searchText');
+                  });
+                }
               },
             ),
           ),
@@ -404,7 +843,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
 
                                   if (tokenSelected != null) {
                                     if(title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty) {
-                                      await _listNotifications.add({
+                                      await _listNotifications?.add({
                                         "token": tokenSelected,
                                         "user": userNumber,
                                         "title": notificationTitle,
@@ -455,109 +894,431 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
 
   }
 
-  Future<void> _disconnectThisUser([DocumentSnapshot? documentSnapshot]) async {
-    if (documentSnapshot != null) {
-      username.text = documentSnapshot['cell number'];
-      title.text = 'Utilities Disconnection Warning';
-      body.text = 'Please complete payment of your utilities on ${documentSnapshot['address']}. Failing to do so will result in utilities on your property being cut off in 14 days!';
-    }
+ // Future<void> _disconnectThisUser([DocumentSnapshot? documentSnapshot]) async {
+ //   if (documentSnapshot != null) {
+ //     username.text = documentSnapshot['cellNumber'] ?? 'Unknown';
+ //     title.text = 'Utilities Disconnection Warning';
+ //     body.text = 'Please complete payment of your utilities on ${documentSnapshot['address'] ?? 'unknown address'}. Failing to do so will result in utilities on your property being cut off in 14 days!';
+ //   }
+ //
+ //   /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
+ //   void _createBottomSheet() async {
+ //     Future<void> future = Future(() async => showModalBottomSheet(
+ //         context: context,
+ //         builder: await showModalBottomSheet(
+ //             isScrollControlled: true,
+ //             context: context,
+ //             builder: (BuildContext ctx) {
+ //               return StatefulBuilder(
+ //                 builder: (BuildContext context, StateSetter setState) {
+ //                   return SingleChildScrollView(
+ //                     child: Padding(
+ //                       padding: EdgeInsets.only(
+ //                           top: 20,
+ //                           left: 20,
+ //                           right: 20,
+ //                           bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+ //                       child: Column(
+ //                         mainAxisSize: MainAxisSize.min,
+ //                         crossAxisAlignment: CrossAxisAlignment.start,
+ //                         children: [
+ //                           Visibility(
+ //                             visible: visShow,
+ //                             child: TextField(
+ //                               controller: title,
+ //                               decoration: const InputDecoration(labelText: 'Message Header'),
+ //                             ),
+ //                           ),
+ //                           Visibility(
+ //                             visible: visShow,
+ //                             child: TextField(
+ //                               controller: body,
+ //                               decoration: const InputDecoration(labelText: 'Message'),
+ //                             ),
+ //                           ),
+ //                           const SizedBox(height: 10),
+ //                           ElevatedButton(
+ //                             child: const Text('Send Notification'),
+ //                             onPressed: () async {
+ //                               DateTime now = DateTime.now();
+ //                               String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+ //
+ //                               final String? tokenSelected = documentSnapshot?['token'];
+ //                               final String? userNumber = documentSnapshot?['cellNumber'];
+ //                               final String notificationTitle = title.text;
+ //                               final String notificationBody = body.text;
+ //                               const bool readStatus = false;
+ //
+ //                               if (notificationTitle.isNotEmpty && notificationBody.isNotEmpty) {
+ //                                 await _listNotifications?.add({
+ //                                   "token": tokenSelected ?? "Unknown Token",
+ //                                   "user": userNumber ?? "Unknown User",
+ //                                   "title": notificationTitle,
+ //                                   "body": notificationBody,
+ //                                   "read": readStatus,
+ //                                   "date": formattedDate,
+ //                                   "level": 'severe',
+ //                                 });
+ //
+ //                                 // Send push notification
+ //                                 if (userNumber != null && userNumber.isNotEmpty) {
+ //                                   String token = documentSnapshot?['token'] ?? '';
+ //                                   sendPushMessage(token, notificationTitle, notificationBody);
+ //                                   Fluttertoast.showToast(msg: 'The user has been sent a notification!', gravity: ToastGravity.CENTER);
+ //                                 } else {
+ //                                   Fluttertoast.showToast(msg: 'User token is missing!', gravity: ToastGravity.CENTER);
+ //                                 }
+ //                               } else {
+ //                                 Fluttertoast.showToast(msg: 'Please fill in both the header and message fields.', gravity: ToastGravity.CENTER);
+ //                               }
+ //
+ //                               // Clear text fields
+ //                               username.text = '';
+ //                               title.text = '';
+ //                               body.text = '';
+ //                               _headerController.text = '';
+ //                               _messageController.text = '';
+ //
+ //                               if (context.mounted) Navigator.of(context).pop();
+ //                             },
+ //                           ),
+ //                         ],
+ //                       ),
+ //                     ),
+ //                   );
+ //                 },
+ //               );
+ //             })));
+ //   }
+ //
+ //   _createBottomSheet();
+ // }
+ Future<void> _disconnectThisUser([DocumentSnapshot? documentSnapshot]) async {
+   // Prepare the text fields based on the documentSnapshot
+   if (documentSnapshot != null) {
+     username.text = documentSnapshot.id; // Account number from the document
+     title.text = 'Utilities Disconnection Warning';
+     body.text =
+     'Please complete payment of your utilities. Failing to do so will result in utilities on your property being cut off in 14 days!';
+   }
+   void _showDialog() async {
+     await showDialog(
+       context: context,
+       builder: (BuildContext ctx) {
+         return StatefulBuilder(
+           builder: (BuildContext context, StateSetter setState) {
+             return AlertDialog(
+               backgroundColor: Colors.grey[50],
+               shape: RoundedRectangleBorder(
+                 borderRadius: BorderRadius.circular(20.0),
+               ),
+               title: const Text(
+                 'Notify User of Utilities Disconnection',
+                 style: TextStyle(
+                   fontSize: 20,
+                   fontWeight: FontWeight.bold,
+                   color: Colors.black,
+                 ),
+               ),
+               content: SizedBox(
+                 width: MediaQuery
+                     .of(context)
+                     .size
+                     .width * 0.6,
+                 child: SingleChildScrollView(
+                   child: Column(
+                     mainAxisSize: MainAxisSize.min,
+                     crossAxisAlignment: CrossAxisAlignment.start,
+                     children: [
+                       const Text(
+                         'Notification Details',
+                         style: TextStyle(
+                           fontSize: 16,
+                           color: Colors.black,
+                         ),
+                       ),
+                       const SizedBox(height: 10),
+                       TextField(
+                         controller: title,
+                         style: const TextStyle(color: Colors.black),
+                         decoration: const InputDecoration(
+                           labelText: 'Message Header',
+                           labelStyle: TextStyle(
+                             color: Colors.black,
+                           ),
+                           border: OutlineInputBorder(),
+                           focusedBorder: UnderlineInputBorder(
+                             borderSide: BorderSide(color: Colors.black),
+                           ),
+                         ),
+                       ),
+                       const SizedBox(height: 15),
+                       TextField(
+                         controller: body,
+                         style: const TextStyle(color: Colors.black),
+                         decoration: const InputDecoration(
+                           labelText: 'Message',
+                           labelStyle: TextStyle(
+                             color: Colors.black,
+                           ),
+                           border: OutlineInputBorder(),
+                           focusedBorder: UnderlineInputBorder(
+                             borderSide: BorderSide(color: Colors.black),
+                           ),
+                         ),
+                         maxLines: 4,
+                       ),
+                     ],
+                   ),
+                 ),
+               ),
+               actions: [
+                 ElevatedButton(
+                   style: ElevatedButton.styleFrom(
+                     foregroundColor: Colors.white,
+                     backgroundColor: Colors.green,
+                     shape: RoundedRectangleBorder(
+                       borderRadius: BorderRadius.circular(10.0),
+                     ),
+                   ),
+                   child: const Text('Send Notification'),
+                   onPressed: () async {
+                     DateTime now = DateTime.now();
+                     String formattedDate = DateFormat('yyyy-MM-dd – kk:mm')
+                         .format(now);
 
-    /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
-    void _createBottomSheet() async {
-      Future<void> future = Future(() async => showModalBottomSheet(
+                     final String tokenSelected = notifyToken; // Token of the user
+                     final String userNumber = documentSnapshot?['accountNumber'] ??
+                         'Unknown'; // User's account number
+                     final String notificationTitle = title.text;
+                     final String notificationBody = body.text;
+
+                     // Validate that the title and body are not empty
+                     if (notificationTitle.isNotEmpty &&
+                         notificationBody.isNotEmpty &&
+                         tokenSelected.isNotEmpty) {
+                       print('Sending notification to user: $userNumber');
+
+                       // Choose correct Firestore path depending on municipality type
+                       CollectionReference notificationsRef;
+                       if (isLocalMunicipality) {
+                         notificationsRef = FirebaseFirestore.instance
+                             .collection('localMunicipalities')
+                             .doc(municipalityId)
+                             .collection('Notifications');
+                       } else {
+                         notificationsRef = FirebaseFirestore.instance
+                             .collection('districts')
+                             .doc(districtId)
+                             .collection('municipalities')
+                             .doc(municipalityId)
+                             .collection('Notifications');
+                       }
+
+                       // Save notification to Firestore or database
+                       await notificationsRef.add({
+                         "token": tokenSelected,
+                         "user": userNumber,
+                         "title": notificationTitle,
+                         "body": notificationBody,
+                         "read": false,
+                         "date": formattedDate,
+                         "level": 'severe',
+                       });
+
+                       // Send push notification to the user's token
+                       sendPushMessage(
+                           tokenSelected, notificationTitle, notificationBody);
+
+                       // Show success message
+                       Fluttertoast.showToast(
+                         msg: 'The user has been sent the disconnection notice!',
+                         gravity: ToastGravity.CENTER,
+                       );
+
+                       // Clear the input fields
+                       title.clear();
+                       body.clear();
+                       if (ctx.mounted) Navigator.of(ctx)
+                           .pop(); // Close the dialog
+                     } else {
+                       // Show error if required fields are empty
+                       Fluttertoast.showToast(
+                         msg: 'Please fill in both the title and message!',
+                         gravity: ToastGravity.CENTER,
+                       );
+                     }
+                   },
+                 ),
+                 ElevatedButton(
+                   style: ElevatedButton.styleFrom(
+                     foregroundColor: Colors.white,
+                     backgroundColor: Colors.red,
+                     shape: RoundedRectangleBorder(
+                       borderRadius: BorderRadius.circular(10.0),
+                     ),
+                   ),
+                   child: const Text('Cancel'),
+                   onPressed: () {
+                     Navigator.of(ctx).pop();
+                   },
+                 ),
+               ],
+             );
+           },
+         );
+       },
+     );
+   }
+
+   _showDialog();
+ }
+ // Future<void> _disconnectThisUser({
+ //   required String accountNumber,
+ //   required String address,
+ //   required String cellNumber,
+ //   required String token,
+ //   required String districtId,
+ //   required String municipalityId,
+ // }) async {
+ //   DateTime now = DateTime.now();
+ //   String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+ //
+ //   // Custom message for disconnection warning
+ //   String messageBody = "Please complete payment of your utilities on $address. "
+ //       "Failing to do so will result in utilities on your property being cut off in 14 days!";
+ //   String title = "Utilities Disconnection Warning";
+ //
+ //   // Add the notification to the correct path in Firestore
+ //   await FirebaseFirestore.instance
+ //       .collection('districts')
+ //       .doc(districtId)
+ //       .collection('municipalities')
+ //       .doc(municipalityId)
+ //       .collection('Notifications')
+ //       .add({
+ //     'accountNumber': accountNumber,
+ //     'address': address,
+ //     'cellNumber': cellNumber,
+ //     'date': formattedDate,
+ //     'message': messageBody,
+ //     'status': 'pending_disconnection',
+ //     'title': title,
+ //     'body': messageBody,
+ //     'level': 'severe',
+ //     'read': false,
+ //     'token': token, // Assuming you fetch the token separately
+ //     'user': cellNumber,
+ //   });
+ //
+ //   Fluttertoast.showToast(
+ //     msg: 'Disconnection warning sent to $accountNumber at $address',
+ //     gravity: ToastGravity.CENTER,
+ //   );
+ //
+ //   // Fetch the user's token if necessary
+ //   DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+ //       .collection('users')
+ //       .doc(cellNumber) // Assuming `cellNumber` is used as the user ID
+ //       .get();
+ //
+ //   if (userSnapshot.exists) {
+ //     String token = userSnapshot['token'];
+ //
+ //     // Call the bottom sheet to send the notification
+ //     _createBottomSheet(token, cellNumber);
+ //   } else {
+ //     Fluttertoast.showToast(
+ //       msg: "User token not found for $cellNumber",
+ //       gravity: ToastGravity.CENTER,
+ //     );
+ //   }
+ // }
+
+// Show the bottom sheet and handle notification sending
+  void _createBottomSheet(String token, String cellNumber) async {
+    Future<void> future = Future(() async => showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      builder: await showModalBottomSheet(
+          isScrollControlled: true,
           context: context,
-          builder: await showModalBottomSheet(
-              isScrollControlled: true,
-              context: context,
-              builder: (BuildContext ctx) {
-                return StatefulBuilder(
-                  builder: (BuildContext context, StateSetter setState) {
-                    return SingleChildScrollView(
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                            top: 20,
-                            left: 20,
-                            right: 20,
-                            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Visibility(
-                              visible: visShow,
-                              child: TextField(
-                                controller: title,
-                                decoration: const InputDecoration(labelText: 'Message Header'),
-                              ),
-                            ),
-                            Visibility(
-                              visible: visShow,
-                              child: TextField(
-                                controller: body,
-                                decoration: const InputDecoration(labelText: 'Message'),
-                              ),
-                            ),
-
-                            const SizedBox(height: 10,),
-                            ElevatedButton(
-                                child: const Text('Send Notification'),
-                                onPressed: () async {
-                                  DateTime now = DateTime.now();
-                                  String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-
-                                  final String? tokenSelected = documentSnapshot?['token'];
-                                  final String? userNumber = documentSnapshot?['cell number'];
-                                  final String notificationTitle = title.text;
-                                  final String notificationBody = body.text;
-                                  final String notificationDate = formattedDate;
-                                  const bool readStatus = false;
-
-                                  if (title.text != '' || title.text.isNotEmpty || body.text != '' || body.text.isNotEmpty) {
-                                    await _listNotifications.add({
-                                      "token": tokenSelected.toString(),
-                                      "user": userNumber.toString(),
-                                      "title": notificationTitle,
-                                      "body": notificationBody,
-                                      "read": readStatus,
-                                      "date": notificationDate,
-                                      "level": 'severe',
-                                    });
-
-                                    ///It can be changed to the firebase notification
-                                    String titleText = title.text;
-                                    String bodyText = body.text;
-
-                                    ///gets users phone token to send notification to this phone
-                                    if (userNumber != "") {
-                                      String token = documentSnapshot?['token'];
-                                      sendPushMessage(token, titleText, bodyText);
-                                      Fluttertoast.showToast(msg: 'The user has been sent a notification!', gravity: ToastGravity.CENTER);
-                                    }
-                                  } else {
-                                    Fluttertoast.showToast(msg: 'Please Fill Header and Message of the notification!', gravity: ToastGravity.CENTER);
-                                  }
-
-                                  username.text = '';
-                                  title.text = '';
-                                  body.text = '';
-                                  _headerController.text = '';
-                                  _messageController.text = '';
-
-                                  if (context.mounted) Navigator.of(context).pop();
-                                }
-                            )
-                          ],
+          builder: (BuildContext ctx) {
+            return StatefulBuilder(
+              builder: (BuildContext context, StateSetter setState) {
+                return SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                        top: 20,
+                        left: 20,
+                        right: 20,
+                        bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Visibility(
+                          visible: visShow,
+                          child: TextField(
+                            controller: title,
+                            decoration: const InputDecoration(labelText: 'Message Header'),
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                        Visibility(
+                          visible: visShow,
+                          child: TextField(
+                            controller: body,
+                            decoration: const InputDecoration(labelText: 'Message'),
+                          ),
+                        ),
+                        const SizedBox(height: 10,),
+                        ElevatedButton(
+                            child: const Text('Send Notification'),
+                            onPressed: () async {
+                              DateTime now = DateTime.now();
+                              String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+
+                              if (title.text.isNotEmpty || body.text.isNotEmpty) {
+                                await FirebaseFirestore.instance.collection('notifications').add({
+                                  'token': token,
+                                  'user': cellNumber,
+                                  'title': title.text,
+                                  'body': body.text,
+                                  'read': false,
+                                  'date': formattedDate,
+                                  'level': 'severe',
+                                });
+
+                                sendPushMessage(token, title.text, body.text);
+                                Fluttertoast.showToast(msg: 'Notification sent!', gravity: ToastGravity.CENTER);
+
+                                title.clear();
+                                body.clear();
+
+                                if (context.mounted) Navigator.of(context).pop();
+                              } else {
+                                Fluttertoast.showToast(msg: 'Please fill out both title and message', gravity: ToastGravity.CENTER);
+                              }
+                            }
+                        ),
+                      ],
+                    ),
+                  ),
                 );
-              })));
-
-    }
-
-    _createBottomSheet();
+              },
+            );
+          }
+      ),
+    ));
   }
+
+// Send push notification to user
+  void sendPushMessage(String token, String title, String body) {
+    // Implement push notification logic here
+    // e.g., using Firebase Cloud Messaging (FCM) or another notification service
+    print('Sending push notification to token: $token');
+  }
+
 
   Widget firebasePropertyCard(CollectionReference<Object?> propertiesDataStream) {
     return Expanded(
@@ -573,10 +1334,16 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                   final DocumentSnapshot documentSnapshot =
                   streamSnapshot.data!.docs[index];
 
-                  eMeterNumber = documentSnapshot['meter number'];
-                  wMeterNumber = documentSnapshot['water meter number'];
-                  propPhoneNum = documentSnapshot['cell number'];
+                  // eMeterNumber = documentSnapshot['meter_number'];
+                  wMeterNumber = documentSnapshot['water_meter_number'];
+                  propPhoneNum = documentSnapshot['cellNumber'];
+                  var propertyData = _allPropertyResults[index].data() as Map<String, dynamic>;
 
+                  String accountNumber = propertyData['accountNumber'];
+                  String address = propertyData['address'];
+                  String meterNumber = propertyData['meter_number'];
+                  String waterMeterNumber = propertyData['water_meter_number'];
+                  String cellNumber = propertyData['cellNumber'];
                   String billMessage;///A check for if payment is outstanding or not
                   if(documentSnapshot['eBill'] != '' ||
                       documentSnapshot['eBill'] != 'R0,000.00' ||
@@ -606,7 +1373,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                             ),
                             const SizedBox(height: 10,),
                             Text(
-                              'Account Number: ${documentSnapshot['account number']}',
+                              'Account Number: ${documentSnapshot['accountNumber']}',
                               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
@@ -616,32 +1383,32 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                             ),
                             const SizedBox(height: 5,),
                             Text(
-                              'Area Code: ${documentSnapshot['area code']}',
+                              'Area Code: ${documentSnapshot['areaCode']}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5,),
+                            // Text(
+                            //   'Meter Number: ${documentSnapshot['meter_number']}',
+                            //   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            // ),
+                            // const SizedBox(height: 5,),
+                            // Text(
+                            //   'Meter Reading: ${documentSnapshot['meter_reading']}',
+                            //   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            // ),
+                            // const SizedBox(height: 5,),
+                            Text(
+                              'Water Meter Number: ${documentSnapshot['water_meter_number']}',
                               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
                             Text(
-                              'Meter Number: ${documentSnapshot['meter number']}',
+                              'Water Meter Reading: ${documentSnapshot['water_meter_reading']}',
                               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5,),
                             Text(
-                              'Meter Reading: ${documentSnapshot['meter reading']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Water Meter Number: ${documentSnapshot['water meter number']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Water Meter Reading: ${documentSnapshot['water meter reading']}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(height: 5,),
-                            Text(
-                              'Phone Number: ${documentSnapshot['cell number']}',
+                              'Phone Number: ${documentSnapshot['cellNumber']}',
                               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 30,),
@@ -653,36 +1420,23 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                                   children: [
                                     BasicIconButtonGrey(
                                       onPress: () async {
-                                        Fluttertoast.showToast(
-                                            msg: "Now downloading your statement!\nPlease wait a few seconds!");
+                                        Fluttertoast.showToast(msg: "Now opening the statement!\nPlease wait a few seconds!");
 
-                                        String accountNumberPDF = documentSnapshot['account number'];
-                                        print('The acc number is ::: $accountNumberPDF');
+                                        // Extract values directly from the _allPropResults[index]
+                                        String userNumber = _allPropertyResults[index]['cellNumber'];
+                                        String propertyAddress = _allPropertyResults[index]['address'];
+                                        String accountNumber = _allPropertyResults[index]['accountNumber'];
 
-                                        final storageRef = FirebaseStorage.instance.ref().child("pdfs/$formattedDate");
-                                        final listResult = await storageRef.listAll();
-                                        for (var prefix in listResult.prefixes) {
-                                          print('The ref is ::: $prefix');
-                                          // The prefixes under storageRef.
-                                          // You can call listAll() recursively on them.
-                                        }
-                                        for (var item in listResult.items) {
-                                          print('The item is ::: $item');
-                                          // The items under storageRef.
-                                          if (item.toString().contains(accountNumberPDF)) {
-                                            final url = item.fullPath;
-                                            print('The url is ::: $url');
-                                            final file = await PDFApi.loadFirebase(url);
-                                            try {
-                                              if(context.mounted)openPDF(context, file);
-                                              Fluttertoast.showToast(
-                                                  msg: "Download Successful!");
-                                            } catch (e) {
-                                              Fluttertoast.showToast(msg: "Unable to download statement.");
-                                            }
-                                          } else {
-                                            Fluttertoast.showToast(msg: "Unable to download statement.");
-                                          }
+                                        print('User Number: $userNumber');
+                                        print('Property Address: $propertyAddress');
+                                        print('Account Number: $accountNumber');
+
+                                        // Call the method to open the invoice PDF
+                                        try {
+                                          await openPropertyInvoice(userNumber, propertyAddress, accountNumber, context);
+                                          Fluttertoast.showToast(msg: "Successful!");
+                                        } catch (e) {
+                                          Fluttertoast.showToast(msg: "Unable to open statement: $e");
                                         }
                                       },
                                       labelText: 'Invoice',
@@ -693,7 +1447,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                                     ),
                                     BasicIconButtonGrey(
                                       onPress: () async {
-                                        accountNumberAll = documentSnapshot['account number'];
+                                        accountNumberAll = documentSnapshot['accountNumber'];
                                         locationGivenAll = documentSnapshot['address'];
 
                                         // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -722,7 +1476,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                                       children: [
                                         BasicIconButtonGrey(
                                           onPress: () async {
-                                            String cell = documentSnapshot['cell number'];
+                                            String cell = documentSnapshot['cellNumber'];
 
                                             Fluttertoast.showToast(msg: "The owner must be given a notification",);
 
@@ -732,7 +1486,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                                                 builder: (context) {
                                                   return AlertDialog(
                                                     title: const Text("Notify Utilities Disconnection"),
-                                                    content: const Text("This will notify the owner of the property of their water or electricity being disconnection in 14 days!\n\nAre you sure?"),
+                                                    content: const Text("This will notify the owner of the property of their water or electricity being disconnected in 14 days!\n\nAre you sure?"),
                                                     actions: [
                                                       IconButton(
                                                         onPressed: () {
@@ -745,9 +1499,11 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                                                       ),
                                                       IconButton(
                                                         onPressed: () async {
-                                                          _disconnectThisUser(documentSnapshot);
+                                                          await _disconnectThisUser(
+                                                             // Pass the correct municipalityId
+                                                          );
                                                           Navigator.pop(context);
-                                                          },
+                                                        },
                                                         icon: const Icon(
                                                           Icons.done,
                                                           color: Colors.green,
@@ -763,6 +1519,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                                           fgColor: Colors.amber,
                                           btSize: const Size(100, 38),
                                         ),
+
                                       ],
                                     ),
                                   ],
@@ -790,8 +1547,8 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
     _accountNumberController.text = '';
     _addressController.text = '';
     _areaCodeController.text = '';
-    _meterNumberController.text = '';
-    _meterReadingController.text = '';
+    // _meterNumberController.text = '';
+    // _meterReadingController.text = '';
     _waterMeterController.text = '';
     _waterMeterReadingController.text = '';
     _cellNumberController.text = '';
@@ -840,20 +1597,20 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                       decoration: const InputDecoration(labelText: 'Area Code',),
                     ),
                   ),
-                  Visibility(
-                    visible: visibilityState1,
-                    child: TextField(
-                      controller: _meterNumberController,
-                      decoration: const InputDecoration(labelText: 'Meter Number'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState1,
-                    child: TextField(
-                      controller: _meterReadingController,
-                      decoration: const InputDecoration(labelText: 'Meter Reading'),
-                    ),
-                  ),
+                  // Visibility(
+                  //   visible: visibilityState1,
+                  //   child: TextField(
+                  //     controller: _meterNumberController,
+                  //     decoration: const InputDecoration(labelText: 'Meter Number'),
+                  //   ),
+                  // ),
+                  // Visibility(
+                  //   visible: visibilityState1,
+                  //   child: TextField(
+                  //     controller: _meterReadingController,
+                  //     decoration: const InputDecoration(labelText: 'Meter Reading'),
+                  //   ),
+                  // ),
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
@@ -905,8 +1662,8 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                       final String accountNumber = _accountNumberController.text;
                       final String address = _addressController.text;
                       final String areaCode = _areaCodeController.text;
-                      final String meterNumber = _meterNumberController.text;
-                      final String meterReading = _meterReadingController.text;
+                      // final String meterNumber = _meterNumberController.text;
+                      // final String meterReading = _meterReadingController.text;
                       final String waterMeterNumber = _waterMeterController.text;
                       final String waterMeterReading = _waterMeterReadingController.text;
                       final String cellNumber = _cellNumberController.text;
@@ -914,24 +1671,24 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                       final String lastName = _lastNameController.text;
                       final String idNumber = _idNumberController.text;
                       if (accountNumber != null) {
-                        await _propList.add({
-                          "account number": accountNumber,
+                        await _propList?.add({
+                          "accountNumber": accountNumber,
                           "address": address,
-                          "area code": areaCode,
-                          "meter number": meterNumber,
-                          "meter reading": meterReading,
-                          "water meter number": waterMeterNumber,
-                          "water meter reading": waterMeterReading,
-                          "cell number": cellNumber,
-                          "first name": firstName,
-                          "last name": lastName,
-                          "id number": idNumber
+                          "areaCode": areaCode,
+                          // "meter_number": meterNumber,
+                          // "meter_reading": meterReading,
+                          "water_meter_number": waterMeterNumber,
+                          "water_meter_reading": waterMeterReading,
+                          "cellNumber": cellNumber,
+                          "firstName": firstName,
+                          "lastName": lastName,
+                          "idNumber": idNumber
                         });
                         _accountNumberController.text = '';
                         _addressController.text = '';
                         _areaCodeController.text = '';
-                        _meterNumberController.text = '';
-                        _meterReadingController.text = '';
+                        // _meterNumberController.text = '';
+                        // _meterReadingController.text = '';
                         _waterMeterController.text = '';
                         _waterMeterReadingController.text = '';
                         _cellNumberController.text = '';
@@ -953,18 +1710,18 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
   /// on update the only info necessary to change should be meter reading
   Future<void> _update([DocumentSnapshot? documentSnapshot]) async {
     if (documentSnapshot != null) {
-      _accountNumberController.text = documentSnapshot['account number'];
+      _accountNumberController.text = documentSnapshot['accountNumber'];
       _addressController.text = documentSnapshot['address'];
-      _areaCodeController.text = documentSnapshot['area code'].toString();
-      _meterNumberController.text = documentSnapshot['meter number'];
-      _meterReadingController.text = documentSnapshot['meter reading'];
-      _waterMeterController.text = documentSnapshot['water meter number'];
-      _waterMeterReadingController.text = documentSnapshot['water meter reading'];
-      _cellNumberController.text = documentSnapshot['cell number'];
-      _firstNameController.text = documentSnapshot['first name'];
-      _lastNameController.text = documentSnapshot['last name'];
-      _idNumberController.text = documentSnapshot['id number'];
-      userID = documentSnapshot['user id'];
+      _areaCodeController.text = documentSnapshot['areaCode'].toString();
+      // _meterNumberController.text = documentSnapshot['meter_number'];
+      // _meterReadingController.text = documentSnapshot['meter_reading'];
+      _waterMeterController.text = documentSnapshot['water_meter_number'];
+      _waterMeterReadingController.text = documentSnapshot['water_meter_reading'];
+      _cellNumberController.text = documentSnapshot['cellNumber'];
+      _firstNameController.text = documentSnapshot['firstName'];
+      _lastNameController.text = documentSnapshot['lastName'];
+      _idNumberController.text = documentSnapshot['idNumber'];
+      userID = documentSnapshot['userID'];
     }
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
     await showModalBottomSheet(
@@ -1008,23 +1765,23 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                       decoration: const InputDecoration(labelText: 'Area Code',),
                     ),
                   ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _meterNumberController,
-                      decoration: const InputDecoration(labelText: 'Electricity Meter Number'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState1,
-                    child: TextField(
-                      maxLength: 5,
-                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                      keyboardType: TextInputType.number,
-                      controller: _meterReadingController,
-                      decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
-                    ),
-                  ),
+                  // Visibility(
+                  //   visible: visibilityState2,
+                  //   child: TextField(
+                  //     controller: _meterNumberController,
+                  //     decoration: const InputDecoration(labelText: 'Electricity Meter Number'),
+                  //   ),
+                  // ),
+                  // Visibility(
+                  //   visible: visibilityState1,
+                  //   child: TextField(
+                  //     maxLength: 5,
+                  //     maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                  //     keyboardType: TextInputType.number,
+                  //     controller: _meterReadingController,
+                  //     decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
+                  //   ),
+                  // ),
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
@@ -1079,8 +1836,8 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                       final String accountNumber = _accountNumberController.text;
                       final String address = _addressController.text;
                       final int areaCode = int.parse(_areaCodeController.text);
-                      final String meterNumber = _meterNumberController.text;
-                      final String meterReading = _meterReadingController.text;
+                      // final String meterNumber = _meterNumberController.text;
+                      // final String meterReading = _meterReadingController.text;
                       final String waterMeterNumber = _waterMeterController.text;
                       final String waterMeterReading = _waterMeterReadingController.text;
                       final String cellNumber = _cellNumberController.text;
@@ -1088,29 +1845,35 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                       final String lastName = _lastNameController.text;
                       final String idNumber = _idNumberController.text;
 
-                      if (accountNumber != null) {
-                        await _propList
+                      if (accountNumber.isNotEmpty) {
+                        await FirebaseFirestore.instance
+                            .collection('districts')
+                            .doc(districtId)
+                            .collection('municipalities')
+                            .doc(municipalityId)
+                            .collection('properties')
                             .doc(documentSnapshot!.id)
                             .update({
-                          "account number": accountNumber,
+                          "accountNumber": accountNumber,
                           "address": address,
-                          "area code": areaCode,
-                          "meter number": meterNumber,
-                          "meter reading": meterReading,
-                          "water meter number": waterMeterNumber,
-                          "water meter reading": waterMeterReading,
-                          "cell number": cellNumber,
-                          "first name": firstName,
-                          "last name": lastName,
-                          "id number": idNumber,
-                          "user id" : userID,
+                          "areaCode": areaCode,
+                          // "meter_number": meterNumber,
+                          // "meter_reading": meterReading,
+                          "water_meter_number": waterMeterNumber,
+                          "water_meter_reading": waterMeterReading,
+                          "cellNumber": cellNumber,
+                          "firstName": firstName,
+                          "lastName": lastName,
+                          "idNumber": idNumber,
+                          "userID": userID,
                         });
+
 
                         _accountNumberController.text = '';
                         _addressController.text = '';
                         _areaCodeController.text = '';
-                        _meterNumberController.text = '';
-                        _meterReadingController.text = '';
+                        // _meterNumberController.text = '';
+                        // _meterReadingController.text = '';
                         _waterMeterController.text = '';
                         _waterMeterReadingController.text = '';
                         _cellNumberController.text = '';
@@ -1137,18 +1900,18 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
 
   Future<void> _updateE([DocumentSnapshot? documentSnapshot]) async {
     if (documentSnapshot != null) {
-      _accountNumberController.text = documentSnapshot['account number'];
+      _accountNumberController.text = documentSnapshot['accountNumber'];
       _addressController.text = documentSnapshot['address'];
-      _areaCodeController.text = documentSnapshot['area code'].toString();
-      _meterNumberController.text = documentSnapshot['meter number'];
-      _meterReadingController.text = documentSnapshot['meter reading'];
-      _waterMeterController.text = documentSnapshot['water meter number'];
-      _waterMeterReadingController.text = documentSnapshot['water meter reading'];
-      _cellNumberController.text = documentSnapshot['cell number'];
-      _firstNameController.text = documentSnapshot['first name'];
-      _lastNameController.text = documentSnapshot['last name'];
-      _idNumberController.text = documentSnapshot['id number'];
-      userID = documentSnapshot['user id'];
+      _areaCodeController.text = documentSnapshot['areaCode'].toString();
+      // _meterNumberController.text = documentSnapshot['meter_number'];
+      // _meterReadingController.text = documentSnapshot['meter_reading'];
+      _waterMeterController.text = documentSnapshot['water_meter_number'];
+      _waterMeterReadingController.text = documentSnapshot['water_meter_reading'];
+      _cellNumberController.text = documentSnapshot['cellNumber'];
+      _firstNameController.text = documentSnapshot['firstName'];
+      _lastNameController.text = documentSnapshot['lastName'];
+      _idNumberController.text = documentSnapshot['idNumber'];
+      userID = documentSnapshot['userID'];
     }
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
     await showModalBottomSheet(
@@ -1192,23 +1955,23 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                       decoration: const InputDecoration(labelText: 'Area Code',),
                     ),
                   ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _meterNumberController,
-                      decoration: const InputDecoration(labelText: 'Electricity Meter Number'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState1,
-                    child: TextField(
-                      maxLength: 5,
-                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                      keyboardType: TextInputType.number,
-                      controller: _meterReadingController,
-                      decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
-                    ),
-                  ),
+                  // Visibility(
+                  //   visible: visibilityState2,
+                  //   child: TextField(
+                  //     controller: _meterNumberController,
+                  //     decoration: const InputDecoration(labelText: 'Electricity Meter Number'),
+                  //   ),
+                  // ),
+                  // Visibility(
+                  //   visible: visibilityState1,
+                  //   child: TextField(
+                  //     maxLength: 5,
+                  //     maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                  //     keyboardType: TextInputType.number,
+                  //     controller: _meterReadingController,
+                  //     decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
+                  //   ),
+                  // ),
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
@@ -1263,8 +2026,8 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                       final String accountNumber = _accountNumberController.text;
                       final String address = _addressController.text;
                       final int areaCode = int.parse(_areaCodeController.text);
-                      final String meterNumber = _meterNumberController.text;
-                      final String meterReading = _meterReadingController.text;
+                      // final String meterNumber = _meterNumberController.text;
+                      // final String meterReading = _meterReadingController.text;
                       final String waterMeterNumber = _waterMeterController.text;
                       final String waterMeterReading = _waterMeterReadingController.text;
                       final String cellNumber = _cellNumberController.text;
@@ -1274,27 +2037,27 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
 
                       if (accountNumber != null) {
                         await _propList
-                            .doc(documentSnapshot!.id)
+                            ?.doc(documentSnapshot!.id)
                             .update({
-                          "account number": accountNumber,
+                          "accountNumber": accountNumber,
                           "address": address,
-                          "area code": areaCode,
-                          "meter number": meterNumber,
-                          "meter reading": meterReading,
-                          "water meter number": waterMeterNumber,
-                          "water meter reading": waterMeterReading,
-                          "cell number": cellNumber,
-                          "first name": firstName,
-                          "last name": lastName,
-                          "id number": idNumber,
-                          "user id" : userID,
+                          "areaCode": areaCode,
+                          // "meter_number": meterNumber,
+                          // "meter_reading": meterReading,
+                          "water_meter_number": waterMeterNumber,
+                          "water_meter_reading": waterMeterReading,
+                          "cellNumber": cellNumber,
+                          "firstName": firstName,
+                          "lastName": lastName,
+                          "idNumber": idNumber,
+                          "userID" : userID,
                         });
 
                         _accountNumberController.text = '';
                         _addressController.text = '';
                         _areaCodeController.text = '';
-                        _meterNumberController.text = '';
-                        _meterReadingController.text = '';
+                        // _meterNumberController.text = '';
+                        // _meterReadingController.text = '';
                         _waterMeterController.text = '';
                         _waterMeterReadingController.text = '';
                         _cellNumberController.text = '';
@@ -1319,20 +2082,20 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
         });
   }
 
-  Future<void> _updateW([DocumentSnapshot? documentSnapshot]) async {
+  Future<void> _updateW(String districtId, String municipalityId,[DocumentSnapshot? documentSnapshot]) async {
     if (documentSnapshot != null) {
-      _accountNumberController.text = documentSnapshot['account number'];
+      _accountNumberController.text = documentSnapshot['accountNumber'];
       _addressController.text = documentSnapshot['address'];
-      _areaCodeController.text = documentSnapshot['area code'].toString();
-      _meterNumberController.text = documentSnapshot['meter number'];
-      _meterReadingController.text = documentSnapshot['meter reading'];
-      _waterMeterController.text = documentSnapshot['water meter number'];
-      _waterMeterReadingController.text = documentSnapshot['water meter reading'];
-      _cellNumberController.text = documentSnapshot['cell number'];
-      _firstNameController.text = documentSnapshot['first name'];
-      _lastNameController.text = documentSnapshot['last name'];
-      _idNumberController.text = documentSnapshot['id number'];
-      userID = documentSnapshot['user id'];
+      _areaCodeController.text = documentSnapshot['areaCode'].toString();
+      // _meterNumberController.text = documentSnapshot['meter_number'];
+      // _meterReadingController.text = documentSnapshot['meter_reading'];
+      _waterMeterController.text = documentSnapshot['water_meter_number'];
+      _waterMeterReadingController.text = documentSnapshot['water_meter_reading'];
+      _cellNumberController.text = documentSnapshot['cellNumber'];
+      _firstNameController.text = documentSnapshot['firstName'];
+      _lastNameController.text = documentSnapshot['lastName'];
+      _idNumberController.text = documentSnapshot['idNumber'];
+      userID = documentSnapshot['userID'];
     }
     /// on update the only info necessary to change should be meter reading on the bottom modal sheet to only specify that information but let all data stay the same
     await showModalBottomSheet(
@@ -1376,23 +2139,23 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                       decoration: const InputDecoration(labelText: 'Area Code',),
                     ),
                   ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      controller: _meterNumberController,
-                      decoration: const InputDecoration(labelText: 'Electricity Meter Number'),
-                    ),
-                  ),
-                  Visibility(
-                    visible: visibilityState2,
-                    child: TextField(
-                      maxLength: 5,
-                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                      keyboardType: TextInputType.number,
-                      controller: _meterReadingController,
-                      decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
-                    ),
-                  ),
+                  // Visibility(
+                  //   visible: visibilityState2,
+                  //   child: TextField(
+                  //     controller: _meterNumberController,
+                  //     decoration: const InputDecoration(labelText: 'Electricity Meter Number'),
+                  //   ),
+                  // ),
+                  // Visibility(
+                  //   visible: visibilityState2,
+                  //   child: TextField(
+                  //     maxLength: 5,
+                  //     maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                  //     keyboardType: TextInputType.number,
+                  //     controller: _meterReadingController,
+                  //     decoration: const InputDecoration(labelText: 'Electricity Meter Reading'),
+                  //   ),
+                  // ),
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
@@ -1447,8 +2210,8 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                       final String accountNumber = _accountNumberController.text;
                       final String address = _addressController.text;
                       final int areaCode = int.parse(_areaCodeController.text);
-                      final String meterNumber = _meterNumberController.text;
-                      final String meterReading = _meterReadingController.text;
+                      // final String meterNumber = _meterNumberController.text;
+                      // final String meterReading = _meterReadingController.text;
                       final String waterMeterNumber = _waterMeterController.text;
                       final String waterMeterReading = _waterMeterReadingController.text;
                       final String cellNumber = _cellNumberController.text;
@@ -1457,28 +2220,33 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                       final String idNumber = _idNumberController.text;
 
                       if (accountNumber != null) {
-                        await _propList
+                        await FirebaseFirestore.instance
+                            .collection('districts')
+                            .doc(districtId)
+                            .collection('municipalities')
+                            .doc(municipalityId)
+                            .collection('properties')
                             .doc(documentSnapshot!.id)
                             .update({
-                          "account number": accountNumber,
+                          "accountNumber": accountNumber,
                           "address": address,
-                          "area code": areaCode,
-                          "meter number": meterNumber,
-                          "meter reading": meterReading,
-                          "water meter number": waterMeterNumber,
-                          "water meter reading": waterMeterReading,
-                          "cell number": cellNumber,
-                          "first name": firstName,
-                          "last name": lastName,
-                          "id number": idNumber,
-                          "user id" : userID,
+                          "areaCode": areaCode,
+                          // "meter_number": meterNumber,
+                          // "meter_reading": meterReading,
+                          "water_meter_number": waterMeterNumber,
+                          "water_meter_reading": waterMeterReading,
+                          "cellNumber": cellNumber,
+                          "firstName": firstName,
+                          "lastName": lastName,
+                          "idNumber": idNumber,
+                          "userID" : userID,
                         });
 
                         _accountNumberController.text = '';
                         _addressController.text = '';
                         _areaCodeController.text = '';
-                        _meterNumberController.text = '';
-                        _meterReadingController.text = '';
+                        // _meterNumberController.text = '';
+                        // _meterReadingController.text = '';
                         _waterMeterController.text = '';
                         _waterMeterReadingController.text = '';
                         _cellNumberController.text = '';
@@ -1503,7 +2271,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
   }
 
   Future<void> _delete(String users) async {
-    await _propList.doc(users).delete();
+    await _propList?.doc(users).delete();
 
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('You have successfully deleted an account')));
@@ -1511,232 +2279,426 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
 
   Widget propertyCard() {
     if (_allPropertyResults.isNotEmpty) {
-    return ListView.builder(
-      ///this call is to display all details for all users but is only displaying for the current user account.
-      ///it can be changed to display all users for the staff to see if the role is set to all later on.
-      itemCount: _allPropertyResults.length,
-      itemBuilder: (context, index) {
-        eMeterNumber = _allPropertyResults[index]['meter number'];
-        wMeterNumber = _allPropertyResults[index]['water meter number'];
-        propPhoneNum = _allPropertyResults[index]['cell number'];
 
-        String billMessage;
+      return GestureDetector(
+        onTap: () {
+          // Refocus on keyboard listener when tapping within the list
+          _focusNode.requestFocus();
+        },
+        child: KeyboardListener(
+          focusNode: _focusNode,
+          onKeyEvent: (KeyEvent event) {
+            if (event is KeyDownEvent) {
+              final double pageScrollAmount =
+                  _scrollController.position.viewportDimension;
 
-        ///A check for if payment is outstanding or not
-        if (_allPropertyResults[index]['eBill'] != '' ||
-            _allPropertyResults[index]['eBill'] != 'R0,000.00' ||
-            _allPropertyResults[index]['eBill'] != 'R0.00' ||
-            _allPropertyResults[index]['eBill'] != 'R0' ||
-            _allPropertyResults[index]['eBill'] != '0'
-        ) {
-          billMessage = 'Utilities bill outstanding: ${_allPropertyResults[index]['eBill']}';
-        } else {
-          billMessage = 'No outstanding payments';
-        }
+              if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                _scrollController.animateTo(
+                  _scrollController.offset + 50,
+                  duration: const Duration(milliseconds: 100),
+                  curve: Curves.easeIn,
+                );
+              } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                _scrollController.animateTo(
+                  _scrollController.offset - 50,
+                  duration: const Duration(milliseconds: 100),
+                  curve: Curves.easeIn,
+                );
+              } else if (event.logicalKey == LogicalKeyboardKey.pageDown) {
+                _scrollController.animateTo(
+                  _scrollController.offset + pageScrollAmount,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeIn,
+                );
+              } else if (event.logicalKey == LogicalKeyboardKey.pageUp) {
+                _scrollController.animateTo(
+                  _scrollController.offset - pageScrollAmount,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeIn,
+                );
+              }
+            }
+          },
+          child: Scrollbar(
+            controller: _scrollController,
+            thickness: 12, // Customize the thickness of the scrollbar
+            radius: const Radius.circular(8), // Rounded edges for the scrollbar
+            thumbVisibility: true,
+            trackVisibility: true, // Makes the track visible as well
+            interactive: true,
+            child: ListView.builder(
+              controller: _scrollController,
+              itemCount: _allPropertyResults.length,
+              itemBuilder: (context, index) {
+                var propertyData = _allPropertyResults[index].data() as Map<String, dynamic>;
 
-        return Card(
-          margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Center(
-                  child: Text('Property Information',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                  ),
-                ),
-                const SizedBox(height: 10,),
-                Text('Account Number: ${_allPropertyResults[index]['account number']}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                ),
-                const SizedBox(height: 5,),
-                Text('Street Address: ${_allPropertyResults[index]['address']}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                ),
-                const SizedBox(height: 5,),
-                Text('Area Code: ${_allPropertyResults[index]['area code']}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                ),
-                const SizedBox(height: 5,),
-                Text('Meter Number: ${_allPropertyResults[index]['meter number']}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                ),
-                const SizedBox(height: 5,),
-                Text('Meter Reading: ${_allPropertyResults[index]['meter reading']}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                ),
-                const SizedBox(height: 5,),
-                Text('Water Meter Number: ${_allPropertyResults[index]['water meter number']}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                ),
-                const SizedBox(height: 5,),
-                Text('Water Meter Reading: ${_allPropertyResults[index]['water meter reading']}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                ),
-                const SizedBox(height: 5,),
-                Text('Phone Number: ${_allPropertyResults[index]['cell number']}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
-                ),
-                const SizedBox(height: 30,),
-                Column(
-                  children: [
-                    Row(
+                String accountNumber = propertyData['accountNumber'];
+                String address = propertyData['address'];
+                String waterMeterNumber = propertyData['water_meter_number'];
+                String cellNumber = propertyData['cellNumber'];
+                bool isLocalMunicipality = propertyData['isLocalMunicipality'] ?? false;
+                String districtId = propertyData['districtId'] ?? '';
+                String municipalityId = propertyData['municipalityId'] ?? '';
+
+                String billMessage;
+
+                // Check if payment is outstanding
+                if (_allPropertyResults[index]['eBill'] != '' ||
+                    _allPropertyResults[index]['eBill'] != 'R0,000.00' ||
+                    _allPropertyResults[index]['eBill'] != 'R0.00' ||
+                    _allPropertyResults[index]['eBill'] != 'R0' ||
+                    _allPropertyResults[index]['eBill'] != '0') {
+                  billMessage = 'Utilities bill outstanding: ${_allPropertyResults[index]['eBill']}';
+                } else {
+                  billMessage = 'No outstanding payments';
+                }
+
+                return Card(
+                  margin: const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        BasicIconButtonGrey(
-                          onPress: () async {
-                            Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!");
-
-                            String accountNumberPDF = _allPropertyResults[index]['account number'];
-                            print('The acc number is ::: $accountNumberPDF');
-
-                            final storageRef = FirebaseStorage.instance.ref().child("pdfs/$formattedDate");
-                            final listResult = await storageRef.listAll();
-                            for (var prefix in listResult.prefixes) {
-                              print('The ref is ::: $prefix');
-                              // The prefixes under storageRef.
-                              // You can call listAll() recursively on them.
-                            }
-                            for (var item in listResult.items) {
-                              print('The item is ::: $item');
-                              // The items under storageRef.
-                              if (item.toString().contains(accountNumberPDF)) {
-                                final url = item.fullPath;
-                                print('The url is ::: $url');
-                                final file = await PDFApi.loadFirebase(url);
-                                try {
-                                  if (context.mounted) openPDF(context, file);
-                                  Fluttertoast.showToast(msg: "Download Successful!");
-                                } catch (e) {
-                                  Fluttertoast.showToast(msg: "Unable to download statement.");
-                                }
-                              } else {
-                                Fluttertoast.showToast(msg: "Unable to download statement.");
-                              }
-                            }
-                          },
-                          labelText: 'Invoice',
-                          fSize: 16,
-                          faIcon: const FaIcon(Icons.picture_as_pdf,),
-                          fgColor: Colors.orangeAccent,
-                          btSize: const Size(100, 38),
+                        const Center(
+                          child: Text(
+                            'Property Information',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                          ),
                         ),
-                        BasicIconButtonGrey(
-                          onPress: () async {
-                            accountNumberAll = _allPropertyResults[index]['account number'];
-                            locationGivenAll = _allPropertyResults[index]['address'];
-
-                            Navigator.push(context,
-                                MaterialPageRoute(builder: (context) =>
-                                    MapScreenProp(propAddress: locationGivenAll, propAccNumber: accountNumberAll,)
-                                ));
-                          },
-                          labelText: 'Map',
-                          fSize: 16,
-                          faIcon: const FaIcon(Icons.map,),
-                          fgColor: Colors.green,
-                          btSize: const Size(100, 38),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Account Number: $accountNumber',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                         ),
-                        const SizedBox(width: 5,),
-                      ],
-                    ),
-                    const SizedBox(height: 5,),
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                        const SizedBox(height: 5),
+                        Text(
+                          'Street Address: $address',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          'Area Code: ${_allPropertyResults[index]['areaCode']}',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          'Water Meter Number: $waterMeterNumber',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          'Water Meter Reading: ${_allPropertyResults[index]['water_meter_reading']}',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          'Phone Number: $cellNumber',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 30),
+                        Column(
                           children: [
-                            BasicIconButtonGrey(
-                              onPress: () async {
-                                String cell = _allPropertyResults[index]['cell number'];
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                BasicIconButtonGrey(
+                                  onPress: () async {
+                                    if (!isLocalUser && !isLocalMunicipality) {
+                                      if (selectedMunicipality == null || selectedMunicipality == "Select Municipality") {
+                                        Fluttertoast.showToast(
+                                          msg: "Please select a municipality first!",
+                                          toastLength: Toast.LENGTH_SHORT,
+                                          gravity: ToastGravity.CENTER,
+                                        );
+                                        return; // Stop execution if no municipality is selected
+                                      }
+                                    }
 
-                                Fluttertoast.showToast(msg: "The owner must be given a notification",);
+                                    // Determine the appropriate municipality context
+                                    String municipalityContext = isLocalMunicipality || isLocalUser
+                                        ? municipalityId
+                                        : selectedMunicipality!;
 
-                                showDialog(
-                                    barrierDismissible: false,
-                                    context: context,
-                                    builder: (context) {
-                                      return AlertDialog(
-                                        title: const Text("Notify Utilities Disconnection"),
-                                        content: const Text("This will notify the owner of the property of their water or electricity being disconnection in 14 days!\n\nAre you sure?"),
-                                        actions: [
-                                          IconButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                            },
-                                            icon: const Icon(Icons.cancel, color: Colors.red,),
-                                          ),
-                                          IconButton(
-                                            onPressed: () async {
-                                              _disconnectThisUser(_allPropertyResults[index]);
-                                              Navigator.pop(context);
-                                            },
-                                            icon: const Icon(Icons.done, color: Colors.green,),
-                                          ),
-                                        ],
+                                    if (municipalityContext.isEmpty) {
+                                      Fluttertoast.showToast(
+                                        msg: "Invalid municipality selection or missing municipality.",
+                                        toastLength: Toast.LENGTH_SHORT,
+                                        gravity: ToastGravity.CENTER,
                                       );
-                                    });
-                              },
-                              labelText: 'Disconnection',
-                              fSize: 16,
-                              faIcon: const FaIcon(Icons.warning_amber,),
-                              fgColor: Colors.amber,
-                              btSize: const Size(100, 38),
+                                      return;
+                                    }
+                                    Fluttertoast.showToast(
+                                        msg: "Now opening the statement!\nPlease wait a few seconds!");
+
+                                    try {
+                                      await openPropertyInvoice(cellNumber, address, accountNumber, context);
+                                      Fluttertoast.showToast(msg: "Successful!");
+                                    } catch (e) {
+                                      Fluttertoast.showToast(msg: "Unable to open statement: $e");
+                                    }
+                                  },
+                                  labelText: 'Invoice',
+                                  fSize: 16,
+                                  faIcon: const FaIcon(Icons.picture_as_pdf),
+                                  fgColor: Colors.orangeAccent,
+                                  btSize: const Size(100, 38),
+                                ),
+                                BasicIconButtonGrey(
+                                  onPress: () async {
+                                    if (!isLocalUser && !isLocalMunicipality) {
+                                      if (selectedMunicipality == null || selectedMunicipality == "Select Municipality") {
+                                        Fluttertoast.showToast(
+                                          msg: "Please select a municipality first!",
+                                          toastLength: Toast.LENGTH_SHORT,
+                                          gravity: ToastGravity.CENTER,
+                                        );
+                                        return; // Stop execution if no municipality is selected
+                                      }
+                                    }
+
+                                    // Determine the appropriate municipality context
+                                    String municipalityContext = isLocalMunicipality || isLocalUser
+                                        ? municipalityId
+                                        : selectedMunicipality!;
+
+                                    if (municipalityContext.isEmpty) {
+                                      Fluttertoast.showToast(
+                                        msg: "Invalid municipality selection or missing municipality.",
+                                        toastLength: Toast.LENGTH_SHORT,
+                                        gravity: ToastGravity.CENTER,
+                                      );
+                                      return;
+                                    }
+                                    accountNumberAll = accountNumber;
+                                    locationGivenAll = address;
+
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => MapScreenProp(
+                                          propAddress: locationGivenAll,
+                                          propAccNumber: accountNumberAll,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  labelText: 'Map',
+                                  fSize: 16,
+                                  faIcon: const FaIcon(Icons.map),
+                                  fgColor: Colors.green,
+                                  btSize: const Size(100, 38),
+                                ),
+                                const SizedBox(width: 5),
+                              ],
+                            ),
+                            const SizedBox(height: 5),
+                            Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    BasicIconButtonGrey(
+                                      onPress: () async {
+                                        if (!isLocalUser && !isLocalMunicipality) {
+                                          if (selectedMunicipality == null || selectedMunicipality == "Select Municipality") {
+                                            Fluttertoast.showToast(
+                                              msg: "Please select a municipality first!",
+                                              toastLength: Toast.LENGTH_SHORT,
+                                              gravity: ToastGravity.CENTER,
+                                            );
+                                            return; // Stop execution if no municipality is selected
+                                          }
+                                        }
+
+                                        // Determine the appropriate municipality context
+                                        String municipalityContext = isLocalMunicipality || isLocalUser
+                                            ? municipalityId
+                                            : selectedMunicipality!;
+
+                                        if (municipalityContext.isEmpty) {
+                                          Fluttertoast.showToast(
+                                            msg: "Invalid municipality selection or missing municipality.",
+                                            toastLength: Toast.LENGTH_SHORT,
+                                            gravity: ToastGravity.CENTER,
+                                          );
+                                          return;
+                                        }
+                                        Fluttertoast.showToast(
+                                            msg: "The owner must be given a notification");
+
+                                        showDialog(
+                                          barrierDismissible: false,
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text("Notify Utilities Disconnection"),
+                                              content: const Text(
+                                                  "This will notify the owner of the property of their water or electricity being disconnected in 14 days!\n\nAre you sure?"),
+                                              actions: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.cancel,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () async {
+                                                    DateTime now = DateTime.now();
+                                                    String formattedDate = DateFormat('yyyy-MM-dd – kk:mm')
+                                                        .format(now);
+
+                                                    String token = usersTokens[index]; // Use the token for this specific property
+
+                                                    // Add the disconnection notice to Firestore based on whether it's local or district municipality
+                                                    CollectionReference notificationsRef;
+
+                                                    if (isLocalMunicipality) {
+                                                      notificationsRef = FirebaseFirestore.instance
+                                                          .collection('localMunicipalities')
+                                                          .doc(municipalityId)
+                                                          .collection('Notifications');
+                                                    } else {
+                                                      notificationsRef = FirebaseFirestore.instance
+                                                          .collection('districts')
+                                                          .doc(districtId)
+                                                          .collection('municipalities')
+                                                          .doc(municipalityId)
+                                                          .collection('Notifications');
+                                                    }
+
+                                                    // Adding debug print statements
+                                                    print('Notification Path: ${notificationsRef.path}');
+                                                    print('Token used: $token');
+                                                    print('Sending notification to accountNumber: $accountNumber');
+                                                    print('Property Address: $address');
+
+                                                    try {
+                                                      DocumentReference notificationDocRef =
+                                                      await notificationsRef.add({
+                                                        'token': token,
+                                                        'user': accountNumber,
+                                                        'title': 'Utilities Disconnection Warning',
+                                                        'body':
+                                                        'Please complete payment of your utilities on property $address. Failing to do so will result in utilities on your property being cut off in 14 days!',
+                                                        'read': false,
+                                                        'date': formattedDate,
+                                                        'level': 'severe',
+                                                      });
+
+                                                      String generatedNotificationId = notificationDocRef.id;
+                                                      print(
+                                                          'Notification added to Firestore with auto-generated ID: $generatedNotificationId at path: ${notificationsRef.path}/$generatedNotificationId');
+
+                                                      // Send push notification
+                                                      sendPushMessage(
+                                                          token,
+                                                          'Utilities Disconnection Warning',
+                                                          'Please complete payment of your utilities on property $address. Failing to do so will result in utilities on your property being cut off in 14 days!');
+
+                                                      Fluttertoast.showToast(
+                                                          msg: 'Disconnection notice sent!',
+                                                          gravity: ToastGravity.CENTER);
+
+                                                      Navigator.pop(context); // Close dialog
+                                                    } catch (e) {
+                                                      print('Error adding notification to Firestore: $e');
+                                                      Fluttertoast.showToast(
+                                                          msg: 'Error sending notification: $e');
+                                                    }
+                                                  },
+                                                  icon: const Icon(
+                                                    Icons.done,
+                                                    color: Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                      },
+                                      labelText: 'Disconnection',
+                                      fSize: 16,
+                                      faIcon: const FaIcon(Icons.warning_amber),
+                                      fgColor: Colors.amber,
+                                      btSize: const Size(100, 38),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                );
+              },
             ),
           ),
-        );
-      },
-    );
-    } return const Center(
+        ),
+      );
+    }
+    return const Center(
       child: CircularProgressIndicator(),
     );
   }
 
-  Future<void> reportGeneration(CollectionReference<Object?> propertiesDataStream) async {
+  Future<void> reportGeneration() async {
     final excel.Workbook workbook = excel.Workbook();
     final excel.Worksheet sheet = workbook.worksheets[0];
 
-    var data = await FirebaseFirestore.instance.collection('properties').get();
+    List<DocumentSnapshot> allPropertyDocs = [];
 
-    setState(() {
-      _allPropertyReport = data.docs;
-    });
+    // Get all districts
+    var districtsSnapshot = await FirebaseFirestore.instance.collection('districts').get();
 
-    for(var reportSnapshot in _allPropertyReport){
-      ///Need to build a property model that retrieves property data entirely from the db
+    // Iterate through each district
+    for (var districtDoc in districtsSnapshot.docs) {
+      // Get all municipalities in the district
+      var municipalitiesSnapshot = await districtDoc.reference.collection('municipalities').get();
+
+      // Iterate through each municipality
+      for (var municipalityDoc in municipalitiesSnapshot.docs) {
+        // Get all properties in the municipality
+        var propertiesSnapshot = await municipalityDoc.reference.collection('properties').get();
+        allPropertyDocs.addAll(propertiesSnapshot.docs);
+      }
+    }
+
+    // Set state with all properties
+    if(mounted) {
+      setState(() {
+        _allPropertyReport = allPropertyDocs;
+      });
+    }
+    // Populate Excel sheet with property data
+    int rowIndex = 1;
+    for (var reportSnapshot in _allPropertyReport) {
       var address = reportSnapshot['address'].toString();
-      sheet.getRangeByName('A1').setText(address);
+      sheet.getRangeByName('A$rowIndex').setText(address);
+      rowIndex++;
     }
 
     final Directory? directory = await getExternalStorageDirectory();
-    //Get directory path
     final String? path = directory?.path;
-    //Create an empty file to write Excel data
-    final File file = File('$path/Msunduzi Property Reports.xlsx');
+    final File file = File('$path/Msunduzi_Property_Reports.xlsx');
 
     final List<int> bytes = workbook.saveAsStream();
-    //Write Excel data
     await file.writeAsBytes(bytes, flush: true);
-    //Launch the file (used open_file package)
-    await OpenFile.open('$path/Msunduzi Property Reports.xlsx');
+    await OpenFile.open('$path/Msunduzi_Property_Reports.xlsx');
 
-    File('Msunduzi Property Reports.xlsx').writeAsBytes(bytes);
+    File('Msunduzi_Property_Reports.xlsx').writeAsBytes(bytes);
 
     workbook.dispose();
-
   }
+
 
   void setMonthLimits(String currentMonth) {
     String month1 = 'January';

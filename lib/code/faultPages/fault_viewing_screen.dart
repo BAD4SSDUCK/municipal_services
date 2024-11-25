@@ -17,7 +17,8 @@ import 'package:municipal_services/code/MapTools/map_screen_prop.dart';
 import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
 
 class FaultViewingScreen extends StatefulWidget {
-  const FaultViewingScreen({Key? key}) : super(key: key);
+
+  const FaultViewingScreen({super.key,});
 
   @override
   State<FaultViewingScreen> createState() => _FaultViewingScreenState();
@@ -53,13 +54,15 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
   final _depAllocationController = TextEditingController();
   late bool _faultResolvedController;
   final _dateReportedController = TextEditingController();
-
-  final CollectionReference _faultData =
-  FirebaseFirestore.instance.collection('faultReporting');
-
-  final CollectionReference _listUser =
-  FirebaseFirestore.instance.collection('users');
-
+   CollectionReference? _faultData;
+  // final CollectionReference _faultData =
+  // FirebaseFirestore.instance.collection('faultReporting');
+  //
+  // final CollectionReference _listUser =
+  // FirebaseFirestore.instance.collection('users');
+  String? userEmail;
+  String districtId='';
+  String municipalityId='';
   String accountNumberRep = ' ';
   String locationGivenRep = ' ';
   int faultStage = 0;
@@ -85,6 +88,54 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
   void initState() {
 
     super.initState();
+  }
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  Future<void> fetchUserDetails() async {
+    try {
+      print("Fetching user details...");
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        userEmail = user.email;
+        print("User email: $userEmail");
+
+        QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+            .collectionGroup('users')
+            .where('email', isEqualTo: userEmail)
+            .limit(1)
+            .get();
+
+        if (userSnapshot.docs.isNotEmpty) {
+          var userDoc = userSnapshot.docs.first;
+
+          // Correct path traversal to retrieve the districtId and municipalityId
+          final userPathSegments = userDoc.reference.path.split('/');
+          districtId = userPathSegments[1]; // Should be the second segment
+          municipalityId = userPathSegments[3]; // Should be the fourth segment
+
+          print("Corrected District ID: $districtId");
+          print("Corrected Municipality ID: $municipalityId");
+
+          setState(() {
+            _faultData = FirebaseFirestore.instance
+                .collection('districts')
+                .doc(districtId)
+                .collection('municipalities')
+                .doc(municipalityId)
+                .collection('faultReporting');
+          });
+        } else {
+          print("No user document found for the provided email.");
+        }
+      } else {
+        print("No current user found.");
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+    }
   }
 
   void initApprove(String stateGivenCheck){
@@ -128,7 +179,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
 
   Future<void> _updateReport([DocumentSnapshot? documentSnapshot]) async {
 
-    String dropdownValue = 'Electricity';
+    String dropdownValue = 'Water & Sanitation';
 
     int stageNum = documentSnapshot!['faultStage'];
 
@@ -225,7 +276,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                       // Step 3.
                       value: dropdownValue,
                       // Step 4.
-                      items: <String>['Electricity', 'Water & Sanitation', 'Roadworks', 'Waste Management']
+                      items: <String>['Water & Sanitation', 'Roadworks', 'Waste Management']
                           .map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
@@ -307,7 +358,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                       if (faultStage == 1) {
                         if (accountNumber != null) {
                           await _faultData
-                              .doc(documentSnapshot.id)
+                              ?.doc(documentSnapshot.id)
                               .update({
                             "accountNumber": accountNumber,
                             "address": address,
@@ -342,7 +393,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                       } else if (faultStage == 2) {
                         if (accountNumber != null) {
                           await _faultData
-                              .doc(documentSnapshot.id)
+                              ?.doc(documentSnapshot.id)
                               .update({
                             "accountNumber": accountNumber,
                             "address": address,
@@ -377,7 +428,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                       } else if (faultStage == 3) {
                         if (accountNumber != null) {
                           await _faultData
-                              .doc(documentSnapshot.id)
+                              ?.doc(documentSnapshot.id)
                               .update({
                             "accountNumber": accountNumber,
                             "address": address,
@@ -412,7 +463,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
                       } else if (faultStage == 4) {
                         if (accountNumber != null) {
                           await _faultData
-                              .doc(documentSnapshot.id)
+                              ?.doc(documentSnapshot.id)
                               .update({
                             "accountNumber": accountNumber,
                             "address": address,
@@ -467,7 +518,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
       ),
 
       body: StreamBuilder(
-        stream: _faultData.orderBy('dateReported', descending: true).snapshots(),
+        stream: _faultData?.orderBy('dateReported', descending: true).snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
           if (streamSnapshot.hasData) {
             return ListView.builder(
@@ -682,7 +733,7 @@ class _FaultViewingScreenState extends State<FaultViewingScreen> {
 
                                       Navigator.push(context,
                                           MaterialPageRoute(
-                                              builder: (context) => FaultImageUpload(propertyAddress: locationGivenRep, reportedDate: reporterDateGiven)
+                                              builder: (context) => FaultImageUpload(propertyAddress: locationGivenRep, reportedDate: reporterDateGiven,)
                                             //MapPage()
                                           ));
                                     },
