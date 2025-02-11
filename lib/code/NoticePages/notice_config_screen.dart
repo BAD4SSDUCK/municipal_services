@@ -57,7 +57,8 @@ final email = user?.email;
 String userID = uid as String;
 String userEmail = email as String;
 
-class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerProviderStateMixin {
+class _NoticeConfigScreenState extends State<NoticeConfigScreen>
+    with TickerProviderStateMixin {
   CollectionReference? _listUserTokens;
   CollectionReference? _listNotifications;
   String districtId = '';
@@ -74,70 +75,76 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
   final FocusNode notifyWard = FocusNode();
   final FocusNode notifySuburb = FocusNode();
   final FocusNode notifyStreet = FocusNode();
-  final ScrollController _notifyAllScroller= ScrollController();
+  final FocusNode notifySelect = FocusNode();
+  final ScrollController _notifyAllScroller = ScrollController();
   final ScrollController _notifyTargetScroller = ScrollController();
   final ScrollController _notifyWardScroller = ScrollController();
   final ScrollController _notifySuburbScroller = ScrollController();
   final ScrollController _notifyStreetScroller = ScrollController();
+  final ScrollController _notifySelectScroller = ScrollController();
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    notifyAll.requestFocus();
-    notifyTarget.requestFocus();
-    notifyWard.requestFocus();
-    notifySuburb.requestFocus();
-    notifyStreet.requestFocus();
-    _tabController = TabController(length: 5, vsync: this);
+
+    // Initialize the TabController
+    _tabController = TabController(length: 6, vsync: this);
+
+    // Add a listener for tab changes
     _tabController.addListener(() {
-      if (_tabController.index == 0) {
-        notifyAll.requestFocus();
-      } else if (_tabController.index == 1) {
-        notifyTarget.requestFocus();
-      }
-      else if (_tabController.index==2){
-        notifyWard.requestFocus();
-      }
-      else if (_tabController.index==3){
-        notifySuburb.requestFocus();
-      }
-      else if (_tabController.index==4){
-        notifyStreet.requestFocus();
+      if (_tabController.indexIsChanging) {
+        // Handle focus based on the current tab
+        setState(() {
+          _handleFocusChange(_tabController.index);
+        });
       }
     });
 
-    notifyAll.requestFocus();
+    // Set initial focus
+    _handleFocusChange(0);
 
-    // Listeners for scroll position
-    _notifyAllScroller.addListener(() {
-    });
-    _notifyTargetScroller.addListener(() {
-    });
-    _notifyWardScroller.addListener(() {
-    });
-    _notifySuburbScroller.addListener(() {
-    });
-    _notifyStreetScroller.addListener(() {
-    });
-
+    // Fetch user details and setup initial data
     fetchUserDetails().then((_) {
       if (isLocalMunicipality) {
-        // Local user, proceed with fetching data
         getUsersPropStream();
         getPropSuburbStream();
         _fetchData();
         _fetchTokenData();
-      } else {
-        // District user, wait for municipality selection
-        print("Waiting for municipality selection...");
       }
     });
 
-    // Listeners setup
+    // Setup listeners for search controllers
     _searchWardController.addListener(_onWardChanged);
     _searchController.addListener(_onSearchChanged);
     _searchSuburbController.addListener(_onSearchChanged);
+  }
+
+  void _handleFocusChange(int tabIndex) {
+    // Request focus based on the tab index
+    switch (tabIndex) {
+      case 0:
+        notifyAll.requestFocus();
+        break;
+      case 1:
+        notifyTarget.requestFocus();
+        break;
+      case 2:
+        notifyWard.requestFocus();
+        break;
+      case 3:
+        notifySuburb.requestFocus();
+        break;
+      case 4:
+        notifyStreet.requestFocus();
+        break;
+      case 5:
+        notifySelect.requestFocus();
+        break;
+      default:
+        // Clear focus if no tab is active
+        FocusScope.of(context).unfocus();
+    }
   }
 
   @override
@@ -147,22 +154,24 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
     notifyWard.dispose();
     notifySuburb.dispose();
     notifyStreet.dispose();
+    notifySelect.dispose();
     _notifyAllScroller.dispose();
     _notifyTargetScroller.dispose();
     _notifyWardScroller.dispose();
     _notifySuburbScroller.dispose();
     _notifyStreetScroller.dispose();
+    _notifySelectScroller.dispose();
     _tabController.dispose();
     // Remove listeners first
     _searchWardController.removeListener(_onWardChanged);
     _searchController.removeListener(_onSearchChanged);
     _searchSuburbController.removeListener(_onSearchChanged);
-
+    _searchSelectController.removeListener(_onSearchChanged);
     // Then dispose controllers
     _searchWardController.dispose();
     _searchController.dispose();
     _searchSuburbController.dispose();
-
+    _searchSelectController.dispose();
     // Nullify variables to avoid unnecessary memory usage
     _headerController.clear();
     _messageController.clear();
@@ -383,6 +392,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
   TextEditingController _searchWardController = TextEditingController();
   TextEditingController _searchSuburbController = TextEditingController();
   TextEditingController _searchStreetController = TextEditingController();
+  TextEditingController _searchSelectController = TextEditingController();
   final CollectionReference _propList =
       FirebaseFirestore.instance.collection('properties');
 
@@ -1173,7 +1183,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
     return combinedData;
   }
 
-
   Future<List<Map<String, dynamic>>> _fetchTokenData() async {
     List<Map<String, dynamic>> combinedData = [];
     CollectionReference propertiesCollection;
@@ -1197,7 +1206,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
     for (var propertyDoc in propertiesSnapshot.docs) {
       String accountNumber = propertyDoc['accountNumber'];
       String phoneNumber = propertyDoc['cellNumber'];
-      String propertyOwner = '${propertyDoc['firstName']} ${propertyDoc['lastName']}';
+      String propertyOwner =
+          '${propertyDoc['firstName']} ${propertyDoc['lastName']}';
       String propertyAddress = propertyDoc['address'];
       String propertyWard = propertyDoc['ward'];
       String? token = propertyDoc['token'];
@@ -1228,7 +1238,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
 
     return combinedData;
   }
-
 
   Widget buildMunicipalityDropdown() {
     if (isLocalMunicipality) {
@@ -1317,7 +1326,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 5,
+      length: 6,
       child: Scaffold(
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
@@ -1331,554 +1340,949 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
             Visibility(
               visible: adminAcc,
               child: IconButton(
-                  onPressed: () {
-                    usersNumbers = [];
-                    usersTokens = [];
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => NoticeConfigArcScreen()));
-                  },
-                  icon: const Icon(
-                    Icons.history_outlined,
-                    color: Colors.white,
-                  )),
+                onPressed: () {
+                  usersNumbers = [];
+                  usersTokens = [];
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NoticeConfigArcScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(
+                  Icons.history_outlined,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ],
           bottom: TabBar(
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-              tabs: [
-                Tab(
-                  child: Container(
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'Notify\nAll',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-                Tab(
-                  child: Container(
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'Target\nNotice',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-                Tab(
-                  child: Container(
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'Ward\nNotice',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-                Tab(
-                  child: Container(
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'Suburb\nNotice',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-                Tab(
-                  child: Container(
-                    alignment: Alignment.center,
-                    child: const Text(
-                      'Street\nNotice',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              ]),
+            controller: _tabController,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            tabs: const [
+              Tab(text: 'Notify\nAll'),
+              Tab(text: 'Target\nNotice'),
+              Tab(text: 'Ward\nNotice'),
+              Tab(text: 'Suburb\nNotice'),
+              Tab(text: 'Street\nNotice'),
+              Tab(text: 'Selected\nProperties'),
+            ],
+          ),
         ),
-        body: TabBarView(controller: _tabController, children: [
-          ///Tab for all
-          Column(
-            children: [
-              const SizedBox(
-                height: 8,
-              ),
-
-              ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
-              ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
-              buildMunicipalityDropdown(),
-              BasicIconButtonGrey(
-                onPress: () async {
-                  _headerController.text = '';
-                  _messageController.text = '';
-                  _notifyAllUser();
-                },
-                labelText: 'Send Notice To All',
-                fSize: 16,
-                faIcon: const FaIcon(
-                  Icons.notifications,
-                ),
-                fgColor: Colors.red,
-                btSize: const Size(300, 50),
-              ),
-
-              const SizedBox(
-                height: 5,
-              ),
-
-              ///made the listview card a reusable widget
-              Expanded(
-                child: userCard(),
-              ),
-            ],
-          ),
-
-          ///Tab for searching
-          Column(
-            children: [
-              ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
-              ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
-              buildMunicipalityDropdown(),
-
-              /// Search bar
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
-                child: SearchBar(
-                  controller: _searchController,
-                  padding: const MaterialStatePropertyAll<EdgeInsets>(
-                      EdgeInsets.symmetric(horizontal: 16.0)),
-                  leading: const Icon(Icons.search),
-                  hintText: "Search",
-                  onChanged: (value) async {
-                    if (context.mounted) {
-                      setState(() {
-                        searchText = value;
-                        print('this is the input text ::: $searchText');
-                      });
-                    }
-                  },
-                ),
-              ),
-
-              /// Search bar end
-
-              ///made the listview card a reusable widget
-              Expanded(
-                child: userTokenSearchCard(),
-              ),
-            ],
-          ),
-
-          ///Tab for wards
-          Column(
-            children: [
-              ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
-              ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
-              buildMunicipalityDropdown(),
-
-              /// Warc select bar
-              const SizedBox(
-                height: 5,
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
-                child: Column(children: [
-                  SizedBox(
-                    // width: 400,
-                    height: 50,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 10, right: 10),
-                      child: Center(
-                        child: TextField(
-                          controller: _searchWardController,
-
-                          ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )),
-                            enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )),
-                            disabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 6),
-                            fillColor: Colors.white,
-                            filled: true,
-                            suffixIcon: DropdownButtonFormField<String>(
-                              value: dropdownValue,
-                              items: dropdownWards
-                                  .map<DropdownMenuItem<String>>(
-                                      (String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 0.0, horizontal: 20.0),
-                                    child: Text(
-                                      value,
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) async {
-                                if (context.mounted) {
-                                  setState(() {
-                                    dropdownValue =
-                                        newValue!; // Set the selected ward
-
-                                    // Only proceed if data for the selected municipality has been loaded
-                                    if (_allUserPropResults.isNotEmpty) {
-                                      // Filter the properties by the selected ward and cast the result to the correct type
-                                      List<DocumentSnapshot<Object?>>
-                                          filteredByWard = _allUserPropResults
-                                              .where((property) {
-                                                return property['ward'] ==
-                                                    dropdownValue;
-                                              })
-                                              .cast<DocumentSnapshot<Object?>>()
-                                              .toList();
-
-                                      // Update the filtered results and refresh the UI
-                                      _allUserPropResults = filteredByWard;
-                                      _searchWardController.text =
-                                          dropdownValue;
-
-                                      // Debugging output to verify filtering
-                                      print(
-                                          "Filtering properties by ward: $dropdownValue");
-                                      print(
-                                          "Number of properties after filtering: ${_allUserPropResults.length}");
-                                    }
-                                  });
-                                }
-                              },
-                              icon: const Padding(
-                                padding: EdgeInsets.only(left: 10, right: 10),
-                                child: Icon(Icons.arrow_circle_down_sharp),
-                              ),
-                              iconEnabledColor: Colors.green,
-                              style: const TextStyle(
-                                  color: Colors.black, fontSize: 18),
-                              dropdownColor: Colors.grey[50],
-                              isExpanded: true,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ]),
-              ),
-
-              /// Search bar end
-
-              const SizedBox(
-                height: 5,
-              ),
-
-              BasicIconButtonGrey(
-                onPress: () async {
-                  _notifyWardUsers();
-                },
-                labelText: 'Notify Selected Ward',
-                fSize: 16,
-                faIcon: const FaIcon(
-                  Icons.notifications,
-                ),
-                fgColor: Colors.red,
-                btSize: const Size(300, 50),
-              ),
-
-              const SizedBox(
-                height: 5,
-              ),
-
-              ///made the listview card a reusable widget
-              Expanded(
-                child: userWardCard(),
-              ),
-            ],
-          ),
-
-          ///Tab for suburb
-          Column(
-            children: [
-              ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
-              ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
-              buildMunicipalityDropdown(),
-
-              /// Warc select bar
-              const SizedBox(
-                height: 5,
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
-                child: Column(children: [
-                  SizedBox(
-                    // width: 400,
-                    height: 50,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 10, right: 10),
-                      child: Center(
-                        child: TextField(
-                          controller: _searchSuburbController,
-
-                          ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )),
-                            enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )),
-                            disabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 6),
-                            fillColor: Colors.white,
-                            filled: true,
-                            suffixIcon: DropdownButtonFormField<String>(
-                              value: dropdownSuburbValue,
-                              items: dropdownSuburbs
-                                  .map<DropdownMenuItem<String>>(
-                                      (String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 0.0, horizontal: 20.0),
-                                    child: Text(
-                                      value,
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) async {
-                                if (context.mounted) {
-                                  setState(() {
-                                    dropdownSuburbValue = newValue!;
-                                    _searchSuburbController.text =
-                                        dropdownSuburbValue;
-
-                                    // Fetch filtered properties and tokens based on the selected suburb
-                                    getUsersTokenStream(
-                                        selectedSuburb: dropdownSuburbValue);
-                                    getUsersPropStream();
-                                    print(
-                                        "Filtering properties by suburb: $dropdownSuburbValue");
-                                    print(
-                                        "Number of properties after filtering: ${_allUserPropResults.length}"); // This is assumed to fetch properties for display
-                                  });
-                                }
-                              },
-                              icon: const Padding(
-                                padding: EdgeInsets.only(left: 10, right: 10),
-                                child: Icon(Icons.arrow_circle_down_sharp),
-                              ),
-                              iconEnabledColor: Colors.green,
-                              style: const TextStyle(
-                                  color: Colors.black, fontSize: 18),
-                              dropdownColor: Colors.grey[50],
-                              isExpanded: true,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ]),
-              ),
-
-              /// Search bar end
-
-              const SizedBox(
-                height: 5,
-              ),
-
-              BasicIconButtonGrey(
-                onPress: () async {
-                  _notifySuburbUsers();
-                },
-                labelText: 'Notify Selected Suburb',
-                fSize: 16,
-                faIcon: const FaIcon(
-                  Icons.notifications,
-                ),
-                fgColor: Colors.red,
-                btSize: const Size(300, 50),
-              ),
-
-              const SizedBox(
-                height: 5,
-              ),
-
-              ///made the listview card a reusable widget
-              Expanded(
-                child: userSuburbCard(),
-              ),
-            ],
-          ),
-          //Tab for streets
-          Column(
-            children: [
-              buildMunicipalityDropdown(),
-
-              /// Warc select bar
-              const SizedBox(
-                height: 5,
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
-                child: Column(children: [
-                  SizedBox(
-                    // width: 400,
-                    height: 50,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 10, right: 10),
-                      child: Center(
-                        child: TextField(
-                          controller: _searchStreetController,
-
-                          ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )),
-                            enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )),
-                            disabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(
-                                  color: Colors.grey,
-                                )),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 6),
-                            fillColor: Colors.white,
-                            filled: true,
-                            suffixIcon: DropdownButtonFormField<String>(
-                              value: dropdownStreetValue,
-                              items: dropdownStreets
-                                  .map<DropdownMenuItem<String>>(
-                                      (String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 0.0, horizontal: 20.0),
-                                    child: Text(
-                                      value,
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) async {
-                                if (context.mounted) {
-                                  setState(() {
-                                    dropdownStreetValue = newValue!;
-                                    _searchStreetController.text =
-                                        dropdownStreetValue;
-
-                                    // Fetch filtered properties and tokens based on the selected suburb
-                                    getUsersTokenStream(
-                                        selectedSuburb: dropdownStreetValue);
-                                    getUsersPropStream();
-                                    print(
-                                        "Filtering properties by suburb: $dropdownStreetValue");
-                                    print(
-                                        "Number of properties after filtering: ${_allUserPropResults.length}"); // This is assumed to fetch properties for display
-                                  });
-                                }
-                              },
-                              icon: const Padding(
-                                padding: EdgeInsets.only(left: 10, right: 10),
-                                child: Icon(Icons.arrow_circle_down_sharp),
-                              ),
-                              iconEnabledColor: Colors.green,
-                              style: const TextStyle(
-                                  color: Colors.black, fontSize: 18),
-                              dropdownColor: Colors.grey[50],
-                              isExpanded: true,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ]),
-              ),
-
-              /// Search bar end
-
-              const SizedBox(
-                height: 5,
-              ),
-
-              BasicIconButtonGrey(
-                onPress: () async {
-                  _notifyStreetUsers();
-                },
-                labelText: 'Notify Selected Street',
-                fSize: 16,
-                faIcon: const FaIcon(
-                  Icons.notifications,
-                ),
-                fgColor: Colors.red,
-                btSize: const Size(300, 50),
-              ),
-
-              const SizedBox(
-                height: 5,
-              ),
-
-              ///made the listview card a reusable widget
-              Expanded(
-                child: userStreetCard(),
-              ),
-            ],
-          ),
-        ]),
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildNotifyAllTab(),
+            _buildTargetNoticeTab(),
+            _buildWardNoticeTab(),
+            _buildSuburbNoticeTab(),
+            _buildStreetNoticeTab(),
+            _buildSelectedPropertiesTab(),
+          ],
+        ),
       ),
     );
   }
+
+  Widget _buildNotifyAllTab() {
+    return GestureDetector(
+      onTap: () => notifyAll.requestFocus(),
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          buildMunicipalityDropdown(),
+          BasicIconButtonGrey(
+            onPress: () async {
+              _headerController.text = '';
+              _messageController.text = '';
+              _notifyAllUser();
+            },
+            labelText: 'Send Notice To All',
+            fSize: 16,
+            faIcon: const FaIcon(Icons.notifications),
+            fgColor: Colors.red,
+            btSize: const Size(300, 50),
+          ),
+          const SizedBox(height: 5),
+          Expanded(
+            child: userCard(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTargetNoticeTab() {
+    return Column(
+      children: [
+        const SizedBox(height: 8),
+        buildMunicipalityDropdown(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
+          child: SearchBar(
+            controller: _searchController,
+            padding: const MaterialStatePropertyAll<EdgeInsets>(
+                EdgeInsets.symmetric(horizontal: 16.0)),
+            leading: const Icon(Icons.search),
+            hintText: "Search",
+            onChanged: (value) {
+              if (context.mounted) {
+                setState(() {
+                  searchText = value;
+                });
+              }
+            },
+          ),
+        ),
+        Expanded(child: userTokenSearchCard()),
+      ],
+    );
+  }
+
+  Widget _buildWardNoticeTab() {
+    return Column(
+      children: [
+        buildMunicipalityDropdown(),
+        const SizedBox(height: 5),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
+          child: Column(
+            children: [
+              SizedBox(
+                height: 50,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: TextField(
+                    controller: _searchWardController,
+                    decoration: InputDecoration(
+                      labelText: "Select Ward",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: const BorderSide(color: Colors.grey),
+                      ),
+                      suffixIcon: DropdownButtonFormField<String>(
+                        value: dropdownValue,
+                        items: dropdownWards.map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              dropdownValue = newValue;
+                              _searchWardController.text = dropdownValue;
+
+                              // Logic to filter properties by ward
+                              getUsersTokenStream(selectedWard: dropdownValue);
+                              getUsersPropStream();
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 5),
+        BasicIconButtonGrey(
+          onPress: () async {
+            _notifyWardUsers();
+          },
+          labelText: 'Notify Selected Ward',
+          fSize: 16,
+          faIcon: const FaIcon(Icons.notifications),
+          fgColor: Colors.red,
+          btSize: const Size(300, 50),
+        ),
+        const SizedBox(height: 5),
+        Expanded(
+          child: userWardCard(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSuburbNoticeTab() {
+    return Column(
+      children: [
+        buildMunicipalityDropdown(),
+        const SizedBox(height: 5),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
+          child: Column(
+            children: [
+              SizedBox(
+                height: 50,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: TextField(
+                    controller: _searchSuburbController,
+                    decoration: InputDecoration(
+                      labelText: "Select Suburb",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: const BorderSide(color: Colors.grey),
+                      ),
+                      suffixIcon: DropdownButtonFormField<String>(
+                        value: dropdownSuburbValue,
+                        items: dropdownSuburbs.map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              dropdownSuburbValue = newValue;
+                              _searchSuburbController.text =
+                                  dropdownSuburbValue;
+
+                              // Logic to filter properties by suburb
+                              getUsersTokenStream(
+                                  selectedSuburb: dropdownSuburbValue);
+                              getUsersPropStream();
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 5),
+        BasicIconButtonGrey(
+          onPress: () async {
+            _notifySuburbUsers();
+          },
+          labelText: 'Notify Selected Suburb',
+          fSize: 16,
+          faIcon: const FaIcon(Icons.notifications),
+          fgColor: Colors.red,
+          btSize: const Size(300, 50),
+        ),
+        const SizedBox(height: 5),
+        Expanded(
+          child: userSuburbCard(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStreetNoticeTab() {
+    return Column(
+      children: [
+        buildMunicipalityDropdown(),
+        const SizedBox(height: 5),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
+          child: Column(
+            children: [
+              SizedBox(
+                height: 50,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: TextField(
+                    controller: _searchStreetController,
+                    decoration: InputDecoration(
+                      labelText: "Select Street",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: const BorderSide(color: Colors.grey),
+                      ),
+                      suffixIcon: DropdownButtonFormField<String>(
+                        value: dropdownStreetValue,
+                        items: dropdownStreets.map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              dropdownStreetValue = newValue;
+                              _searchStreetController.text =
+                                  dropdownStreetValue;
+
+                              // Logic to filter properties by street
+                              getUsersTokenStream(
+                                  selectedStreet: dropdownStreetValue);
+                              getUsersPropStream();
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 5),
+        BasicIconButtonGrey(
+          onPress: () async {
+            _notifyStreetUsers();
+          },
+          labelText: 'Notify Selected Street',
+          fSize: 16,
+          faIcon: const FaIcon(Icons.notifications),
+          fgColor: Colors.red,
+          btSize: const Size(300, 50),
+        ),
+        const SizedBox(height: 5),
+        Expanded(
+          child: userStreetCard(),
+        ),
+      ],
+    );
+  }
+
+  List<Map<String, dynamic>> selectedProperties =
+      []; // 🔹 Tracks selected properties
+
+  Widget _buildSelectedPropertiesTab() {
+    return Column(
+      children: [
+        buildMunicipalityDropdown(), // Dropdown to select municipality
+        const SizedBox(height: 5),
+
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
+          child: SearchBar(
+            controller: _searchController,
+            padding: const MaterialStatePropertyAll<EdgeInsets>(
+                EdgeInsets.symmetric(horizontal: 16.0)),
+            leading: const Icon(Icons.search),
+            hintText: "Search Properties",
+            onChanged: (value) {
+              if (context.mounted) {
+                setState(() {
+                  searchText = value;
+                });
+              }
+            },
+          ),
+        ),
+
+        // 🔹 Notify & Disconnect Buttons
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            BasicIconButtonGrey(
+              onPress: selectedProperties.isNotEmpty
+                  ? () {
+                      print(
+                          "🔘 Notify button clicked! Running _notifySelectedUsers()");
+                      _notifySelectedUsers(); // Call async function
+                    }
+                  : () {}, // Prevents null assignment
+              labelText: 'Notify Selected Users',
+              fSize: 14,
+              faIcon: const FaIcon(Icons.notifications),
+              fgColor: Colors.blueAccent,
+              btSize: const Size(200, 45),
+            ),
+            const SizedBox(width: 10),
+            BasicIconButtonGrey(
+              onPress: selectedProperties.isNotEmpty
+                  ? () {
+                      _disconnectSelectedUsers(); // Call async function
+                    }
+                  : () {}, // Prevents null assignment
+              labelText: 'Disconnect Selected Users',
+              fSize: 14,
+              faIcon: const FaIcon(Icons.warning_amber),
+              fgColor: Colors.amber,
+              btSize: const Size(200, 45),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 5),
+        Expanded(
+          child: userSelectedPropertiesCard(),
+        ),
+      ],
+    );
+  }
+
+  // @override
+  // Widget build(BuildContext context) {
+  //   return DefaultTabController(
+  //     length: 5,
+  //     child: Scaffold(
+  //       backgroundColor: Colors.grey[350],
+  //       appBar: AppBar(
+  //         title: const Text(
+  //           'User Notifications',
+  //           style: TextStyle(color: Colors.white),
+  //         ),
+  //         backgroundColor: Colors.green,
+  //         iconTheme: const IconThemeData(color: Colors.white),
+  //         actions: <Widget>[
+  //           Visibility(
+  //             visible: adminAcc,
+  //             child: IconButton(
+  //                 onPressed: () {
+  //                   usersNumbers = [];
+  //                   usersTokens = [];
+  //                   Navigator.push(
+  //                       context,
+  //                       MaterialPageRoute(
+  //                           builder: (context) => NoticeConfigArcScreen()));
+  //                 },
+  //                 icon: const Icon(
+  //                   Icons.history_outlined,
+  //                   color: Colors.white,
+  //                 )),
+  //           ),
+  //         ],
+  //         bottom: TabBar(
+  //             labelColor: Colors.white,
+  //             unselectedLabelColor: Colors.white70,
+  //             tabs: [
+  //               Tab(
+  //                 child: Container(
+  //                   alignment: Alignment.center,
+  //                   child: const Text(
+  //                     'Notify\nAll',
+  //                     textAlign: TextAlign.center,
+  //                   ),
+  //                 ),
+  //               ),
+  //               Tab(
+  //                 child: Container(
+  //                   alignment: Alignment.center,
+  //                   child: const Text(
+  //                     'Target\nNotice',
+  //                     textAlign: TextAlign.center,
+  //                   ),
+  //                 ),
+  //               ),
+  //               Tab(
+  //                 child: Container(
+  //                   alignment: Alignment.center,
+  //                   child: const Text(
+  //                     'Ward\nNotice',
+  //                     textAlign: TextAlign.center,
+  //                   ),
+  //                 ),
+  //               ),
+  //               Tab(
+  //                 child: Container(
+  //                   alignment: Alignment.center,
+  //                   child: const Text(
+  //                     'Suburb\nNotice',
+  //                     textAlign: TextAlign.center,
+  //                   ),
+  //                 ),
+  //               ),
+  //               Tab(
+  //                 child: Container(
+  //                   alignment: Alignment.center,
+  //                   child: const Text(
+  //                     'Street\nNotice',
+  //                     textAlign: TextAlign.center,
+  //                   ),
+  //                 ),
+  //               ),
+  //             ]),
+  //       ),
+  //       body: TabBarView(controller: _tabController, children: [
+  //         ///Tab for all
+  //         Column(
+  //           children: [
+  //             const SizedBox(
+  //               height: 8,
+  //             ),
+  //
+  //             ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
+  //             ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
+  //             buildMunicipalityDropdown(),
+  //             BasicIconButtonGrey(
+  //               onPress: () async {
+  //                 _headerController.text = '';
+  //                 _messageController.text = '';
+  //                 _notifyAllUser();
+  //               },
+  //               labelText: 'Send Notice To All',
+  //               fSize: 16,
+  //               faIcon: const FaIcon(
+  //                 Icons.notifications,
+  //               ),
+  //               fgColor: Colors.red,
+  //               btSize: const Size(300, 50),
+  //             ),
+  //
+  //             const SizedBox(
+  //               height: 5,
+  //             ),
+  //
+  //             ///made the listview card a reusable widget
+  //             Expanded(
+  //               child: userCard(),
+  //             ),
+  //           ],
+  //         ),
+  //
+  //         ///Tab for searching
+  //         Column(
+  //           children: [
+  //             ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
+  //             ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
+  //             buildMunicipalityDropdown(),
+  //
+  //             /// Search bar
+  //             Padding(
+  //               padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
+  //               child: SearchBar(
+  //                 controller: _searchController,
+  //                 padding: const MaterialStatePropertyAll<EdgeInsets>(
+  //                     EdgeInsets.symmetric(horizontal: 16.0)),
+  //                 leading: const Icon(Icons.search),
+  //                 hintText: "Search",
+  //                 onChanged: (value) async {
+  //                   if (context.mounted) {
+  //                     setState(() {
+  //                       searchText = value;
+  //                       print('this is the input text ::: $searchText');
+  //                     });
+  //                   }
+  //                 },
+  //               ),
+  //             ),
+  //
+  //             /// Search bar end
+  //
+  //             ///made the listview card a reusable widget
+  //             Expanded(
+  //               child: userTokenSearchCard(),
+  //             ),
+  //           ],
+  //         ),
+  //
+  //         ///Tab for wards
+  //         Column(
+  //           children: [
+  //             ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
+  //             ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
+  //             buildMunicipalityDropdown(),
+  //
+  //             /// Warc select bar
+  //             const SizedBox(
+  //               height: 5,
+  //             ),
+  //             Padding(
+  //               padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
+  //               child: Column(children: [
+  //                 SizedBox(
+  //                   // width: 400,
+  //                   height: 50,
+  //                   child: Padding(
+  //                     padding: const EdgeInsets.only(left: 10, right: 10),
+  //                     child: Center(
+  //                       child: TextField(
+  //                         controller: _searchWardController,
+  //
+  //                         ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
+  //                         decoration: InputDecoration(
+  //                           border: OutlineInputBorder(
+  //                               borderRadius: BorderRadius.circular(30),
+  //                               borderSide: const BorderSide(
+  //                                 color: Colors.grey,
+  //                               )),
+  //                           enabledBorder: OutlineInputBorder(
+  //                               borderRadius: BorderRadius.circular(30),
+  //                               borderSide: const BorderSide(
+  //                                 color: Colors.grey,
+  //                               )),
+  //                           focusedBorder: OutlineInputBorder(
+  //                               borderRadius: BorderRadius.circular(30),
+  //                               borderSide: const BorderSide(
+  //                                 color: Colors.grey,
+  //                               )),
+  //                           disabledBorder: OutlineInputBorder(
+  //                               borderRadius: BorderRadius.circular(30),
+  //                               borderSide: const BorderSide(
+  //                                 color: Colors.grey,
+  //                               )),
+  //                           contentPadding: const EdgeInsets.symmetric(
+  //                               horizontal: 14, vertical: 6),
+  //                           fillColor: Colors.white,
+  //                           filled: true,
+  //                           suffixIcon: DropdownButtonFormField<String>(
+  //                             value: dropdownValue,
+  //                             items: dropdownWards
+  //                                 .map<DropdownMenuItem<String>>(
+  //                                     (String value) {
+  //                               return DropdownMenuItem<String>(
+  //                                 value: value,
+  //                                 child: Padding(
+  //                                   padding: const EdgeInsets.symmetric(
+  //                                       vertical: 0.0, horizontal: 20.0),
+  //                                   child: Text(
+  //                                     value,
+  //                                     style: const TextStyle(fontSize: 16),
+  //                                   ),
+  //                                 ),
+  //                               );
+  //                             }).toList(),
+  //                             onChanged: (String? newValue) async {
+  //                               if (context.mounted) {
+  //                                 setState(() {
+  //                                   dropdownValue =
+  //                                       newValue!; // Set the selected ward
+  //
+  //                                   // Only proceed if data for the selected municipality has been loaded
+  //                                   if (_allUserPropResults.isNotEmpty) {
+  //                                     // Filter the properties by the selected ward and cast the result to the correct type
+  //                                     List<DocumentSnapshot<Object?>>
+  //                                         filteredByWard = _allUserPropResults
+  //                                             .where((property) {
+  //                                               return property['ward'] ==
+  //                                                   dropdownValue;
+  //                                             })
+  //                                             .cast<DocumentSnapshot<Object?>>()
+  //                                             .toList();
+  //
+  //                                     // Update the filtered results and refresh the UI
+  //                                     _allUserPropResults = filteredByWard;
+  //                                     _searchWardController.text =
+  //                                         dropdownValue;
+  //
+  //                                     // Debugging output to verify filtering
+  //                                     print(
+  //                                         "Filtering properties by ward: $dropdownValue");
+  //                                     print(
+  //                                         "Number of properties after filtering: ${_allUserPropResults.length}");
+  //                                   }
+  //                                 });
+  //                               }
+  //                             },
+  //                             icon: const Padding(
+  //                               padding: EdgeInsets.only(left: 10, right: 10),
+  //                               child: Icon(Icons.arrow_circle_down_sharp),
+  //                             ),
+  //                             iconEnabledColor: Colors.green,
+  //                             style: const TextStyle(
+  //                                 color: Colors.black, fontSize: 18),
+  //                             dropdownColor: Colors.grey[50],
+  //                             isExpanded: true,
+  //                           ),
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ]),
+  //             ),
+  //
+  //             /// Search bar end
+  //
+  //             const SizedBox(
+  //               height: 5,
+  //             ),
+  //
+  //             BasicIconButtonGrey(
+  //               onPress: () async {
+  //                 _notifyWardUsers();
+  //               },
+  //               labelText: 'Notify Selected Ward',
+  //               fSize: 16,
+  //               faIcon: const FaIcon(
+  //                 Icons.notifications,
+  //               ),
+  //               fgColor: Colors.red,
+  //               btSize: const Size(300, 50),
+  //             ),
+  //
+  //             const SizedBox(
+  //               height: 5,
+  //             ),
+  //
+  //             ///made the listview card a reusable widget
+  //             Expanded(
+  //               child: userWardCard(),
+  //             ),
+  //           ],
+  //         ),
+  //
+  //         ///Tab for suburb
+  //         Column(
+  //           children: [
+  //             ///this onPress code bellow is used to set the message information and pop it up to the user in their notifications.
+  //             ///button not needed as it will only be used when a new chat is sent or when an admin sends to a specific phone which will be a list of tokens per device
+  //             buildMunicipalityDropdown(),
+  //
+  //             /// Warc select bar
+  //             const SizedBox(
+  //               height: 5,
+  //             ),
+  //             Padding(
+  //               padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
+  //               child: Column(children: [
+  //                 SizedBox(
+  //                   // width: 400,
+  //                   height: 50,
+  //                   child: Padding(
+  //                     padding: const EdgeInsets.only(left: 10, right: 10),
+  //                     child: Center(
+  //                       child: TextField(
+  //                         controller: _searchSuburbController,
+  //
+  //                         ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
+  //                         decoration: InputDecoration(
+  //                           border: OutlineInputBorder(
+  //                               borderRadius: BorderRadius.circular(30),
+  //                               borderSide: const BorderSide(
+  //                                 color: Colors.grey,
+  //                               )),
+  //                           enabledBorder: OutlineInputBorder(
+  //                               borderRadius: BorderRadius.circular(30),
+  //                               borderSide: const BorderSide(
+  //                                 color: Colors.grey,
+  //                               )),
+  //                           focusedBorder: OutlineInputBorder(
+  //                               borderRadius: BorderRadius.circular(30),
+  //                               borderSide: const BorderSide(
+  //                                 color: Colors.grey,
+  //                               )),
+  //                           disabledBorder: OutlineInputBorder(
+  //                               borderRadius: BorderRadius.circular(30),
+  //                               borderSide: const BorderSide(
+  //                                 color: Colors.grey,
+  //                               )),
+  //                           contentPadding: const EdgeInsets.symmetric(
+  //                               horizontal: 14, vertical: 6),
+  //                           fillColor: Colors.white,
+  //                           filled: true,
+  //                           suffixIcon: DropdownButtonFormField<String>(
+  //                             value: dropdownSuburbValue,
+  //                             items: dropdownSuburbs
+  //                                 .map<DropdownMenuItem<String>>(
+  //                                     (String value) {
+  //                               return DropdownMenuItem<String>(
+  //                                 value: value,
+  //                                 child: Padding(
+  //                                   padding: const EdgeInsets.symmetric(
+  //                                       vertical: 0.0, horizontal: 20.0),
+  //                                   child: Text(
+  //                                     value,
+  //                                     style: const TextStyle(fontSize: 16),
+  //                                   ),
+  //                                 ),
+  //                               );
+  //                             }).toList(),
+  //                             onChanged: (String? newValue) async {
+  //                               if (context.mounted) {
+  //                                 setState(() {
+  //                                   dropdownSuburbValue = newValue!;
+  //                                   _searchSuburbController.text =
+  //                                       dropdownSuburbValue;
+  //
+  //                                   // Fetch filtered properties and tokens based on the selected suburb
+  //                                   getUsersTokenStream(
+  //                                       selectedSuburb: dropdownSuburbValue);
+  //                                   getUsersPropStream();
+  //                                   print(
+  //                                       "Filtering properties by suburb: $dropdownSuburbValue");
+  //                                   print(
+  //                                       "Number of properties after filtering: ${_allUserPropResults.length}"); // This is assumed to fetch properties for display
+  //                                 });
+  //                               }
+  //                             },
+  //                             icon: const Padding(
+  //                               padding: EdgeInsets.only(left: 10, right: 10),
+  //                               child: Icon(Icons.arrow_circle_down_sharp),
+  //                             ),
+  //                             iconEnabledColor: Colors.green,
+  //                             style: const TextStyle(
+  //                                 color: Colors.black, fontSize: 18),
+  //                             dropdownColor: Colors.grey[50],
+  //                             isExpanded: true,
+  //                           ),
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ]),
+  //             ),
+  //
+  //             /// Search bar end
+  //
+  //             const SizedBox(
+  //               height: 5,
+  //             ),
+  //
+  //             BasicIconButtonGrey(
+  //               onPress: () async {
+  //                 _notifySuburbUsers();
+  //               },
+  //               labelText: 'Notify Selected Suburb',
+  //               fSize: 16,
+  //               faIcon: const FaIcon(
+  //                 Icons.notifications,
+  //               ),
+  //               fgColor: Colors.red,
+  //               btSize: const Size(300, 50),
+  //             ),
+  //
+  //             const SizedBox(
+  //               height: 5,
+  //             ),
+  //
+  //             ///made the listview card a reusable widget
+  //             Expanded(
+  //               child: userSuburbCard(),
+  //             ),
+  //           ],
+  //         ),
+  //         //Tab for streets
+  //         Column(
+  //           children: [
+  //             buildMunicipalityDropdown(),
+  //
+  //             /// Warc select bar
+  //             const SizedBox(
+  //               height: 5,
+  //             ),
+  //             Padding(
+  //               padding: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
+  //               child: Column(children: [
+  //                 SizedBox(
+  //                   // width: 400,
+  //                   height: 50,
+  //                   child: Padding(
+  //                     padding: const EdgeInsets.only(left: 10, right: 10),
+  //                     child: Center(
+  //                       child: TextField(
+  //                         controller: _searchStreetController,
+  //
+  //                         ///Input decoration here had to be manual because dropdown button uses suffix icon of the textfield
+  //                         decoration: InputDecoration(
+  //                           border: OutlineInputBorder(
+  //                               borderRadius: BorderRadius.circular(30),
+  //                               borderSide: const BorderSide(
+  //                                 color: Colors.grey,
+  //                               )),
+  //                           enabledBorder: OutlineInputBorder(
+  //                               borderRadius: BorderRadius.circular(30),
+  //                               borderSide: const BorderSide(
+  //                                 color: Colors.grey,
+  //                               )),
+  //                           focusedBorder: OutlineInputBorder(
+  //                               borderRadius: BorderRadius.circular(30),
+  //                               borderSide: const BorderSide(
+  //                                 color: Colors.grey,
+  //                               )),
+  //                           disabledBorder: OutlineInputBorder(
+  //                               borderRadius: BorderRadius.circular(30),
+  //                               borderSide: const BorderSide(
+  //                                 color: Colors.grey,
+  //                               )),
+  //                           contentPadding: const EdgeInsets.symmetric(
+  //                               horizontal: 14, vertical: 6),
+  //                           fillColor: Colors.white,
+  //                           filled: true,
+  //                           suffixIcon: DropdownButtonFormField<String>(
+  //                             value: dropdownStreetValue,
+  //                             items: dropdownStreets
+  //                                 .map<DropdownMenuItem<String>>(
+  //                                     (String value) {
+  //                               return DropdownMenuItem<String>(
+  //                                 value: value,
+  //                                 child: Padding(
+  //                                   padding: const EdgeInsets.symmetric(
+  //                                       vertical: 0.0, horizontal: 20.0),
+  //                                   child: Text(
+  //                                     value,
+  //                                     style: const TextStyle(fontSize: 16),
+  //                                   ),
+  //                                 ),
+  //                               );
+  //                             }).toList(),
+  //                             onChanged: (String? newValue) async {
+  //                               if (context.mounted) {
+  //                                 setState(() {
+  //                                   dropdownStreetValue = newValue!;
+  //                                   _searchStreetController.text =
+  //                                       dropdownStreetValue;
+  //
+  //                                   // Fetch filtered properties and tokens based on the selected suburb
+  //                                   getUsersTokenStream(
+  //                                       selectedSuburb: dropdownStreetValue);
+  //                                   getUsersPropStream();
+  //                                   print(
+  //                                       "Filtering properties by suburb: $dropdownStreetValue");
+  //                                   print(
+  //                                       "Number of properties after filtering: ${_allUserPropResults.length}"); // This is assumed to fetch properties for display
+  //                                 });
+  //                               }
+  //                             },
+  //                             icon: const Padding(
+  //                               padding: EdgeInsets.only(left: 10, right: 10),
+  //                               child: Icon(Icons.arrow_circle_down_sharp),
+  //                             ),
+  //                             iconEnabledColor: Colors.green,
+  //                             style: const TextStyle(
+  //                                 color: Colors.black, fontSize: 18),
+  //                             dropdownColor: Colors.grey[50],
+  //                             isExpanded: true,
+  //                           ),
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ]),
+  //             ),
+  //
+  //             /// Search bar end
+  //
+  //             const SizedBox(
+  //               height: 5,
+  //             ),
+  //
+  //             BasicIconButtonGrey(
+  //               onPress: () async {
+  //                 _notifyStreetUsers();
+  //               },
+  //               labelText: 'Notify Selected Street',
+  //               fSize: 16,
+  //               faIcon: const FaIcon(
+  //                 Icons.notifications,
+  //               ),
+  //               fgColor: Colors.red,
+  //               btSize: const Size(300, 50),
+  //             ),
+  //
+  //             const SizedBox(
+  //               height: 5,
+  //             ),
+  //
+  //             ///made the listview card a reusable widget
+  //             Expanded(
+  //               child: userStreetCard(),
+  //             ),
+  //           ],
+  //         ),
+  //       ]),
+  //     ),
+  //   );
+  // }
 
   Widget tokenItemField(
       String tokenData,
@@ -2037,8 +2441,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
   //this widget is for displaying users phone numbers with the hidden stored device token
   Widget userCard() {
     if (_allPropResults.isNotEmpty) {
-
-      return  GestureDetector(
+      return GestureDetector(
         onTap: () {
           // Refocus when tapping within the tab content
           notifyAll.requestFocus();
@@ -2088,7 +2491,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                 controller: _notifyAllScroller,
                 itemCount: _allPropResults.length,
                 itemBuilder: (context, index) {
-                  String accountNumber = _allPropResults[index]['accountNumber'];
+                  String accountNumber =
+                      _allPropResults[index]['accountNumber'];
                   userNameProp =
                       '${_allPropResults[index]['firstName']} ${_allPropResults[index]['lastName']}';
                   userAddress = _allPropResults[index]['address'];
@@ -2124,8 +2528,13 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                           const SizedBox(
                             height: 10,
                           ),
-                          tokenItemField(userPhoneNumber, userNameProp, userAddress,
-                              userPhoneNumber, userValid, userWardProp),
+                          tokenItemField(
+                              userPhoneNumber,
+                              userNameProp,
+                              userAddress,
+                              userPhoneNumber,
+                              userValid,
+                              userWardProp),
                           Visibility(
                             visible: false,
                             child: Text(
@@ -2155,7 +2564,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
   Widget userTokenSearchCard() {
     print('User Properties Results: ${_allUserPropResults.length}');
     if (_allUserPropResults.isNotEmpty) {
-
       return GestureDetector(
         onTap: () {
           // Refocus when tapping within the tab content
@@ -2229,8 +2637,10 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                 // Check if the user matches the search query
                 String searchText = _searchController.text.toLowerCase();
                 bool matchesPhone = userPhoneNumber.contains(searchText);
-                bool matchesName = userNameProp.toLowerCase().contains(searchText);
-                bool matchesAddress = userAddress.toLowerCase().contains(searchText);
+                bool matchesName =
+                    userNameProp.toLowerCase().contains(searchText);
+                bool matchesAddress =
+                    userAddress.toLowerCase().contains(searchText);
                 // If there's no search query or if the user matches the search query, display the card
                 if (_searchController.text.isEmpty ||
                     matchesPhone ||
@@ -2252,8 +2662,13 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                             ),
                           ),
                           const SizedBox(height: 10),
-                          tokenItemField(userPhoneNumber, userNameProp, userAddress,
-                              userPhoneNumber, userValid, userWardProp),
+                          tokenItemField(
+                              userPhoneNumber,
+                              userNameProp,
+                              userAddress,
+                              userPhoneNumber,
+                              userValid,
+                              userWardProp),
                           Visibility(
                             visible: false,
                             child: Text(
@@ -2276,9 +2691,12 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                           context: context,
                                           builder: (context) {
                                             return AlertDialog(
-                                              shape: const RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.all(
-                                                      Radius.circular(16))),
+                                              shape:
+                                                  const RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.all(
+                                                              Radius.circular(
+                                                                  16))),
                                               title: const Text("Call User!"),
                                               content: const Text(
                                                   "Would you like to call the user directly?"),
@@ -2324,7 +2742,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                       width: 10), // Add spacing between buttons
                                   BasicIconButtonGrey(
                                     onPress: () async {
-                                      if (!isLocalUser && !isLocalMunicipality) {
+                                      if (!isLocalUser &&
+                                          !isLocalMunicipality) {
                                         if (selectedMunicipality == null ||
                                             selectedMunicipality ==
                                                 "Select Municipality") {
@@ -2357,13 +2776,16 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                       }
                                       // Get the account number for the selected property
                                       String accountNumber =
-                                          _allUserPropResults[index]['accountNumber'];
+                                          _allUserPropResults[index]
+                                              ['accountNumber'];
 
                                       // Fetch all tokens like in notifyAllUsers
                                       await getUsersTokenStream();
 
                                       // Look for the token for the specific account number
-                                      for (int i = 0; i < usersTokens.length; i++) {
+                                      for (int i = 0;
+                                          i < usersTokens.length;
+                                          i++) {
                                         if (usersNumbers[i] == accountNumber) {
                                           notifyToken = usersTokens[i];
                                           break;
@@ -2372,8 +2794,10 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
 
                                       // Proceed to notify the user
                                       userPhoneNumber =
-                                          _allUserPropResults[index]['cellNumber'];
-                                      _notifyThisUser(_allUserPropResults[index]);
+                                          _allUserPropResults[index]
+                                              ['cellNumber'];
+                                      _notifyThisUser(
+                                          _allUserPropResults[index]);
                                     },
                                     labelText: 'Notify',
                                     fSize: 14,
@@ -2385,7 +2809,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                       width: 10), // Add spacing between buttons
                                   BasicIconButtonGrey(
                                     onPress: () async {
-                                      if (!isLocalUser && !isLocalMunicipality) {
+                                      if (!isLocalUser &&
+                                          !isLocalMunicipality) {
                                         if (selectedMunicipality == null ||
                                             selectedMunicipality ==
                                                 "Select Municipality") {
@@ -2418,13 +2843,16 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                       }
                                       // Get the account number for the selected property
                                       String accountNumber =
-                                          _allUserPropResults[index]['accountNumber'];
+                                          _allUserPropResults[index]
+                                              ['accountNumber'];
 
                                       // Fetch all tokens like in notifyAllUsers
                                       await getUsersTokenStream();
 
                                       // Look for the token for the specific account number
-                                      for (int i = 0; i < usersTokens.length; i++) {
+                                      for (int i = 0;
+                                          i < usersTokens.length;
+                                          i++) {
                                         if (usersNumbers[i] == accountNumber) {
                                           notifyToken = usersTokens[i];
                                           break;
@@ -2433,8 +2861,10 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
 
                                       // Proceed to notify the user
                                       userPhoneNumber =
-                                          _allUserPropResults[index]['cellNumber'];
-                                      _disconnectThisUser(_allUserPropResults[index]);
+                                          _allUserPropResults[index]
+                                              ['cellNumber'];
+                                      _disconnectThisUser(
+                                          _allUserPropResults[index]);
                                     },
                                     labelText: 'Disconnect',
                                     fSize: 14,
@@ -2470,7 +2900,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
 
   Widget userWardCard() {
     if (_allUserPropResults.isNotEmpty) {
-
       return GestureDetector(
         onTap: () {
           // Refocus when tapping within the tab content
@@ -2528,7 +2957,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                     (property['ward'].toString() == dropdownValue.toString() ||
                         dropdownValue == 'Select Ward')) {
                   // Set variables for display
-                  userNameProp = '${property['firstName']} ${property['lastName']}';
+                  userNameProp =
+                      '${property['firstName']} ${property['lastName']}';
                   userAddress = property['address'];
                   userWardProp = property['ward'];
                   userPhoneNumber = property['cellNumber'];
@@ -2554,9 +2984,15 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                           ),
                           const SizedBox(height: 10),
                           // Display user details
-                          tokenItemField(userPhoneNumber, userNameProp, userAddress,
-                              userPhoneNumber, userValid, userWardProp),
-                          const SizedBox(height: 15), // Add some space before buttons
+                          tokenItemField(
+                              userPhoneNumber,
+                              userNameProp,
+                              userAddress,
+                              userPhoneNumber,
+                              userValid,
+                              userWardProp),
+                          const SizedBox(
+                              height: 15), // Add some space before buttons
 
                           // Interaction buttons
                           Row(
@@ -2588,7 +3024,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                             ),
                                             IconButton(
                                               onPressed: () {
-                                                String cellGiven = userPhoneNumber;
+                                                String cellGiven =
+                                                    userPhoneNumber;
 
                                                 final Uri _tel = Uri.parse(
                                                     'tel:${cellGiven.toString()}');
@@ -2622,7 +3059,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                         selectedMunicipality ==
                                             "Select Municipality") {
                                       Fluttertoast.showToast(
-                                        msg: "Please select a municipality first!",
+                                        msg:
+                                            "Please select a municipality first!",
                                         toastLength: Toast.LENGTH_SHORT,
                                         gravity: ToastGravity.CENTER,
                                       );
@@ -2637,7 +3075,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                           : selectedMunicipality!;
 
                                   if (municipalityContext.isEmpty) {
-                                    print("Error: Municipality context is empty.");
+                                    print(
+                                        "Error: Municipality context is empty.");
                                     Fluttertoast.showToast(
                                       msg:
                                           "Invalid municipality selection or missing municipality.",
@@ -2648,7 +3087,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                   }
                                   // Get the account number for the selected property
                                   String accountNumber =
-                                      _allUserPropResults[index]['accountNumber'];
+                                      _allUserPropResults[index]
+                                          ['accountNumber'];
 
                                   // Fetch all tokens like in notifyAllUsers
                                   await getUsersTokenStream();
@@ -2681,7 +3121,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                         selectedMunicipality ==
                                             "Select Municipality") {
                                       Fluttertoast.showToast(
-                                        msg: "Please select a municipality first!",
+                                        msg:
+                                            "Please select a municipality first!",
                                         toastLength: Toast.LENGTH_SHORT,
                                         gravity: ToastGravity.CENTER,
                                       );
@@ -2696,7 +3137,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                           : selectedMunicipality!;
 
                                   if (municipalityContext.isEmpty) {
-                                    print("Error: Municipality context is empty.");
+                                    print(
+                                        "Error: Municipality context is empty.");
                                     Fluttertoast.showToast(
                                       msg:
                                           "Invalid municipality selection or missing municipality.",
@@ -2707,7 +3149,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                   }
                                   // Get the account number for the selected property
                                   String accountNumber =
-                                      _allUserPropResults[index]['accountNumber'];
+                                      _allUserPropResults[index]
+                                          ['accountNumber'];
 
                                   // Fetch all tokens like in notifyAllUsers
                                   await getUsersTokenStream();
@@ -2723,7 +3166,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                   // Proceed to notify the user
                                   userPhoneNumber =
                                       _allUserPropResults[index]['cellNumber'];
-                                  _disconnectThisUser(_allUserPropResults[index]);
+                                  _disconnectThisUser(
+                                      _allUserPropResults[index]);
                                 },
                                 labelText: 'Disconnect',
                                 fSize: 14,
@@ -3389,7 +3833,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
   // }
   Widget userSuburbCard() {
     if (_allUserPropResults.isNotEmpty) {
-
       return KeyboardListener(
         focusNode: notifySuburb,
         onKeyEvent: (KeyEvent event) {
@@ -3444,7 +3887,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                           .contains(dropdownSuburbValue.toLowerCase()) ||
                       dropdownSuburbValue == 'Select Suburb')) {
                 // Set variables for display
-                userNameProp = '${property['firstName']} ${property['lastName']}';
+                userNameProp =
+                    '${property['firstName']} ${property['lastName']}';
                 userAddress = property['address'];
                 userWardProp = property['ward'];
                 userPhoneNumber = property['cellNumber'];
@@ -3470,10 +3914,16 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                         ),
                         const SizedBox(height: 10),
                         // Display user details
-                        tokenItemField(userPhoneNumber, userNameProp, userAddress,
-                            userPhoneNumber, userValid, userWardProp),
+                        tokenItemField(
+                            userPhoneNumber,
+                            userNameProp,
+                            userAddress,
+                            userPhoneNumber,
+                            userValid,
+                            userWardProp),
 
-                        const SizedBox(height: 15), // Add some space before buttons
+                        const SizedBox(
+                            height: 15), // Add some space before buttons
 
                         // Interaction buttons
                         Row(
@@ -3505,7 +3955,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                           ),
                                           IconButton(
                                             onPressed: () {
-                                              String cellGiven = userPhoneNumber;
+                                              String cellGiven =
+                                                  userPhoneNumber;
 
                                               final Uri _tel = Uri.parse(
                                                   'tel:${cellGiven.toString()}');
@@ -3539,7 +3990,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                       selectedMunicipality ==
                                           "Select Municipality") {
                                     Fluttertoast.showToast(
-                                      msg: "Please select a municipality first!",
+                                      msg:
+                                          "Please select a municipality first!",
                                       toastLength: Toast.LENGTH_SHORT,
                                       gravity: ToastGravity.CENTER,
                                     );
@@ -3554,7 +4006,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                         : selectedMunicipality!;
 
                                 if (municipalityContext.isEmpty) {
-                                  print("Error: Municipality context is empty.");
+                                  print(
+                                      "Error: Municipality context is empty.");
                                   Fluttertoast.showToast(
                                     msg:
                                         "Invalid municipality selection or missing municipality.",
@@ -3598,7 +4051,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                       selectedMunicipality ==
                                           "Select Municipality") {
                                     Fluttertoast.showToast(
-                                      msg: "Please select a municipality first!",
+                                      msg:
+                                          "Please select a municipality first!",
                                       toastLength: Toast.LENGTH_SHORT,
                                       gravity: ToastGravity.CENTER,
                                     );
@@ -3613,7 +4067,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                         : selectedMunicipality!;
 
                                 if (municipalityContext.isEmpty) {
-                                  print("Error: Municipality context is empty.");
+                                  print(
+                                      "Error: Municipality context is empty.");
                                   Fluttertoast.showToast(
                                     msg:
                                         "Invalid municipality selection or missing municipality.",
@@ -3669,7 +4124,6 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
 
   Widget userStreetCard() {
     if (_allUserPropResults.isNotEmpty) {
-
       return KeyboardListener(
         focusNode: notifyStreet,
         onKeyEvent: (KeyEvent event) {
@@ -3726,7 +4180,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                   (propertyStreet.contains(streetName) ||
                       dropdownStreetValue == 'Select Street')) {
                 // Set variables for display
-                userNameProp = '${property['firstName']} ${property['lastName']}';
+                userNameProp =
+                    '${property['firstName']} ${property['lastName']}';
                 userAddress = property['address'];
                 userWardProp = property['ward'];
                 userPhoneNumber = property['cellNumber'];
@@ -3752,10 +4207,16 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                         ),
                         const SizedBox(height: 10),
                         // Display user details
-                        tokenItemField(userPhoneNumber, userNameProp, userAddress,
-                            userPhoneNumber, userValid, userWardProp),
+                        tokenItemField(
+                            userPhoneNumber,
+                            userNameProp,
+                            userAddress,
+                            userPhoneNumber,
+                            userValid,
+                            userWardProp),
 
-                        const SizedBox(height: 15), // Add some space before buttons
+                        const SizedBox(
+                            height: 15), // Add some space before buttons
 
                         // Interaction buttons
                         Row(
@@ -3787,7 +4248,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                           ),
                                           IconButton(
                                             onPressed: () {
-                                              String cellGiven = userPhoneNumber;
+                                              String cellGiven =
+                                                  userPhoneNumber;
                                               final Uri _tel = Uri.parse(
                                                   'tel:${cellGiven.toString()}');
                                               launchUrl(_tel);
@@ -3820,7 +4282,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                       selectedMunicipality ==
                                           "Select Municipality") {
                                     Fluttertoast.showToast(
-                                      msg: "Please select a municipality first!",
+                                      msg:
+                                          "Please select a municipality first!",
                                       toastLength: Toast.LENGTH_SHORT,
                                       gravity: ToastGravity.CENTER,
                                     );
@@ -3835,7 +4298,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                         : selectedMunicipality!;
 
                                 if (municipalityContext.isEmpty) {
-                                  print("Error: Municipality context is empty.");
+                                  print(
+                                      "Error: Municipality context is empty.");
                                   Fluttertoast.showToast(
                                     msg:
                                         "Invalid municipality selection or missing municipality.",
@@ -3881,7 +4345,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                       selectedMunicipality ==
                                           "Select Municipality") {
                                     Fluttertoast.showToast(
-                                      msg: "Please select a municipality first!",
+                                      msg:
+                                          "Please select a municipality first!",
                                       toastLength: Toast.LENGTH_SHORT,
                                       gravity: ToastGravity.CENTER,
                                     );
@@ -3896,7 +4361,8 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
                                         : selectedMunicipality!;
 
                                 if (municipalityContext.isEmpty) {
-                                  print("Error: Municipality context is empty.");
+                                  print(
+                                      "Error: Municipality context is empty.");
                                   Fluttertoast.showToast(
                                     msg:
                                         "Invalid municipality selection or missing municipality.",
@@ -3949,6 +4415,359 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
       );
     }
     return const Center(child: CircularProgressIndicator());
+  }
+
+  Widget userSelectedPropertiesCard() {
+    if (_allUserPropResults.isNotEmpty) {
+      return KeyboardListener(
+        focusNode: notifySelect,
+        onKeyEvent: (KeyEvent event) {
+          if (event is KeyDownEvent) {
+            final double pageScrollAmount =
+                _notifySelectScroller.position.viewportDimension;
+
+            if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+              _notifySelectScroller.animateTo(
+                _notifySelectScroller.offset + 50,
+                duration: const Duration(milliseconds: 100),
+                curve: Curves.easeIn,
+              );
+            } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+              _notifySelectScroller.animateTo(
+                _notifySelectScroller.offset - 50,
+                duration: const Duration(milliseconds: 100),
+                curve: Curves.easeIn,
+              );
+            }
+          }
+        },
+        child: Scrollbar(
+          controller: _notifySelectScroller,
+          thickness: 12,
+          radius: const Radius.circular(8),
+          thumbVisibility: true,
+          trackVisibility: true,
+          interactive: true,
+          child: ListView.builder(
+            controller: _notifySelectScroller,
+            itemCount: _allUserPropResults.length,
+            itemBuilder: (context, index) {
+              var property = _allUserPropResults[index];
+              String address = property['address'] ?? 'No Address';
+              String accountNumber = property['accountNumber'];
+              String ownerName =
+                  '${property['firstName']} ${property['lastName']}';
+              String userToken = property['token'] ?? '';
+
+              // Filter properties by search input
+              String searchText = _searchController.text.toLowerCase();
+              bool matches = address.toLowerCase().contains(searchText) ||
+                  ownerName.toLowerCase().contains(searchText);
+
+              if (_searchController.text.isEmpty || matches) {
+                return Card(
+                  margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Row(
+                      children: [
+                        // Checkbox for selecting the property
+                        Checkbox(
+                          value: selectedProperties.any((p) =>
+                              p['accountNumber'] == property['accountNumber']),
+                          checkColor: Colors.green,
+                          activeColor:
+                              Colors.transparent, // ✅ Check by accountNumber
+                          onChanged: (bool? value) {
+                            if (mounted) {
+                              setState(() {
+                                if (value == true) {
+                                  selectedProperties.add(property.data() as Map<
+                                      String, dynamic>); // ✅ Convert to Map
+                                } else {
+                                  selectedProperties.removeWhere((p) =>
+                                      p['accountNumber'] ==
+                                      property['accountNumber']);
+                                }
+                              });
+                            }
+                          },
+                        ),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("Owner: $ownerName",
+                                  style: const TextStyle(fontSize: 16)),
+                              Text("Address: $address",
+                                  style: const TextStyle(fontSize: 16)),
+                              Text("Account Number: $accountNumber",
+                                  style: const TextStyle(fontSize: 16)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              } else {
+                return const SizedBox.shrink();
+              }
+            },
+          ),
+        ),
+      );
+    }
+    return const Center(child: CircularProgressIndicator());
+  }
+
+  Future<void> _notifySelectedUsers() async {
+    if (selectedProperties.isEmpty) {
+      Fluttertoast.showToast(msg: "No properties selected.");
+      print("❌ No properties selected. Aborting notification process.");
+      return;
+    }
+
+    title.text = '';
+    body.text = '';
+
+    _showDialog(
+      context: context,
+      titleText: 'Notify Selected Users',
+      onConfirm: () async {
+        DateTime now = DateTime.now();
+        String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+
+        print(
+            "✅ Starting notification process for ${selectedProperties.length} properties.");
+
+        for (var property in selectedProperties) {
+          String tokenSelected = property['token'] ?? '';
+          String userNumber = property['accountNumber'] ?? '';
+
+          print("🔹 Sending to account: $userNumber | Token: $tokenSelected");
+
+          if (tokenSelected.isNotEmpty) {
+            // Determine the correct Firestore path based on municipality type
+            CollectionReference notificationsRef;
+            if (isLocalMunicipality) {
+              notificationsRef = FirebaseFirestore.instance
+                  .collection('localMunicipalities')
+                  .doc(municipalityId)
+                  .collection('Notifications');
+            } else {
+              notificationsRef = FirebaseFirestore.instance
+                  .collection('districts')
+                  .doc(districtId)
+                  .collection('municipalities')
+                  .doc(municipalityId)
+                  .collection('Notifications');
+            }
+
+            await notificationsRef.add({
+              "token": tokenSelected,
+              "user": userNumber,
+              "title": title.text,
+              "body": body.text,
+              "read": false,
+              "date": formattedDate,
+              "level": 'general',
+            });
+
+            print(
+                "✅ Notification saved in Firestore for $userNumber at path: ${notificationsRef.path}");
+
+            sendPushMessage(tokenSelected, title.text, body.text);
+            print("📨 Push notification sent to $tokenSelected");
+          } else {
+            print("⚠️ Skipping $userNumber - No token found.");
+          }
+        }
+
+        Fluttertoast.showToast(msg: 'Notification sent to selected users!');
+        title.clear();
+        body.clear();
+        selectedProperties.clear();
+        Navigator.of(context).pop();
+        setState(() {}); // Refresh UI
+      },
+    );
+  }
+
+  Future<void> _disconnectSelectedUsers() async {
+    if (selectedProperties.isEmpty) {
+      Fluttertoast.showToast(msg: "No properties selected.");
+      print("❌ No properties selected. Aborting disconnection notice process.");
+      return;
+    }
+
+    title.text = 'Utilities Disconnection Warning';
+    body.text =
+        'Please complete payment of your utilities. Failing to do so will result in utilities being cut off in 14 days!';
+
+    _showDialog(
+      context: context,
+      titleText: 'Notify Selected Users of Disconnection',
+      onConfirm: () async {
+        DateTime now = DateTime.now();
+        String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+
+        print(
+            "✅ Starting disconnection notice process for ${selectedProperties.length} properties.");
+
+        for (var property in selectedProperties) {
+          String tokenSelected = property['token'] ?? '';
+          String userNumber = property['accountNumber'] ?? '';
+
+          print("🔹 Sending to account: $userNumber | Token: $tokenSelected");
+
+          if (tokenSelected.isNotEmpty) {
+            // Determine the correct Firestore path based on municipality type
+            CollectionReference notificationsRef;
+            if (isLocalMunicipality) {
+              notificationsRef = FirebaseFirestore.instance
+                  .collection('localMunicipalities')
+                  .doc(municipalityId)
+                  .collection('Notifications');
+            } else {
+              notificationsRef = FirebaseFirestore.instance
+                  .collection('districts')
+                  .doc(districtId)
+                  .collection('municipalities')
+                  .doc(municipalityId)
+                  .collection('Notifications');
+            }
+
+            await notificationsRef.add({
+              "token": tokenSelected,
+              "user": userNumber,
+              "title": title.text,
+              "body": body.text,
+              "read": false,
+              "date": formattedDate,
+              "level": 'severe',
+            });
+
+            print(
+                "✅ Disconnection notice saved in Firestore for $userNumber at path: ${notificationsRef.path}");
+
+            sendPushMessage(tokenSelected, title.text, body.text);
+            print("📨 Push notification sent to $tokenSelected");
+          } else {
+            print("⚠️ Skipping $userNumber - No token found.");
+          }
+        }
+
+        Fluttertoast.showToast(
+            msg: 'Disconnection notice sent to selected users!');
+        title.clear();
+        body.clear();
+        selectedProperties.clear();
+        Navigator.of(context).pop();
+        setState(() {}); // Refresh UI
+      },
+    );
+  }
+
+  Future<void> _showDialog({
+    required BuildContext context,
+    required String titleText,
+    required Future<void> Function() onConfirm,
+  }) async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext ctx) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return AlertDialog(
+              backgroundColor: Colors.grey[50],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0),
+              ),
+              title: Text(
+                titleText,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              content: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.6,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Notification Details',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: title,
+                        style: const TextStyle(color: Colors.black),
+                        decoration: const InputDecoration(
+                          labelText: 'Message Header',
+                          labelStyle: TextStyle(color: Colors.black),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      TextField(
+                        controller: body,
+                        style: const TextStyle(color: Colors.black),
+                        decoration: const InputDecoration(
+                          labelText: 'Message',
+                          labelStyle: TextStyle(color: Colors.black),
+                          border: OutlineInputBorder(),
+                        ),
+                        maxLines: 4,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  child: const Text('Send Notification'),
+                  onPressed: () async {
+                    await onConfirm(); // ✅ Call onConfirm and wait for it
+                  },
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.red,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  child: const Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   //This class is for updating the notification
@@ -4752,114 +5571,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>   with TickerPr
 
     print(
         'Municipality ID: $municipalityId, District ID: $districtId'); // Add print here for debugging
-    //   void _createBottomSheet() async {
-    //     await showModalBottomSheet(
-    //       isScrollControlled: true,
-    //       context: context,
-    //       builder: (BuildContext ctx) {
-    //         return StatefulBuilder(
-    //           builder: (BuildContext context, StateSetter setState) {
-    //             return SingleChildScrollView(
-    //               child: Padding(
-    //                 padding: EdgeInsets.only(
-    //                   top: 20,
-    //                   left: 20,
-    //                   right: 20,
-    //                   bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-    //                 ),
-    //                 child: Column(
-    //                   mainAxisSize: MainAxisSize.min,
-    //                   crossAxisAlignment: CrossAxisAlignment.start,
-    //                   children: [
-    //                     const Center(
-    //                       child: Text(
-    //                         'Notify Selected User',
-    //                         style: TextStyle(
-    //                           fontSize: 16,
-    //                           fontWeight: FontWeight.w700,
-    //                         ),
-    //                       ),
-    //                     ),
-    //                     const SizedBox(height: 10),
-    //                     TextField(
-    //                       controller: title,
-    //                       decoration: const InputDecoration(
-    //                         labelText: 'Message Header',
-    //                       ),
-    //                     ),
-    //                     const SizedBox(height: 10),
-    //                     TextField(
-    //                       controller: body,
-    //                       decoration: const InputDecoration(
-    //                         labelText: 'Message',
-    //                       ),
-    //                     ),
-    //                     const SizedBox(height: 20),
-    //                     ElevatedButton(
-    //                       child: const Text('Send Notification'),
-    //                       onPressed: () async {
-    //                         print('Title: ${title.text}');
-    //                         print('Body: ${body.text}');
-    //                         print('Token: $notifyToken');
-    //
-    //                         DateTime now = DateTime.now();
-    //                         String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-    //
-    //                         final String tokenSelected = notifyToken;
-    //                         final String userNumber = documentSnapshot?['accountNumber'];
-    //                         final String notificationTitle = title.text;
-    //                         final String notificationBody = body.text;
-    //
-    //                         if (notificationTitle.isNotEmpty &&
-    //                             notificationBody.isNotEmpty &&
-    //                             tokenSelected.isNotEmpty) {
-    //                           print('Sending notification to user: $userNumber');
-    //
-    //                           // Save the notification to Firestore or database
-    //                           await _listNotifications?.add({
-    //                             "token": tokenSelected,
-    //                             "user": userNumber,
-    //                             "title": notificationTitle,
-    //                             "body": notificationBody,
-    //                             "read": false,
-    //                             "date": formattedDate,
-    //                             "level": 'general',
-    //                           });
-    //
-    //                           // Send push notification
-    //                           sendPushMessage(tokenSelected, notificationTitle, notificationBody);
-    //
-    //                           // Show success message
-    //                           Fluttertoast.showToast(
-    //                             msg: 'Notification sent to the user!',
-    //                             gravity: ToastGravity.CENTER,
-    //                           );
-    //
-    //                           // Clear the fields and close the modal
-    //                           title.clear();
-    //                           body.clear();
-    //                           if (context.mounted) Navigator.of(context).pop();
-    //                         } else {
-    //                           // Handle error if fields are empty
-    //                           Fluttertoast.showToast(
-    //                             msg: 'Please fill in both the title and message!',
-    //                             gravity: ToastGravity.CENTER,
-    //                           );
-    //                         }
-    //                       },
-    //                     ),
-    //                   ],
-    //                 ),
-    //               ),
-    //             );
-    //           },
-    //         );
-    //       },
-    //     );
-    //   }
-    //
-    //   _createBottomSheet();
-    // }
+
     void _showDialog() async {
       await showDialog(
         context: context,

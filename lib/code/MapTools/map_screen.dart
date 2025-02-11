@@ -33,17 +33,25 @@ class _MapScreenState extends State<MapScreen> {
   late LatLng currentLocation;
   late LatLng addressLocation;
   late bool _isLoading;
-
+  late GoogleMapController _mapController;
+  BitmapDescriptor? sourceIcon; // ✅ Nullable to prevent LateInitializationError
+  final Set<Marker> _markers = <Marker>{};
   String location = 'Null, Press Button';
   String address = 'search';
 
   @override
   void initState() {
     _isLoading = true;
+    _cameraPosition = const CameraPosition(
+      target: SOURCE_LOCATION,
+      zoom: 16,
+    );
     Future.delayed(const Duration(seconds: 5), () {
-      setState(() {
-        _isLoading = false;
-      });
+      if(mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     });
 
     locationAllow(); // Capture user's location
@@ -54,15 +62,19 @@ class _MapScreenState extends State<MapScreen> {
     setSourceAndDestinationMarkerIcons(); // Set marker icons
   }
 
-  late GoogleMapController _mapController;
-  late BitmapDescriptor sourceIcon;
-  final Set<Marker> _markers = <Marker>{};
 
   /// Check current user's location
   Future<void> locationAllow() async {
     Position position = await _getGeoLocationPosition();
     location = 'Lat: ${position.latitude} , Long: ${position.longitude}';
-    GetAddressFromLatLong(position);
+
+    print("📍 User's Current Coordinates: $location"); // Debugging output
+
+    await GetAddressFromLatLong(position);
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<Position> _getGeoLocationPosition() async {
@@ -91,10 +103,27 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> GetAddressFromLatLong(Position position) async {
-    List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
-    Placemark place = placemarks[0];
-    address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks.first;
+        address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+        print("📍 Resolved Address: $address"); // Debugging output
+      } else {
+        print("⚠️ No placemark found! Using default address.");
+        address = "Unknown Location";
+      }
+    } catch (e) {
+      print("🚨 Error resolving address: $e");
+      address = "Unknown Location"; // Use a default address when lookup fails
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
   }
+
 
   /// Set source and destination marker icons
   void setSourceAndDestinationMarkerIcons() async {
@@ -118,17 +147,26 @@ class _MapScreenState extends State<MapScreen> {
 
         currentLocation = LatLng(latitude, longitude);
         showPinOnMap();
+        print("✅ Address converted successfully: $address");
+      } else {
+        throw Exception("Address not found");
       }
 
       _cameraPosition = CameraPosition(target: currentLocation, zoom: 16);
-
     } catch (e) {
-      currentLocation = LatLng(-29.601505328570788, 30.379442518631805);
-      _cameraPosition = CameraPosition(target: currentLocation, zoom: 16);
+      print("⚠️ Address conversion failed: $e. Using default location.");
+
+      currentLocation = SOURCE_LOCATION;
+      _cameraPosition = CameraPosition(target: SOURCE_LOCATION, zoom: 16);
       showPinOnMap();
-      Fluttertoast.showToast(msg: "Address not found! Default map location City Hall!", gravity: ToastGravity.CENTER);
+
+      Fluttertoast.showToast(
+        msg: "Address not found! Defaulting to City Hall.",
+        gravity: ToastGravity.CENTER,
+      );
     }
   }
+
 
   void setInitialLocation() async {
     currentLocation = LatLng(
@@ -152,28 +190,20 @@ class _MapScreenState extends State<MapScreen> {
           body: Stack(
             children: <Widget>[
               _isLoading
-                  ? const Center(child: CircularProgressIndicator(),)
-                  : Expanded(
+                  ? const Center(child: CircularProgressIndicator())
+                  : SizedBox.expand(
                 child: GoogleMap(
                   myLocationEnabled: true,
                   compassEnabled: false,
                   tiltGesturesEnabled: false,
                   markers: _markers,
                   mapType: mapType,
-
                   onMapCreated: (GoogleMapController mapController) {
                     addressConvert();
-                    setState(() {
-                      _mapController = mapController;
-                    });
-                    Fluttertoast.showToast(msg: "Tap on the pin and access directions to the property.", gravity: ToastGravity.CENTER);
+                    _mapController = mapController;
                   },
                   initialCameraPosition: _cameraPosition,
                 ),
-              ),
-              Positioned(
-                top: 10, left: 0, right: 0,
-                child: MapUserBadge(locationGivenGet: locationGiven, accountNumberGet: accountNumber),
               ),
             ],
           ),
@@ -182,17 +212,19 @@ class _MapScreenState extends State<MapScreen> {
             foregroundColor: Colors.black,
             child: const Icon(Icons.map),
             onPressed: () {
-              setState(() {
-                if (mapType == MapType.normal) {
-                  mapType = MapType.satellite;
-                } else if (mapType == MapType.satellite) {
-                  mapType = MapType.terrain;
-                } else if (mapType == MapType.terrain) {
-                  mapType = MapType.hybrid;
-                } else if (mapType == MapType.hybrid) {
-                  mapType = MapType.normal;
-                }
-              });
+              if(mounted) {
+                setState(() {
+                  if (mapType == MapType.normal) {
+                    mapType = MapType.satellite;
+                  } else if (mapType == MapType.satellite) {
+                    mapType = MapType.terrain;
+                  } else if (mapType == MapType.terrain) {
+                    mapType = MapType.hybrid;
+                  } else if (mapType == MapType.hybrid) {
+                    mapType = MapType.normal;
+                  }
+                });
+              }
             },
           ),
           floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
@@ -202,13 +234,15 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void showPinOnMap() {
-    setState(() {
-      _markers.add(Marker(
-        markerId: const MarkerId('sourcePin'),
-        position: currentLocation,
-        icon: sourceIcon,
-      ));
-    });
+    if (mounted) {
+      setState(() {
+        _markers.add(Marker(
+          markerId: const MarkerId('sourcePin'),
+          position: currentLocation,
+          icon: sourceIcon ?? BitmapDescriptor.defaultMarker,
+        ));
+      });
+    }
   }
 }
 

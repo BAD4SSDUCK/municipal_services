@@ -5,17 +5,15 @@ import 'package:flutter/material.dart';
 class NotificationProvider with ChangeNotifier {
 
   static final NotificationProvider _instance = NotificationProvider._internal();
-  final Map<String, bool> _councillorUnreadMessages = {};
   bool _hasUnreadMessages = false;
   bool _hasUnreadFinanceMessages = false;
   bool _hasUnreadNotices = false;
-  bool _isListening = false;
-
+  bool _hasUnreadCouncillorMessages = false;
 
   bool get hasUnreadMessages => _hasUnreadMessages;
   bool get hasUnreadFinanceMessages => _hasUnreadFinanceMessages;
   bool get hasUnreadNotices => _hasUnreadNotices;
-  Map<String, bool> get councillorUnreadMessages => _councillorUnreadMessages;
+  bool get hasUnreadCouncillorMessages => _hasUnreadCouncillorMessages;
 
   // Getter for unread notices
   factory NotificationProvider() => _instance;
@@ -25,6 +23,7 @@ class NotificationProvider with ChangeNotifier {
     _listenToRegularChatUpdates();
     _listenToFinanceChatUpdates();
     _listenToNoticesUpdates();
+    _listenToCouncillorChatUpdates();
   }
 
 
@@ -76,11 +75,6 @@ class NotificationProvider with ChangeNotifier {
     });
   }
 
-  void updateCouncillorUnreadMessages(String councillorPhone, bool hasUnread) {
-    _councillorUnreadMessages[councillorPhone] = hasUnread;
-    notifyListeners();
-  }
-
   void updateRegularUnreadMessagesStatus(bool hasUnreadMessages) {
     if (_hasUnreadMessages != hasUnreadMessages) {
       _hasUnreadMessages = hasUnreadMessages;
@@ -88,4 +82,78 @@ class NotificationProvider with ChangeNotifier {
     }
   }
 
+  void _listenToCouncillorChatUpdates() async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      print("Error: No authenticated user found.");
+      return;
+    }
+
+    String userPhone = currentUser.phoneNumber ?? '';
+    bool isCouncillor = await _checkIfUserIsCouncillor(userPhone);
+
+    FirebaseFirestore.instance
+        .collectionGroup('chatRoomCouncillor')
+        .snapshots()
+        .listen((snapshot) async {
+      print('Listening to councillor chats for updates...');
+
+      bool newUnreadCouncillorStatus = false;
+
+      for (var councillorDoc in snapshot.docs) {
+        QuerySnapshot userChatsSnapshot =
+        await councillorDoc.reference.collection('userChats').get();
+
+        for (var userChatDoc in userChatsSnapshot.docs) {
+          QuerySnapshot unreadMessages = await userChatDoc.reference
+              .collection('messages')
+              .where(isCouncillor ? 'isReadByCouncillor' : 'isReadByUser',
+              isEqualTo: false)
+              .get();
+
+          if (unreadMessages.docs.isNotEmpty) {
+            newUnreadCouncillorStatus = true;
+
+            print(
+                'Unread Messages Found: ${unreadMessages.docs.length} for User: ${userChatDoc.id}');
+            break;
+          }
+        }
+
+        if (newUnreadCouncillorStatus) break;
+      }
+
+      // Update the state if the unread status changes
+      if (_hasUnreadCouncillorMessages != newUnreadCouncillorStatus) {
+        print("Provider: updating _hasUnreadCouncillorMessages to $newUnreadCouncillorStatus");
+        _hasUnreadCouncillorMessages = newUnreadCouncillorStatus;
+        notifyListeners();
+      }
+    });
+  }
+
+
+  /// Checks if the current user is a councillor
+  Future<bool> _checkIfUserIsCouncillor(String phoneNumber) async {
+    try {
+      QuerySnapshot councillorCheck = await FirebaseFirestore.instance
+          .collectionGroup('councillors')
+          .where('councillorPhone', isEqualTo: phoneNumber)
+          .limit(1)
+          .get();
+
+      return councillorCheck.docs.isNotEmpty;
+    } catch (e) {
+      print("Error checking if user is a councillor: $e");
+      return false;
+    }
+  }
+
+
+  void updateCouncillorUnreadMessagesStatus(bool hasUnread) {
+    if (_hasUnreadCouncillorMessages != hasUnread) {
+      _hasUnreadCouncillorMessages = hasUnread;
+      notifyListeners();
+    }
+  }
 }

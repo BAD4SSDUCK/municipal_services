@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ElevatedIconButton extends StatelessWidget {
-  const ElevatedIconButton({Key? key, required this.onPress, required this.labelText, required this.fSize, required this.faIcon, required this.fgColor, required this.btSize, }) : super(key: key);
+  const ElevatedIconButton({super.key, required this.onPress, required this.labelText, required this.fSize, required this.faIcon, required this.fgColor, required this.btSize, });
 
   final Function onPress;
   final String labelText;
@@ -31,7 +32,7 @@ class ElevatedIconButton extends StatelessWidget {
         ),
         style: IconButton.styleFrom(
           foregroundColor: fgColor,
-          minimumSize: btSize,
+          minimumSize: Size(140.w, 120.h),
           disabledForegroundColor: Colors.red.withOpacity(0.38), //foreground
           backgroundColor: Colors.white70,
           shadowColor: Colors.black,

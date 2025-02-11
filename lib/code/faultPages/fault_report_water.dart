@@ -29,6 +29,9 @@ import 'package:municipal_services/code/MapTools/place_service.dart';
 import 'package:provider/provider.dart';
 import '../Models/prop_provider.dart';
 import '../Models/property.dart';
+import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
+import 'package:file_picker/file_picker.dart';
+import 'dart:io' show Platform;
 
 class WaterSanitationReportMenu extends StatefulWidget {
   final Property currentProperty;
@@ -68,7 +71,8 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
   String locationGivenRep = '';
   bool imageVisibility = true;
   bool addressExists = false;
-
+  Uint8List? _webImageBytes; // 📌 Holds selected image file (Web)
+  String? _webImageName;
   File? _photo;
   final ImagePicker _picker = ImagePicker();
   String? meterType;
@@ -77,7 +81,7 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
 
   bool buttonEnabled = true;
   String location = 'Null, Press Button';
-  String Address = '';
+  String address = '';
   DocumentSnapshot? propertyDocument;
   bool isLoading = true;
   bool isAddressLoading = true;
@@ -88,8 +92,10 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
     'Leakage',
     'Burst pipe',
     'Clogged storm drains/pipes',
-    'No water'
+    'No water',
+    'Other'
   ];
+  bool showOtherTextField = false;
 
   @override
   void initState() {
@@ -286,11 +292,14 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                                   );
                                 }).toList(),
                                 onChanged: (String? newValue) {
-                                  setState(() {
-                                    faultDescriptionValue = newValue!;
-                                    _faultDescriptionController.text =
-                                    faultDescriptionValue == 'Select Fault Description' ? '' : faultDescriptionValue;
-                                  });
+                                  if(mounted) {
+                                    setState(() {
+                                      faultDescriptionValue = newValue!;
+                                      showOtherTextField = faultDescriptionValue == 'Other';
+                                      _faultDescriptionController.text =
+                                          _faultDescriptionController.text = showOtherTextField ? '' : faultDescriptionValue;
+                                    });
+                                  }
                                 },
                                 decoration: formItemDecoration(
                                   'Select Fault Description',
@@ -298,6 +307,35 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                                 ),
                               ),
                             ),
+                            if (showOtherTextField)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                                child: TextFormField(
+                                  controller: _faultDescriptionController,
+                                  decoration: InputDecoration(
+                                    prefixIcon: const Icon(Icons.edit, color: Colors.black87),
+                                    hintText: "Enter fault description...",
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(30), // Match others
+                                      borderSide: const BorderSide(color: Colors.grey),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(30), // Match others
+                                      borderSide: const BorderSide(color: Colors.grey),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                      borderSide: const BorderSide(color: Colors.grey),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 14), // Adjust padding to match others
+                                    fillColor: Colors.white,
+                                    filled: true,
+                                  ),
+                                ),
+                              ),
+
+
                             const SizedBox(height: 20),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -336,18 +374,25 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
                                   child: GestureDetector(
                                     onTap: () {
-                                      _showPicker(context);
+                                      showImagePicker(context);
                                     },
                                     child: CircleAvatar(
                                       radius: 50,
                                       backgroundColor: Colors.grey[400],
-                                      child: _photo != null
+                                      child: _photo != null || _webImageBytes != null
                                           ? ClipRRect(
-                                        borderRadius: BorderRadius.circular(10),
-                                        child: Image.file(
+                                        borderRadius: BorderRadius.circular(50), // Keep it circular
+                                        child: kIsWeb
+                                            ? Image.memory(
+                                          _webImageBytes!,
+                                          width: 100,
+                                          height: 100,
+                                          fit: BoxFit.cover,
+                                        )
+                                            : Image.file(
                                           _photo!,
-                                          width: 60,
-                                          height: 60,
+                                          width: 100,
+                                          height: 100,
                                           fit: BoxFit.cover,
                                         ),
                                       )
@@ -357,7 +402,7 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                                             borderRadius: BorderRadius.circular(10)),
                                         width: 60,
                                         height: 60,
-                                        child: Icon(
+                                        child:  Icon(
                                           Icons.camera_alt,
                                           color: Colors.grey[800],
                                         ),
@@ -367,12 +412,13 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                                 ),
                               ],
                             ),
+
                             const SizedBox(height: 20),
                             Center(
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 30.0),
                                 child: BasicIconButtonGreen(
-                                  onPress: buttonEnabled && !isAddressLoading
+                                  onPress: buttonEnabled && (_addressController.text.isNotEmpty || !isAddressLoading)
                                       ? () async {
                                     // Validate form fields
                                     if (_addressController.text.isEmpty) {
@@ -399,7 +445,7 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                                     }
 
                                     // Check if photo is attached
-                                    if (_photo != null) {
+                                    if (_photo != null || _webImageBytes != null) {
                                       await verifyAddress();
                                       if (addressExists) {
                                         await uploadFaultFile();
@@ -474,8 +520,6 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                                 ),
                               ),
                             ),
-
-
                           ],
                         ),
                       ),
@@ -910,25 +954,44 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
   }
 
   Future<void> locationAllow() async {
-    setState(() {
-      isAddressLoading = true; // Set to true while fetching location
-    });
-
-    Position position = await _getGeoLocationPosition();
-    location = 'Lat: ${position.latitude} , Long: ${position.longitude}';
-    await GetAddressFromLatLong(
-        position); // Await to ensure address is fully populated
-
-    if (_getGeoLocationPosition.isBlank == false) {
-      buttonEnabled = true;
+    if (mounted) {
+      setState(() {
+        isAddressLoading = true;
+      });
     }
 
-    setState(() {
-      isAddressLoading =
-      false; // Set to false after fetching location and populating address
-      _addressController.text =
-          Address; // Populate the address field after geolocation
-    });
+    // Check if running on web - SKIP GPS and allow manual address entry
+    if (kIsWeb) {
+      if (mounted) {
+        setState(() {
+          isAddressLoading = false; // ✅ Allow manual input on web
+        });
+      }
+      return; // Stop execution here for web
+    }
+
+    // If not web, continue with GPS logic for mobile
+    try {
+      Position position = await _getGeoLocationPosition();
+      location = 'Lat: ${position.latitude} , Long: ${position.longitude}';
+
+      await GetAddressFromLatLong(position);
+
+      if (mounted) {
+        setState(() {
+          isAddressLoading = false;
+          _addressController.text = address;
+        });
+      }
+    } catch (e) {
+      print("❌ Location error: $e");
+
+      if (mounted) {
+        setState(() {
+          isAddressLoading = false;
+        });
+      }
+    }
   }
 
   Future<Position> _getGeoLocationPosition() async {
@@ -967,105 +1030,283 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
     await placemarkFromCoordinates(position.latitude, position.longitude);
     print(placemarks);
     Placemark place = placemarks[0];
-    Address =
+    address =
     '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
   }
 
   //Used to set the _photo file as image from gallery
-  Future imgFromGallery() async {
+  // Future imgFromGallery() async {
+  //   final pickedFile = await _picker.pickImage(
+  //     source: ImageSource.gallery,
+  //     imageQuality: 60,
+  //   );
+  //        if(mounted) {
+  //          setState(() {
+  //            if (pickedFile != null) {
+  //              _photo = File(pickedFile.path);
+  //            } else {
+  //              print('No image selected.');
+  //            }
+  //          });
+  //        }
+  // }
+  //
+  // //Used to set the _photo file as image from gallery
+  // Future imgFromCamera() async {
+  //   final pickedFile = await _picker.pickImage(
+  //     source: ImageSource.camera,
+  //     imageQuality: 60,
+  //   );
+  //     if(mounted) {
+  //       setState(() {
+  //         if (pickedFile != null) {
+  //           _photo = File(pickedFile.path);
+  //         } else {
+  //           print('No image selected.');
+  //         }
+  //       });
+  //     }
+  // }
+  Future<void> _pickImageFromPC() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+    );
+
+    if (result != null && result.files.single.bytes != null) {
+      if(mounted) {
+        setState(() {
+          _webImageBytes = result.files.single.bytes;
+          _webImageName = result.files.single.name;
+        });
+      }
+    }
+  }
+
+  /// 📷 Pick Image from Mobile Gallery
+  Future<void> _pickImageFromGallery() async {
     final pickedFile = await _picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 60,
     );
-         if(mounted) {
-           setState(() {
-             if (pickedFile != null) {
-               _photo = File(pickedFile.path);
-             } else {
-               print('No image selected.');
-             }
-           });
-         }
+
+    if (pickedFile != null) {
+      if(mounted) {
+        setState(() {
+          _photo = File(pickedFile.path);
+        });
+      }
+    }
   }
 
-  //Used to set the _photo file as image from gallery
-  Future imgFromCamera() async {
+  /// 📷 Capture Image Using Camera (Mobile Only)
+  Future<void> _pickImageFromCamera() async {
     final pickedFile = await _picker.pickImage(
       source: ImageSource.camera,
       imageQuality: 60,
     );
+
+    if (pickedFile != null) {
       if(mounted) {
         setState(() {
-          if (pickedFile != null) {
-            _photo = File(pickedFile.path);
-          } else {
-            print('No image selected.');
-          }
+          _photo = File(pickedFile.path);
         });
       }
+    }
   }
+
+  /// 📌 Show Image Picker (Handles Mobile & Web)
+  Future<void> showImagePicker(BuildContext context) async {
+    if (kIsWeb) {
+      print("📂 Attempting to pick an image (Web)");
+      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
+
+      if (result != null && result.files.single.bytes != null) {
+        if(mounted) {
+          setState(() {
+            _webImageBytes = result.files.single.bytes;
+            _webImageName = result.files.single.name;
+            print("✅ Image selected (Web): $_webImageName");
+          });
+        }
+      } else {
+        print("❌ No image selected (Web)");
+      }
+  } else {
+      // For mobile devices (Gallery or Camera)
+      showModalBottomSheet(
+        context: context,
+        builder: (BuildContext bc) {
+          return SafeArea(
+            child: Wrap(
+              children: <Widget>[
+                ListTile(
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('Gallery'),
+                  onTap: () {
+                    _pickImageFromGallery();
+                    Navigator.of(context).pop();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_camera),
+                  title: const Text('Camera'),
+                  onTap: () {
+                    _pickImageFromCamera();
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+  }
+
 
   showImage(String image) {
     return Image.memory(base64Decode(image));
   }
 
-  void _showPicker(context) {
-    showModalBottomSheet(
-        context: context,
-        builder: (BuildContext bc) {
-          return SafeArea(
-            child: Container(
-              child: Wrap(
-                children: <Widget>[
-                  ListTile(
-                      leading: const Icon(Icons.photo_library),
-                      title: const Text('Gallery'),
-                      onTap: () {
-                        imgFromGallery();
-                        Navigator.of(context).pop();
-                      }),
-                  ListTile(
-                    leading: const Icon(Icons.photo_camera),
-                    title: const Text('Camera'),
-                    onTap: () {
-                      imgFromCamera();
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        });
-  }
+  // void _showPicker(context) {
+  //   showModalBottomSheet(
+  //       context: context,
+  //       builder: (BuildContext bc) {
+  //         return SafeArea(
+  //           child: Container(
+  //             child: Wrap(
+  //               children: <Widget>[
+  //                 ListTile(
+  //                     leading: const Icon(Icons.photo_library),
+  //                     title: const Text('Gallery'),
+  //                     onTap: () {
+  //                       imgFromGallery();
+  //                       Navigator.of(context).pop();
+  //                     }),
+  //                 ListTile(
+  //                   leading: const Icon(Icons.photo_camera),
+  //                   title: const Text('Camera'),
+  //                   onTap: () {
+  //                     imgFromCamera();
+  //                     Navigator.of(context).pop();
+  //                   },
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         );
+  //       });
+  // }
 
   ///Upload fault with an image file included
-  Future uploadFaultFile() async {
-    if (_photo == null) return;
+  // Future uploadFaultFile() async {
+  //   if (_photo == null) return;
+  //
+  //   // Get the extension of the image file
+  //   final extension = pathing
+  //       .extension(_photo!.path); // Get the file extension (e.g., '.jpg')
+  //
+  //   // Clean the address to make sure it doesn't contain invalid characters for a file name
+  //   String addressFault =
+  //   _addressController.text.isEmpty ? address : _addressController.text;
+  //   addressFault = addressFault.replaceAll(
+  //       RegExp(r'[\/:*?"<>|]'), ''); // Remove invalid characters
+  //
+  //   // Use the cleaned address as the file name (without extra pathing)
+  //   final fileName =
+  //       '$addressFault$extension'; // File name will now be 'address.jpg'
+  //
+  //   // Create a folder with the date and time of the report (path should only include timestamp)
+  //   DateTime now = DateTime.now();
+  //   String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+  //   final destination =
+  //       'files/faultImages/$formattedDate'; // Only the timestamp as folder path
+  //
+  //   final String faultDescription = _faultDescriptionController.text;
+  //   final String refNum = UniqueKey().toString();
+  //   const String faultType = "Water & Sanitation";
+  //   await _faultData.add({
+  //     "ref": refNum,
+  //     "uid": _currentUser,
+  //     "accountNumber": '',
+  //     "address": addressFault,
+  //     "faultType": faultType,
+  //     "reporterContact": userPhone,
+  //     "departmentSwitchComment": '',
+  //     "reallocationComment": '',
+  //     "attendeeAllocated": '',
+  //     "managerAllocated": '',
+  //     "adminComment": '',
+  //     "attendeeCom1": '',
+  //     "attendeeCom2": '',
+  //     "attendeeCom3": '',
+  //     "managerCom1": '',
+  //     "managerCom2": '',
+  //     "managerCom3": '',
+  //     "managerReturnCom": '',
+  //     "attendeeReturnCom": '',
+  //     "faultDescription": faultDescription,
+  //     "depAllocated": '',
+  //     "faultResolved": false,
+  //     "dateReported": formattedDate,
+  //     "faultStage": 1,
+  //   });
+  //
+  //   try {
+  //     // Firebase storage reference with only the timestamp folder and the address as file name
+  //     final ref = firebase_storage.FirebaseStorage.instance
+  //         .ref(destination)
+  //         .child(fileName); // Only fileName (e.g., 'address.jpg')
+  //
+  //     // Set metadata for correct content type (image MIME type)
+  //     final metadata = firebase_storage.SettableMetadata(
+  //       contentType:
+  //       'image/${extension.replaceAll('.', '')}', // Correct MIME type
+  //     );
+  //
+  //     // Upload the image with the correct metadata
+  //     await ref.putFile(_photo!, metadata);
+  //
+  //     print('Image uploaded successfully: $destination/$fileName');
+  //   } catch (e) {
+  //     print('Error occurred during image upload: $e');
+  //   }
+  //
+  //   // Clear input fields after the upload
+  //   _addressController.text = '';
+  //   _faultDescriptionController.text = '';
+  //   addressExists = false;
+  //
+  //   if (mounted) {
+  //     setState(() {
+  //       dropdownValue = 'Select Fault Type';
+  //     });
+  //   }
+  // }
+  /// 📌 Upload Fault with Image (Works for Web & Mobile)
+  Future<void> uploadFaultFile() async {
+    if (_photo == null && _webImageBytes == null) return;
 
-    // Get the extension of the image file
-    final extension = pathing
-        .extension(_photo!.path); // Get the file extension (e.g., '.jpg')
-
-    // Clean the address to make sure it doesn't contain invalid characters for a file name
-    String addressFault =
-    _addressController.text.isEmpty ? Address : _addressController.text;
-    addressFault = addressFault.replaceAll(
-        RegExp(r'[\/:*?"<>|]'), ''); // Remove invalid characters
-
-    // Use the cleaned address as the file name (without extra pathing)
-    final fileName =
-        '$addressFault$extension'; // File name will now be 'address.jpg'
-
-    // Create a folder with the date and time of the report (path should only include timestamp)
+    // Get the current date for folder structuring
     DateTime now = DateTime.now();
     String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-    final destination =
-        'files/faultImages/$formattedDate'; // Only the timestamp as folder path
 
-    final String faultDescription = _faultDescriptionController.text;
+    // Ensure address formatting is correct
+    String addressFault = _addressController.text.isEmpty ? address : _addressController.text;
+    addressFault = addressFault.replaceAll(RegExp(r'[\/:*?"<>|]'), ''); // Remove invalid characters
+
+    // Ensure correct file extension for mobile
+    String fileExtension = kIsWeb ? '.png' : pathing.extension(_photo!.path);
+    final fileName = '$addressFault$fileExtension'; // Address as filename
+
+    // ✅ Ensure the path is treated as a folder by appending a filename
+    final destination = 'files/faultImages/$formattedDate/$fileName';
+    // Generate a unique reference number
     final String refNum = UniqueKey().toString();
     const String faultType = "Water & Sanitation";
+
+    // Store fault details in Firestore
     await _faultData.add({
       "ref": refNum,
       "uid": _currentUser,
@@ -1086,7 +1327,7 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
       "managerCom3": '',
       "managerReturnCom": '',
       "attendeeReturnCom": '',
-      "faultDescription": faultDescription,
+      "faultDescription": _faultDescriptionController.text,
       "depAllocated": '',
       "faultResolved": false,
       "dateReported": formattedDate,
@@ -1094,26 +1335,28 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
     });
 
     try {
-      // Firebase storage reference with only the timestamp folder and the address as file name
-      final ref = firebase_storage.FirebaseStorage.instance
-          .ref(destination)
-          .child(fileName); // Only fileName (e.g., 'address.jpg')
+      final ref = firebase_storage.FirebaseStorage.instance.ref(destination);
 
-      // Set metadata for correct content type (image MIME type)
-      final metadata = firebase_storage.SettableMetadata(
-        contentType:
-        'image/${extension.replaceAll('.', '')}', // Correct MIME type
-      );
+      if (kIsWeb && _webImageBytes != null) {
+        // Upload file from web as bytes
+        await ref.putData(
+          _webImageBytes!,
+          firebase_storage.SettableMetadata(contentType: 'image/png'), // Ensure it's a PNG for web
+        );
+      } else if (_photo != null) {
+        // Upload file from mobile (File object)
+        await ref.putFile(
+          _photo!,
+          firebase_storage.SettableMetadata(contentType: 'image/jpeg'), // Ensure it's a JPEG for mobile
+        );
+      }
 
-      // Upload the image with the correct metadata
-      await ref.putFile(_photo!, metadata);
-
-      print('Image uploaded successfully: $destination/$fileName');
+      print('✅ Image uploaded successfully: $destination');
     } catch (e) {
-      print('Error occurred during image upload: $e');
+      print('❌ Error occurred during image upload: $e');
     }
 
-    // Clear input fields after the upload
+    // Clear input fields after upload
     _addressController.text = '';
     _faultDescriptionController.text = '';
     addressExists = false;
@@ -1121,8 +1364,12 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
     if (mounted) {
       setState(() {
         dropdownValue = 'Select Fault Type';
+        _photo = null;
+        _webImageBytes = null;
       });
     }
+
+    Fluttertoast.showToast(msg: "Fault reported successfully!");
   }
 
   ///Upload fault without an image file included and an image may be added later on
@@ -1165,9 +1412,11 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
     _addressController.text = '';
     _faultDescriptionController.text = '';
     addressExists = false;
-    setState(() {
-      dropdownValue = 'Select Fault Type';
-    });
+    if(mounted) {
+      setState(() {
+        dropdownValue = 'Select Fault Type';
+      });
+    }
   }
 
   Future<void> verifyAddress() async {
@@ -1220,8 +1469,8 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
       print('Please enter an address');
     }
   }
+
   Future<void> _addNewFaultReport() async {
-    // Ensure the property data is available
     if (widget.currentProperty == null) {
       Fluttertoast.showToast(
         msg: "Property data is not available. Please try again later.",
@@ -1233,175 +1482,244 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
     // Set default values from the current property
     String addressField = widget.currentProperty.address;
     String accountNumber = widget.currentProperty.accountNo;
-
-    // Reset the dropdown and description controller
-    setState(() {
-      faultDescriptionValue = 'Select Fault Description';
-      _faultDescriptionController.text = '';
-    });
-
-    await showDialog(
+         if(mounted) {
+           setState(() {
+             faultDescriptionValue = 'Select Fault Description';
+             _faultDescriptionController.text = '';
+           });
+         }
+    // Use showGeneralDialog for a full-screen dialog
+    await showGeneralDialog(
       context: context,
-      barrierDismissible: false, // Prevent dismissing the dialog by tapping outside
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-          ),
-          title: const Text(
-            "Report Property Fault",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          content: StatefulBuilder(
-            builder: (BuildContext context, StateSetter setModalState) {
-              return SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    DropdownButtonFormField<String>(
-                      value: faultDescriptionValue,
-                      isExpanded: true,
-                      items: waterSanitationIssues.map<DropdownMenuItem<String>>((String issue) {
-                        return DropdownMenuItem<String>(
-                          value: issue,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Text(issue, style: const TextStyle(fontSize: 16)),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setModalState(() {
-                          faultDescriptionValue = newValue!;
-                          _faultDescriptionController.text = faultDescriptionValue == 'Select Fault Description'
-                              ? ''
-                              : faultDescriptionValue;
-                        });
-                      },
-                      decoration: InputDecoration(
-                        labelText: 'Select Fault Description',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Show the address and account number (non-editable)
-                    Text(
-                      'Address: $addressField',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Account Number: $accountNumber',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Cancel the dialog
-              },
-              child: const Text(
-                'Cancel',
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                // Confirm submission
-                showDialog(
-                  barrierDismissible: false,
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(16)),
-                      ),
-                      title: const Text("Submit Fault"),
-                      content: const Text(
-                        "To add a photo to your property fault report, go to your Current Reports tab to upload or update your fault image.",
-                      ),
-                      actions: [
-                        IconButton(
-                          onPressed: () {
-                            Navigator.of(context).pop(); // Cancel confirmation
-                          },
-                          icon: const Icon(Icons.cancel, color: Colors.red),
-                        ),
-                        IconButton(
-                          onPressed: () async {
-                            DateTime now = DateTime.now();
-                            String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-                            const String faultType = 'Water & Sanitation';
-                            final String refNum = UniqueKey().toString();
-                            final String faultDescription = _faultDescriptionController.text;
-
-                            if (faultDescription.isNotEmpty) {
-                              await _faultData.add({
-                                "ref": refNum,
-                                "uid": _currentUser,
-                                "accountNumber": accountNumber,
-                                "address": addressField,
-                                "faultType": faultType,
-                                "reporterContact": userPhone,
-                                "departmentSwitchComment": '',
-                                "reallocationComment": '',
-                                "attendeeAllocated": '',
-                                "managerAllocated": '',
-                                "adminComment": '',
-                                "attendeeCom1": '',
-                                "attendeeCom2": '',
-                                "attendeeCom3": '',
-                                "managerCom1": '',
-                                "managerCom2": '',
-                                "managerCom3": '',
-                                "managerReturnCom": '',
-                                "attendeeReturnCom": '',
-                                "faultDescription": faultDescription,
-                                "depAllocated": '',
-                                "faultResolved": false,
-                                "dateReported": formattedDate,
-                                "faultStage": 1,
-                                // Other fields as needed
-                              });
-
-                              // Reset fields
-                              _faultDescriptionController.text = '';
-                              faultDescriptionValue = 'Select Fault Description';
-
-                              Fluttertoast.showToast(
-                                msg: "Fault has been reported successfully!",
-                                gravity: ToastGravity.CENTER,
-                              );
-
-                              Navigator.of(context).pop(); // Close confirmation
-                              Navigator.of(context).pop(); // Close fault dialog
-                            } else {
-                              Fluttertoast.showToast(
-                                msg: "Please fill in all required fields.",
-                                gravity: ToastGravity.CENTER,
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.done, color: Colors.green),
-                        ),
-                      ],
-                    );
+      barrierDismissible: false,
+      barrierLabel: 'FullScreenDialog',
+      pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('Report Property Fault',style: TextStyle(color: Colors.white),),
+                backgroundColor: Colors.green,
+                leading: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the full-screen dialog
                   },
-                );
-              },
-              child: const Text('Report'),
-            ),
-          ],
+                ),
+              ),
+              body: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+
+                      // Fault Description Dropdown
+                      DropdownButtonFormField<String>(
+                        value: faultDescriptionValue,
+                        isExpanded: true,
+                        menuMaxHeight: 400, // Expands dropdown for better visibility
+                        items: waterSanitationIssues.map<DropdownMenuItem<String>>((String issue) {
+                          return DropdownMenuItem<String>(
+                            value: issue,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Text(issue, style: const TextStyle(fontSize: 18)),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setModalState(() {
+                            faultDescriptionValue = newValue!;
+                            showOtherTextField = faultDescriptionValue == 'Other';
+                            _faultDescriptionController.text =
+                                _faultDescriptionController.text =
+                            showOtherTextField ? '' : faultDescriptionValue;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          labelText: 'Select Fault Description',
+                          labelStyle: const TextStyle(fontSize: 18),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+                        ),
+                      ),
+                      if (showOtherTextField)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                          child: TextFormField(
+                            controller: _faultDescriptionController,
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(Icons.edit, color: Colors.black87),
+                              hintText: "Enter fault description...",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30), // Match others
+                                borderSide: const BorderSide(color: Colors.grey),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30), // Match others
+                                borderSide: const BorderSide(color: Colors.grey),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                borderSide: const BorderSide(color: Colors.grey),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 14), // Adjust padding to match others
+                              fillColor: Colors.white,
+                              filled: true,
+                            ),
+                          ),
+                        ),
+
+
+                      const SizedBox(height: 20),
+
+                      // Address Field
+                      TextFormField(
+                        readOnly: true,
+                        initialValue: addressField,
+                        maxLines: 2,
+                        decoration: InputDecoration(
+                          labelText: "Address",
+                          labelStyle: const TextStyle(fontSize: 18),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+                          prefixIcon: const Icon(Icons.location_on_sharp, color: Colors.black87),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Account Number Field
+                      TextFormField(
+                        readOnly: true,
+                        initialValue: accountNumber,
+                        decoration: InputDecoration(
+                          labelText: "Account Number",
+                          labelStyle: const TextStyle(fontSize: 18),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+                          prefixIcon: const Icon(Icons.account_circle, color: Colors.black87),
+                        ),
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      // Submit Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: Colors.green,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed: () async {
+                            // Confirm submission
+                            showDialog(
+                              barrierDismissible: false,
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  title: const Text("Submit Fault"),
+                                  content: const Text(
+                                    "To add a photo to your property fault report, go to your Current Reports tab to upload or update your fault image.",
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () async {
+                                        DateTime now = DateTime.now();
+                                        String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
+                                        const String faultType = 'Water & Sanitation';
+                                        final String refNum = UniqueKey().toString();
+                                        final String faultDescription = _faultDescriptionController.text;
+
+                                        if (faultDescription.isNotEmpty) {
+                                          await _faultData.add({
+                                            "ref": refNum,
+                                            "uid": _currentUser,
+                                            "accountNumber": accountNumber,
+                                            "address": addressField,
+                                            "faultType": faultType,
+                                            "reporterContact": userPhone,
+                                            "departmentSwitchComment": '',
+                                            "reallocationComment": '',
+                                            "attendeeAllocated": '',
+                                            "managerAllocated": '',
+                                            "adminComment": '',
+                                            "attendeeCom1": '',
+                                            "attendeeCom2": '',
+                                            "attendeeCom3": '',
+                                            "managerCom1": '',
+                                            "managerCom2": '',
+                                            "managerCom3": '',
+                                            "managerReturnCom": '',
+                                            "attendeeReturnCom": '',
+                                            "faultDescription": faultDescription,
+                                            "depAllocated": '',
+                                            "faultResolved": false,
+                                            "dateReported": formattedDate,
+                                            "faultStage": 1,
+                                          });
+
+                                          // Reset fields
+                                          _faultDescriptionController.text = '';
+                                          faultDescriptionValue = 'Select Fault Description';
+
+                                          Fluttertoast.showToast(
+                                            msg: "Fault has been reported successfully!",
+                                            gravity: ToastGravity.CENTER,
+                                          );
+
+                                          Navigator.of(context).pop(); // Close confirmation dialog
+                                          Navigator.of(context).pop(); // Close full-screen dialog
+                                        } else {
+                                          Fluttertoast.showToast(
+                                            msg: "Please fill in all required fields.",
+                                            gravity: ToastGravity.CENTER,
+                                          );
+                                        }
+                                      },
+                                      child: const Text(
+                                        "Okay",
+                                        style: TextStyle(color: Colors.blue, fontSize: 18),
+                                      ),
+                                    ),
+
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                          child: const Text(
+                            "Submit Fault",
+                            style: TextStyle(color: Colors.white, fontSize: 18),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
     );
   }
+
 }

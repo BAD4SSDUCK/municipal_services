@@ -1,35 +1,19 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-import 'package:provider/provider.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_database/ui/firebase_animated_list.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:municipal_services/code/Chat/chat_screen_councillors.dart';
-import 'package:municipal_services/code/NoticePages/notice_user_arc_screen.dart';
-import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
-import 'package:municipal_services/code/Reusable/cache_manager.dart';
-import 'package:municipal_services/code/faultPages/fault_task_screen_archive.dart';
-import 'package:municipal_services/code/MapTools/map_screen.dart';
-import 'package:municipal_services/code/MapTools/map_screen_prop.dart';
 import '../Chat/councillor_chatroom.dart';
-import '../Models/notify_provider.dart';
 
 
 class CouncillorScreen extends StatefulWidget {
-  const CouncillorScreen({super.key,});
+  const CouncillorScreen({
+    super.key,
+  });
 
   @override
   State<CouncillorScreen> createState() => _CouncillorScreenState();
@@ -39,31 +23,117 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
   final FirebaseAuth auth = FirebaseAuth.instance;
   final User? user = FirebaseAuth.instance.currentUser;
   late final CollectionReference councillors;
-
+  List<DocumentSnapshot> filteredCouncillorList = [];
+  Map<String, bool> unreadMessagesMap = {};
   List<DocumentSnapshot> councillorList = [];
   bool isLoading = true;
   String dropdownValue = 'Select Ward';
   List<String> dropdownWards = List.generate(
       41,
-          (index) =>
-      (index == 0) ? 'Select Ward' : index.toString().padLeft(2, '0'));
-  List<DocumentSnapshot> filteredCouncillorList = [];
+      (index) =>
+          (index == 0) ? 'Select Ward' : index.toString().padLeft(2, '0'));
   final TextEditingController _searchController = TextEditingController();
   String? userEmail;
-  String districtId='';
-  String municipalityId='';
+  String districtId = '';
+  String municipalityId = '';
   bool isLocalMunicipality = false;
-  StreamSubscription? councillorUnreadSubscription;
-
+  bool hasUnreadCouncillorMessages = false;
+  StreamSubscription<QuerySnapshot>? unreadCouncillorMessagesSubscription;
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     fetchUserDetails();
-
-    // Fetch user details and initialize councillors collection afterward
+    setupRealTimeBadgeListener();
   }
+
+  @override
+  void dispose() {
+    unreadCouncillorMessagesSubscription?.cancel();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> setupRealTimeBadgeListener() async {
+    String? userPhone = FirebaseAuth.instance.currentUser?.phoneNumber;
+
+    if (userPhone == null) {
+      print("Error: Current user's phone number is null.");
+      return;
+    }
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+
+    if (selectedPropertyAccountNumber == null) {
+      print('Error: selectedPropertyAccountNumber is null.');
+      return;
+    }
+
+    FirebaseFirestore.instance
+        .collectionGroup('properties')
+        .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+        .get()
+        .then((propertySnapshot) {
+      if (propertySnapshot.docs.isNotEmpty) {
+        DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
+        bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
+        String municipalityId = propertyDoc.get('municipalityId');
+        String? districtId = propertyDoc.data().toString().contains('districtId')
+            ? propertyDoc.get('districtId')
+            : null;
+
+        CollectionReference councillorChatsCollection = isLocalMunicipality
+            ? FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .collection('chatRoomCouncillor')
+            : FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId!)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('chatRoomCouncillor');
+
+        unreadCouncillorMessagesSubscription?.cancel();
+        unreadCouncillorMessagesSubscription = councillorChatsCollection.snapshots().listen((snapshot) async {
+          print("Councillor chats snapshot received: ${snapshot.docs.length} councillors.");
+          Map<String, bool> updatedUnreadMessagesMap = {};
+          bool hasUnread = false;
+
+          for (var doc in snapshot.docs) {
+            QuerySnapshot userChatsSnapshot = await doc.reference.collection('userChats').get();
+
+            for (var userChatDoc in userChatsSnapshot.docs) {
+              QuerySnapshot unreadMessages = await userChatDoc.reference
+                  .collection('messages')
+                  .where('isReadByCouncillor', isEqualTo: false)
+                  .get();
+
+              if (unreadMessages.docs.isNotEmpty) {
+                updatedUnreadMessagesMap[doc.id] = true;
+                hasUnread = true;
+              }
+            }
+          }
+
+          if (mounted) {
+            setState(() {
+              unreadMessagesMap = updatedUnreadMessagesMap;
+              hasUnreadCouncillorMessages = hasUnread; // Update UI dynamically
+            });
+            print("Real-time badge updated: $hasUnreadCouncillorMessages");
+            print("Unread messages map: $unreadMessagesMap");
+          }
+        });
+      }
+    }).catchError((error) {
+      print("Error setting up real-time badge listener: $error");
+    });
+  }
+
 
 
   Future<void> fetchUserDetails() async {
@@ -92,7 +162,8 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
           print("Local municipality detected");
         } else {
           // If no local municipality property is found, fetch from district municipalities
-          QuerySnapshot districtPropertiesSnapshot = await FirebaseFirestore.instance
+          QuerySnapshot districtPropertiesSnapshot = await FirebaseFirestore
+              .instance
               .collectionGroup('properties')
               .where('cellNumber', isEqualTo: cellNumber)
               .where('isLocalMunicipality', isEqualTo: false)
@@ -121,15 +192,15 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
         // Initialize the councillors reference with the correct path
         councillors = isLocalMunicipality
             ? FirebaseFirestore.instance
-            .collection('localMunicipalities')
-            .doc(municipalityId)
-            .collection('councillors')
+                .collection('localMunicipalities')
+                .doc(municipalityId)
+                .collection('councillors')
             : FirebaseFirestore.instance
-            .collection('districts')
-            .doc(districtId)
-            .collection('municipalities')
-            .doc(municipalityId)
-            .collection('councillors');
+                .collection('districts')
+                .doc(districtId)
+                .collection('municipalities')
+                .doc(municipalityId)
+                .collection('councillors');
 
         // Fetch councillor data
         fetchCouncillorData();
@@ -138,53 +209,6 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
       }
     } catch (e) {
       print('Error fetching user details: $e');
-    }
-  }
-
-  Stream<bool> getUnreadMessagesStream(String userPhone, bool isCouncillor) {
-    if (isCouncillor) {
-      // Stream for councillors (messages sent to them)
-      return FirebaseFirestore.instance
-          .collectionGroup('chatRoomCouncillor')
-          .snapshots()
-          .asyncMap((snapshot) async {
-        for (var councillorDoc in snapshot.docs) {
-          QuerySnapshot userChatsSnapshot =
-          await councillorDoc.reference.collection('userChats').get();
-
-          for (var userChatDoc in userChatsSnapshot.docs) {
-            QuerySnapshot unreadMessages = await userChatDoc.reference
-                .collection('messages')
-                .where('isReadByCouncillor', isEqualTo: false)
-                .where('sendBy', isNotEqualTo: userPhone)
-                .get();
-
-            if (unreadMessages.docs.isNotEmpty) {
-              return true; // Unread messages for the councillor
-            }
-          }
-        }
-        return false; // No unread messages
-      });
-    } else {
-      // Stream for regular users (messages sent to them)
-      return FirebaseFirestore.instance
-          .collectionGroup('chatRoomCouncillor')
-          .where('sendTo', isEqualTo: userPhone)
-          .snapshots()
-          .asyncMap((snapshot) async {
-        for (var chatDoc in snapshot.docs) {
-          QuerySnapshot unreadMessages = await chatDoc.reference
-              .collection('messages')
-              .where('isReadByUser', isEqualTo: false)
-              .get();
-
-          if (unreadMessages.docs.isNotEmpty) {
-            return true; // Unread messages for the regular user
-          }
-        }
-        return false; // No unread messages
-      });
     }
   }
 
@@ -215,17 +239,33 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
     }
   }
 
-
-  void fetchCouncillorData() async {
+  Future<void> fetchCouncillorData() async {
     try {
       var snapshot = await councillors.orderBy('wardNum').get();
       print("Fetched ${snapshot.docs.length} councillors");
+
+      Map<String, bool> updatedUnreadMessagesMap = {};
+      bool anyUnreadMessages = false; // Track overall unread messages
+
+      for (var doc in snapshot.docs) {
+        String councillorPhone = doc['councillorPhone'];
+        bool hasUnread = await checkForUnreadMessagesForCouncillor(councillorPhone);
+
+        updatedUnreadMessagesMap[councillorPhone] = hasUnread;
+        anyUnreadMessages = anyUnreadMessages || hasUnread;
+
+        print("Councillor $councillorPhone has unread messages: $hasUnread");
+      }
+
       if (mounted) {
         setState(() {
           councillorList = snapshot.docs;
           filteredCouncillorList = snapshot.docs;
-          isLoading = false;
+          unreadMessagesMap = updatedUnreadMessagesMap;
+          hasUnreadCouncillorMessages = anyUnreadMessages; // Update badge state
+          isLoading = false; // Ensure this is called after data is fetched
         });
+        print("Updated unreadMessagesMap: $unreadMessagesMap");
       }
     } catch (e) {
       print("Error fetching councillor data: $e");
@@ -233,6 +273,44 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
   }
 
 
+  Future<bool> checkForUnreadMessagesForCouncillor(
+      String councillorPhone) async {
+    try {
+      print("Checking unread messages for councillor: $councillorPhone");
+
+      // Fetch all userChats for this councillor
+      QuerySnapshot userChatsSnapshot = await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .collection('chatRoomCouncillor')
+          .doc(councillorPhone)
+          .collection('userChats')
+          .get();
+
+      // Iterate through each userChat and check for unread messages
+      for (var userChatDoc in userChatsSnapshot.docs) {
+        QuerySnapshot unreadMessages = await userChatDoc.reference
+            .collection('messages')
+            .where('isReadByCouncillor', isEqualTo: false)
+            .get();
+
+        print(
+            "Unread messages for userChat ${userChatDoc.id}: ${unreadMessages.docs.length}");
+
+        if (unreadMessages.docs.isNotEmpty) {
+          return true; // Return true if any unread messages are found
+        }
+      }
+
+      return false; // Return false if no unread messages are found
+    } catch (e) {
+      print(
+          "Error checking unread messages for councillor $councillorPhone: $e");
+      return false;
+    }
+  }
 
   Future<String> getImageUrl(String imagePath) async {
     final ref = FirebaseStorage.instance.ref().child(imagePath);
@@ -245,125 +323,204 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
     }
   }
 
-  Stream<bool> councillorUnreadMessagesStream(String councillorPhone) async* {
+  Future<bool> checkIfCouncillor() async {
     try {
-      CollectionReference userChats = isLocalMunicipality
-          ? FirebaseFirestore.instance
-          .collection('localMunicipalities')
-          .doc(municipalityId)
-          .collection('chatRoomCouncillor')
-          .doc(councillorPhone)
-          .collection('userChats')
-          : FirebaseFirestore.instance
-          .collection('districts')
-          .doc(districtId)
-          .collection('municipalities')
-          .doc(municipalityId)
-          .collection('chatRoomCouncillor')
-          .doc(councillorPhone)
-          .collection('userChats');
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? selectedPropertyAccountNumber =
+          prefs.getString('selectedPropertyAccountNo');
 
-      yield* userChats.snapshots().asyncMap((snapshot) async {
-        for (var chatDoc in snapshot.docs) {
-          QuerySnapshot unreadMessages = await chatDoc.reference
-              .collection('messages')
-              .where('isReadByCouncillor', isEqualTo: false)
-              .get();
-
-          if (unreadMessages.docs.isNotEmpty) {
-            return true; // Unread messages found
-          }
-        }
-        return false; // No unread messages
-      });
-    } catch (e) {
-      print("Error in councillorUnreadMessagesStream: $e");
-      yield false;
-    }
-  }
-
-
-  Future<void> markMessagesAsReadForUser(String councillorPhone) async {
-    try {
-      CollectionReference userChats = isLocalMunicipality
-          ? FirebaseFirestore.instance
-          .collection('localMunicipalities')
-          .doc(municipalityId)
-          .collection('chatRoomCouncillor')
-          .doc(councillorPhone)
-          .collection('userChats')
-          : FirebaseFirestore.instance
-          .collection('districts')
-          .doc(districtId)
-          .collection('municipalities')
-          .doc(municipalityId)
-          .collection('chatRoomCouncillor')
-          .doc(councillorPhone)
-          .collection('userChats');
-
-      String userPhone = FirebaseAuth.instance.currentUser?.phoneNumber ?? '';
-
-      QuerySnapshot unreadMessages = await userChats
-          .doc(userPhone)
-          .collection('messages')
-          .where('isReadByUser', isEqualTo: false)
-          .get();
-
-      for (var message in unreadMessages.docs) {
-        await message.reference.update({'isReadByUser': true});
+      if (selectedPropertyAccountNumber == null) {
+        print('Error: selectedPropertyAccountNumber is null.');
+        return false;
       }
 
-      print("Marked all messages as read for user $userPhone with councillor $councillorPhone");
-
-      // Update the provider
-      NotificationProvider().updateCouncillorUnreadMessages(councillorPhone, false);
-    } catch (e) {
-      print("Error marking messages as read: $e");
-    }
-  }
-
-
-
-
-  Future<bool> hasUnreadCouncilMessages(String councillorPhone) async {
-    try {
-      CollectionReference userChats = isLocalMunicipality
-          ? FirebaseFirestore.instance
-          .collection('localMunicipalities')
-          .doc(municipalityId)
-          .collection('chatRoomCouncillor')
-          .doc(councillorPhone)
-          .collection('userChats')
-          : FirebaseFirestore.instance
-          .collection('districts')
-          .doc(districtId)
-          .collection('municipalities')
-          .doc(municipalityId)
-          .collection('chatRoomCouncillor')
-          .doc(councillorPhone)
-          .collection('userChats');
-
-      String userPhone = FirebaseAuth.instance.currentUser?.phoneNumber ?? '';
-      QuerySnapshot unreadMessages = await userChats
-          .doc(userPhone)
-          .collection('messages')
-          .where('isReadByUser', isEqualTo: false)
+      QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
+          .collectionGroup('properties')
+          .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
           .get();
 
-      return unreadMessages.docs.isNotEmpty;
+      if (propertySnapshot.docs.isNotEmpty) {
+        DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
+        bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
+        String municipalityId = propertyDoc.get('municipalityId');
+        String? districtId =
+            propertyDoc.data().toString().contains('districtId')
+                ? propertyDoc.get('districtId')
+                : null;
+
+        // Check the councillor collection
+        QuerySnapshot councillorSnapshot = isLocalMunicipality
+            ? await FirebaseFirestore.instance
+                .collection('localMunicipalities')
+                .doc(municipalityId)
+                .collection('councillors')
+                .where('councillorPhone',
+                    isEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
+                .get()
+            : await FirebaseFirestore.instance
+                .collection('districts')
+                .doc(districtId!)
+                .collection('municipalities')
+                .doc(municipalityId)
+                .collection('councillors')
+                .where('councillorPhone',
+                    isEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
+                .get();
+
+        if (councillorSnapshot.docs.isNotEmpty) {
+          print("User is a councillor.");
+          return true;
+        }
+      }
+
+      print("User is not a councillor.");
+      return false;
     } catch (e) {
-      print("Error checking unread messages: $e");
+      print('Error checking if user is a councillor: $e');
       return false;
     }
   }
+
+  Future<void> checkForUnreadCouncillorMessages() async {
+    if (!mounted) return;
+
+    try {
+      String? userPhone = FirebaseAuth.instance.currentUser?.phoneNumber;
+
+      if (userPhone == null) {
+        print("Error: Current user's phone number is null.");
+        return;
+      }
+
+      print("Current user phone number: $userPhone");
+
+      // Determine if the user is a councillor
+      bool isCouncillor = await checkIfCouncillor();
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+
+      if (selectedPropertyAccountNumber == null) {
+        print('Error: selectedPropertyAccountNumber is null.');
+        return;
+      }
+
+      QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
+          .collectionGroup('properties')
+          .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+          .get();
+
+      if (propertySnapshot.docs.isNotEmpty) {
+        DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
+        bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
+        String municipalityId = propertyDoc.get('municipalityId');
+        String? districtId = propertyDoc.data().toString().contains('districtId')
+            ? propertyDoc.get('districtId')
+            : null;
+
+        CollectionReference councillorChatsCollection;
+
+        if (isCouncillor) {
+          councillorChatsCollection = isLocalMunicipality
+              ? FirebaseFirestore.instance
+              .collection('localMunicipalities')
+              .doc(municipalityId)
+              .collection('chatRoomCouncillor')
+              .doc(userPhone)
+              .collection('userChats')
+              : FirebaseFirestore.instance
+              .collection('districts')
+              .doc(districtId!)
+              .collection('municipalities')
+              .doc(municipalityId)
+              .collection('chatRoomCouncillor')
+              .doc(userPhone)
+              .collection('userChats');
+        } else {
+          councillorChatsCollection = isLocalMunicipality
+              ? FirebaseFirestore.instance
+              .collection('localMunicipalities')
+              .doc(municipalityId)
+              .collection('chatRoomCouncillor')
+              : FirebaseFirestore.instance
+              .collection('districts')
+              .doc(districtId!)
+              .collection('municipalities')
+              .doc(municipalityId)
+              .collection('chatRoomCouncillor');
+        }
+
+        print("Councillor chats collection path: ${councillorChatsCollection.path}");
+
+        unreadCouncillorMessagesSubscription?.cancel();
+
+        unreadCouncillorMessagesSubscription = councillorChatsCollection
+            .snapshots()
+            .listen((snapshot) async {
+          print("Councillor chats snapshot received. Docs count: ${snapshot.docs.length}");
+          Map<String, bool> updatedUnreadMessagesMap = {};
+          bool hasUnread = false;
+
+          for (var doc in snapshot.docs) {
+            if (isCouncillor) {
+              QuerySnapshot unreadMessages = await doc.reference
+                  .collection('messages')
+                  .where('isReadByCouncillor', isEqualTo: false)
+                  .get();
+
+              print("Unread messages count for userChat ${doc.id}: ${unreadMessages.docs.length}");
+
+              if (unreadMessages.docs.isNotEmpty) {
+                updatedUnreadMessagesMap[userPhone] = true; // Mark councillor as having unread messages
+                hasUnread = true;
+              }
+            } else {
+              CollectionReference userChatsCollection = doc.reference.collection('userChats');
+              QuerySnapshot userChats = await userChatsCollection.get();
+
+              for (var userChatDoc in userChats.docs) {
+                QuerySnapshot unreadMessages = await userChatDoc.reference
+                    .collection('messages')
+                    .where('isReadByUser', isEqualTo: false)
+                    .get();
+
+                print("Unread messages count for userChat ${userChatDoc.id}: ${unreadMessages.docs.length}");
+
+                if (unreadMessages.docs.isNotEmpty) {
+                  updatedUnreadMessagesMap[doc.id] = true; // Mark user chat as having unread messages
+                  hasUnread = true;
+                }
+              }
+            }
+          }
+
+          if (mounted) {
+            setState(() {
+              unreadMessagesMap = updatedUnreadMessagesMap;
+              hasUnreadCouncillorMessages = hasUnread;
+            });
+            print("Final unreadMessagesMap: $unreadMessagesMap");
+            print("Updated hasUnreadCouncillorMessages to: $hasUnreadCouncillorMessages");
+          }
+        });
+      }
+    } catch (e) {
+      print('Error checking for unread councillor messages: $e');
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Councillor Screen', style: TextStyle(color: Colors.white)),
+        title: const Text('Councillor Screen',
+            style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.green,
       ),
-      body: isLoading ? const Center(child: CircularProgressIndicator()) : buildBody(),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : buildBody(),
     );
   }
 
@@ -385,10 +542,12 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
             value: dropdownValue,
             onChanged: (String? newValue) {
               if (newValue != null) {
-                setState(() {
-                  dropdownValue = newValue;
-                  filterCouncillors(newValue);
-                });
+                if (mounted) {
+                  setState(() {
+                    dropdownValue = newValue;
+                    filterCouncillors(newValue);
+                  });
+                }
               }
             },
             items: dropdownWards.map<DropdownMenuItem<String>>((String value) {
@@ -415,19 +574,12 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
   }
 
   Widget buildCouncillorList() {
-    final String userPhone = FirebaseAuth.instance.currentUser?.phoneNumber ?? '';
     return ListView.builder(
       itemCount: filteredCouncillorList.length,
       itemBuilder: (context, index) {
         DocumentSnapshot doc = filteredCouncillorList[index];
         if (doc.exists) {
-          return StreamBuilder<bool>(
-            stream: councillorUnreadMessagesStream(doc['councillorPhone']),
-            builder: (context, snapshot) {
-              bool hasUnreadMessages = snapshot.data ?? false;
-              return buildCouncillorCard(doc, userPhone, hasUnreadMessages);
-            },
-          );
+          return buildCouncillorCard(doc);
         } else {
           return const Text("Document does not exist");
         }
@@ -435,14 +587,14 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
     );
   }
 
-
-  Widget buildCouncillorCard(
-      DocumentSnapshot doc, String userPhone, bool hasUnreadMessages) {
+  Widget buildCouncillorCard(DocumentSnapshot doc) {
     final String councillorPhone = doc['councillorPhone'];
     final String councillorName = doc['councillorName'];
     final String imagePath = 'files/councillors/$councillorName.jpg';
-
-    bool isUserCouncillor = userPhone == councillorPhone;
+    bool isUserCouncillor = user!.phoneNumber == councillorPhone;
+    // Determine if this specific councillor has unread messages
+    bool hasUnreadMessagesForCouncillor =
+        unreadMessagesMap[councillorPhone] ?? false;
 
     return Card(
       margin: const EdgeInsets.all(10),
@@ -454,7 +606,8 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
             FutureBuilder(
               future: getImageUrl(imagePath),
               builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
-                if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                if (snapshot.connectionState == ConnectionState.done &&
+                    snapshot.hasData) {
                   return CircleAvatar(
                     backgroundImage: NetworkImage(snapshot.data!),
                     radius: 60,
@@ -472,40 +625,28 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
               councillorName,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            Text(
-              'Ward: ${doc['wardNum']}',
-              style: const TextStyle(fontSize: 16),
-            ),
-            Text(
-              'Contact Number: $councillorPhone',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 10),
+            Text('Ward: ${doc['wardNum']}',
+                style: const TextStyle(fontSize: 16)),
+            Text('Contact Number: $councillorPhone',
+                style: const TextStyle(fontSize: 16)),
             Stack(
               children: [
                 IconButton(
                   icon: const Icon(Icons.message, color: Colors.blue),
-                  onPressed: () {
-                    if (isUserCouncillor) {
-                      navigateToCouncillorChatListScreen(councillorPhone);
-                    } else {
-                      navigateToCouncillorChat(councillorPhone, userPhone, councillorName);
-                    }
-                  },
+                  onPressed: () => isUserCouncillor
+                      ? navigateToCouncillorChatListScreen(councillorPhone)
+                      : navigateToCouncillorChat(
+                          councillorPhone, councillorName),
                 ),
-                if (hasUnreadMessages)
+                if (hasUnreadMessagesForCouncillor)
                   Positioned(
                     top: 0,
                     right: 0,
                     child: Container(
                       padding: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.red,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 20,
-                        minHeight: 20,
+                        shape: BoxShape.circle,
                       ),
                       child: const Text(
                         '!',
@@ -514,7 +655,6 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
-                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),
@@ -526,7 +666,6 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
     );
   }
 
-
   void navigateToCouncillorChatListScreen(String councillorPhone) {
     Navigator.push(
       context,
@@ -534,45 +673,39 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
         builder: (context) => CouncillorChatListScreen(
           councillorPhone: councillorPhone,
           isLocalMunicipality: isLocalMunicipality,
-          municipalityId: municipalityId,  // Pass municipalityId
+          municipalityId: municipalityId, // Pass municipalityId
         ),
       ),
     );
     fetchCouncillorData();
+    setupRealTimeBadgeListener();
   }
 
+  void navigateToCouncillorChat(String councillorPhone, String councillorName) {
+    String? regularUserPhoneNumber =
+        FirebaseAuth.instance.currentUser?.phoneNumber;
 
-  void navigateToCouncillorChat(String councillorPhone, String userPhone, String councillorName) {
-    // Mark messages as read before navigating to the chat screen
-    markMessagesAsReadForUser(councillorPhone);
-
+    if (regularUserPhoneNumber == null || regularUserPhoneNumber.isEmpty) {
+      print("Error: Regular user phone number is null or empty.");
+      return; // Prevent navigation if the phone number is unavailable
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ChatCouncillor(
           chatRoomId: councillorPhone,
           councillorName: councillorName,
-          userId: userPhone,
           isLocalMunicipality: isLocalMunicipality,
           districtId: districtId,
           municipalityId: municipalityId,
+          userId: regularUserPhoneNumber,
         ),
       ),
     ).then((_) {
+      print("Returned from ChatCouncillor for councillor: $councillorPhone");
       // Refresh councillor data after returning from the chat
       fetchCouncillorData();
+      setupRealTimeBadgeListener();
     });
-  }
-
-
-
-
-
-  @override
-  void dispose() {
-    super.dispose();
-    _searchController.removeListener(_onSearchChanged);
-    _searchController.dispose();
-    councillorUnreadSubscription?.cancel();
   }
 }

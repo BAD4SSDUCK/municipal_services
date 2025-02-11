@@ -1574,7 +1574,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                             children: [
                               Stack(
                                 children: [
-                                  BasicIconButtonGrey(
+                                  /*BasicIconButtonGrey(
                                     onPress: () async {
                                       try {
                                         // Ensure the municipality context is valid for non-local users
@@ -1687,7 +1687,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                     ),
                                     fgColor: Colors.orangeAccent,
                                     btSize: const Size(100, 38),
-                                  ),
+                                  ),*/
                                   const SizedBox(
                                     width: 5,
                                   ),
@@ -2918,7 +2918,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                   children: [
                                     Stack(
                                       children: [
-                                        BasicIconButtonGrey(
+                                     /*  BasicIconButtonGrey(
                                           onPress: () async {
                                             final Property? property =
                                                 Provider.of<PropertyProvider>(context, listen: false).selectedProperty;
@@ -2960,7 +2960,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                           ),
                                           fgColor: Colors.orangeAccent,
                                           btSize: const Size(100, 38),
-                                        ),
+                                        ),*/
                                         const SizedBox(
                                           width: 5,
                                         ),
@@ -4002,7 +4002,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  BasicIconButtonGrey(
+                                 /* BasicIconButtonGrey(
                                     onPress: () async {
                                       try {
                                         // Ensure the district-level user selects a municipality
@@ -4076,7 +4076,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                     faIcon: const FaIcon(Icons.picture_as_pdf),
                                     fgColor: Colors.orangeAccent,
                                     btSize: const Size(100, 38),
-                                  ),
+                                  ),*/
                                   BasicIconButtonGrey(
                                     onPress: () async {
                                       Provider.of<PropertyProvider>(context,

@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:android_intent_plus/android_intent.dart';
@@ -18,88 +20,229 @@ import '../Chat/chat_screen_councillors.dart';
 import '../DisplayPages/city_directory.dart';
 import '../Models/notify_provider.dart';
 
-class NavDrawer extends StatelessWidget {
-  final String userPhone;
-  final bool isCouncillor;
-
+class NavDrawer extends StatefulWidget {
   const NavDrawer({
     super.key,
-    required this.userPhone,
-    required this.isCouncillor,
   });
 
-  Stream<bool> getUnreadMessagesStream(String userPhone, bool isCouncillor) {
-    if (isCouncillor) {
-      // Stream for councillors (messages sent to them)
-      return FirebaseFirestore.instance
-          .collectionGroup('chatRoomCouncillor')
-          .snapshots()
-          .asyncMap((snapshot) async {
-        for (var councillorDoc in snapshot.docs) {
-          QuerySnapshot userChatsSnapshot =
-          await councillorDoc.reference.collection('userChats').get();
+  @override
+  State<NavDrawer> createState() => _NavDrawerState();
+}
 
-          for (var userChatDoc in userChatsSnapshot.docs) {
-            QuerySnapshot unreadMessages = await userChatDoc.reference
-                .collection('messages')
-                .where('isReadByCouncillor', isEqualTo: false)
-                .where('sendBy', isNotEqualTo: userPhone)
-                .get();
+class _NavDrawerState extends State<NavDrawer> {
+  bool isCouncillor = false;
+  StreamSubscription<QuerySnapshot>? unreadCouncillorMessagesSubscription;
+  bool hasUnreadCouncillorMessages = false;
 
-            if (unreadMessages.docs.isNotEmpty) {
-              return true; // Unread messages for the councillor
-            }
-          }
+  @override
+  void initState() {
+    super.initState();
+    checkIfCouncillor();
+    checkForUnreadCouncilMessages();
+  }
+
+  @override
+  void dispose() {
+    unreadCouncillorMessagesSubscription?.cancel();
+    super.dispose();
+  }
+
+  // Determine if the user is a councillor
+  Future<bool> checkIfCouncillor() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? selectedPropertyAccountNumber =
+      prefs.getString('selectedPropertyAccountNo');
+
+      if (selectedPropertyAccountNumber == null) {
+        print('Error: selectedPropertyAccountNumber is null.');
+        return false;
+      }
+
+      QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
+          .collectionGroup('properties')
+          .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+          .get();
+
+      if (propertySnapshot.docs.isNotEmpty) {
+        DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
+        bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
+        String municipalityId = propertyDoc.get('municipalityId');
+        String? districtId =
+        propertyDoc.data().toString().contains('districtId')
+            ? propertyDoc.get('districtId')
+            : null;
+
+        // Check the councillor collection
+        QuerySnapshot councillorSnapshot = isLocalMunicipality
+            ? await FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .collection('councillors')
+            .where('councillorPhone',
+            isEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
+            .get()
+            : await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId!)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('councillors')
+            .where('councillorPhone',
+            isEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
+            .get();
+
+        if (councillorSnapshot.docs.isNotEmpty) {
+          print("User is a councillor.");
+          return true;
         }
-        return false; // No unread messages
-      });
-    } else {
-      // Stream for regular users (messages sent to them)
-      return FirebaseFirestore.instance
-          .collectionGroup('chatRoomCouncillor')
-          .where('sendTo', isEqualTo: userPhone)
-          .snapshots()
-          .asyncMap((snapshot) async {
-        for (var chatDoc in snapshot.docs) {
-          QuerySnapshot unreadMessages = await chatDoc.reference
-              .collection('messages')
-              .where('isReadByUser', isEqualTo: false)
-              .get();
+      }
 
-          if (unreadMessages.docs.isNotEmpty) {
-            return true; // Unread messages for the regular user
-          }
-        }
-        return false; // No unread messages
-      });
+      print("User is not a councillor.");
+      return false;
+    } catch (e) {
+      print('Error checking if user is a councillor: $e');
+      return false;
     }
+  }
+
+
+  Future<void> checkForUnreadCouncilMessages() async {
+    String? userPhone = FirebaseAuth.instance.currentUser?.phoneNumber;
+
+    if (userPhone == null) {
+      print("Error: Current user's phone number is null.");
+      return;
+    }
+
+    // Determine if the user is a councillor
+    checkIfCouncillor().then((isCouncillor) {
+      SharedPreferences.getInstance().then((prefs) {
+        String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+        if (selectedPropertyAccountNumber == null) {
+          print('Error: selectedPropertyAccountNumber is null.');
+          return;
+        }
+
+        FirebaseFirestore.instance
+            .collectionGroup('properties')
+            .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+            .get()
+            .then((propertySnapshot) {
+          if (propertySnapshot.docs.isNotEmpty) {
+            DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
+            bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
+            String municipalityId = propertyDoc.get('municipalityId');
+            String? districtId = propertyDoc.data().toString().contains('districtId')
+                ? propertyDoc.get('districtId')
+                : null;
+
+            CollectionReference councillorChatsCollection = isLocalMunicipality
+                ? FirebaseFirestore.instance
+                .collection('localMunicipalities')
+                .doc(municipalityId)
+                .collection('chatRoomCouncillor')
+                : FirebaseFirestore.instance
+                .collection('districts')
+                .doc(districtId!)
+                .collection('municipalities')
+                .doc(municipalityId)
+                .collection('chatRoomCouncillor');
+
+            unreadCouncillorMessagesSubscription?.cancel();
+            unreadCouncillorMessagesSubscription = councillorChatsCollection.snapshots().listen(
+                  (councillorSnapshot) async {
+                bool hasUnread = false;
+
+                if (isCouncillor) {
+                  String councillorPhoneNumber = FirebaseAuth.instance.currentUser?.phoneNumber ?? '';
+                  councillorChatsCollection
+                      .doc(councillorPhoneNumber)
+                      .collection('userChats')
+                      .snapshots()
+                      .listen((userChatSnapshot) {
+                    for (var userChatDoc in userChatSnapshot.docs) {
+                      userChatDoc.reference.collection('messages').snapshots().listen((messagesSnapshot) {
+                        bool localUnread = false; // Temporary variable for this chat
+                        for (var messageDoc in messagesSnapshot.docs) {
+                          if (messageDoc['isReadByCouncillor'] == false) {
+                            localUnread = true;
+                            hasUnread = true;
+                            break;
+                          }
+                        }
+
+                        // Update the global unread state only if necessary
+                        if (!localUnread) {
+                          hasUnread = false;
+                        }
+
+                        if (mounted) {
+                          setState(() {
+                            hasUnreadCouncillorMessages = hasUnread;
+                          });
+                          print("Real-time badge updated: $hasUnreadCouncillorMessages");
+                        }
+                      });
+                    }
+                  });
+                } else {
+                  for (var councillorDoc in councillorSnapshot.docs) {
+                    councillorDoc.reference.collection('userChats').snapshots().listen((userChatSnapshot) {
+                      for (var userChatDoc in userChatSnapshot.docs) {
+                        userChatDoc.reference.collection('messages').snapshots().listen((messagesSnapshot) {
+                          bool localUnread = false; // Temporary variable for this chat
+                          for (var messageDoc in messagesSnapshot.docs) {
+                            if (messageDoc['isReadByUser'] == false) {
+                              localUnread = true;
+                              hasUnread = true;
+                              break;
+                            }
+                          }
+
+                          // Update the global unread state only if necessary
+                          if (!localUnread) {
+                            hasUnread = false;
+                          }
+
+                          if (mounted) {
+                            setState(() {
+                              hasUnreadCouncillorMessages = hasUnread;
+                            });
+                            print("Real-time badge updated: $hasUnreadCouncillorMessages");
+                          }
+                        });
+                      }
+                    });
+                  }
+                }
+              },
+            );
+          }
+        });
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: Colors.grey[200],
-      child: SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            const SizedBox(height: 80),
-            Center(child: buildHeader(context)),
-            const SizedBox(height: 50),
-            // Use StreamBuilder to dynamically update menu items
-            StreamBuilder<bool>(
-              stream: getUnreadMessagesStream(userPhone, isCouncillor),
-              builder: (context, snapshot) {
-                bool hasUnreadCouncilMessages = snapshot.data ?? false;
-                return buildMenuItems(context, hasUnreadCouncilMessages);
-              },
-            ),
-          ],
-        ),
-      ),
+        backgroundColor: Colors.grey[200],
+        child: SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              const SizedBox(height: 80,),
+              Center(child: buildHeader(context)),
+              const SizedBox(height: 50,),
+              buildMenuItems(context),
+            ],
+          ),
+        )
     );
   }
+
 
   Widget buildHeader(BuildContext context) =>
       Container(
@@ -117,21 +260,17 @@ class NavDrawer extends StatelessWidget {
       );
 
 
-  Widget buildMenuItems(BuildContext context, bool hasUnreadCouncilMessages) =>
+  Widget buildMenuItems(BuildContext context,) =>
       Wrap(
         runSpacing: 10,
         runAlignment: WrapAlignment.end,
         children: <Widget>[
-          const SizedBox(height: 20),
-          // Contact Councillors menu item
+          const SizedBox(height: 20,),
           ListTile(
             leading: Stack(
               children: [
-                const Icon(
-                  Icons.supervised_user_circle_outlined,
-                  size: 40,
-                ),
-                if (hasUnreadCouncilMessages)
+                const Icon(Icons.supervised_user_circle_outlined, size: 40),
+                if (hasUnreadCouncillorMessages)
                   Positioned(
                     top: 0,
                     right: 0,
@@ -153,8 +292,7 @@ class NavDrawer extends StatelessWidget {
                   ),
               ],
             ),
-            title: Text(
-              'Contact Councillors',
+            title: Text('Contact Councillors',
               style: GoogleFonts.turretRoad(
                 color: Colors.black,
                 fontWeight: FontWeight.bold,
@@ -162,10 +300,8 @@ class NavDrawer extends StatelessWidget {
               ),
             ),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const CouncillorScreen()),
+              Navigator.push(context,
+                MaterialPageRoute(builder: (context) => CouncillorScreen()),
               );
             },
           ),

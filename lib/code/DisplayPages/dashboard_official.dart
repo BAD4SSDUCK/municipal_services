@@ -1105,6 +1105,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
 void openPDF(BuildContext context, File file) => Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
     );
+
 class ResponsiveLogo extends StatelessWidget {
   const ResponsiveLogo({Key? key}) : super(key: key);
 

@@ -9,7 +9,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
-
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 
 class FaultImageUpload extends StatefulWidget {
    FaultImageUpload({super.key, required this.propertyAddress, required this.reportedDate, });
@@ -36,31 +38,73 @@ class _FaultImageUploadState extends State<FaultImageUpload> {
   final GlobalKey<ScaffoldState> _key = GlobalKey();
   File? _photo;
   final ImagePicker _picker = ImagePicker();
+  Uint8List? _webImageBytes; // For Web
+  String? _webImageName;
+
+
+
+  Future<void> selectImage() async {
+    if (kIsWeb) {
+      // Web: Use File Picker
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+      );
+
+      if (result != null) {
+        if(mounted) {
+          setState(() {
+            _webImageBytes = result.files.single.bytes;
+            _webImageName = result.files.single.name;
+          });
+        }
+      } else {
+        print("No image selected.");
+      }
+    } else {
+      // Mobile: Use Image Picker
+      final pickedFile = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 60,
+      );
+
+      if (pickedFile != null) {
+        if(mounted) {
+          setState(() {
+            _photo = File(pickedFile.path);
+          });
+        }
+      } else {
+        print("No image selected.");
+      }
+    }
+  }
 
   Future imgFromGallery() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 60,);
-
-    setState(() {
-      if (pickedFile != null) {
-        _photo = File(pickedFile.path);
-        uploadFile();
-      } else {
-        print('No image selected.');
-      }
-    });
+     if(mounted) {
+       setState(() {
+         if (pickedFile != null) {
+           _photo = File(pickedFile.path);
+           uploadFile();
+         } else {
+           print('No image selected.');
+         }
+       });
+     }
   }
 
   Future imgFromCamera() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.camera, imageQuality: 60,);
-
-    setState(() {
-      if (pickedFile != null) {
-        _photo = File(pickedFile.path);
-        uploadFile();
-      } else {
-        print('No image selected.');
-      }
-    });
+     if(mounted) {
+       setState(() {
+         if (pickedFile != null) {
+           _photo = File(pickedFile.path);
+           uploadFile();
+         } else {
+           print('No image selected.');
+         }
+       });
+     }
   }
 
   // Future uploadFile() async {
@@ -86,36 +130,44 @@ class _FaultImageUploadState extends State<FaultImageUpload> {
   //   }
   // }
   Future uploadFile() async {
-    if (_photo == null) {
-      print('No image selected.');
+    if (_photo == null && _webImageBytes == null) {
+      print("No image selected.");
       return;
     }
 
     final String reportAddress = widget.propertyAddress;
     final String dateReported = widget.reportedDate;
-    String fileExtension = path.extension(_photo!.path);
+    String fileExtension = kIsWeb ? ".png" : ".jpg";
     final String fileName = '$reportAddress$fileExtension';
     final String destination = 'files/faultImages/$dateReported/$fileName';
+
 
     try {
       final ref = firebase_storage.FirebaseStorage.instance.ref(destination);
 
-      // Determine MIME type of the file
-      final mimeType = lookupMimeType(_photo!.path) ?? 'application/octet-stream';
-      print("Determined MIME type: $mimeType");
+      firebase_storage.SettableMetadata metadata = firebase_storage.SettableMetadata(
+        contentType: kIsWeb ? "image/png" : "image/jpeg",
+      );
 
-      // Metadata for the upload, specifying the content type
-      final metadata = firebase_storage.SettableMetadata(contentType: mimeType);
+      if (kIsWeb) {
+        // Upload Web Image (Bytes)
+        await ref.putData(_webImageBytes!, metadata);
+      } else {
+        // Upload Mobile Image (File)
+        await ref.putFile(_photo!, metadata);
+      }
 
-      // Uploading the file with metadata
-      await ref.putFile(_photo!, metadata);
-
-      // Optionally, get the URL of the uploaded file
       String fileUrl = await ref.getDownloadURL();
-      print('Image uploaded successfully to: $destination');
-      print('File URL: $fileUrl');
+      print("✅ Image uploaded successfully: $destination");
+      print("🔗 File URL: $fileUrl");
+
+      Fluttertoast.showToast(
+        msg: "Report Image Successfully Uploaded!",
+        gravity: ToastGravity.CENTER,
+      );
+      Navigator.of(context).pop();
     } catch (e) {
-      print('Error uploading image: $e');
+      print("❌ Error uploading image: $e");
     }
   }
 
@@ -134,37 +186,34 @@ class _FaultImageUploadState extends State<FaultImageUpload> {
             Center(
               child: GestureDetector(
                 onTap: () {
-                  _showPicker(context);
+                  showImagePicker(context);
 
                 },
-                child: CircleAvatar(
-                  radius: 180,
-                  backgroundColor: Colors.grey[400],
-                  child: _photo != null ? ClipRRect(
+                child: (_photo != null || _webImageBytes != null)
+                    ? ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: kIsWeb
+                      ? Image.memory(_webImageBytes!, width: 250, height: 250, fit: BoxFit.cover)
+                      : Image.file(_photo!, width: 250, height: 250, fit: BoxFit.cover),
+                )
+                    : Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.file(
-                      _photo!,
-                      width: 250,
-                      height: 250,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                      : Container(
-                    decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(10)), width: 250, height: 250,
-                    child: Icon(Icons.camera_alt, color: Colors.grey[800],),
                   ),
+                  width: 250,
+                  height: 250,
+                  child:  Icon(Icons.camera_alt, color: Colors.grey[800]),
                 ),
               ),
-            ),
+      ),
 
             const SizedBox(height: 100,),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25.0),
               child: GestureDetector(
                 onTap: () {
-                  if (_photo != null) {
+                  if (_photo != null || _webImageBytes != null) {
                     uploadFile();
                     Fluttertoast.showToast(
                         msg: "Report Image Successfully Uploaded!",
@@ -202,34 +251,82 @@ class _FaultImageUploadState extends State<FaultImageUpload> {
       ),
     );
   }
+  Future<void> _pickImageFromGallery() async {
+    final pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 60,
+    );
 
-  void _showPicker(context) {
-    showModalBottomSheet(
+    if (pickedFile != null) {
+      if(mounted) {
+        setState(() {
+          _photo = File(pickedFile.path);
+        });
+      }
+    }
+  }
+
+  /// 📷 Capture Image Using Camera (Mobile Only)
+  Future<void> _pickImageFromCamera() async {
+    final pickedFile = await _picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 60,
+    );
+
+    if (pickedFile != null) {
+      if(mounted) {
+        setState(() {
+          _photo = File(pickedFile.path);
+        });
+      }
+    }
+  }
+
+  Future<void> showImagePicker(BuildContext context) async {
+    if (kIsWeb) {
+      print("📂 Attempting to pick an image (Web)");
+      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
+
+      if (result != null && result.files.single.bytes != null) {
+        if(mounted) {
+          setState(() {
+            _webImageBytes = result.files.single.bytes;
+            _webImageName = result.files.single.name;
+            print("✅ Image selected (Web): $_webImageName");
+          });
+        }
+      } else {
+        print("❌ No image selected (Web)");
+      }
+    } else {
+      // For mobile devices (Gallery or Camera)
+      showModalBottomSheet(
         context: context,
         builder: (BuildContext bc) {
           return SafeArea(
-            child: Container(
-              child: new Wrap(
-                children: <Widget>[
-                  new ListTile(
-                      leading: new Icon(Icons.photo_library),
-                      title: new Text('Gallery'),
-                      onTap: () {
-                        imgFromGallery();
-                        Navigator.of(context).pop();
-                      }),
-                  new ListTile(
-                    leading: new Icon(Icons.photo_camera),
-                    title: new Text('Camera'),
-                    onTap: () {
-                      imgFromCamera();
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                ],
-              ),
+            child: Wrap(
+              children: <Widget>[
+                ListTile(
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('Gallery'),
+                  onTap: () {
+                    _pickImageFromGallery();
+                    Navigator.of(context).pop();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_camera),
+                  title: const Text('Camera'),
+                  onTap: () {
+                    _pickImageFromCamera();
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
             ),
           );
-        });
+        },
+      );
+    }
   }
 }

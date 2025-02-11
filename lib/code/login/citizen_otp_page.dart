@@ -387,82 +387,86 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       left: screenWidth / 12,
                       right: screenWidth / 12,
                       top: bottom > 0 ? screenHeight / 12 : 0,
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        screenState == 0 ? stateRegister() : stateOTP(),
-                        GestureDetector(
-                          onTap: () {
-                            if(screenState == 0) {
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          screenState == 0 ? stateRegister() : stateOTP(),
+                          GestureDetector(
+                            onTap: () {
+                              if(screenState == 0) {
 
-                              // if(fullNameController.text.isEmpty) {
-                              //   showSnackBarText("Full Name is still empty!");
-                              //
-                              // } else
-                              if(phoneController.text.isEmpty) {
-                                showSnackBarText("Phone number is still empty!");
+                                // if(fullNameController.text.isEmpty) {
+                                //   showSnackBarText("Full Name is still empty!");
+                                //
+                                // } else
+                                if(phoneController.text.isEmpty) {
+                                  showSnackBarText("Phone number is still empty!");
+                                } else {
+                                  showSnackBarText("Now verifying your phone number!");
+                                  verifyPhone(countryDial + phoneController.text);
+                                }
                               } else {
-                                showSnackBarText("Now verifying your phone number!");
-                                verifyPhone(countryDial + phoneController.text);
+                                if(otpPin.length >= 6) {
+                                  verifyOTP();
+                                } else {
+                                  showSnackBarText("Enter OTP correctly!");
+                                }
                               }
-                            } else {
-                              if(otpPin.length >= 6) {
-                                verifyOTP();
-                              } else {
-                                showSnackBarText("Enter OTP correctly!");
-                              }
-                            }
-                          },
-                          child: Container(
-                            height: 50,
-                            width: screenWidth,
-                            margin: EdgeInsets.only(bottom: screenHeight / 12),
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              borderRadius: BorderRadius.circular(50),
-                            ),
-                            child: Center(
-                              child: Text(
-                                "CONTINUE",
-                                style: GoogleFonts.montserrat(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.5,
-                                  fontSize: 18,
+                            },
+                            child: Container(
+                              height: 50,
+                              width: screenWidth,
+                              margin: EdgeInsets.only(bottom: screenHeight / 12),
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                borderRadius: BorderRadius.circular(50),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  "CONTINUE",
+                                  style: GoogleFonts.montserrat(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.5,
+                                    fontSize: 18,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 5,),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              'Municipality Member?',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap:() async{
-                                bool isLocalMunicipality = await getIsLocalMunicipality();
-                                Navigator.push(context,
-                                    MaterialPageRoute(builder: (context) =>
-                                    LoginPage(isLocalMunicipality: isLocalMunicipality)));
-                              },
-                              child: const Text(
-                                ' Login Here',
+                          const SizedBox(height: 5,),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                'Municipality Member?',
                                 style: TextStyle(
-                                  color: Colors.blue,
                                   fontWeight: FontWeight.bold,
-                                ),),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20,),
-                      ],
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap:() async{
+                                  bool isLocalMunicipality = await getIsLocalMunicipality();
+                                  Navigator.push(context,
+                                      MaterialPageRoute(builder: (context) =>
+                                      LoginPage(isLocalMunicipality: isLocalMunicipality)));
+                                },
+                                child: const Text(
+                                  ' Login Here',
+                                  style: TextStyle(
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.bold,
+                                  ),),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20,),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -639,29 +643,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget cloudDesign(){
     if(defaultTargetPlatform == TargetPlatform.android){
-      return Column(
-        children: [
-          Transform.translate(
-            offset: const Offset(0, 390),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: circle(5),
+      return SingleChildScrollView(
+        child: Column(
+          children: [
+            Transform.translate(
+              offset: const Offset(0, 390),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: circle(5),
+              ),
             ),
-          ),
-          Transform.translate(
-            offset: const Offset(30, 190),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: circle(4.5),
+            Transform.translate(
+              offset: const Offset(30, 190),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: circle(4.5),
+              ),
             ),
-          ),
-          Transform.translate(
-            offset: const Offset(10,20),
-            child: Center(
-              child: circle(3),
+            Transform.translate(
+              offset: const Offset(10,20),
+              child: Center(
+                child: circle(3),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }else{
       return Column();

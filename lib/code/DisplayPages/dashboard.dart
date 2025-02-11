@@ -40,7 +40,7 @@ import '../Models/prop_provider.dart';
 import '../Models/property.dart';
 import '../Models/property_service.dart';
 import 'package:provider/provider.dart';
-
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../faultPages/fault_report_water.dart';
 
 //Main Menu for users
@@ -81,11 +81,11 @@ class _MainMenuState extends State<MainMenu> {
   final user = FirebaseAuth.instance.currentUser!;
   late String userPhoneNumber;
   final CollectionReference _propList =
-      FirebaseFirestore.instance.collection('properties');
+  FirebaseFirestore.instance.collection('properties');
   final CollectionReference _tokenList =
-      FirebaseFirestore.instance.collection('UserToken');
+  FirebaseFirestore.instance.collection('UserToken');
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin();
   Timer? timer;
   String? mtoken = " ";
   late Property currentProperty;
@@ -100,9 +100,11 @@ class _MainMenuState extends State<MainMenu> {
   bool hasUnreadMessages = false;
   StreamSubscription<QuerySnapshot>? unreadRegularMessagesSubscription;
   StreamSubscription<QuerySnapshot>? unreadFinanceMessagesSubscription;
-  StreamSubscription<QuerySnapshot>? unreadCouncilMessagesSubscription;
+  StreamSubscription<QuerySnapshot>? unreadCouncillorMessagesSubscription;
   bool hasUnreadFinanceMessages = false;
-  bool hasUnreadCouncilMessages=false;
+  bool hasUnreadCouncillorMessages = false;
+  bool isCouncillor = false;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -119,14 +121,14 @@ class _MainMenuState extends State<MainMenu> {
       if (mounted) {
         setState(() {
           isLoading =
-              false; // Data is loaded, user can now interact with the menu
+          false; // Data is loaded, user can now interact with the menu
         });
       }
       checkForUnreadMessages();
       checkForUnreadFinanceMessages();
-
     });
     setupNotificationListener();
+    checkForUnreadCouncilMessages();
     fetchUserProperties();
     currentProperty = widget.property;
     if (user == null) {
@@ -149,7 +151,7 @@ class _MainMenuState extends State<MainMenu> {
     timer?.cancel();
     unreadRegularMessagesSubscription?.cancel();
     unreadFinanceMessagesSubscription?.cancel();
-    unreadCouncilMessagesSubscription?.cancel();
+    unreadCouncillorMessagesSubscription?.cancel();
     super.dispose();
   }
 
@@ -180,7 +182,7 @@ class _MainMenuState extends State<MainMenu> {
       });
     }
     userProperties =
-        await propertyService.fetchPropertiesForUser(widget.property.cellNum);
+    await propertyService.fetchPropertiesForUser(widget.property.cellNum);
 
     if (userProperties == null || userProperties!.isEmpty) {
       print("No properties found for this user.");
@@ -194,7 +196,7 @@ class _MainMenuState extends State<MainMenu> {
 
     if (selectedPropertyAccountNumber != null) {
       currentProperty = userProperties!.firstWhere(
-        (property) => property.accountNo == selectedPropertyAccountNumber,
+            (property) => property.accountNo == selectedPropertyAccountNumber,
         orElse: () => userProperties!.first,
       );
     } else {
@@ -296,7 +298,7 @@ class _MainMenuState extends State<MainMenu> {
 
   void getToken() async {
     await FirebaseMessaging.instance.getToken().then(
-      (token) {
+          (token) {
         setState(() {
           mtoken = token;
           print("My token is $mtoken");
@@ -329,15 +331,15 @@ class _MainMenuState extends State<MainMenu> {
     // Update token for all properties associated with this user
     final propListRef = widget.property.isLocalMunicipality
         ? FirebaseFirestore.instance
-            .collection('localMunicipalities')
-            .doc(widget.property.municipalityId)
-            .collection('properties')
+        .collection('localMunicipalities')
+        .doc(widget.property.municipalityId)
+        .collection('properties')
         : FirebaseFirestore.instance
-            .collection('districts')
-            .doc(widget.property.districtId)
-            .collection('municipalities')
-            .doc(widget.property.municipalityId)
-            .collection('properties');
+        .collection('districts')
+        .doc(widget.property.districtId)
+        .collection('municipalities')
+        .doc(widget.property.municipalityId)
+        .collection('properties');
 
     propListRef.get().then((querySnapshot) async {
       for (var result in querySnapshot.docs) {
@@ -352,7 +354,7 @@ class _MainMenuState extends State<MainMenu> {
     if (!mounted) return;
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? selectedPropertyAccountNumber =
-        prefs.getString('selectedPropertyAccountNo');
+    prefs.getString('selectedPropertyAccountNo');
 
     if (selectedPropertyAccountNumber == null) {
       print('Error: selectedPropertyAccountNumber is null.');
@@ -370,9 +372,9 @@ class _MainMenuState extends State<MainMenu> {
         bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
         String municipalityId = propertyDoc.get('municipalityId');
         String? districtId =
-            propertyDoc.data().toString().contains('districtId')
-                ? propertyDoc.get('districtId')
-                : null;
+        propertyDoc.data().toString().contains('districtId')
+            ? propertyDoc.get('districtId')
+            : null;
         String phoneNumber = propertyDoc.get('cellNumber');
 
         CollectionReference chatsCollection;
@@ -402,7 +404,7 @@ class _MainMenuState extends State<MainMenu> {
 
         unreadRegularMessagesSubscription = chatsCollection
             .where('sendBy',
-                isNotEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
+            isNotEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
             .snapshots()
             .listen((snapshot) {
           bool hasUnread = false;
@@ -431,7 +433,7 @@ class _MainMenuState extends State<MainMenu> {
     if (!mounted) return;
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? selectedPropertyAccountNumber =
-        prefs.getString('selectedPropertyAccountNo');
+    prefs.getString('selectedPropertyAccountNo');
 
     if (selectedPropertyAccountNumber == null) {
       print('Error: selectedPropertyAccountNumber is null.');
@@ -449,9 +451,9 @@ class _MainMenuState extends State<MainMenu> {
         bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
         String municipalityId = propertyDoc.get('municipalityId');
         String? districtId =
-            propertyDoc.data().toString().contains('districtId')
-                ? propertyDoc.get('districtId')
-                : null;
+        propertyDoc.data().toString().contains('districtId')
+            ? propertyDoc.get('districtId')
+            : null;
         String phoneNumber = propertyDoc.get('cellNumber');
 
         CollectionReference financeChatsCollection;
@@ -481,7 +483,7 @@ class _MainMenuState extends State<MainMenu> {
 
         unreadFinanceMessagesSubscription = financeChatsCollection
             .where('sendBy',
-                isNotEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
+            isNotEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
             .snapshots()
             .listen((snapshot) {
           bool hasUnread = false;
@@ -507,11 +509,10 @@ class _MainMenuState extends State<MainMenu> {
     }
   }
 
-
-
   Future<void> setupNotificationListener() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    final selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+    final selectedPropertyAccountNumber =
+    prefs.getString('selectedPropertyAccountNo');
 
     print("Selected Property Account Number: $selectedPropertyAccountNumber");
 
@@ -553,7 +554,8 @@ class _MainMenuState extends State<MainMenu> {
                 .collection('Notifications');
             print("Using District Municipality Notifications path.");
           } else {
-            print('Error: Unable to determine municipality type or IDs are missing.');
+            print(
+                'Error: Unable to determine municipality type or IDs are missing.');
             return;
           }
 
@@ -567,7 +569,8 @@ class _MainMenuState extends State<MainMenu> {
             NotificationProvider().updateUnreadNoticesStatus(hasUnreadNotices);
           });
         } else {
-          print("Error: No property found for account number $selectedPropertyAccountNumber.");
+          print(
+              "Error: No property found for account number $selectedPropertyAccountNumber.");
         }
       } catch (e) {
         print("Error fetching property details: $e");
@@ -577,9 +580,193 @@ class _MainMenuState extends State<MainMenu> {
     }
   }
 
+  Future<bool> checkIfCouncillor() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? selectedPropertyAccountNumber =
+      prefs.getString('selectedPropertyAccountNo');
+
+      if (selectedPropertyAccountNumber == null) {
+        print('Error: selectedPropertyAccountNumber is null.');
+        return false;
+      }
+
+      QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
+          .collectionGroup('properties')
+          .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+          .get();
+
+      if (propertySnapshot.docs.isNotEmpty) {
+        DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
+        bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
+        String municipalityId = propertyDoc.get('municipalityId');
+        String? districtId =
+        propertyDoc.data().toString().contains('districtId')
+            ? propertyDoc.get('districtId')
+            : null;
+
+        // Check the councillor collection
+        QuerySnapshot councillorSnapshot = isLocalMunicipality
+            ? await FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .collection('councillors')
+            .where('councillorPhone',
+            isEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
+            .get()
+            : await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId!)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('councillors')
+            .where('councillorPhone',
+            isEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
+            .get();
+
+        if (councillorSnapshot.docs.isNotEmpty) {
+          print("User is a councillor.");
+          return true;
+        }
+      }
+
+      print("User is not a councillor.");
+      return false;
+    } catch (e) {
+      print('Error checking if user is a councillor: $e');
+      return false;
+    }
+  }
 
 
+  Future<void> checkForUnreadCouncilMessages() async {
+    String? userPhone = FirebaseAuth.instance.currentUser?.phoneNumber;
 
+    if (userPhone == null) {
+      print("Error: Current user's phone number is null.");
+      return;
+    }
+
+    // Determine if the user is a councillor
+    checkIfCouncillor().then((isCouncillor) {
+      SharedPreferences.getInstance().then((prefs) {
+        String? selectedPropertyAccountNumber = prefs.getString(
+            'selectedPropertyAccountNo');
+        if (selectedPropertyAccountNumber == null) {
+          print('Error: selectedPropertyAccountNumber is null.');
+          return;
+        }
+
+        FirebaseFirestore.instance
+            .collectionGroup('properties')
+            .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+            .get()
+            .then((propertySnapshot) {
+          if (propertySnapshot.docs.isNotEmpty) {
+            DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
+            bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
+            String municipalityId = propertyDoc.get('municipalityId');
+            String? districtId = propertyDoc.data().toString().contains(
+                'districtId')
+                ? propertyDoc.get('districtId')
+                : null;
+
+            CollectionReference councillorChatsCollection = isLocalMunicipality
+                ? FirebaseFirestore.instance
+                .collection('localMunicipalities')
+                .doc(municipalityId)
+                .collection('chatRoomCouncillor')
+                : FirebaseFirestore.instance
+                .collection('districts')
+                .doc(districtId!)
+                .collection('municipalities')
+                .doc(municipalityId)
+                .collection('chatRoomCouncillor');
+
+            unreadCouncillorMessagesSubscription?.cancel();
+            unreadCouncillorMessagesSubscription =
+                councillorChatsCollection.snapshots().listen(
+                      (councillorSnapshot) async {
+                    bool hasUnread = false;
+
+                    if (isCouncillor) {
+                      String councillorPhoneNumber = FirebaseAuth.instance
+                          .currentUser?.phoneNumber ?? '';
+                      councillorChatsCollection
+                          .doc(councillorPhoneNumber)
+                          .collection('userChats')
+                          .snapshots()
+                          .listen((userChatSnapshot) {
+                        for (var userChatDoc in userChatSnapshot.docs) {
+                          userChatDoc.reference.collection('messages')
+                              .snapshots()
+                              .listen((messagesSnapshot) {
+                            bool localUnread = false; // Temporary variable for this chat
+                            for (var messageDoc in messagesSnapshot.docs) {
+                              if (messageDoc['isReadByCouncillor'] == false) {
+                                localUnread = true;
+                                hasUnread = true;
+                                break;
+                              }
+                            }
+
+                            // Update the global unread state only if necessary
+                            if (!localUnread) {
+                              hasUnread = false;
+                            }
+
+                            if (mounted) {
+                              setState(() {
+                                hasUnreadCouncillorMessages = hasUnread;
+                              });
+                              print(
+                                  "Real-time badge updated: $hasUnreadCouncillorMessages");
+                            }
+                          });
+                        }
+                      });
+                    } else {
+                      for (var councillorDoc in councillorSnapshot.docs) {
+                        councillorDoc.reference.collection('userChats')
+                            .snapshots()
+                            .listen((userChatSnapshot) {
+                          for (var userChatDoc in userChatSnapshot.docs) {
+                            userChatDoc.reference.collection('messages')
+                                .snapshots()
+                                .listen((messagesSnapshot) {
+                              bool localUnread = false; // Temporary variable for this chat
+                              for (var messageDoc in messagesSnapshot.docs) {
+                                if (messageDoc['isReadByUser'] == false) {
+                                  localUnread = true;
+                                  hasUnread = true;
+                                  break;
+                                }
+                              }
+
+                              // Update the global unread state only if necessary
+                              if (!localUnread) {
+                                hasUnread = false;
+                              }
+
+                              if (mounted) {
+                                setState(() {
+                                  hasUnreadCouncillorMessages = hasUnread;
+                                });
+                                print(
+                                    "Real-time badge updated: $hasUnreadCouncillorMessages");
+                              }
+                            });
+                          }
+                        });
+                      }
+                    }
+                  },
+                );
+          }
+        });
+      });
+    });
+  }
 
   // void saveToken(String token) async {
   //   await FirebaseFirestore.instance.collection("UserToken").doc(user.phoneNumber).set({
@@ -618,28 +805,30 @@ class _MainMenuState extends State<MainMenu> {
 
   void initInfo() {
     var androidInitialize =
-        const AndroidInitializationSettings('@mipmap/ic_launcher');
+    const AndroidInitializationSettings('@mipmap/ic_launcher');
     var initializationSettings =
-        InitializationSettings(android: androidInitialize);
+    InitializationSettings(android: androidInitialize);
     flutterLocalNotificationsPlugin.initialize(initializationSettings,
         onDidReceiveNotificationResponse:
             (NotificationResponse notificationResponse) {
-      switch (notificationResponse.notificationResponseType) {
-        case NotificationResponseType.selectedNotification:
-          selectNotificationStream.add(notificationResponse.payload);
-          break;
-        case NotificationResponseType.selectedNotificationAction:
-          if (notificationResponse.actionId == navigationActionId) {
-            selectNotificationStream.add(notificationResponse.payload);
+          switch (notificationResponse.notificationResponseType) {
+            case NotificationResponseType.selectedNotification:
+              selectNotificationStream.add(notificationResponse.payload);
+              break;
+            case NotificationResponseType.selectedNotificationAction:
+              if (notificationResponse.actionId == navigationActionId) {
+                selectNotificationStream.add(notificationResponse.payload);
+              }
+              break;
           }
-          break;
-      }
-    }, onDidReceiveBackgroundNotificationResponse: notificationTapBackground);
+        },
+        onDidReceiveBackgroundNotificationResponse: notificationTapBackground);
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       print("..........onMessage..........");
       print(
-          "onMessage: ${message.notification?.title}/${message.notification?.body}}");
+          "onMessage: ${message.notification?.title}/${message.notification
+              ?.body}}");
 
       BigTextStyleInformation bigTextStyleInformation = BigTextStyleInformation(
         message.notification!.body.toString(),
@@ -648,7 +837,7 @@ class _MainMenuState extends State<MainMenu> {
         htmlFormatContentTitle: true,
       );
       AndroidNotificationDetails androidPlatformChannelSpecifics =
-          AndroidNotificationDetails(
+      AndroidNotificationDetails(
         'User',
         'User',
         importance: Importance.high,
@@ -657,7 +846,7 @@ class _MainMenuState extends State<MainMenu> {
         playSound: true,
       );
       NotificationDetails platformChannelSpecifics =
-          NotificationDetails(android: androidPlatformChannelSpecifics);
+      NotificationDetails(android: androidPlatformChannelSpecifics);
       await flutterLocalNotificationsPlugin.show(0, message.notification?.title,
           message.notification?.body, platformChannelSpecifics,
           payload: message.data['body']);
@@ -673,7 +862,7 @@ class _MainMenuState extends State<MainMenu> {
   // List _allVersionResults = [];
 
   final CollectionReference _chatRoom =
-      FirebaseFirestore.instance.collection('chatRoom');
+  FirebaseFirestore.instance.collection('chatRoom');
 
   // void addChatCustomId() async {
   //   String? addChatID = user.phoneNumber;
@@ -748,6 +937,11 @@ class _MainMenuState extends State<MainMenu> {
       // Handle error state in the UI (e.g., show a message to the user)
     }
   }
+
+
+
+
+
 
   // void getVersionStream() async {
   //   try {
@@ -841,51 +1035,926 @@ class _MainMenuState extends State<MainMenu> {
   //     }
   //   }
   // }
-  Stream<bool> getUnreadMessagesStream(String userPhone, bool isCouncillor) {
-    if (isCouncillor) {
-      // Stream for councillors (messages sent to them)
-      return FirebaseFirestore.instance
-          .collectionGroup('chatRoomCouncillor')
-          .snapshots()
-          .asyncMap((snapshot) async {
-        for (var councillorDoc in snapshot.docs) {
-          QuerySnapshot userChatsSnapshot =
-          await councillorDoc.reference.collection('userChats').get();
 
-          for (var userChatDoc in userChatsSnapshot.docs) {
-            QuerySnapshot unreadMessages = await userChatDoc.reference
-                .collection('messages')
-                .where('isReadByCouncillor', isEqualTo: false)
-                .where('sendBy', isNotEqualTo: userPhone)
-                .get();
+//   @override
+//   Widget build(BuildContext context) {
+//     Get.put(LocationController());
+//     SystemChrome.setPreferredOrientations([
+//       DeviceOrientation.portraitUp,
+//       DeviceOrientation.portraitDown,
+//     ]);
+//
+//     return Container(
+//       decoration: const BoxDecoration(
+//         image: DecorationImage(
+//           image: AssetImage("assets/images/greyscale.jpg"),
+//           fit: BoxFit.cover,
+//         ),
+//       ),
+//       child: Scaffold(
+//         key: _scaffoldKey,
+//         backgroundColor: Colors.transparent,
+//         appBar: AppBar(
+//           title: Text(
+//             'Signed in from: ${user.phoneNumber!}',
+//             style: GoogleFonts.turretRoad(
+//               color: Colors.white,
+//               fontWeight: FontWeight.w900,
+//               fontSize: 19,
+//             ),
+//             overflow: TextOverflow.ellipsis,
+//           ),
+//           backgroundColor: Colors.black87,
+//           iconTheme: const IconThemeData(color: Colors.white),
+//           leading: Stack(
+//             children: [
+//               IconButton(
+//                 icon: const Icon(Icons.menu),
+//                 onPressed: () {
+//                   _scaffoldKey.currentState?.openDrawer(); // Use the global key to open the drawer
+//                 },
+//               ),
+//               if (hasUnreadCouncillorMessages)
+//                 Positioned(
+//                   top: 8,
+//                   right: 8,
+//                   child: Container(
+//                     padding: const EdgeInsets.all(3),
+//                     decoration: const BoxDecoration(
+//                       color: Colors.red,
+//                       shape: BoxShape.circle,
+//                     ),
+//                     child: const Text(
+//                       '!',
+//                       style: TextStyle(
+//                         color: Colors.white,
+//                         fontSize: 10,
+//                         fontWeight: FontWeight.bold,
+//                       ),
+//                     ),
+//                   ),
+//                 ),
+//             ],
+//           ),
+//         ),
+//         drawer: const NavDrawer(),
+//         body: SingleChildScrollView(
+//           child: Column(
+//             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+//             children: <Widget>[
+//               Column(
+//                 children: <Widget>[
+//                   const SizedBox(height: 30),
+//                   const ResponsiveLogo(),
+//                   SizedBox(height: 20.h),
+//                   if (userProperties != null && userProperties!.length > 1)
+//                     ElevatedIconButton(
+//                       onPress: () async {
+//                         final selectedProperty = await Navigator.push(
+//                           context,
+//                           MaterialPageRoute(
+//                             builder: (context) => PropertySelectionScreen(
+//                               properties: userProperties!,
+//                               userPhoneNumber: userPhoneNumber,
+//                               isLocalMunicipality: widget.isLocalMunicipality,
+//                             ),
+//                           ),
+//                         );
+//
+//                         if (selectedProperty != null) {
+//                           setState(() {
+//                             currentProperty = selectedProperty;
+//                           });
+//                         }
+//                       },
+//                       labelText: 'Select\nProperty',
+//                       fSize: 18,
+//                       faIcon: const FaIcon(FontAwesomeIcons.houseUser),
+//                       fgColor: Colors.deepPurple,
+//                         btSize: Size(130.w, 120.h)
+//                     ),
+//                   Column(
+//                     children: [
+//                       Center(
+//                         child: Row(
+//                           mainAxisAlignment: MainAxisAlignment.center,
+//                           crossAxisAlignment: CrossAxisAlignment.center,
+//                           children: [
+//                             Expanded(
+//                               child: Stack(
+//                                 children: [
+//                                   ElevatedIconButton(
+//                                     onPress: () async {
+//                                       SharedPreferences prefs =
+//                                           await SharedPreferences.getInstance();
+//                                       String? selectedPropertyAccountNumber =
+//                                           prefs.getString(
+//                                               'selectedPropertyAccountNo');
+//
+//                                       if (selectedPropertyAccountNumber ==
+//                                           null) {
+//                                         print(
+//                                             'Error: selectedPropertyAccountNumber is null.');
+//                                         return;
+//                                       }
+//
+//                                       try {
+//                                         QuerySnapshot
+//                                             localMunicipalitySnapshot =
+//                                             await FirebaseFirestore.instance
+//                                                 .collectionGroup('properties')
+//                                                 .where('accountNumber',
+//                                                     isEqualTo:
+//                                                         selectedPropertyAccountNumber)
+//                                                 .get();
+//
+//                                         if (localMunicipalitySnapshot
+//                                             .docs.isNotEmpty) {
+//                                           DocumentSnapshot propertyDoc =
+//                                               localMunicipalitySnapshot
+//                                                   .docs.first;
+//                                           bool isLocalMunicipality = propertyDoc
+//                                               .get('isLocalMunicipality');
+//                                           String municipalityId =
+//                                               propertyDoc.get('municipalityId');
+//                                           String? districtId = propertyDoc
+//                                                   .data()
+//                                                   .toString()
+//                                                   .contains('districtId')
+//                                               ? propertyDoc.get('districtId')
+//                                               : null;
+//                                           String phoneNumber =
+//                                               propertyDoc.get('cellNumber');
+//
+//                                           CollectionReference<Object?>?
+//                                               chatCollectionRef;
+//                                           if (isLocalMunicipality) {
+//                                             chatCollectionRef =
+//                                                 FirebaseFirestore.instance
+//                                                     .collection(
+//                                                         'localMunicipalities')
+//                                                     .doc(municipalityId)
+//                                                     .collection('chatRoom');
+//                                           } else if (districtId != null) {
+//                                             chatCollectionRef =
+//                                                 FirebaseFirestore
+//                                                     .instance
+//                                                     .collection('districts')
+//                                                     .doc(districtId)
+//                                                     .collection(
+//                                                         'municipalities')
+//                                                     .doc(municipalityId)
+//                                                     .collection('chatRoom');
+//                                           }
+//
+//                                           if (chatCollectionRef != null) {
+//                                             Navigator.push(
+//                                               context,
+//                                               MaterialPageRoute(
+//                                                 builder: (context) => Chat(
+//                                                   chatRoomId: phoneNumber,
+//                                                   userName:
+//                                                       selectedPropertyAccountNumber,
+//                                                   chatCollectionRef:
+//                                                       chatCollectionRef!,
+//                                                   refreshChatList:
+//                                                       checkForUnreadMessages,
+//                                                   // Callback to refresh badge
+//                                                   isLocalMunicipality:
+//                                                       isLocalMunicipality,
+//                                                   districtId: districtId ?? '',
+//                                                   municipalityId:
+//                                                       municipalityId,
+//                                                 ),
+//                                               ),
+//                                             );
+//                                           }
+//                                         }
+//                                       } catch (e) {
+//                                         print(
+//                                             'Error retrieving property details: $e');
+//                                       }
+//                                     },
+//                                     labelText: 'Admin \nChat',
+//                                     fSize: 18,
+//                                     faIcon:
+//                                         const FaIcon(FontAwesomeIcons.message),
+//                                     fgColor: Colors.blue,
+//                                       btSize: Size(130.w, 120.h)
+//                                   ),
+//                                   if (hasUnreadMessages)
+//                                     Positioned(
+//                                       right: 0,
+//                                       top: 0,
+//                                       child: Container(
+//                                         padding: const EdgeInsets.all(3),
+//                                         decoration: BoxDecoration(
+//                                           color: Colors.red,
+//                                           borderRadius:
+//                                               BorderRadius.circular(8),
+//                                         ),
+//                                         constraints: const BoxConstraints(
+//                                           minWidth: 16,
+//                                           minHeight: 16,
+//                                         ),
+//                                         child: const Text(
+//                                           '!',
+//                                           style: TextStyle(
+//                                             color: Colors.white,
+//                                             fontSize: 12,
+//                                             fontWeight: FontWeight.bold,
+//                                           ),
+//                                           textAlign: TextAlign.center,
+//                                         ),
+//                                       ),
+//                                     ),
+//                                 ],
+//                               ),
+//                             ),
+//                             const SizedBox(width: 40),
+//                             Expanded(
+//                               child: ElevatedIconButton(
+//                                 onPress: () async {
+//                                   // Fetch selected property information, especially for local municipality
+//                                   if (currentProperty.isLocalMunicipality) {
+//                                     // Local municipality logic
+//                                     Navigator.push(
+//                                       context,
+//                                       MaterialPageRoute(
+//                                         builder: (context) =>
+//                                             UsersTableViewPage(
+//                                           property: currentProperty,
+//                                           userNumber: currentProperty.cellNum,
+//                                           accountNumber:
+//                                               currentProperty.accountNo,
+//                                           propertyAddress:
+//                                               currentProperty.address,
+//                                           districtId: '',
+//                                           // No districtId for local municipalities
+//                                           municipalityId:
+//                                               currentProperty.municipalityId,
+//                                           isLocalMunicipality: currentProperty
+//                                               .isLocalMunicipality,
+//                                         ),
+//                                       ),
+//                                     );
+//                                   } else {
+//                                     // District-based municipality logic
+//                                     Navigator.push(
+//                                       context,
+//                                       MaterialPageRoute(
+//                                         builder: (context) =>
+//                                             UsersTableViewPage(
+//                                           property: currentProperty,
+//                                           userNumber: currentProperty.cellNum,
+//                                           accountNumber:
+//                                               currentProperty.accountNo,
+//                                           propertyAddress:
+//                                               currentProperty.address,
+//                                           districtId:
+//                                               currentProperty.districtId,
+//                                           municipalityId:
+//                                               currentProperty.municipalityId,
+//                                           isLocalMunicipality: currentProperty
+//                                               .isLocalMunicipality,
+//                                         ),
+//                                       ),
+//                                     );
+//                                   }
+//                                 },
+//                                 labelText: 'View \nDetails',
+//                                 fSize: 16,
+//                                 faIcon: const FaIcon(
+//                                     FontAwesomeIcons.houseCircleExclamation),
+//                                 fgColor: Colors.green,
+//                                   btSize: Size(130.w, 120.h)
+//                               ),
+//                             ),
+//                           ],
+//                         ),
+//                       ),
+//                       Center(
+//                         child: Row(
+//                           mainAxisAlignment: MainAxisAlignment.center,
+//                           crossAxisAlignment: CrossAxisAlignment.center,
+//                           children: [
+//                             Expanded(
+//                               child: Consumer<NotificationProvider>(
+//                                 builder:
+//                                     (context, notificationProvider, child) {
+//                                   return Stack(
+//                                     children: [
+//                                       ElevatedIconButton(
+//                                         onPress: () async {
+//                                           // Fetch the selected property account number from SharedPreferences
+//                                           SharedPreferences prefs =
+//                                               await SharedPreferences
+//                                                   .getInstance();
+//                                           String?
+//                                               selectedPropertyAccountNumber =
+//                                               prefs.getString(
+//                                                   'selectedPropertyAccountNo');
+//
+//                                           // Check if the account number exists
+//                                           if (selectedPropertyAccountNumber ==
+//                                               null) {
+//                                             print(
+//                                                 'Error: selectedPropertyAccountNumber is null.');
+//                                             Fluttertoast.showToast(
+//                                                 msg: "No property selected.");
+//                                             return;
+//                                           }
+//
+//                                           try {
+//                                             // Search for the property in both localMunicipalities and district properties
+//                                             QuerySnapshot propertySnapshot =
+//                                                 await FirebaseFirestore.instance
+//                                                     .collectionGroup(
+//                                                         'properties')
+//                                                     .where('accountNumber',
+//                                                         isEqualTo:
+//                                                             selectedPropertyAccountNumber)
+//                                                     .get();
+//
+//                                             if (propertySnapshot
+//                                                 .docs.isNotEmpty) {
+//                                               DocumentSnapshot propertyDoc =
+//                                                   propertySnapshot.docs.first;
+//
+//                                               // Retrieve the 'isLocalMunicipality', 'municipalityId', and 'districtId' (if applicable)
+//                                               bool isLocalMunicipality =
+//                                                   propertyDoc.get(
+//                                                           'isLocalMunicipality')
+//                                                       as bool;
+//                                               String municipalityId =
+//                                                   propertyDoc
+//                                                           .get('municipalityId')
+//                                                       as String;
+//                                               String? districtId = propertyDoc
+//                                                       .data()
+//                                                       .toString()
+//                                                       .contains('districtId')
+//                                                   ? propertyDoc.get(
+//                                                       'districtId') as String
+//                                                   : null;
+//
+//                                               // Pass the correct data to the NoticeScreen based on whether it's a local or district property
+//                                               Navigator.push(
+//                                                 context,
+//                                                 MaterialPageRoute(
+//                                                   builder: (context) =>
+//                                                       NoticeScreen(
+//                                                     selectedPropertyAccountNumber:
+//                                                         selectedPropertyAccountNumber,
+//                                                     isLocalMunicipality:
+//                                                         isLocalMunicipality,
+//                                                     municipalityId:
+//                                                         municipalityId,
+//                                                     districtId:
+//                                                         districtId, // Can be null for local municipalities
+//                                                   ),
+//                                                 ),
+//                                               );
+//                                             } else {
+//                                               print(
+//                                                   'Error: No property found for account number $selectedPropertyAccountNumber.');
+//                                               Fluttertoast.showToast(
+//                                                   msg:
+//                                                       "No property found for selected account.");
+//                                             }
+//                                           } catch (e) {
+//                                             print(
+//                                                 'Error retrieving property details: $e');
+//                                             Fluttertoast.showToast(
+//                                                 msg:
+//                                                     "Failed to load property details.");
+//                                           }
+//                                         },
+//                                         labelText: 'Notices',
+//                                         fSize: 16,
+//                                         faIcon: const FaIcon(
+//                                             Icons.notifications_on),
+//                                         fgColor: Colors.red,
+//                                           btSize: Size(130.w, 120.h)
+//                                       ),
+//                                       // Show notification badge if there are unread notices
+//                                       if (notificationProvider.hasUnreadNotices)
+//                                         Positioned(
+//                                           right: 0,
+//                                           top: 0,
+//                                           child: Container(
+//                                             padding: const EdgeInsets.all(3),
+//                                             decoration: BoxDecoration(
+//                                               color: Colors.red,
+//                                               borderRadius:
+//                                                   BorderRadius.circular(8),
+//                                             ),
+//                                             constraints: const BoxConstraints(
+//                                               minWidth: 16,
+//                                               minHeight: 16,
+//                                             ),
+//                                             child: const Text(
+//                                               '!',
+//                                               style: TextStyle(
+//                                                 color: Colors.white,
+//                                                 fontSize: 12,
+//                                                 fontWeight: FontWeight.bold,
+//                                               ),
+//                                               textAlign: TextAlign.center,
+//                                             ),
+//                                           ),
+//                                         ),
+//                                     ],
+//                                   );
+//                                 },
+//                               ),
+//                             ),
+//                             const SizedBox(width: 40),
+//                             Expanded(
+//                               child: Stack(
+//                                 children: [
+//                                   ElevatedIconButton(
+//                                     onPress: () async {
+//                                       // Fetch selected property account number from SharedPreferences
+//                                       SharedPreferences prefs =
+//                                           await SharedPreferences.getInstance();
+//                                       String? selectedPropertyAccountNumber =
+//                                           prefs.getString(
+//                                               'selectedPropertyAccountNo');
+//
+//                                       // Check if the account number exists
+//                                       if (selectedPropertyAccountNumber ==
+//                                           null) {
+//                                         print(
+//                                             'Error: selectedPropertyAccountNumber is null.');
+//                                         Fluttertoast.showToast(
+//                                             msg: "No property selected.");
+//                                         return;
+//                                       }
+//
+//                                       try {
+//                                         // Search for the property in both localMunicipalities and district properties
+//                                         QuerySnapshot propertySnapshot =
+//                                             await FirebaseFirestore.instance
+//                                                 .collectionGroup('properties')
+//                                                 .where('accountNumber',
+//                                                     isEqualTo:
+//                                                         selectedPropertyAccountNumber)
+//                                                 .get();
+//
+//                                         if (propertySnapshot.docs.isNotEmpty) {
+//                                           DocumentSnapshot propertyDoc =
+//                                               propertySnapshot.docs.first;
+//
+//                                           // Retrieve the 'isLocalMunicipality', 'municipalityId', and 'districtId' (if applicable)
+//                                           bool isLocalMunicipality = propertyDoc
+//                                                   .get('isLocalMunicipality')
+//                                               as bool;
+//                                           String municipalityId = propertyDoc
+//                                               .get('municipalityId') as String;
+//                                           String? districtId = propertyDoc
+//                                                   .data()
+//                                                   .toString()
+//                                                   .contains('districtId')
+//                                               ? propertyDoc.get('districtId')
+//                                                   as String
+//                                               : null;
+//
+//                                           // Pass the correct data to the UsersPdfListViewPage based on whether it's a local or district property
+//                                           Navigator.push(
+//                                             context,
+//                                             MaterialPageRoute(
+//                                               builder: (context) =>
+//                                                   UsersPdfListViewPage(
+//                                                 userNumber: propertyDoc
+//                                                     .get('cellNumber'),
+//                                                 propertyAddress:
+//                                                     propertyDoc.get('address'),
+//                                                 accountNumber: propertyDoc
+//                                                     .get('accountNumber'),
+//                                                 isLocalMunicipality:
+//                                                     isLocalMunicipality,
+//                                                 municipalityId: municipalityId,
+//                                                 districtId:
+//                                                     districtId, // Can be null for local municipalities
+//                                               ),
+//                                             ),
+//                                           );
+//                                         } else {
+//                                           print(
+//                                               'Error: No property found for account number $selectedPropertyAccountNumber.');
+//                                           Fluttertoast.showToast(
+//                                               msg:
+//                                                   "No property found for selected account.");
+//                                         }
+//                                       } catch (e) {
+//                                         print(
+//                                             'Error retrieving property details: $e');
+//                                         Fluttertoast.showToast(
+//                                             msg:
+//                                                 "Failed to load property details.");
+//                                       }
+//                                     },
+//                                     labelText: 'View\nInvoice',
+//                                     fSize: 17,
+//                                     faIcon: const FaIcon(
+//                                         FontAwesomeIcons.solidFilePdf),
+//                                     fgColor: Colors.redAccent,
+//                                       btSize: Size(130.w, 120.h)
+//                                   ),
+//                                   if (hasUnreadFinanceMessages)
+//                                     Positioned(
+//                                       left: 0,
+//                                       top: 0,
+//                                       child: Container(
+//                                         padding: const EdgeInsets.all(3),
+//                                         decoration: BoxDecoration(
+//                                           color: Colors.red,
+//                                           borderRadius:
+//                                               BorderRadius.circular(8),
+//                                         ),
+//                                         constraints: const BoxConstraints(
+//                                           minWidth: 16,
+//                                           minHeight: 16,
+//                                         ),
+//                                         child: const Text(
+//                                           '!',
+//                                           style: TextStyle(
+//                                             color: Colors.white,
+//                                             fontSize: 12,
+//                                             fontWeight: FontWeight.bold,
+//                                           ),
+//                                           textAlign: TextAlign.center,
+//                                         ),
+//                                       ),
+//                                     ),
+//                                 ],
+//                               ),
+//                             ),
+//                           ],
+//                         ),
+//                       ),
+//                       Center(
+//                         child: Row(
+//                           mainAxisAlignment: MainAxisAlignment.center,
+//                           crossAxisAlignment: CrossAxisAlignment.center,
+//                           children: [
+//                             ElevatedIconButton(
+//                               onPress: () {
+//                                 showDialog(
+//                                   barrierDismissible: false,
+//                                   context: context,
+//                                   builder: (context) {
+//                                     return AlertDialog(
+//                                       shape: const RoundedRectangleBorder(
+//                                           borderRadius: BorderRadius.all(
+//                                               Radius.circular(18))),
+//                                       title: const Text("Logout"),
+//                                       content: const Text(
+//                                           "Are you sure you want to logout?"),
+//                                       actions: [
+//                                         IconButton(
+//                                           onPressed: () {
+//                                             Navigator.pop(context);
+//                                           },
+//                                           icon: const Icon(Icons.cancel,
+//                                               color: Colors.red),
+//                                         ),
+//                                         IconButton(
+//                                           onPressed: () async {
+//                                             await FirebaseAuth.instance
+//                                                 .signOut();
+//                                             Navigator.pop(context);
+//                                           },
+//                                           icon: const Icon(Icons.done,
+//                                               color: Colors.green),
+//                                         ),
+//                                       ],
+//                                     );
+//                                   },
+//                                 );
+//                               },
+//                               labelText: 'Logout',
+//                               fSize: 18,
+//                               faIcon: const FaIcon(Icons.logout),
+//                               fgColor: Colors.red,
+//                                 btSize: Size(130.w, 120.h)
+//                             ),
+//                             const SizedBox(width: 40),
+//                             ElevatedIconButton(
+//                               onPress: () {
+//                                 if (currentProperty != null) {
+//                                   Navigator.push(
+//                                     context,
+//                                     MaterialPageRoute(
+//                                       builder: (context) =>
+//                                           WaterSanitationReportMenu(
+//                                         currentProperty: currentProperty,
+//                                         isLocalMunicipality:
+//                                             currentProperty.isLocalMunicipality,
+//                                         municipalityId:
+//                                             currentProperty.municipalityId,
+//                                         districtId: currentProperty
+//                                                 .isLocalMunicipality
+//                                             ? null
+//                                             : currentProperty
+//                                                 .districtId, // null if local
+//                                       ),
+//                                     ),
+//                                   );
+//                                 } else {
+//                                   print('Error: No property selected.');
+//                                   Fluttertoast.showToast(
+//                                       msg: "No property selected.");
+//                                 }
+//                               },
+//                               labelText: 'Report \nFaults',
+//                               fSize: 17,
+//                               faIcon: const FaIcon(Icons.report_problem),
+//                               fgColor: Colors.orangeAccent,
+//                                 btSize: Size(130.w, 120.h)
+//                             ),
+//                           ],
+//                         ),
+//                       ),
+//                       const SizedBox(height: 30),
+//                       Column(
+//                         mainAxisAlignment: MainAxisAlignment.end,
+//                         children: <Widget>[
+//                           Text(
+//                             'Copyright Cyberfox ',
+//                             style: GoogleFonts.saira(
+//                               color: Colors.white,
+//                               backgroundColor: Colors.white10,
+//                               fontWeight: FontWeight.normal,
+//                               fontStyle: FontStyle.italic,
+//                               fontSize: 16,
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                       const SizedBox(height: 20),
+//                     ],
+//                   ),
+//                 ],
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
 
-            if (unreadMessages.docs.isNotEmpty) {
-              return true; // Unread messages for the councillor
-            }
-          }
-        }
-        return false; // No unread messages
-      });
-    } else {
-      // Stream for regular users (messages sent to them)
-      return FirebaseFirestore.instance
-          .collectionGroup('chatRoomCouncillor')
-          .snapshots()
-          .asyncMap((snapshot) async {
-        for (var chatDoc in snapshot.docs) {
-          QuerySnapshot unreadMessages = await chatDoc.reference
-              .collection('messages')
-              .where('isReadByUser', isEqualTo: false)
-              .where('sendBy', isNotEqualTo: userPhone) // Check messages not sent by the user
-              .get();
+  Future<void> _navigateToChat(BuildContext context) async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
 
-          if (unreadMessages.docs.isNotEmpty) {
-            return true; // Unread messages for the regular user
-          }
-        }
-        return false; // No unread messages
-      });
+      if (selectedPropertyAccountNumber == null) {
+        print('Error: selectedPropertyAccountNumber is null.');
+        Fluttertoast.showToast(msg: "No property selected.");
+        return;
+      }
+
+      QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
+          .collectionGroup('properties')
+          .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+          .get();
+
+      if (propertySnapshot.docs.isEmpty) {
+        print('Error: No property found for account number $selectedPropertyAccountNumber.');
+        Fluttertoast.showToast(msg: "Property not found.");
+        return;
+      }
+
+      DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
+      bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
+      String municipalityId = propertyDoc.get('municipalityId');
+      String? districtId = propertyDoc.data().toString().contains('districtId')
+          ? propertyDoc.get('districtId')
+          : null;
+      String phoneNumber = propertyDoc.get('cellNumber');
+
+      CollectionReference chatCollectionRef;
+
+      if (isLocalMunicipality) {
+        chatCollectionRef = FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .collection('chatRoom');
+      } else if (districtId != null) {
+        chatCollectionRef = FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('chatRoom');
+      } else {
+        print("Error: Could not determine chat collection reference.");
+        Fluttertoast.showToast(msg: "Chat room not found.");
+        return;
+      }
+
+      // Navigate to chat screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Chat(
+            chatRoomId: phoneNumber,
+            userName: selectedPropertyAccountNumber,
+            chatCollectionRef: chatCollectionRef,
+            refreshChatList: checkForUnreadMessages, // Callback to refresh badge
+            isLocalMunicipality: isLocalMunicipality,
+            districtId: districtId ?? '',
+            municipalityId: municipalityId,
+          ),
+        ),
+      );
+    } catch (e) {
+      print('Error retrieving property details: $e');
+      Fluttertoast.showToast(msg: "Failed to load chat.");
     }
+  }
+
+  Future<void> _navigateToViewDetails(BuildContext context) async {
+    if (currentProperty == null) {
+      print("Error: No property selected.");
+      Fluttertoast.showToast(msg: "No property selected.");
+      return;
+    }
+
+    // Determine the correct navigation path based on property type
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UsersTableViewPage(
+          property: currentProperty,
+          userNumber: currentProperty.cellNum,
+          accountNumber: currentProperty.accountNo,
+          propertyAddress: currentProperty.address,
+          districtId: currentProperty.isLocalMunicipality ? '' : currentProperty.districtId,
+          municipalityId: currentProperty.municipalityId,
+          isLocalMunicipality: currentProperty.isLocalMunicipality,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _navigateToNotices(BuildContext context) async {
+    // Fetch the selected property account number from SharedPreferences
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+
+    // Check if the account number exists
+    if (selectedPropertyAccountNumber == null) {
+      print('Error: selectedPropertyAccountNumber is null.');
+      Fluttertoast.showToast(msg: "No property selected.");
+      return;
+    }
+
+    try {
+      // Search for the property in both localMunicipalities and district properties
+      QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
+          .collectionGroup('properties')
+          .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+          .get();
+
+      if (propertySnapshot.docs.isNotEmpty) {
+        DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
+
+        // Retrieve the property details
+        bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality') as bool;
+        String municipalityId = propertyDoc.get('municipalityId') as String;
+        String? districtId = propertyDoc.data().toString().contains('districtId')
+            ? propertyDoc.get('districtId') as String
+            : null;
+
+        // Navigate to the Notices screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NoticeScreen(
+              selectedPropertyAccountNumber: selectedPropertyAccountNumber,
+              isLocalMunicipality: isLocalMunicipality,
+              municipalityId: municipalityId,
+              districtId: districtId, // Can be null for local municipalities
+            ),
+          ),
+        );
+      } else {
+        print('Error: No property found for account number $selectedPropertyAccountNumber.');
+        Fluttertoast.showToast(msg: "No property found for selected account.");
+      }
+    } catch (e) {
+      print('Error retrieving property details: $e');
+      Fluttertoast.showToast(msg: "Failed to load property details.");
+    }
+  }
+
+  Future<void> _navigateToViewInvoice(BuildContext context) async {
+    try {
+      // Fetch the selected property account number from SharedPreferences
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+
+      if (selectedPropertyAccountNumber == null) {
+        print('Error: selectedPropertyAccountNumber is null.');
+        Fluttertoast.showToast(msg: "No property selected.");
+        return;
+      }
+
+      // Search for the property in both localMunicipalities and district properties
+      QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
+          .collectionGroup('properties')
+          .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+          .get();
+
+      if (propertySnapshot.docs.isNotEmpty) {
+        DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
+
+        // Retrieve the required property details
+        bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality') as bool;
+        String municipalityId = propertyDoc.get('municipalityId') as String;
+        String? districtId = propertyDoc.data().toString().contains('districtId')
+            ? propertyDoc.get('districtId') as String
+            : null;
+
+        // Navigate to the UsersPdfListViewPage
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UsersPdfListViewPage(
+              userNumber: propertyDoc.get('cellNumber'),
+              propertyAddress: propertyDoc.get('address'),
+              accountNumber: propertyDoc.get('accountNumber'),
+              isLocalMunicipality: isLocalMunicipality,
+              municipalityId: municipalityId,
+              districtId: districtId, // Can be null for local municipalities
+            ),
+          ),
+        );
+      } else {
+        print('Error: No property found for account number $selectedPropertyAccountNumber.');
+        Fluttertoast.showToast(msg: "No property found for selected account.");
+      }
+    } catch (e) {
+      print('Error retrieving property details: $e');
+      Fluttertoast.showToast(msg: "Failed to load property details.");
+    }
+  }
+
+  Future<void> _navigateToReportFault(BuildContext context) async {
+    if (currentProperty != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => WaterSanitationReportMenu(
+            currentProperty: currentProperty,
+            isLocalMunicipality: currentProperty.isLocalMunicipality,
+            municipalityId: currentProperty.municipalityId,
+            districtId: currentProperty.isLocalMunicipality
+                ? null
+                : currentProperty.districtId, // null if local
+          ),
+        ),
+      );
+    } else {
+      print('Error: No property selected.');
+      Fluttertoast.showToast(msg: "No property selected.");
+    }
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(18)),
+          ),
+          title: const Text("Logout"),
+          content: const Text("Are you sure you want to logout?"),
+          actions: [
+            IconButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+              },
+              icon: const Icon(Icons.cancel, color: Colors.red),
+            ),
+            IconButton(
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+                Navigator.pop(context); // Close dialog
+                // Optionally navigate to login screen if needed
+              },
+              icon: const Icon(Icons.done, color: Colors.green),
+            ),
+          ],
+        );
+      },
+    );
   }
 
 
@@ -897,712 +1966,271 @@ class _MainMenuState extends State<MainMenu> {
       DeviceOrientation.portraitDown,
     ]);
 
-    // Determine whether the user is a councillor
-    Future<bool> checkIfCouncillor() async {
-      return await isUserCouncillor(
-        user.phoneNumber!,
-        municipalityId, // Pass the appropriate value
-        districtId, // Pass the appropriate value
-        isLocalMunicipality, // Pass the appropriate value
-      );
-    }
-
-    return FutureBuilder<bool>(
-        future: checkIfCouncillor(),
-    builder: (context, snapshot) {
-      if (!snapshot.hasData) {
-        // Show a basic app bar while checking
-        return AppBar(
-          title: const Text('Loading...'),
-          backgroundColor: Colors.black87,
-        );
-      }
-
-      bool isCouncillor = snapshot.data!;
-
-      return Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage("assets/images/greyscale.jpg"),
-            fit: BoxFit.cover,
-          ),
-        ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: Text(
-            'Signed in from: ${user.phoneNumber!}',
-            style: GoogleFonts.turretRoad(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 19,
+    return ScreenUtilInit(
+      designSize: const Size(375, 812), // Default mobile reference size
+      minTextAdapt: true,
+      builder: (context, child) {
+        return Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage("assets/images/greyscale.jpg"),
+              fit: BoxFit.cover,
             ),
           ),
-          backgroundColor: Colors.black87,
-          iconTheme: const IconThemeData(color: Colors.white),
-          leading: StreamBuilder<bool>(
-            stream: getUnreadMessagesStream(user.phoneNumber!, isCouncillor),
-            builder: (context, unreadSnapshot) {
-              bool hasUnreadMessages = unreadSnapshot.data ?? false;
-              return Stack(
+          child: Scaffold(
+            key: _scaffoldKey,
+            backgroundColor: Colors.transparent,
+            appBar: AppBar(
+              title: Text(
+                'Signed in from: ${user.phoneNumber!}',
+                style: GoogleFonts.turretRoad(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 19.sp, // Scalable font size
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              backgroundColor: Colors.black87,
+              iconTheme: const IconThemeData(color: Colors.white),
+              leading: Stack(
                 children: [
                   IconButton(
                     icon: const Icon(Icons.menu),
-                    onPressed: () => Scaffold.of(context).openDrawer(),
+                    onPressed: () {
+                      _scaffoldKey.currentState?.openDrawer();
+                    },
                   ),
-                  if (hasUnreadMessages)
+                  if (hasUnreadCouncillorMessages)
                     Positioned(
-                      right: 8,
-                      top: 8,
+                      top: 8.h,
+                      right: 7.w,
                       child: Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
+                        padding: EdgeInsets.all(3.w),
+                        decoration: const BoxDecoration(
                           color: Colors.red,
                           shape: BoxShape.circle,
                         ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: const Text(
+                        child: Text(
                           '!',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 10,
+                            fontSize: 10.sp,
                             fontWeight: FontWeight.bold,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),
                 ],
-              );
-            },
-          ),
-        ),
-        drawer: NavDrawer(  userPhone: user.phoneNumber!, // Pass the user's phone number
-          isCouncillor: isCouncillor,),
-        body: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              Column(
+              ),
+            ),
+            drawer: const NavDrawer(),
+            body: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: <Widget>[
-                  const SizedBox(height: 30),
-                  const ResponsiveLogo(),
-                  const SizedBox(height: 20),
-                  if (userProperties != null && userProperties!.length > 1)
-                    ElevatedIconButton(
-                      onPress: () async {
-                        final selectedProperty = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                PropertySelectionScreen(
-                                  properties: userProperties!,
-                                  userPhoneNumber: userPhoneNumber,
-                                  isLocalMunicipality: widget
-                                      .isLocalMunicipality,
-                                ),
-                          ),
-                        );
-
-                        if (selectedProperty != null) {
-                          setState(() {
-                            currentProperty = selectedProperty;
-                          });
-                        }
-                      },
-                      labelText: 'Select\nProperty',
-                      fSize: 18,
-                      faIcon: const FaIcon(FontAwesomeIcons.houseUser),
-                      fgColor: Colors.deepPurple,
-                      btSize: const Size(130, 120),
-                    ),
                   Column(
-                    children: [
-                      Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Stack(
-                                children: [
-                                  ElevatedIconButton(
-                                    onPress: () async {
-                                      SharedPreferences prefs =
-                                      await SharedPreferences.getInstance();
-                                      String? selectedPropertyAccountNumber =
-                                      prefs.getString(
-                                          'selectedPropertyAccountNo');
+                    children: <Widget>[
+                      SizedBox(height: 30.h),
+                      const ResponsiveLogo(),
+                      SizedBox(height: 20.h),
 
-                                      if (selectedPropertyAccountNumber ==
-                                          null) {
-                                        print(
-                                            'Error: selectedPropertyAccountNumber is null.');
-                                        return;
-                                      }
-
-                                      try {
-                                        QuerySnapshot
-                                        localMunicipalitySnapshot =
-                                        await FirebaseFirestore.instance
-                                            .collectionGroup('properties')
-                                            .where('accountNumber',
-                                            isEqualTo:
-                                            selectedPropertyAccountNumber)
-                                            .get();
-
-                                        if (localMunicipalitySnapshot
-                                            .docs.isNotEmpty) {
-                                          DocumentSnapshot propertyDoc =
-                                              localMunicipalitySnapshot
-                                                  .docs.first;
-                                          bool isLocalMunicipality = propertyDoc
-                                              .get('isLocalMunicipality');
-                                          String municipalityId =
-                                          propertyDoc.get('municipalityId');
-                                          String? districtId = propertyDoc
-                                              .data()
-                                              .toString()
-                                              .contains('districtId')
-                                              ? propertyDoc.get('districtId')
-                                              : null;
-                                          String phoneNumber =
-                                          propertyDoc.get('cellNumber');
-
-                                          CollectionReference<Object?>?
-                                          chatCollectionRef;
-                                          if (isLocalMunicipality) {
-                                            chatCollectionRef =
-                                                FirebaseFirestore.instance
-                                                    .collection(
-                                                    'localMunicipalities')
-                                                    .doc(municipalityId)
-                                                    .collection('chatRoom');
-                                          } else if (districtId != null) {
-                                            chatCollectionRef =
-                                                FirebaseFirestore
-                                                    .instance
-                                                    .collection('districts')
-                                                    .doc(districtId)
-                                                    .collection(
-                                                    'municipalities')
-                                                    .doc(municipalityId)
-                                                    .collection('chatRoom');
-                                          }
-
-                                          if (chatCollectionRef != null) {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    Chat(
-                                                      chatRoomId: phoneNumber,
-                                                      userName:
-                                                      selectedPropertyAccountNumber,
-                                                      chatCollectionRef:
-                                                      chatCollectionRef!,
-                                                      refreshChatList:
-                                                      checkForUnreadMessages,
-                                                      // Callback to refresh badge
-                                                      isLocalMunicipality:
-                                                      isLocalMunicipality,
-                                                      districtId: districtId ??
-                                                          '',
-                                                      municipalityId:
-                                                      municipalityId,
-                                                    ),
-                                              ),
-                                            );
-                                          }
-                                        }
-                                      } catch (e) {
-                                        print(
-                                            'Error retrieving property details: $e');
-                                      }
-                                    },
-                                    labelText: 'Admin \nChat',
-                                    fSize: 18,
-                                    faIcon:
-                                    const FaIcon(FontAwesomeIcons.message),
-                                    fgColor: Colors.blue,
-                                    btSize: const Size(130, 120),
-                                  ),
-                                  if (hasUnreadMessages)
-                                    Positioned(
-                                      right: 0,
-                                      top: 0,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(3),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red,
-                                          borderRadius:
-                                          BorderRadius.circular(8),
-                                        ),
-                                        constraints: const BoxConstraints(
-                                          minWidth: 16,
-                                          minHeight: 16,
-                                        ),
-                                        child: const Text(
-                                          '!',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
+                      // Property Selection Button
+                      if (userProperties != null && userProperties!.length > 1)
+                        ElevatedIconButton(
+                          onPress: () async {
+                            final selectedProperty = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    PropertySelectionScreen(
+                                      properties: userProperties!,
+                                      userPhoneNumber: userPhoneNumber,
+                                      isLocalMunicipality: widget
+                                          .isLocalMunicipality,
                                     ),
-                                ],
                               ),
-                            ),
-                            const SizedBox(width: 40),
-                            Expanded(
-                              child: ElevatedIconButton(
-                                onPress: () async {
-                                  // Fetch selected property information, especially for local municipality
-                                  if (currentProperty.isLocalMunicipality) {
-                                    // Local municipality logic
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            UsersTableViewPage(
-                                              property: currentProperty,
-                                              userNumber: currentProperty
-                                                  .cellNum,
-                                              accountNumber:
-                                              currentProperty.accountNo,
-                                              propertyAddress:
-                                              currentProperty.address,
-                                              districtId:
-                                              '',
-                                              // No districtId for local municipalities
-                                              municipalityId:
-                                              currentProperty.municipalityId,
-                                              isLocalMunicipality: currentProperty
-                                                  .isLocalMunicipality,
-                                            ),
-                                      ),
-                                    );
-                                  } else {
-                                    // District-based municipality logic
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            UsersTableViewPage(
-                                              property: currentProperty,
-                                              userNumber: currentProperty
-                                                  .cellNum,
-                                              accountNumber:
-                                              currentProperty.accountNo,
-                                              propertyAddress:
-                                              currentProperty.address,
-                                              districtId:
-                                              currentProperty.districtId,
-                                              municipalityId:
-                                              currentProperty.municipalityId,
-                                              isLocalMunicipality: currentProperty
-                                                  .isLocalMunicipality,
-                                            ),
-                                      ),
-                                    );
-                                  }
+                            );
+
+                            if (selectedProperty != null) {
+                              setState(() {
+                                currentProperty = selectedProperty;
+                              });
+                            }
+                          },
+                          labelText: 'Select\nProperty',
+                          fSize: 18.sp,
+                          faIcon: const FaIcon(FontAwesomeIcons.houseUser),
+                          fgColor: Colors.deepPurple,
+                          btSize: Size(130.w, 120.h),
+                        ),
+
+                      SizedBox(height: 20.h),
+
+                      // Button Layout
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: MediaQuery.of(context).size.width < 600 ? 2 : 3, // 2 columns on mobile, 3 on web
+                        mainAxisSpacing: 20.h,
+                        crossAxisSpacing: 20.w,
+                        childAspectRatio: 1, // Ensures square buttons
+                        children: [
+
+                          // Admin Chat
+                          _buildButton(
+                            label: 'Queries',
+                            icon: FontAwesomeIcons.message,
+                            color: Colors.blue,
+                            size: Size(130.w, 120.h),
+                            onTap: () async {
+                              await _navigateToChat(context);
+                            },
+                            showBadge: hasUnreadMessages,
+                          ),
+
+                          // View Details
+                          _buildButton(
+                            label: 'View \nDetails',
+                            icon: FontAwesomeIcons.houseCircleExclamation,
+                            color: Colors.green,
+                            size: Size(130.w, 120.h),
+                            onTap: () async {
+                              await _navigateToViewDetails(context);
+                            },
+                          ),
+
+                          // Notices
+                          Consumer<NotificationProvider>(
+                            builder: (context, notificationProvider, child) {
+                              return _buildButton(
+                                label: 'Notices',
+                                icon: Icons.notifications_on,
+                                color: Colors.red,
+                                size: Size(130.w, 120.h),
+                                onTap: () async {
+                                  await _navigateToNotices(context);
                                 },
-                                labelText: 'View \nDetails',
-                                fSize: 18,
-                                faIcon: const FaIcon(
-                                    FontAwesomeIcons.houseCircleExclamation),
-                                fgColor: Colors.green,
-                                btSize: const Size(130, 120),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Consumer<NotificationProvider>(
-                                builder:
-                                    (context, notificationProvider, child) {
-                                  return Stack(
-                                    children: [
-                                      ElevatedIconButton(
-                                        onPress: () async {
-                                          // Fetch the selected property account number from SharedPreferences
-                                          SharedPreferences prefs =
-                                          await SharedPreferences
-                                              .getInstance();
-                                          String?
-                                          selectedPropertyAccountNumber =
-                                          prefs.getString(
-                                              'selectedPropertyAccountNo');
+                                showBadge: notificationProvider.hasUnreadNotices, // ✅ Keeps the logic inside the Consumer
+                              );
+                            },
+                          ),
 
-                                          // Check if the account number exists
-                                          if (selectedPropertyAccountNumber ==
-                                              null) {
-                                            print(
-                                                'Error: selectedPropertyAccountNumber is null.');
-                                            Fluttertoast.showToast(
-                                                msg: "No property selected.");
-                                            return;
-                                          }
+                          // View Invoice
+                          _buildButton(
+                            label: 'View\nInvoice',
+                            icon: FontAwesomeIcons.solidFilePdf,
+                            color: Colors.redAccent,
+                            size: Size(130.w, 120.h),
+                            onTap: () async {
+                              await _navigateToViewInvoice(context);
+                            },
+                            showBadge: hasUnreadFinanceMessages,
+                          ),
 
-                                          try {
-                                            // Search for the property in both localMunicipalities and district properties
-                                            QuerySnapshot propertySnapshot =
-                                            await FirebaseFirestore.instance
-                                                .collectionGroup(
-                                                'properties')
-                                                .where('accountNumber',
-                                                isEqualTo:
-                                                selectedPropertyAccountNumber)
-                                                .get();
+                          // Logout
+                          _buildButton(
+                            label: 'Logout',
+                            icon: Icons.logout,
+                            color: Colors.red,
+                            size: Size(130.w, 120.h),
+                            onTap: () async {
+                              await _handleLogout(context);
+                            },
+                          ),
 
-                                            if (propertySnapshot
-                                                .docs.isNotEmpty) {
-                                              DocumentSnapshot propertyDoc =
-                                                  propertySnapshot.docs.first;
-
-                                              // Retrieve the 'isLocalMunicipality', 'municipalityId', and 'districtId' (if applicable)
-                                              bool isLocalMunicipality =
-                                              propertyDoc.get(
-                                                  'isLocalMunicipality')
-                                              as bool;
-                                              String municipalityId =
-                                              propertyDoc
-                                                  .get('municipalityId')
-                                              as String;
-                                              String? districtId = propertyDoc
-                                                  .data()
-                                                  .toString()
-                                                  .contains('districtId')
-                                                  ? propertyDoc.get(
-                                                  'districtId') as String
-                                                  : null;
-
-                                              // Pass the correct data to the NoticeScreen based on whether it's a local or district property
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      NoticeScreen(
-                                                        selectedPropertyAccountNumber:
-                                                        selectedPropertyAccountNumber,
-                                                        isLocalMunicipality:
-                                                        isLocalMunicipality,
-                                                        municipalityId:
-                                                        municipalityId,
-                                                        districtId:
-                                                        districtId, // Can be null for local municipalities
-                                                      ),
-                                                ),
-                                              );
-                                            } else {
-                                              print(
-                                                  'Error: No property found for account number $selectedPropertyAccountNumber.');
-                                              Fluttertoast.showToast(
-                                                  msg:
-                                                  "No property found for selected account.");
-                                            }
-                                          } catch (e) {
-                                            print(
-                                                'Error retrieving property details: $e');
-                                            Fluttertoast.showToast(
-                                                msg:
-                                                "Failed to load property details.");
-                                          }
-                                        },
-                                        labelText: 'Notices',
-                                        fSize: 16.5,
-                                        faIcon: const FaIcon(
-                                            Icons.notifications_on),
-                                        fgColor: Colors.red,
-                                        btSize: const Size(130, 120),
-                                      ),
-                                      // Show notification badge if there are unread notices
-                                      if (notificationProvider.hasUnreadNotices)
-                                        Positioned(
-                                          right: 0,
-                                          top: 0,
-                                          child: Container(
-                                            padding: const EdgeInsets.all(3),
-                                            decoration: BoxDecoration(
-                                              color: Colors.red,
-                                              borderRadius: BorderRadius
-                                                  .circular(8),
-                                            ),
-                                            constraints: const BoxConstraints(
-                                              minWidth: 16,
-                                              minHeight: 16,
-                                            ),
-                                            child: const Text(
-                                              '!',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 40),
-                            Expanded(
-                              child: Stack(
-                                children: [
-                                  ElevatedIconButton(
-                                    onPress: () async {
-                                      // Fetch selected property account number from SharedPreferences
-                                      SharedPreferences prefs =
-                                      await SharedPreferences.getInstance();
-                                      String? selectedPropertyAccountNumber =
-                                      prefs.getString(
-                                          'selectedPropertyAccountNo');
-
-                                      // Check if the account number exists
-                                      if (selectedPropertyAccountNumber ==
-                                          null) {
-                                        print(
-                                            'Error: selectedPropertyAccountNumber is null.');
-                                        Fluttertoast.showToast(
-                                            msg: "No property selected.");
-                                        return;
-                                      }
-
-                                      try {
-                                        // Search for the property in both localMunicipalities and district properties
-                                        QuerySnapshot propertySnapshot =
-                                        await FirebaseFirestore.instance
-                                            .collectionGroup('properties')
-                                            .where('accountNumber',
-                                            isEqualTo:
-                                            selectedPropertyAccountNumber)
-                                            .get();
-
-                                        if (propertySnapshot.docs.isNotEmpty) {
-                                          DocumentSnapshot propertyDoc =
-                                              propertySnapshot.docs.first;
-
-                                          // Retrieve the 'isLocalMunicipality', 'municipalityId', and 'districtId' (if applicable)
-                                          bool isLocalMunicipality = propertyDoc
-                                              .get('isLocalMunicipality')
-                                          as bool;
-                                          String municipalityId = propertyDoc
-                                              .get('municipalityId') as String;
-                                          String? districtId = propertyDoc
-                                              .data()
-                                              .toString()
-                                              .contains('districtId')
-                                              ? propertyDoc.get('districtId')
-                                          as String
-                                              : null;
-
-                                          // Pass the correct data to the UsersPdfListViewPage based on whether it's a local or district property
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  UsersPdfListViewPage(
-                                                    userNumber: propertyDoc
-                                                        .get('cellNumber'),
-                                                    propertyAddress:
-                                                    propertyDoc.get('address'),
-                                                    accountNumber: propertyDoc
-                                                        .get('accountNumber'),
-                                                    isLocalMunicipality:
-                                                    isLocalMunicipality,
-                                                    municipalityId: municipalityId,
-                                                    districtId:
-                                                    districtId, // Can be null for local municipalities
-                                                  ),
-                                            ),
-                                          );
-                                        } else {
-                                          print(
-                                              'Error: No property found for account number $selectedPropertyAccountNumber.');
-                                          Fluttertoast.showToast(
-                                              msg:
-                                              "No property found for selected account.");
-                                        }
-                                      } catch (e) {
-                                        print(
-                                            'Error retrieving property details: $e');
-                                        Fluttertoast.showToast(
-                                            msg:
-                                            "Failed to load property details.");
-                                      }
-                                    },
-                                    labelText: 'View\nInvoice',
-                                    fSize: 18,
-                                    faIcon: const FaIcon(
-                                        FontAwesomeIcons.solidFilePdf),
-                                    fgColor: Colors.redAccent,
-                                    btSize: const Size(130, 120),
-                                  ),
-                                  if (hasUnreadFinanceMessages)
-                                    Positioned(
-                                      left: 0,
-                                      top: 0,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(3),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red,
-                                          borderRadius:
-                                          BorderRadius.circular(8),
-                                        ),
-                                        constraints: const BoxConstraints(
-                                          minWidth: 16,
-                                          minHeight: 16,
-                                        ),
-                                        child: const Text(
-                                          '!',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            ElevatedIconButton(
-                              onPress: () {
-                                showDialog(
-                                  barrierDismissible: false,
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      shape: const RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.all(
-                                              Radius.circular(18))),
-                                      title: const Text("Logout"),
-                                      content: const Text(
-                                          "Are you sure you want to logout?"),
-                                      actions: [
-                                        IconButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                          icon: const Icon(Icons.cancel,
-                                              color: Colors.red),
-                                        ),
-                                        IconButton(
-                                          onPressed: () async {
-                                            await FirebaseAuth.instance
-                                                .signOut();
-                                            Navigator.pop(context);
-                                          },
-                                          icon: const Icon(Icons.done,
-                                              color: Colors.green),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                              labelText: 'Logout',
-                              fSize: 18,
-                              faIcon: const FaIcon(Icons.logout),
-                              fgColor: Colors.red,
-                              btSize: const Size(130, 120),
-                            ),
-                            const SizedBox(width: 40),
-                            ElevatedIconButton(
-                              onPress: () {
-                                if (currentProperty != null) {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          WaterSanitationReportMenu(
-                                            currentProperty: currentProperty,
-                                            isLocalMunicipality:
-                                            currentProperty.isLocalMunicipality,
-                                            municipalityId:
-                                            currentProperty.municipalityId,
-                                            districtId: currentProperty
-                                                .isLocalMunicipality
-                                                ? null
-                                                : currentProperty
-                                                .districtId, // null if local
-                                          ),
-                                    ),
-                                  );
-                                } else {
-                                  print('Error: No property selected.');
-                                  Fluttertoast.showToast(
-                                      msg: "No property selected.");
-                                }
-                              },
-                              labelText: 'Report \nFaults',
-                              fSize: 17,
-                              faIcon: const FaIcon(Icons.report_problem),
-                              fgColor: Colors.orangeAccent,
-                              btSize: const Size(130, 120),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: <Widget>[
-                          Text(
-                            'Copyright Cyberfox ',
-                            style: GoogleFonts.saira(
-                              color: Colors.white,
-                              backgroundColor: Colors.white10,
-                              fontWeight: FontWeight.normal,
-                              fontStyle: FontStyle.italic,
-                              fontSize: 16,
-                            ),
+                          // Report Faults
+                          _buildButton(
+                            label: 'Report \nFaults',
+                            icon: Icons.report_problem,
+                            color: Colors.orangeAccent,
+                            size: Size(130.w, 120.h),
+                            onTap: () async {
+                              await _navigateToReportFault(context);
+                            },
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
+
+                      SizedBox(height: 30.h),
+
+                      // Footer
+                      Text(
+                        'Copyright Cyberfox ',
+                        style: GoogleFonts.saira(
+                          color: Colors.white,
+                          backgroundColor: Colors.white10,
+                          fontWeight: FontWeight.normal,
+                          fontStyle: FontStyle.italic,
+                          fontSize: 16.sp,
+                        ),
+                      ),
+                      SizedBox(height: 20.h),
                     ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-      );
-    },
+        );
+      },
     );
   }
+
+  /// **Reusable Button Builder**
+  Widget _buildButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required Size size,
+    required VoidCallback onTap,
+    bool showBadge = false,
+  }) {
+    return Stack(
+      children: [
+        ElevatedIconButton(
+          onPress: onTap,
+          labelText: label,
+          fSize: 17.sp,
+          faIcon: FaIcon(icon),
+          fgColor: color,
+          btSize: size,
+        ),
+        if (showBadge)
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Container(
+              padding: EdgeInsets.all(3.w),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              constraints: BoxConstraints(
+                minWidth: 16.w,
+                minHeight: 16.h,
+              ),
+              child: Text(
+                '!',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
 }
 
-void openPDF(BuildContext context, File file) => Navigator.of(context).push(
+
+
+  void openPDF(BuildContext context, File file) => Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
     );
-
 
 class ResponsiveLogo extends StatelessWidget {
   const ResponsiveLogo({Key? key}) : super(key: key);
@@ -1615,14 +2243,15 @@ class ResponsiveLogo extends StatelessWidget {
 
     // Set a base logo size that scales based on the screen dimensions
     double logoWidth = screenWidth * 0.5; // Set to 50% of screen width
-    double logoHeight = logoWidth * (687 / 550); // Maintain new aspect ratio (550x687)
+    double logoHeight =
+        logoWidth * (687 / 550); // Maintain new aspect ratio (550x687)
 
     return Center(
       child: Container(
         width: logoWidth,
         height: logoHeight,
         child: FittedBox(
-          fit: BoxFit.contain,  // Ensures the image scales within the container
+          fit: BoxFit.contain, // Ensures the image scales within the container
           child: Image.asset('assets/images/umdm.png'),
         ),
       ),

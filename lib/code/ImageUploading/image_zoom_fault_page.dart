@@ -154,26 +154,34 @@ class _ImageZoomFaultPageState extends State<ImageZoomFaultPage> {
 
   Future<String> _getImageUrl(BuildContext context, String dateReported, String address) async {
     print("starting getImageUrl");
+
     try {
-      // Construct the correct image path (with no duplication)
-      String imagePath = 'files/faultImages/$dateReported/$address.jpg'; // Ensure no extra 'files/faultImages/' is added
+      // Construct the image paths for both JPEG (Mobile) and PNG (Web)
+      String jpgPath = 'files/faultImages/$dateReported/$address.jpg';
+      String pngPath = 'files/faultImages/$dateReported/$address.png';
 
-      // Print the constructed image path to check if it's correct
-      print('Attempting to load image from path: $imagePath');
+      print('Attempting to load image (JPEG) from path: $jpgPath');
 
-      // Load the image URL from Firebase Storage
-      final imageUrl = await FireStorageService.loadImage(context, imagePath);
+      try {
+        // Try loading the JPG image first (Mobile uploads)
+        final imageUrl = await FireStorageService.loadImage(context, jpgPath);
+        print('✅ Image URL retrieved (JPEG): $imageUrl');
+        return imageUrl;
+      } catch (e) {
+        print('❌ JPEG image not found, trying PNG...');
 
-      // Print the image URL to verify it's correct
-      print('Image URL retrieved: $imageUrl');
-
-      return imageUrl; // Return the URL, not the widget
+        // If JPEG is not found, try loading the PNG version (Web uploads)
+        final imageUrl = await FireStorageService.loadImage(context, pngPath);
+        print('✅ Image URL retrieved (PNG): $imageUrl');
+        return imageUrl;
+      }
     } catch (e) {
       // Print any errors encountered
-      print('Error occurred while loading image: $e');
+      print('❌ Error occurred while loading image: $e');
       throw Exception('Image not available');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

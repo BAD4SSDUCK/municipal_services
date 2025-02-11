@@ -81,20 +81,7 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
   final CollectionReference _userList =
   FirebaseFirestore.instance.collection('users');
 
-  Future<bool> determineIfCouncillor(String userPhone) async {
-    try {
-      // Replace with your logic to check if the user is a councillor
-      QuerySnapshot councillorCheck = await FirebaseFirestore.instance
-          .collectionGroup('councillors')
-          .where('councillorPhone', isEqualTo: userPhone)
-          .limit(1)
-          .get();
-      return councillorCheck.docs.isNotEmpty;
-    } catch (e) {
-      print("Error checking councillor status: $e");
-      return false;
-    }
-  }
+
   @override
   Widget build(BuildContext context) {
     Get.put(LocationController());
@@ -103,8 +90,6 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
-    User? currentUser = FirebaseAuth.instance.currentUser;
-    String userPhone = currentUser?.phoneNumber ?? '';
     return Container(
       ///When a background image is created this section will display it on the dashboard instead of just a grey colour with no background
       decoration: const BoxDecoration(
@@ -116,23 +101,10 @@ class _HomeFragmentScreenState extends State<HomeFragmentScreen>{
         backgroundColor: Colors.transparent,//Colors.grey,
         ///App bar removed for aesthetic
         appBar: AppBar(
-          title:
-          Text(''),
+          title: Text(''),
           backgroundColor: Colors.black87,
         ),
-        drawer: FutureBuilder<bool>(
-          future: determineIfCouncillor(userPhone),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              bool isCouncillor = snapshot.data ?? false;
-              return NavDrawer(
-                userPhone: userPhone,
-                isCouncillor: isCouncillor,
-              );
-            }
-            return const SizedBox.shrink(); // Show nothing until the status is known
-          },
-        ),
+        drawer:  NavDrawer(),
         body: SingleChildScrollView(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,

@@ -1418,7 +1418,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    BasicIconButtonGrey(
+                                   /* BasicIconButtonGrey(
                                       onPress: () async {
                                         Fluttertoast.showToast(msg: "Now opening the statement!\nPlease wait a few seconds!");
 
@@ -1444,7 +1444,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                                       faIcon: const FaIcon(Icons.picture_as_pdf,),
                                       fgColor: Colors.orangeAccent,
                                       btSize: const Size(100, 38),
-                                    ),
+                                    ),*/
                                     BasicIconButtonGrey(
                                       onPress: () async {
                                         accountNumberAll = documentSnapshot['accountNumber'];
@@ -2339,7 +2339,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                 bool isLocalMunicipality = propertyData['isLocalMunicipality'] ?? false;
                 String districtId = propertyData['districtId'] ?? '';
                 String municipalityId = propertyData['municipalityId'] ?? '';
-
+                String bill=propertyData['eBill'];
                 String billMessage;
 
                 // Check if payment is outstanding
@@ -2398,13 +2398,18 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                         ),
                         const SizedBox(height: 30),
+                        Text(
+                          'Outstanding amount: $bill',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 30),
                         Column(
                           children: [
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                BasicIconButtonGrey(
+                               /* BasicIconButtonGrey(
                                   onPress: () async {
                                     if (!isLocalUser && !isLocalMunicipality) {
                                       if (selectedMunicipality == null || selectedMunicipality == "Select Municipality") {
@@ -2445,7 +2450,7 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                                   faIcon: const FaIcon(Icons.picture_as_pdf),
                                   fgColor: Colors.orangeAccent,
                                   btSize: const Size(100, 38),
-                                ),
+                                ),*/
                                 BasicIconButtonGrey(
                                   onPress: () async {
                                     if (!isLocalUser && !isLocalMunicipality) {

@@ -93,7 +93,7 @@ dependencies:
   geocoding: ^2.2.0
   map_box_geocoder: ^0.0.12
   location: ^5.0.3
-
+  flutter_screenutil: ^5.8.4
   #flutter_google_places_hoc081098: ^1.1.0
   #rxdart: ^0.27.7
 

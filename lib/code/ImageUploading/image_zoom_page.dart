@@ -233,10 +233,11 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
           print(
               'No matching property found with address: ${widget.addressSnap}');
         }
-
-        setState(() {
-          print('Initialized _propList or loaded municipality list');
-        });
+          if(mounted) {
+            setState(() {
+              print('Initialized _propList or loaded municipality list');
+            });
+          }
       } else {
         print("No current user found.");
       }

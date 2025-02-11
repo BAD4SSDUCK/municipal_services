@@ -302,7 +302,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
           var level = notification['level'] ?? 'general';
 
           // Only show general notifications here
-          if (notificationUser == selectedAccountNumber && level == 'general') {
+          if (notificationUser == selectedAccountNumber && level == 'general' && !isRead) {
             return Card(
               margin: const EdgeInsets.all(10.0),
               child: Padding(
@@ -759,15 +759,41 @@ class _NoticeScreenState extends State<NoticeScreen> {
           actions: <Widget>[
             Visibility(
               visible: true,
-              child: IconButton(
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(
-                      builder: (context) => NoticeArchiveScreen()));
+              child: TextButton.icon( // ✅ Use TextButton.icon to add label
+                onPressed: () async {
+                  final propertyProvider = Provider.of<PropertyProvider>(context, listen: false);
+                  await propertyProvider.loadSelectedPropertyAccountNo(); // Ensure property is loaded
+
+                  final currentProperty = propertyProvider.selectedProperty;
+                  if (currentProperty == null) {
+                    Fluttertoast.showToast(
+                      msg: "No selected property found!",
+                      gravity: ToastGravity.CENTER,
+                    );
+                    return;
+                  }
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NoticeArchiveScreen(
+                        selectedPropertyAccountNumber: currentProperty.accountNo, // ✅ Pass account number
+                        isLocalMunicipality: currentProperty.isLocalMunicipality,
+                        municipalityId: currentProperty.municipalityId,
+                        districtId: currentProperty.districtId,
+                      ),
+                    ),
+                  );
                 },
-                icon: const Icon(Icons.history_outlined, color: Colors.white),
+                icon: const Icon(Icons.history_outlined, color: Colors.white), // ✅ History Icon
+                label: const Text( // ✅ Added "Notice Archive" label
+                  "Notice Archive",
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ),
           ],
+
           bottom: const TabBar(
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,

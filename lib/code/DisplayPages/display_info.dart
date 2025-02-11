@@ -23,6 +23,9 @@ import '../Models/property.dart';
 import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:universal_html/html.dart' as html;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 //View Details user side
 class UsersTableViewPage extends StatefulWidget {
@@ -118,10 +121,12 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   Stream<QuerySnapshot>? _propertyStream;
   CollectionReference? _propList;
   String? propertyAddress;
+
   // text fields' controllers
   final _accountNumberController = TextEditingController();
   final _addressController = TextEditingController();
   final _areaCodeController = TextEditingController();
+
   // final _meterNumberController = TextEditingController();
   // final _meterReadingController = TextEditingController();
   final _waterMeterController = TextEditingController();
@@ -140,10 +145,11 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final propertyProvider = Provider.of<PropertyProvider>(context, listen: false);
+      final propertyProvider = Provider.of<PropertyProvider>(
+          context, listen: false);
       if (propertyProvider.selectedProperty == null) {
         print('Error: Selected property is null. Retrying fetch...');
-        if(mounted) {
+        if (mounted) {
           setState(() {
             _isLoadingProp =
             true; // Trigger a loading state while fetching data
@@ -155,7 +161,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
             initializeFirestoreReferences(context);
             fetchPropertyDetails();
           }
-          if(mounted) {
+          if (mounted) {
             setState(() {
               _isLoadingProp = false;
             });
@@ -165,7 +171,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
         // If the property is already available, initialize Firestore and fetch details
         initializeFirestoreReferences(context);
         fetchPropertyDetails();
-        if(mounted) {
+        if (mounted) {
           setState(() {
             _isLoadingProp = false;
           });
@@ -177,13 +183,15 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
     // Adjust the query to listen only to the selected property
 
   }
-@override
-void dispose(){
+
+  @override
+  void dispose() {
     super.dispose();
-}
+  }
 
   void initializeFirestoreReferences(BuildContext context) async {
-    final propertyProvider = Provider.of<PropertyProvider>(context, listen: false);
+    final propertyProvider = Provider.of<PropertyProvider>(
+        context, listen: false);
     Property? selectedProperty = propertyProvider.selectedProperty;
 
     if (selectedProperty != null) {
@@ -204,12 +212,12 @@ void dispose(){
       _propertyStream = _propList!
           .where('accountNumber', isEqualTo: selectedProperty.accountNo)
           .snapshots();
-           if(mounted) {
-             setState(() {
-               _isLoadingProp =
-               false; // Firestore references initialized, stop loading
-             });
-           }
+      if (mounted) {
+        setState(() {
+          _isLoadingProp =
+          false; // Firestore references initialized, stop loading
+        });
+      }
     } else {
       print("Error: Selected property is null.");
     }
@@ -224,13 +232,14 @@ void dispose(){
           .get();
 
       if (propertyQuery.docs.isNotEmpty) {
-        Map<String, dynamic>? propertyData = propertyQuery.docs.first.data() as Map<String, dynamic>?;
-          if(mounted) {
-            setState(() {
-              propertyAddress =
-                  propertyData?['address'] ?? 'Address not available';
-            });
-          }
+        Map<String, dynamic>? propertyData = propertyQuery.docs.first
+            .data() as Map<String, dynamic>?;
+        if (mounted) {
+          setState(() {
+            propertyAddress =
+                propertyData?['address'] ?? 'Address not available';
+          });
+        }
       } else {
         print('No matching property found for the given user number.');
       }
@@ -243,14 +252,14 @@ void dispose(){
     setState(() => _isLoading = true);
     Future.delayed(
       const Duration(seconds: 5),
-      () => setState(() => _isLoading = false),
+          () => setState(() => _isLoading = false),
     );
   }
 
   String formattedMonth =
-      DateFormat.MMMM().format(now); //format for full Month by name
+  DateFormat.MMMM().format(now); //format for full Month by name
   String formattedDateMonth =
-      DateFormat.MMMMd().format(now); //format for Day Month only
+  DateFormat.MMMMd().format(now); //format for Day Month only
 
   String dropdownValue = 'Select Month';
   List<String> dropdownMonths = [
@@ -280,12 +289,11 @@ void dispose(){
 
   // Ensures the document for logging exists with an initial timestamp.
 // Ensures the document for the user's action log exists.
-  Future<void> ensureDocumentExists(
-      String? districtId, // Nullable districtId to support local municipalities
+  Future<void> ensureDocumentExists(String? districtId,
+      // Nullable districtId to support local municipalities
       String municipalityId,
       String userId,
-      String propertyAddress,
-      ) async {
+      String propertyAddress,) async {
     DocumentReference actionLogDocRef;
 
     if (districtId != null && districtId.isNotEmpty) {
@@ -311,7 +319,8 @@ void dispose(){
     }
 
     // Ensure the document exists by adding an initial record if necessary
-    await actionLogDocRef.set({'created': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+    await actionLogDocRef.set(
+        {'created': FieldValue.serverTimestamp()}, SetOptions(merge: true));
   }
 
 
@@ -358,20 +367,20 @@ void dispose(){
 //   }
 
 // Logs the water meter reading updates.
-  Future<void> logWMeterReadingUpdate(
-      String? districtId, // Nullable to support local municipalities
+  Future<void> logWMeterReadingUpdate(String? districtId,
+      // Nullable to support local municipalities
       String municipalityId,
       String userId,
       String propertyAddress,
-      Map<String, dynamic> details,
-      ) async {
+      Map<String, dynamic> details,) async {
     FirebaseAuth auth = FirebaseAuth.instance;
     User? user = auth.currentUser;
 
     if (user != null && user.phoneNumber != null) {
       String userPhoneNumber = user.phoneNumber ?? "Unknown";
 
-      await ensureDocumentExists(districtId, municipalityId, userPhoneNumber, propertyAddress);
+      await ensureDocumentExists(
+          districtId, municipalityId, userPhoneNumber, propertyAddress);
 
       DocumentReference actionLogRef;
 
@@ -435,7 +444,10 @@ void dispose(){
                   top: 20,
                   left: 20,
                   right: 20,
-                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+                  bottom: MediaQuery
+                      .of(ctx)
+                      .viewInsets
+                      .bottom + 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -445,7 +457,7 @@ void dispose(){
                     child: TextField(
                       controller: _accountNumberController,
                       decoration:
-                          const InputDecoration(labelText: 'Account Number'),
+                      const InputDecoration(labelText: 'Account Number'),
                     ),
                   ),
                   Visibility(
@@ -453,7 +465,7 @@ void dispose(){
                     child: TextField(
                       controller: _addressController,
                       decoration:
-                          const InputDecoration(labelText: 'Street Address'),
+                      const InputDecoration(labelText: 'Street Address'),
                     ),
                   ),
                   Visibility(
@@ -503,7 +515,7 @@ void dispose(){
                     child: TextField(
                       controller: _cellNumberController,
                       decoration:
-                          const InputDecoration(labelText: 'Phone Number'),
+                      const InputDecoration(labelText: 'Phone Number'),
                     ),
                   ),
                   Visibility(
@@ -511,7 +523,7 @@ void dispose(){
                     child: TextField(
                       controller: _firstNameController,
                       decoration:
-                          const InputDecoration(labelText: 'First Name'),
+                      const InputDecoration(labelText: 'First Name'),
                     ),
                   ),
                   Visibility(
@@ -568,7 +580,8 @@ void dispose(){
 
                         CollectionReference consumptionRef;
 
-                        if (widget.districtId != null && widget.districtId!.isNotEmpty) {
+                        if (widget.districtId != null &&
+                            widget.districtId!.isNotEmpty) {
                           consumptionRef = FirebaseFirestore.instance
                               .collection('districts')
                               .doc(widget.districtId)
@@ -624,7 +637,7 @@ void dispose(){
       // _meterReadingController.text = documentSnapshot['meter_reading'];
       _waterMeterController.text = documentSnapshot['water_meter_number'];
       _waterMeterReadingController.text =
-          documentSnapshot['water_meter_reading'];
+      documentSnapshot['water_meter_reading'];
       _cellNumberController.text = documentSnapshot['cellNumber'];
       _firstNameController.text = documentSnapshot['firstName'];
       _lastNameController.text = documentSnapshot['lastName'];
@@ -643,7 +656,10 @@ void dispose(){
                   top: 20,
                   left: 20,
                   right: 20,
-                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+                  bottom: MediaQuery
+                      .of(ctx)
+                      .viewInsets
+                      .bottom + 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -653,7 +669,7 @@ void dispose(){
                     child: TextField(
                       controller: _accountNumberController,
                       decoration:
-                          const InputDecoration(labelText: 'Account Number'),
+                      const InputDecoration(labelText: 'Account Number'),
                     ),
                   ),
                   Visibility(
@@ -661,7 +677,7 @@ void dispose(){
                     child: TextField(
                       controller: _addressController,
                       decoration:
-                          const InputDecoration(labelText: 'Street Address'),
+                      const InputDecoration(labelText: 'Street Address'),
                     ),
                   ),
                   Visibility(
@@ -711,7 +727,7 @@ void dispose(){
                     child: TextField(
                       controller: _cellNumberController,
                       decoration:
-                          const InputDecoration(labelText: 'Phone Number'),
+                      const InputDecoration(labelText: 'Phone Number'),
                     ),
                   ),
                   Visibility(
@@ -719,7 +735,7 @@ void dispose(){
                     child: TextField(
                       controller: _firstNameController,
                       decoration:
-                          const InputDecoration(labelText: 'First Name'),
+                      const InputDecoration(labelText: 'First Name'),
                     ),
                   ),
                   Visibility(
@@ -775,7 +791,8 @@ void dispose(){
 
                         CollectionReference consumptionRef;
 
-                        if (widget.districtId != null && widget.districtId!.isNotEmpty) {
+                        if (widget.districtId != null &&
+                            widget.districtId!.isNotEmpty) {
                           consumptionRef = FirebaseFirestore.instance
                               .collection('districts')
                               .doc(widget.districtId)
@@ -1145,7 +1162,7 @@ void dispose(){
       // _meterReadingController.text = documentSnapshot['meter_reading'];
       _waterMeterController.text = documentSnapshot['water_meter_number'];
       _waterMeterReadingController.text =
-          documentSnapshot['water_meter_reading'];
+      documentSnapshot['water_meter_reading'];
       _cellNumberController.text = documentSnapshot['cellNumber'];
       _firstNameController.text = documentSnapshot['firstName'];
       _lastNameController.text = documentSnapshot['lastName'];
@@ -1164,7 +1181,10 @@ void dispose(){
                   top: 20,
                   left: 20,
                   right: 20,
-                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+                  bottom: MediaQuery
+                      .of(ctx)
+                      .viewInsets
+                      .bottom + 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1174,7 +1194,7 @@ void dispose(){
                     child: TextField(
                       controller: _accountNumberController,
                       decoration:
-                          const InputDecoration(labelText: 'Account Number'),
+                      const InputDecoration(labelText: 'Account Number'),
                     ),
                   ),
                   Visibility(
@@ -1182,7 +1202,7 @@ void dispose(){
                     child: TextField(
                       controller: _addressController,
                       decoration:
-                          const InputDecoration(labelText: 'Street Address'),
+                      const InputDecoration(labelText: 'Street Address'),
                     ),
                   ),
                   Visibility(
@@ -1238,7 +1258,7 @@ void dispose(){
                     child: TextField(
                       controller: _cellNumberController,
                       decoration:
-                          const InputDecoration(labelText: 'Phone Number'),
+                      const InputDecoration(labelText: 'Phone Number'),
                     ),
                   ),
                   Visibility(
@@ -1246,7 +1266,7 @@ void dispose(){
                     child: TextField(
                       controller: _firstNameController,
                       decoration:
-                          const InputDecoration(labelText: 'First Name'),
+                      const InputDecoration(labelText: 'First Name'),
                     ),
                   ),
                   Visibility(
@@ -1350,8 +1370,10 @@ void dispose(){
                         });
 
                         // Update the consumption collection
-                        String formattedMonth = DateFormat.MMMM().format(DateTime.now());
-                        await consumptionRef.doc(formattedMonth).collection('properties').doc(address).set({
+                        String formattedMonth = DateFormat.MMMM().format(
+                            DateTime.now());
+                        await consumptionRef.doc(formattedMonth).collection(
+                            'properties').doc(address).set({
                           "water_meter_reading": waterMeterReading,
                         }, SetOptions(merge: true));
 
@@ -1364,16 +1386,20 @@ void dispose(){
                           updateDetails,
                         );
 
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text("Meter readings updated successfully"),
-                          duration: Duration(seconds: 2),
-                        ));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  "Meter readings updated successfully"),
+                              duration: Duration(seconds: 2),
+                            ));
                         Navigator.of(context).pop(); // Close the modal
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text("Please fill in all required fields."),
-                          duration: Duration(seconds: 2),
-                        ));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  "Please fill in all required fields."),
+                              duration: Duration(seconds: 2),
+                            ));
                         // await FirebaseFirestore.instance
                         //     .collection('consumption')
                         //     .doc(formattedMonth)
@@ -1413,22 +1439,25 @@ void dispose(){
                                       onPressed: () async {
                                         Fluttertoast.showToast(
                                             msg:
-                                                "Uploading a new image\nwill replace current image!");
+                                            "Uploading a new image\nwill replace current image!");
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
                                             builder: (context) =>
                                                 ImageUploadWater(
-                                              userNumber: documentSnapshot?[
+                                                  userNumber: documentSnapshot?[
                                                   'cellNumber'],
-                                              meterNumber: documentSnapshot?[
+                                                  meterNumber: documentSnapshot?[
                                                   'water_meter_number'],
-                                              propertyAddress:
+                                                  propertyAddress:
                                                   widget.propertyAddress,
-                                                  districtId: widget.districtId ?? '',
-                                              municipalityId:
-                                                  widget.municipalityId, isLocalMunicipality:widget.isLocalMunicipality,
-                                            ),
+                                                  districtId: widget
+                                                      .districtId ?? '',
+                                                  municipalityId:
+                                                  widget.municipalityId,
+                                                  isLocalMunicipality: widget
+                                                      .isLocalMunicipality,
+                                                ),
                                           ),
                                         );
                                       },
@@ -1450,6 +1479,7 @@ void dispose(){
           );
         });
   }
+
   void _resetTextFields() {
     _accountNumberController.text = '';
     _addressController.text = '';
@@ -1461,6 +1491,7 @@ void dispose(){
     _lastNameController.text = '';
     _idNumberController.text = '';
   }
+
   Future<void> _delete(String users) async {
     await _propList?.doc(users).delete();
     Fluttertoast.showToast(msg: "You have successfully deleted an account!");
@@ -1479,7 +1510,8 @@ void dispose(){
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _isLoadingProp // Check if data is still loading
-          ? const Center(child: CircularProgressIndicator()) // Show a loading indicator
+          ? const Center(
+          child: CircularProgressIndicator()) // Show a loading indicator
           : Padding(
         padding: const EdgeInsets.fromLTRB(0.0, 10.0, 0.0, 10.0),
         child: StreamBuilder<QuerySnapshot>(
@@ -1488,12 +1520,13 @@ void dispose(){
             if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
               var documentSnapshot = snapshot.data!.docs.first;
               return ListView.builder(
+
                 ///this call is to display all details for all users but is only displaying for the current user account.
                 ///it can be changed to display all users for the staff to see if the role is set to all later on.
                 itemCount: snapshot.data!.docs.length,
                 itemBuilder: (context, index) {
                   final DocumentSnapshot documentSnapshot =
-                      snapshot.data!.docs[index];
+                  snapshot.data!.docs[index];
 
                   // eMeterNumber = documentSnapshot['meter_number'];
                   wMeterNumber = documentSnapshot['water_meter_number'];
@@ -1508,7 +1541,7 @@ void dispose(){
                       documentSnapshot['eBill'] != 'R0' ||
                       documentSnapshot['eBill'] != '0') {
                     billMessage =
-                        'Utilities bill outstanding: ${documentSnapshot['eBill']}';
+                    'Utilities bill outstanding: ${documentSnapshot['eBill']}';
                   } else {
                     billMessage = 'No outstanding payments';
                   }
@@ -1897,17 +1930,21 @@ void dispose(){
                                       child: Padding(
                                         padding: const EdgeInsets.only(
                                           right: 8,
-                                        ), // Adding some space between the buttons
+                                        ),
+                                        // Adding some space between the buttons
                                         child: BasicIconButtonGrey(
                                           onPress: () async {
-                                            wMeterNumber = documentSnapshot['water_meter_number'];
-                                            propPhoneNum = documentSnapshot['cellNumber'];
+                                            wMeterNumber =
+                                            documentSnapshot['water_meter_number'];
+                                            propPhoneNum =
+                                            documentSnapshot['cellNumber'];
                                             showDialog(
                                               barrierDismissible: false,
                                               context: context,
                                               builder: (context) {
                                                 return AlertDialog(
-                                                  title: const Text("Upload Water Meter"),
+                                                  title: const Text(
+                                                      "Upload Water Meter"),
                                                   content: const Text(
                                                       "Uploading a new image will replace the current image!\n\nAre you sure?"),
                                                   actions: [
@@ -1930,15 +1967,22 @@ void dispose(){
                                                         Navigator.push(
                                                             context,
                                                             MaterialPageRoute(
-                                                                builder: (context) => ImageUploadWater(
-                                                                  userNumber: propPhoneNum,
-                                                                  meterNumber: wMeterNumber,
-                                                                  propertyAddress: widget.propertyAddress,
-                                                                  districtId: widget.districtId ?? '',
-                                                                  municipalityId: widget.municipalityId,
-                                                                  isLocalMunicipality:
-                                                                  widget.isLocalMunicipality,
-                                                                )));
+                                                                builder: (
+                                                                    context) =>
+                                                                    ImageUploadWater(
+                                                                      userNumber: propPhoneNum,
+                                                                      meterNumber: wMeterNumber,
+                                                                      propertyAddress: widget
+                                                                          .propertyAddress,
+                                                                      districtId: widget
+                                                                          .districtId ??
+                                                                          '',
+                                                                      municipalityId: widget
+                                                                          .municipalityId,
+                                                                      isLocalMunicipality:
+                                                                      widget
+                                                                          .isLocalMunicipality,
+                                                                    )));
                                                       },
                                                       icon: const Icon(
                                                         Icons.done,
@@ -2058,60 +2102,60 @@ void dispose(){
                                 // ),
 
                                 InkWell(
-                                  onTap: () {
-                                    wMeterNumber = documentSnapshot['water_meter_number']; // Correct meter number
-                                    propPhoneNum = documentSnapshot['cellNumber']; // Correct phone number
-                                    showDialog(
-                                        barrierDismissible: false,
-                                        context: context,
-                                        builder: (context) {
-                                          return AlertDialog(
-                                            title: const Text("Upload Water Meter Image"),
-                                            content: const Text(
-                                                "Uploading a new image will replace current image!\n\nAre you sure?"
-                                            ),
-                                            actions: [
-                                              IconButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                },
-                                                icon: const Icon(
-                                                  Icons.cancel,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                              IconButton(
-                                                onPressed: () async {
-                                                  Fluttertoast.showToast(
-                                                      msg: "Uploading a new image\nwill replace current image!"
-                                                  );
-
-                                                  // Navigate to ImageUploadWater, passing the correct phone number and meter number
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) => ImageUploadWater(
-                                                        userNumber: propPhoneNum, // Pass correct user phone number
-                                                        meterNumber: wMeterNumber, // Pass correct meter number
-                                                        propertyAddress: widget.propertyAddress,
-                                                        districtId: widget.districtId ?? '',
-                                                        municipalityId: widget.municipalityId, isLocalMunicipality: widget.isLocalMunicipality,
-                                                      ),
-                                                    ),
-                                                  ).then((_) {
-                                                    // Once the image is uploaded, update the meter reading
-                                                    _updateW(documentSnapshot);
-                                                  });
-                                                },
-                                                icon: const Icon(
-                                                  Icons.done,
-                                                  color: Colors.green,
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        });
-                                  },
+                                  // onTap: () {
+                                  //   wMeterNumber = documentSnapshot['water_meter_number']; // Correct meter number
+                                  //   propPhoneNum = documentSnapshot['cellNumber']; // Correct phone number
+                                  //   showDialog(
+                                  //       barrierDismissible: false,
+                                  //       context: context,
+                                  //       builder: (context) {
+                                  //         return AlertDialog(
+                                  //           title: const Text("Upload Water Meter Image"),
+                                  //           content: const Text(
+                                  //               "Uploading a new image will replace current image!\n\nAre you sure?"
+                                  //           ),
+                                  //           actions: [
+                                  //             IconButton(
+                                  //               onPressed: () {
+                                  //                 Navigator.pop(context);
+                                  //               },
+                                  //               icon: const Icon(
+                                  //                 Icons.cancel,
+                                  //                 color: Colors.red,
+                                  //               ),
+                                  //             ),
+                                  //             IconButton(
+                                  //               onPressed: () async {
+                                  //                 Fluttertoast.showToast(
+                                  //                     msg: "Uploading a new image\nwill replace current image!"
+                                  //                 );
+                                  //
+                                  //                 // Navigate to ImageUploadWater, passing the correct phone number and meter number
+                                  //                 Navigator.push(
+                                  //                   context,
+                                  //                   MaterialPageRoute(
+                                  //                     builder: (context) => ImageUploadWater(
+                                  //                       userNumber: propPhoneNum, // Pass correct user phone number
+                                  //                       meterNumber: wMeterNumber, // Pass correct meter number
+                                  //                       propertyAddress: widget.propertyAddress,
+                                  //                       districtId: widget.districtId ?? '',
+                                  //                       municipalityId: widget.municipalityId, isLocalMunicipality: widget.isLocalMunicipality,
+                                  //                     ),
+                                  //                   ),
+                                  //                 ).then((_) {
+                                  //                   // Once the image is uploaded, update the meter reading
+                                  //                   _updateW(documentSnapshot);
+                                  //                 });
+                                  //               },
+                                  //               icon: const Icon(
+                                  //                 Icons.done,
+                                  //                 color: Colors.green,
+                                  //               ),
+                                  //             ),
+                                  //           ],
+                                  //         );
+                                  //       });
+                                  // },
                                   child: Container(
                                     margin: const EdgeInsets.only(bottom: 5),
                                     height: 180,
@@ -2120,19 +2164,20 @@ void dispose(){
                                         color: Colors.grey,
                                         semanticContainer: true,
                                         clipBehavior:
-                                            Clip.antiAliasWithSaveLayer,
+                                        Clip.antiAliasWithSaveLayer,
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
-                                              BorderRadius.circular(10.0),
+                                          BorderRadius.circular(10.0),
                                         ),
                                         elevation: 0,
                                         margin: const EdgeInsets.all(10.0),
                                         child: FutureBuilder<String?>(
                                             future: _getImageW(
 
-                                                /// Firebase image location must be changed to display image based on the meter number
+                                              /// Firebase image location must be changed to display image based on the meter number
                                                 context,
-                                                'files/meters/$formattedMonth/${documentSnapshot['cellNumber']}/${documentSnapshot['address']}/water/${documentSnapshot['water_meter_number']}.jpg'), //$meterNumber
+                                                'files/meters/$formattedMonth/${documentSnapshot['cellNumber']}/${documentSnapshot['address']}/water/${documentSnapshot['water_meter_number']}.jpg'),
+                                            //$meterNumber
                                             builder: (context, snapshot) {
                                               if (snapshot.hasError) {
                                                 imgUploadCheck = false;
@@ -2143,7 +2188,7 @@ void dispose(){
                                                   padding: EdgeInsets.all(20.0),
                                                   child: Column(
                                                     mainAxisSize:
-                                                        MainAxisSize.min,
+                                                    MainAxisSize.min,
                                                     children: [
                                                       Text(
                                                         'Image not yet uploaded.',
@@ -2165,7 +2210,8 @@ void dispose(){
                                                 if (snapshot.data != null) {
                                                   return Image.network(
                                                     snapshot
-                                                        .data!, // Assuming _getImageW returns a URL
+                                                        .data!,
+                                                    // Assuming _getImageW returns a URL
                                                     fit: BoxFit.cover,
                                                   );
                                                 } else {
@@ -2178,7 +2224,7 @@ void dispose(){
                                                 return const Padding(
                                                   padding: EdgeInsets.all(5.0),
                                                   child:
-                                                      CircularProgressIndicator(),
+                                                  CircularProgressIndicator(),
                                                 );
                                               }
                                               return Container();
@@ -2205,18 +2251,21 @@ void dispose(){
                                     BasicIconButtonGrey(
                                       onPress: () async {
                                         addressForTrend =
-                                            documentSnapshot['address'];
+                                        documentSnapshot['address'];
 
                                         Navigator.push(
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) =>
                                                   PropertyTrend(
-                                                      addressTarget:
-                                                          addressForTrend,
-                                                      districtId: widget.districtId ?? '',
-                                                      municipalityId: widget
-                                                          .municipalityId, isLocalMunicipality: widget.isLocalMunicipality,),
+                                                    addressTarget:
+                                                    addressForTrend,
+                                                    districtId: widget
+                                                        .districtId ?? '',
+                                                    municipalityId: widget
+                                                        .municipalityId,
+                                                    isLocalMunicipality: widget
+                                                        .isLocalMunicipality,),
                                             ));
                                       },
                                       labelText: 'History',
@@ -2229,9 +2278,9 @@ void dispose(){
                                     ),
                                     Row(
                                       mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                                      MainAxisAlignment.center,
                                       crossAxisAlignment:
-                                          CrossAxisAlignment.center,
+                                      CrossAxisAlignment.center,
                                       children: [
                                         Stack(
                                           children: [
@@ -2239,7 +2288,7 @@ void dispose(){
                                               onPress: () async {
                                                 Fluttertoast.showToast(
                                                     msg:
-                                                        "Now opening your statement!\nPlease wait a few seconds!");
+                                                    "Now opening your statement!\nPlease wait a few seconds!");
 
                                                 _onSubmit(); // Handle any necessary updates
 
@@ -2248,101 +2297,82 @@ void dispose(){
                                                     .propertyAddress
                                                     .trim(); // Trim any extra spaces
                                                 String formattedMonth =
-                                                    DateFormat('MMMM')
-                                                        .format(DateTime.now());
+                                                DateFormat('MMMM')
+                                                    .format(DateTime.now());
 
                                                 // Print statements to debug the exact path being used
                                                 print(
-                                                    'Attempting to list files in path: pdfs/$formattedMonth/${widget.userNumber}/$formattedAddress/');
+                                                    'Attempting to list files in path: pdfs/$formattedMonth/${widget
+                                                        .userNumber}/$formattedAddress/');
 
                                                 // Reference the storage path based on the formatted address
                                                 final storageRef = FirebaseStorage
                                                     .instance
                                                     .ref()
                                                     .child(
-                                                        "pdfs/$formattedMonth/${widget.userNumber}/$formattedAddress");
+                                                    "pdfs/$formattedMonth/${widget
+                                                        .userNumber}/$formattedAddress");
 
                                                 try {
                                                   final listResult =
-                                                      await storageRef
-                                                          .listAll();
+                                                  await storageRef
+                                                      .listAll();
 
                                                   // Log the number of files found
                                                   print(
-                                                      'Files found in directory: ${listResult.items.length}');
+                                                      'Files found in directory: ${listResult
+                                                          .items.length}');
 
                                                   // If no files are found, inform the user
                                                   if (listResult
                                                       .items.isEmpty) {
                                                     Fluttertoast.showToast(
                                                         msg:
-                                                            "No files found in the directory.");
+                                                        "No files found in the directory.");
                                                     return;
                                                   }
 
                                                   bool found = false;
-                                                  for (var item
-                                                      in listResult.items) {
-                                                    print(
-                                                        'File found: ${item.name}');
+                                                  String? webPdfUrl;
+                                                  File? mobilePdfFile;
 
-                                                    // Check if the file name matches the account number
-                                                    if (item.name.contains(
-                                                        widget.accountNumber)) {
-                                                      print(
-                                                          'Found a matching file: ${item.name}');
+                                                  for (var item in listResult.items) {
+                                                    if (item.name.contains(widget.accountNumber)) {
+                                                      print('Found matching file: ${item.name}');
 
-                                                      // Get the download URL
-                                                      final url = await item
-                                                          .getDownloadURL();
-                                                      print(
-                                                          'Download URL: $url');
+                                                      // ✅ Get the download URL for web
+                                                      webPdfUrl = await item.getDownloadURL();
+                                                      print('Download URL: $webPdfUrl');
 
-                                                      // Download the PDF locally
-                                                      final directory =
-                                                          await getApplicationDocumentsDirectory();
-                                                      final filePath =
-                                                          '${directory.path}/${item.name}';
-                                                      final response =
-                                                          await Dio().download(
-                                                              url, filePath);
+                                                      if (!kIsWeb) {
+                                                        // ✅ Mobile: Download the PDF locally
+                                                        final directory = await getApplicationDocumentsDirectory();
+                                                        final filePath = '${directory.path}/${item.name}';
+                                                        final response = await Dio().download(webPdfUrl, filePath);
 
-                                                      if (response.statusCode ==
-                                                          200) {
-                                                        Fluttertoast.showToast(
-                                                            msg: "Successful!");
-                                                        File pdfFile =
-                                                            File(filePath);
-
-                                                        // Open the PDF in the viewer
-                                                        openPDF(
-                                                            context, pdfFile);
-                                                      } else {
-                                                        Fluttertoast.showToast(
-                                                            msg:
-                                                                "Failed to open PDF.");
+                                                        if (response.statusCode == 200) {
+                                                          mobilePdfFile = File(filePath);
+                                                          Fluttertoast.showToast(msg: "Successful!");
+                                                        } else {
+                                                          Fluttertoast.showToast(msg: "Failed to download PDF.");
+                                                        }
                                                       }
 
                                                       found = true;
-                                                      break; // Exit loop after successful operation
-                                                    } else {
-                                                      print(
-                                                          'File does not match account number: ${item.name}');
+                                                      break;
                                                     }
                                                   }
 
-                                                  // Only show this toast if no matching document was found
                                                   if (!found) {
-                                                    Fluttertoast.showToast(
-                                                        msg:
-                                                            "No matching document found for account number: ${widget.accountNumber}");
+                                                    Fluttertoast.showToast(msg: "No matching invoice found.");
+                                                    return;
                                                   }
+
+                                                  // ✅ Open PDF: Mobile (file) | Web (URL)
+                                                  openPDF(context, mobilePdfFile, webPdfUrl);
                                                 } catch (e) {
-                                                  print(
-                                                      'Error during file listing or download process: $e');
-                                                  Fluttertoast.showToast(
-                                                      msg:
-                                                          "Unable to open statement.");
+                                                  print('Error opening PDF: $e');
+                                                  Fluttertoast.showToast(msg: "Unable to open statement.");
                                                 }
                                               },
                                               labelText: 'Invoice',
@@ -2360,7 +2390,7 @@ void dispose(){
                                                 visible: _isLoading,
                                                 child: Column(
                                                   mainAxisAlignment:
-                                                      MainAxisAlignment.center,
+                                                  MainAxisAlignment.center,
                                                   children: [
                                                     const SizedBox(
                                                       height: 15,
@@ -2370,10 +2400,10 @@ void dispose(){
                                                       width: 24,
                                                       height: 24,
                                                       padding:
-                                                          const EdgeInsets.all(
-                                                              2.0),
+                                                      const EdgeInsets.all(
+                                                          2.0),
                                                       child:
-                                                          const CircularProgressIndicator(
+                                                      const CircularProgressIndicator(
                                                         color: Colors.purple,
                                                         strokeWidth: 3,
                                                       ),
@@ -2385,19 +2415,24 @@ void dispose(){
                                         BasicIconButtonGrey(
                                           onPress: () async {
                                             accountNumber = documentSnapshot[
-                                                'accountNumber'];
+                                            'accountNumber'];
                                             locationGiven =
-                                                documentSnapshot['address'];
+                                            documentSnapshot['address'];
 
                                             Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
                                                     builder: (context) =>
-                                                        MapScreen(  isLocalMunicipality: documentSnapshot['isLocalMunicipality'], // Pass isLocalMunicipality
-                                                          districtId: documentSnapshot['districtId'] ?? '',  // Pass districtId
-                                                          municipalityId: documentSnapshot['municipalityId'] ?? '',)
-                                                    //MapPage()
-                                                    ));
+                                                        MapScreen(
+                                                          isLocalMunicipality: documentSnapshot['isLocalMunicipality'],
+                                                          // Pass isLocalMunicipality
+                                                          districtId: documentSnapshot['districtId'] ??
+                                                              '',
+                                                          // Pass districtId
+                                                          municipalityId: documentSnapshot['municipalityId'] ??
+                                                              '',)
+                                                  //MapPage()
+                                                ));
                                           },
                                           labelText: 'Map',
                                           fSize: 16,
@@ -2676,7 +2711,23 @@ void dispose(){
   }
 
   //pdf view loader getting file name onPress/onTap that passes pdf filename to this class.
-  void openPDF(BuildContext context, File file) => Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
-      );
+  void openPDF(BuildContext context, File? file, String? webUrl) {
+    if (kIsWeb) {
+      // ✅ Web: Open the PDF in a new browser tab
+      if (webUrl != null && webUrl.isNotEmpty) {
+        html.window.open(webUrl, "_blank");
+      } else {
+        Fluttertoast.showToast(msg: "Failed to open PDF: No URL available.");
+      }
+    } else {
+      // ✅ Mobile: Open the PDF using a viewer
+      if (file != null) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
+        );
+      } else {
+        Fluttertoast.showToast(msg: "Failed to open PDF file.");
+      }
+    }
+  }
 }

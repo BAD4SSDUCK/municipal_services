@@ -13,6 +13,8 @@ import 'package:municipal_services/code/ImageUploading/water_meter_reading.dart'
 import 'package:path/path.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:location/location.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ImageUploadWater extends StatefulWidget {
   const ImageUploadWater({
@@ -203,21 +205,30 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
     return _locationData;
   }
 
-  Future imgFromGallery() async {
+  Future<void> imgFromGallery() async {
     final pickedFile = await _picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 60,
     );
 
-    setState(() {
-      if (pickedFile != null) {
-        _photo = File(pickedFile.path);
-        // uploadFile();
-      } else {
-        print('No image selected.');
-      }
-    });
+    if (pickedFile != null) {
+      final tempFile = File(pickedFile.path); // ✅ Create a new file reference
+        if(mounted) {
+          setState(() {
+            _photo = tempFile; // ✅ Ensure _photo updates correctly
+            _selectedFileBytes =
+                _photo!.readAsBytesSync(); // ✅ Convert to bytes for preview
+            _selectedFileName = "${widget.meterNumber}.jpg"; // ✅ Rename file
+          });
+        }
+      print("Gallery image selected: $_selectedFileName");
+    } else {
+      print('No image selected.');
+    }
   }
+
+
+
 
   Future<bool> validateProperty() async {
     if (widget.isLocalMunicipality) {
@@ -285,6 +296,7 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
       print('Error fetching property details: $e');
     }
   }
+
   Future<void> _fetchDocumentSnapshot() async {
     // Assuming you need to fetch the property based on some criteria
     try {
@@ -312,9 +324,11 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
       }
 
       if (propertySnapshot.docs.isNotEmpty) {
-        setState(() {
-          documentSnapshot = propertySnapshot.docs.first;
-        });
+        if(mounted) {
+          setState(() {
+            documentSnapshot = propertySnapshot.docs.first;
+          });
+        }
       } else {
         Fluttertoast.showToast(msg: "Error: Property not found.");
       }
@@ -419,10 +433,11 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                                   waterMeterReadingController.text;
 
                               if (waterMeterReading.isNotEmpty) {
-                                setState(() {
-                                  isLoadingMeter = true; // Set loading state
-                                });
-
+                                if(mounted) {
+                                  setState(() {
+                                    isLoadingMeter = true; // Set loading state
+                                  });
+                                }
                                 try {
                                   await documentSnapshot.reference.update({
                                     'water_meter_reading': waterMeterReading,
@@ -452,9 +467,12 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                                     ),
                                   );
                                 } finally {
-                                  setState(() {
-                                    isLoadingMeter = false; // Reset loading state
-                                  });
+                                  if(mounted) {
+                                    setState(() {
+                                      isLoadingMeter =
+                                      false; // Reset loading state
+                                    });
+                                  }
                                 }
                               } else {
                                 ScaffoldMessenger.of(parentContext)
@@ -784,7 +802,102 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
         longitude,
       );
 
-     // _callMeterReadingServiceAfterUpload();// Call the MeterReadingService to update the meter reading
+      if(mounted) {
+        setState(() {
+          _photo = null;
+        });
+      }
+    } catch (e) {
+      print('Error uploading image: $e');
+    }
+  }
+
+  void _showPicker(context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext bc) {
+        return SafeArea(
+          child: Container(
+            child: Wrap(
+              children: <Widget>[
+                ListTile(
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('Gallery'),
+                  onTap: () {
+                    if (kIsWeb) {
+                      pickFileFromPC();  // 🔹 New method for Web
+                    } else {
+                      imgFromGallery();  // 🔹 Mobile users
+                    }
+                    Navigator.of(context).pop();
+                  },
+                ),
+                if (!kIsWeb)  // 🔹 Camera option only for mobile users
+                  ListTile(
+                    leading: const Icon(Icons.photo_camera),
+                    title: const Text('Camera'),
+                    onTap: () {
+                      imgFromCamera(context);
+                      Navigator.of(context).pop();
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Uint8List? _selectedFileBytes; // Store selected file bytes
+  String? _selectedFileName; // Store selected file name
+
+  Future<void> pickFileFromPC() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true, // Store file bytes instead of path
+    );
+
+    if (result != null) {
+      if(mounted) {
+        setState(() {
+          _selectedFileBytes = result.files.first.bytes; // Store file bytes
+          _selectedFileName = "${widget.meterNumber}.jpg"; // Rename file
+        });
+      }
+      print("File selected and renamed to: $_selectedFileName");
+    } else {
+      print('No file selected.');
+    }
+  }
+
+
+
+
+  Future<void> _uploadFileToFirebase(Uint8List fileBytes, String fileName) async {
+    final String destination =
+        'files/meters/$formattedDate/${widget.userNumber}/${widget.propertyAddress}/water/$fileName';
+
+    try {
+      final ref = firebase_storage.FirebaseStorage.instance.ref(destination);
+      final metadata = firebase_storage.SettableMetadata(contentType: "image/jpeg");
+
+      await ref.putData(fileBytes, metadata); // Upload bytes instead of file
+      String fileUrl = await ref.getDownloadURL();
+
+      print("Image uploaded successfully as: $fileName");
+      print("File URL: $fileUrl");
+
+      // Log the upload action
+      await logWMeterUploadAction(
+        fileUrl,
+        "Upload Water Meter Image",
+        widget.userNumber,
+        widget.propertyAddress,
+        widget.municipalityUserEmail,
+        latitude ?? 0.0,
+        longitude ?? 0.0,
+      );
 
     } catch (e) {
       print('Error uploading image: $e');
@@ -818,16 +931,26 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                 child: CircleAvatar(
                   radius: 180,
                   backgroundColor: Colors.grey[400],
-                  child: _photo != null
+                  child: _selectedFileBytes != null // ✅ Show preview for web & mobile gallery
                       ? ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.file(
-                            _photo!,
-                            width: 250,
-                            height: 250,
-                            fit: BoxFit.cover,
-                          ),
-                        )
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.memory( // ✅ Display image from Uint8List
+                      _selectedFileBytes!,
+                      width: 250,
+                      height: 250,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                      : _photo != null // ✅ Show preview for camera images
+                      ? ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.file(
+                      _photo!,
+                      width: 250,
+                      height: 250,
+                      fit: BoxFit.cover,
+                    ),
+                  )
                       : Container(
                           decoration: BoxDecoration(
                               color: Colors.grey[200],
@@ -848,54 +971,43 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25.0),
               child: GestureDetector(
-                  onTap: isLoading
-                      ? null // Disable the button when loading
-                      : () async {
-                    setState(() {
-                      isLoading = true; // Set loading state to true
-                    });
-
-                    try {
-                      if (_photo != null) {
-                        if (latitude != null && longitude != null) {
-                          await uploadFile(latitude!, longitude!).then(
-                                  (_) async {
-                                // Fetch document snapshot after the upload is successful
-                                await _fetchDocumentSnapshot();
-
-                                // Show UI only if document snapshot is available
-                                if (documentSnapshot != null) {
-                                  await _showMeterReadingUpdateUI(
-                                      context, documentSnapshot!);
-                                  Navigator.of(context).pop();
-                                } else {
-                                  Fluttertoast.showToast(
-                                      msg:
-                                      "Error: Could not fetch property details after upload.");
-                                }
-                              });
-
-                          Fluttertoast.showToast(
-                              msg:
-                              "Successfully Uploaded!\nWater Meter Image!");
-                        } else {
-                          Fluttertoast.showToast(
-                              msg:
-                              "Location data not available. Please retake the picture.");
-                        }
-                      } else {
-                        Fluttertoast.showToast(
-                            msg:
-                            "Please tap on the image area\nand select the image to upload!");
-                      }
-                    } finally {
+                onTap: isLoading
+                    ? null // Disable button when loading
+                    : () async {
+                  if (_selectedFileBytes != null && _selectedFileName != null) {
+                    if(mounted) {
                       setState(() {
-                        isLoading = false; // Set loading state back to false
+                        isLoading = true;
                       });
                     }
-                  },
+                    try {
+                      await _uploadFileToFirebase(_selectedFileBytes!, _selectedFileName!).then((_) async {
+                        // Fetch document snapshot after successful upload
+                        await _fetchDocumentSnapshot();
+
+                        // Show UI only if document snapshot is available
+                        if (documentSnapshot != null) {
+                          await _showMeterReadingUpdateUI(context, documentSnapshot!);
+                          Navigator.of(context).pop();
+                        } else {
+                          Fluttertoast.showToast(msg: "Error: Could not fetch property details after upload.");
+                        }
+                      });
+
+                      Fluttertoast.showToast(msg: "Successfully Uploaded!\nWater Meter Image!");
+                    } finally {
+                      if(mounted) {
+                        setState(() {
+                          isLoading = false;
+                        });
+                      }
+                    }
+                  } else {
+                    Fluttertoast.showToast(msg: "Please select an image first!");
+                  }
+                },
                 child: isLoading
-                    ? const CircularProgressIndicator() // Show progress indicator when loading
+                    ? const CircularProgressIndicator()
                     : Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -920,36 +1032,5 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
         ),
       ),
     );
-  }
-
-
-  void _showPicker(context) {
-    showModalBottomSheet(
-        context: context,
-        builder: (BuildContext bc) {
-          return SafeArea(
-            child: Container(
-              child: Wrap(
-                children: <Widget>[
-                  ListTile(
-                      leading: const Icon(Icons.photo_library),
-                      title: const Text('Gallery'),
-                      onTap: () {
-                        imgFromGallery();
-                        Navigator.of(context).pop();
-                      }),
-                  ListTile(
-                    leading: const Icon(Icons.photo_camera),
-                    title: const Text('Camera'),
-                    onTap: () {
-                      imgFromCamera(context);
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        });
   }
 }

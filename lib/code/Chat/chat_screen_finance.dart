@@ -12,7 +12,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'chat_screen.dart';
-
+import 'package:universal_html/html.dart' as html;
+import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 
 class ChatFinance extends StatefulWidget {
   final String chatRoomId;
@@ -20,7 +21,7 @@ class ChatFinance extends StatefulWidget {
   final CollectionReference chatFinCollectionRef;
   final Function refreshChatList;
   final bool isLocalMunicipality; // Add this flag to distinguish between local municipalities and districts
-  final String? districtId; // Only needed for district-based municipalities
+  final String districtId; // Only needed for district-based municipalities
   final String municipalityId;
   const ChatFinance({super.key, required this.chatRoomId, required this.userName, required this.chatFinCollectionRef, required this.refreshChatList, required this.isLocalMunicipality, required this.districtId, required this.municipalityId, });
 
@@ -47,10 +48,11 @@ class _ChatFinanceState extends State<ChatFinance> {
   String municipalityId='';
   late CollectionReference _propList;
   bool hasUnreadMessages = false;
+  String? propertyAddress;
 
   @override
   void initState() {
-
+    fetchPropertyAddress();
     _chatsListFinance= widget.chatFinCollectionRef;
     createOrUpdateChatRoom();
     fetchChats(widget.chatRoomId);
@@ -125,6 +127,62 @@ class _ChatFinanceState extends State<ChatFinance> {
     }
   }
 
+  Future<void> fetchPropertyAddress() async {
+    String? address = await getPropertyAddress(
+      widget.userName ?? '',
+      widget.districtId,
+      widget.municipalityId,
+      widget.isLocalMunicipality,
+    );
+
+    if (mounted) {
+      setState(() {
+        propertyAddress = address ?? 'Unknown Property';
+      });
+    }
+  }
+
+  Future<String?> getPropertyAddress(
+      String accountNumber, String districtId, String municipalityId, bool isLocalMunicipality) async {
+    try {
+      QuerySnapshot propertiesSnapshot;
+
+      if (isLocalMunicipality) {
+        // 🔍 Search in the Local Municipality collection
+        propertiesSnapshot = await FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .collection('properties')
+            .where('accountNumber', isEqualTo: accountNumber)
+            .limit(1)
+            .get();
+      } else {
+        // 🔍 Search in the District Municipality collection
+        propertiesSnapshot = await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('properties')
+            .where('accountNumber', isEqualTo: accountNumber)
+            .limit(1)
+            .get();
+      }
+
+      if (propertiesSnapshot.docs.isNotEmpty) {
+        var propertyData = propertiesSnapshot.docs.first.data() as Map<String, dynamic>;
+        String propertyAddress = propertyData['address'];
+        print('✅ Property Address Found: $propertyAddress');
+        return propertyAddress;
+      } else {
+        print('❌ No property found for account number: $accountNumber');
+        return null;
+      }
+    } catch (e) {
+      print('🚨 Error fetching property address: $e');
+      return null;
+    }
+  }
 
   Future<void> createOrUpdateChatRoom() async {
     try {
@@ -345,7 +403,7 @@ class _ChatFinanceState extends State<ChatFinance> {
                     message: data["message"],
                     sendByMe: sendByMe,
                     timestamp: data["time"],
-                    isRead:false,
+                    isRead:data[currentUserIdentifier.contains('@') ? "isReadByMunicipalUser" : "isReadByRegularUser"],
                     fileUrl: data["fileUrl"],
                     sendBy: data["sendBy"],
                   );
@@ -567,7 +625,7 @@ class _ChatFinanceState extends State<ChatFinance> {
       }
 
       try {
-        String filePath = 'chat_files/$cellNumber/${widget.chatRoomId}/$fileName';
+        String filePath = 'finance_chat_files/$cellNumber/${widget.chatRoomId}/$fileName';
         final ref = FirebaseStorage.instance.ref().child(filePath);
         var metadata = SettableMetadata(
             contentType: mimeType,  // Ensure this is correctly set based on the file
@@ -661,7 +719,7 @@ class _ChatFinanceState extends State<ChatFinance> {
       }
 
       try {
-        String filePath = 'chat_files/$cellNumber/${widget.chatRoomId}/$fileName';
+        String filePath = 'finance_chat_files/$cellNumber/${widget.chatRoomId}/$fileName';
         final ref = FirebaseStorage.instance.ref().child(filePath);
         var metadata = SettableMetadata(
             contentType: mimeType,
@@ -706,6 +764,51 @@ class _ChatFinanceState extends State<ChatFinance> {
     }
   }
 
+  Future<void> uploadFileWeb() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.any, // ✅ Allow all file types
+    );
+
+    if (result != null) {
+      PlatformFile pickedFile = result.files.first;
+      Uint8List? fileBytes = pickedFile.bytes;
+      String fileName = pickedFile.name;
+      String cellNumber = FirebaseAuth.instance.currentUser!.phoneNumber ?? "unknown";
+
+      if (fileBytes == null) {
+        Fluttertoast.showToast(msg: "Error: Could not read file data.");
+        return;
+      }
+
+      try {
+        String filePath = 'finance_chat_files/$cellNumber/${widget.chatRoomId}/$fileName';
+        final ref = FirebaseStorage.instance.ref().child(filePath);
+
+        SettableMetadata metadata = SettableMetadata(
+          contentType: pickedFile.extension == 'jpg' || pickedFile.extension == 'png'
+              ? 'image/${pickedFile.extension}'
+              : 'application/octet-stream',
+        );
+
+        // ✅ Upload file bytes to Firebase Storage
+        TaskSnapshot uploadTask = await ref.putData(fileBytes, metadata);
+
+        if (uploadTask.state == TaskState.success) {
+          String fileUrl = await ref.getDownloadURL();
+          sendMessage(chatRoomId: widget.chatRoomId, text: "", fileUrl: fileUrl);
+          Fluttertoast.showToast(msg: "Upload Successful!");
+        } else {
+          Fluttertoast.showToast(msg: "Upload failed.");
+        }
+      } catch (e) {
+        print("🚨 Upload error: $e");
+        Fluttertoast.showToast(msg: "Error uploading file.");
+      }
+    } else {
+      Fluttertoast.showToast(msg: "No file selected.");
+    }
+  }
+
   void showUploadOptions() {
     showModalBottomSheet(
       context: context,
@@ -713,20 +816,33 @@ class _ChatFinanceState extends State<ChatFinance> {
         return SafeArea(
           child: Wrap(
             children: <Widget>[
-              ListTile(
+              if (kIsWeb)
+                ListTile(
+                  leading: const Icon(Icons.upload_file),
+                  title: const Text('Upload File'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    uploadFileWeb(); // 🌐 Handle file uploads for web
+                  },
+                )
+              else ...[
+                ListTile(
                   leading: const Icon(Icons.photo_library),
                   title: const Text('Upload Image'),
                   onTap: () {
                     Navigator.pop(context);
-                    uploadImage();
-                  }),
-              ListTile(
+                    uploadImage(); // 📸 Handle image uploads for mobile
+                  },
+                ),
+                ListTile(
                   leading: const Icon(Icons.insert_drive_file),
                   title: const Text('Upload Document'),
                   onTap: () {
                     Navigator.pop(context);
-                    uploadDocument();
-                  }),
+                    uploadDocument(); // 📄 Handle document uploads for mobile
+                  },
+                ),
+              ],
             ],
           ),
         );
@@ -736,11 +852,7 @@ class _ChatFinanceState extends State<ChatFinance> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.userName != null) {
-      chatTo = ' ${widget.userName}';
-    } else {
-      chatTo = 'Finance Chat';
-    }
+    String chatTo = propertyAddress ?? 'Finance Queries';
     return WillPopScope(
         onWillPop: () async {
       // Trigger the refresh function when the back button is pressed
@@ -829,8 +941,8 @@ class MessageTile extends StatelessWidget {
   final String message;
   final bool sendByMe;
   final int timestamp;
-  final String? fileUrl;
   final String sendBy;
+  final String? fileUrl;
 // Callback for attaching files
 
   const MessageTile({
@@ -838,7 +950,8 @@ class MessageTile extends StatelessWidget {
     required this.message,
     required this.sendByMe,
     required this.timestamp,
-    this.fileUrl,required bool isRead, required this.sendBy,
+    this.fileUrl,
+    required bool isRead, required this.sendBy,
     // Accept the callback in the constructor
   });
 
@@ -856,6 +969,7 @@ class MessageTile extends StatelessWidget {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -870,8 +984,8 @@ class MessageTile extends StatelessWidget {
         margin: sendByMe
             ? const EdgeInsets.only(left: 30)
             : const EdgeInsets.only(right: 30),
-        padding: const EdgeInsets.only(
-            top: 17, bottom: 17, left: 20, right: 20),
+        padding:
+        const EdgeInsets.only(top: 17, bottom: 17, left: 20, right: 20),
         decoration: BoxDecoration(
           borderRadius: sendByMe
               ? const BorderRadius.only(
@@ -882,33 +996,42 @@ class MessageTile extends StatelessWidget {
               topLeft: Radius.circular(23),
               topRight: Radius.circular(23),
               bottomRight: Radius.circular(23)),
-          color: sendByMe ? Colors.blue : Colors.grey[700],  // Different color based on sender
+          color: sendByMe ? Colors.blue : Colors.grey[700],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              sendBy,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white70,
+              ),
+            ),
+            const SizedBox(height: 5),
             if (fileUrl != null && fileUrl!.isNotEmpty)
               InkWell(
-                onTap: () {
-                  // Implement file download or viewing functionality
-                  _launchURL(fileUrl!);
-                },
+                onTap: () => _launchURL(fileUrl!),
                 child: const Row(
                   children: [
                     Icon(Icons.attachment),
                     SizedBox(width: 8),
-                    Text('View File',
-                        style: TextStyle(decoration: TextDecoration.underline)),
+                    Text(
+                      'View File',
+                      style: TextStyle(decoration: TextDecoration.underline),
+                    ),
                   ],
                 ),
               ),
-            Text(message,
-                textAlign: TextAlign.start,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontFamily: 'OverpassRegular',
-                    fontWeight: FontWeight.w400)),
+            Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontFamily: 'OverpassRegular',
+                fontWeight: FontWeight.w400,
+              ),
+            ),
             const SizedBox(height: 5),
             Text(
               _formatTimestamp(timestamp),
@@ -947,158 +1070,3 @@ TextStyle biggerTextStyle() {
   return const TextStyle(color: Colors.white, fontSize: 17);
 }
 
-class DatabaseMethods {
-  String? userEmail;
-  late String districtId;
-  late String municipalityId;
-
-  Future<void> addUserInfo(Map<String, dynamic> userData) async {
-    try {
-      await FirebaseFirestore.instance.collection("users").add(userData);
-    } catch (e) {
-      print("Error adding user info: $e");
-      rethrow;
-    }
-  }
-
-  Future<QuerySnapshot> getUserInfo(String phone) async {
-    try {
-      return await FirebaseFirestore.instance.collection("users").where("cellNumber", isEqualTo: phone).get();
-    } catch (e) {
-      print("Error fetching user info: $e");
-      rethrow;
-    }
-  }
-
-  Future<QuerySnapshot> searchByName(String searchField) async {
-    try {
-      return await FirebaseFirestore.instance.collection("users").where('firstName', isEqualTo: searchField).get();
-    } catch (e) {
-      print("Error searching by name: $e");
-      rethrow;
-    }
-  }
-
-  Future<bool> addChatRoom( Map<String, dynamic> chatRoom, String chatRoomId) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('districts')
-          .doc(districtId)
-          .collection('municipalities')
-          .doc(municipalityId)
-          .collection("chatRoomFinance")
-          .doc(chatRoomId)
-          .set(chatRoom);
-      return true;
-    } catch (e) {
-      print("Error adding chat room: $e");
-      return false;
-    }
-  }
-
-  Stream<QuerySnapshot> getChats(String chatRoomId) {
-    return FirebaseFirestore.instance
-        .collection('districts')
-        .doc(districtId)
-        .collection('municipalities')
-        .doc(municipalityId)
-        .collection("chatRoom")
-        .doc(chatRoomId)
-        .collection("chats")
-        .orderBy('time')
-        .snapshots();
-  }
-
-  Stream<QuerySnapshot> getFinanceChats({
-    required String chatRoomId,
-    required bool isLocalMunicipality,
-    required String municipalityId,
-    String? districtId,
-  }) {
-    if (isLocalMunicipality) {
-      return FirebaseFirestore.instance
-          .collection('localMunicipalities')
-          .doc(municipalityId)
-          .collection("chatRoomFinance")
-          .doc(chatRoomId)
-          .collection("chats")
-          .orderBy('time')
-          .snapshots();
-    } else {
-      return FirebaseFirestore.instance
-          .collection('districts')
-          .doc(districtId)
-          .collection('municipalities')
-          .doc(municipalityId)
-          .collection("chatRoomFinance")
-          .doc(chatRoomId)
-          .collection("chats")
-          .orderBy('time')
-          .snapshots();
-    }
-  }
-
-
-
-  Future<void> addMessage( String chatRoomId, Map<String, dynamic> chatMessageData) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('districts')
-          .doc(districtId)
-          .collection('municipalities')
-          .doc(municipalityId)
-          .collection("chatRoom")
-          .doc(chatRoomId)
-          .collection("chats")
-          .add(chatMessageData);
-    } catch (e) {
-      print("Error adding message: $e");
-      rethrow;
-    }
-  }
-
-  Future<void> addFinanceMessage( String chatRoomId, Map<String, dynamic> chatMessageData) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('districts')
-          .doc(districtId)
-          .collection('municipalities')
-          .doc(municipalityId)
-          .collection("chatRoomFinance")
-          .doc(chatRoomId)
-          .collection("chats")
-          .add(chatMessageData);
-    } catch (e) {
-      print("Error adding finance message: $e");
-      rethrow;
-    }
-  }
-
-
-  Stream<QuerySnapshot> getUserChats( String userName) {
-    return FirebaseFirestore.instance
-        .collection('districts')
-        .doc(districtId)
-        .collection('municipalities')
-        .doc(municipalityId)
-        .collection("chatRoomFinance")
-        .where('users', arrayContains: userName)
-        .snapshots();
-  }
-
-  Future<void> addChatDocName(
-      DocumentSnapshot? documentSnapshot, String chatRoomId) async {
-    final CollectionReference namedChatAdd = FirebaseFirestore.instance
-        .collection('districts')
-        .doc(districtId)
-        .collection('municipalities')
-        .doc(municipalityId)
-        .collection("chatRoomFinance");
-
-    if (documentSnapshot != null) {
-      await namedChatAdd.add({
-        "chatRoomFinance": chatRoomId,
-      });
-    }
-  }
-}

@@ -305,9 +305,9 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
+                      const Text(
                         "Confirm Your Address",
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                       ),
                       const SizedBox(height: 10),
                       if (isEditing) ...[
@@ -534,133 +534,140 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage("assets/images/greyscale.jpg"),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text(
-            'Select Your Property',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 21),
+    return Consumer<PropertyProvider>(
+      builder: (context, propertyProvider, child) {
+        return Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage("assets/images/greyscale.jpg"),
+              fit: BoxFit.cover,
+            ),
           ),
-          backgroundColor: Colors.green,
-          iconTheme: const IconThemeData(color: Colors.white),
-        ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                controller: searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search by address',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30.0),
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: AppBar(
+              title: const Text(
+                'Select Your Property',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 21),
+              ),
+              backgroundColor: Colors.green,
+              iconTheme: const IconThemeData(color: Colors.white),
+            ),
+            body: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search by address',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            Expanded(
-              child: filteredProperties.isEmpty
-                  ? const Center(child: Text('No properties found.'))
-                  : ListView.builder(
-                itemCount: filteredProperties.length,
-                itemBuilder: (context, index) {
-                  final property = filteredProperties[index];
-                  return Card(
-                    color: Colors.white70,
-                    margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    child: ListTile(
-                      leading: const Icon(Icons.home, color: Colors.green),
-                      title: Text(
-                        property.address,
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
-                      ),
-                      subtitle: Text(
-                        'Account: ${property.accountNo}',
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                      trailing: const Icon(Icons.arrow_forward),
-                      onTap: () async {
-                        print("Property selected: ${property.address} - Account No: ${property.accountNo}");
-
-                        // Set districtId and municipalityId based on the selected property
-                        if (property.isLocalMunicipality) {
-                          districtId = null;
-                          municipalityId = property.municipalityId;
-                        } else {
-                          districtId = property.districtId;
-                          municipalityId = property.municipalityId;
-                        }
-
-                        if (municipalityId.isEmpty) {
-                          print("Error: Municipality ID is missing.");
-                          return;
-                        }
-
-                        DocumentSnapshot? propertyDoc = await getPropertyDocument(property);
-
-                        if (propertyDoc == null) {
-                          print("Property document not found.");
-                          return;
-                        }
-
-                        DocumentReference propertyRef = propertyDoc.reference;
-                        Map<String, dynamic>? data = propertyDoc.data() as Map<String, dynamic>?;
-
-                        // Check if the address is already confirmed
-                        bool isAddressConfirmed = data?['isAddressConfirmed'] ?? false;
-
-                        if (!isAddressConfirmed) {
-                          // Show confirmation dialog
-                          await showAddressConfirmationDialog(context, property, propertyRef);
-                        } else {
-                          print("Address already confirmed.");
-                        }
-
-
-
-                        await saveSelectedPropertyAccountNo(property.accountNo, property.isLocalMunicipality);
-                        await checkAndGenerateCoordinates(property);
-                        Provider.of<PropertyProvider>(context, listen: false).selectProperty(property);
-
-                        // Retrieve the user's token
-                        String? token = await FirebaseMessaging.instance.getToken();
-                        if (token != null) {
-                          print("User's token: $token");
-                          // Store the token with the account number
-                          await storeTokenForAccount(property.accountNo, token, property);
-                        } else {
-                          print("Error: Could not retrieve token.");
-                        }
-
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => MainMenu(
-                              property: property,
-                              propertyCount: properties.length,
-                              isLocalMunicipality: widget.isLocalMunicipality,
-                            ),
+                Expanded(
+                  child: filteredProperties.isEmpty
+                      ? const Center(child: Text('No properties found.'))
+                      : ListView.builder(
+                    itemCount: filteredProperties.length,
+                    itemBuilder: (context, index) {
+                      final property = filteredProperties[index];
+                      return Card(
+                        color: Colors.white70,
+                        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        child: ListTile(
+                          leading: const Icon(Icons.home, color: Colors.green),
+                          title: Text(
+                            property.address,
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
                           ),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
+                          subtitle: Text(
+                            'Account: ${property.accountNo}',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          trailing: const Icon(Icons.arrow_forward),
+                          onTap: () async {
+                            print("Property selected: ${property.address} - Account No: ${property.accountNo}");
+
+                            // Set districtId and municipalityId based on the selected property
+                            if (property.isLocalMunicipality) {
+                              districtId = null;
+                              municipalityId = property.municipalityId;
+                            } else {
+                              districtId = property.districtId;
+                              municipalityId = property.municipalityId;
+                            }
+
+                            if (municipalityId.isEmpty) {
+                              print("Error: Municipality ID is missing.");
+                              return;
+                            }
+
+                            DocumentSnapshot? propertyDoc = await getPropertyDocument(property);
+
+                            if (propertyDoc == null) {
+                              print("Property document not found.");
+                              return;
+                            }
+
+                            DocumentReference propertyRef = propertyDoc.reference;
+                            Map<String, dynamic>? data = propertyDoc.data() as Map<String, dynamic>?;
+
+                            // Check if the address is already confirmed
+                            bool isAddressConfirmed = data?['isAddressConfirmed'] ?? false;
+
+                            if (!isAddressConfirmed) {
+                              // Show confirmation dialog
+                              await showAddressConfirmationDialog(context, property, propertyRef);
+                            } else {
+                              print("Address already confirmed.");
+                            }
+
+                            await saveSelectedPropertyAccountNo(property.accountNo, property.isLocalMunicipality);
+                            await checkAndGenerateCoordinates(property);
+
+                            // ✅ Use Provider safely with proper context
+                            if (mounted) {
+                              propertyProvider.selectProperty(property);
+                            }
+
+                            // Retrieve the user's token
+                            String? token = await FirebaseMessaging.instance.getToken();
+                            if (token != null) {
+                              print("User's token: $token");
+                              // Store the token with the account number
+                              await storeTokenForAccount(property.accountNo, token, property);
+                            } else {
+                              print("Error: Could not retrieve token.");
+                            }
+
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MainMenu(
+                                  property: property,
+                                  propertyCount: properties.length,
+                                  isLocalMunicipality: widget.isLocalMunicipality,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
+
 }

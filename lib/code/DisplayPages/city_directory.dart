@@ -117,13 +117,20 @@ class _EmployeeDirectoryScreenState extends State<EmployeeDirectoryScreen> {
       body: districtId == null || municipalityId == null
           ? const Center(child: CircularProgressIndicator())
           : StreamBuilder(
-        stream: FirebaseFirestore.instance
-            .collection(isLocalMunicipality ? 'localMunicipalities' : 'districts')
-            .doc(isLocalMunicipality ? municipalityId : districtId)
+        stream: isLocalMunicipality
+            ? FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityId) // ✅ Only use municipalityId for local municipalities
+            .collection('employees')
+            .snapshots()
+            : FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId) // ✅ Use districtId for district-level queries
             .collection('municipalities')
             .doc(municipalityId)
             .collection('employees')
             .snapshots(),
+
         builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -146,7 +153,7 @@ class _EmployeeDirectoryScreenState extends State<EmployeeDirectoryScreen> {
             itemBuilder: (context, index) {
               final employee = employeeDocs[index];
               return FutureBuilder(
-                future: _getImageUrl(districtId!, municipalityId!, employee['name']),
+                future: _getImageUrl(districtId, municipalityId, employee['name']),
                 builder: (context, AsyncSnapshot<String> imageSnapshot) {
                   if (imageSnapshot.connectionState == ConnectionState.waiting) {
                     return const Center(

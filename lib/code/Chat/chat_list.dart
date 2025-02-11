@@ -59,6 +59,16 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    print("TabController initialized");
+
+    _tabController.addListener(() {
+      print("Current Tab Index: ${_tabController.index}");
+      if (_tabController.index == 1) {
+        print("Switched to Payment Queries tab");
+        setState(() {}); // Rebuild for Payment Queries
+      }
+    });
+
     initializeData();
     searchController.addListener(() {
       if (mounted) {
@@ -293,14 +303,14 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
       QuerySnapshot chatSnapshot = await FirebaseFirestore.instance
           .collectionGroup('chatRoomFinance') // Target all subcollections named chatRoomFinance
           .get();
-
+      print("Fetched ${chatSnapshot.docs.length} finance chat documents");
       List<Map<String, dynamic>> allFinanceChats = [];
       bool anyUnreadFinanceMessages = false;
 
       for (var chatDoc in chatSnapshot.docs) {
         String phoneNumber = chatDoc.id; // Document ID representing the user’s phone number
         String? municipalityId = chatDoc.reference.parent.parent?.id; // Extract municipality ID if available
-
+        print("Processing chat document: ${chatDoc.id}");
         // Access the 'accounts' subcollection within this chatRoom document
         QuerySnapshot accountsSnapshot = await chatDoc.reference.collection('accounts').get();
 
@@ -364,10 +374,12 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
           });
         }
       }
+      print("Final processed finance chats: $allFinanceChats");
 
       if (mounted) {
         setState(() {
           _allFinanceChats = allFinanceChats;
+          print("All finance chats set in state: $_allFinanceChats");
         });
       }
     } catch (e) {
@@ -612,7 +624,7 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
 
       // Step 2: Create a list of chatRoomIds from the finance chatRoom collection
       List<String> chatRoomIds =
-          chatRoomSnapshot.docs.map((doc) => doc.id).toList();
+      chatRoomSnapshot.docs.map((doc) => doc.id).toList();
 
       // Log the number of finance chat rooms found
       print("Total finance chat rooms fetched: ${chatRoomIds.length}");
@@ -623,12 +635,21 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
       for (var phoneNumberDoc in chatRoomSnapshot.docs) {
         String phoneNumber = phoneNumberDoc.id;
 
+        print("Processing chat document: $phoneNumber");
+
         // Fetch the accounts subcollection for each phone number
         QuerySnapshot accountsSnapshot =
-            await phoneNumberDoc.reference.collection('accounts').get();
+        await phoneNumberDoc.reference.collection('accounts').get();
+
+        if (accountsSnapshot.docs.isEmpty) {
+          print("No accounts found under chat document: $phoneNumber");
+          continue; // Skip if no accounts are found
+        }
 
         for (var accountDoc in accountsSnapshot.docs) {
           String accountNumber = accountDoc.id;
+
+          print("Processing account document: $accountNumber");
 
           // Fetch properties whose accountNumber matches the account number under the phone number
           QuerySnapshot propSnapshot = await _propList!
@@ -637,9 +658,9 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
 
           if (propSnapshot.docs.isNotEmpty) {
             var propertyData =
-                propSnapshot.docs.first.data() as Map<String, dynamic>;
+            propSnapshot.docs.first.data() as Map<String, dynamic>;
 
-            // Step 4: Fetch the latest message for this account (chatRoomId = phoneNumber, accountNumber)
+            // Step 4: Fetch the latest message for this account
             var latestMessageSnapshot = await phoneNumberDoc.reference
                 .collection('accounts')
                 .doc(accountNumber)
@@ -647,20 +668,31 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
                 .orderBy('time', descending: true)
                 .get();
 
-            var latestMessage = latestMessageSnapshot.docs.isNotEmpty
-                ? latestMessageSnapshot.docs.first.data()
-                : {'time': 0, 'message': "No messages yet."};
+            if (latestMessageSnapshot.docs.isEmpty) {
+              print("No messages found for accountNumber: $accountNumber");
+              propertyData['latestMessageTime'] = 0;
+              propertyData['latestMessage'] = "No messages yet.";
+            } else {
+              var latestMessage = latestMessageSnapshot.docs.first.data();
+              print("Latest message data: $latestMessage");
+
+              // Null-safe checks for latestMessage['time'] and ['message']
+              propertyData['latestMessageTime'] =
+                  latestMessage['time'] ?? 0; // Fallback to 0 if null
+              propertyData['latestMessage'] =
+                  latestMessage['message'] ?? "No messages yet."; // Fallback
+            }
 
             // Add property and chat message data
-            propertyData['latestMessageTime'] = latestMessage['time'];
-            propertyData['latestMessage'] = latestMessage['message'];
             propertyData['accountNumber'] = accountNumber;
             propertyData['phoneNumber'] = phoneNumber;
             financePropertiesWithMessages.add(propertyData);
 
-            // Log each finance property being processed
             print(
-                'Processing finance property with accountNumber: $accountNumber and phoneNumber: $phoneNumber');
+                'Added finance property with accountNumber: $accountNumber and phoneNumber: $phoneNumber');
+          } else {
+            print(
+                "No properties found for accountNumber: $accountNumber under chat document: $phoneNumber");
           }
         }
       }
@@ -676,6 +708,7 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
           _filteredFinanceProperties = financePropertiesWithMessages;
         });
       }
+      print("Updated _allFinanceChats: $_allFinanceChats");
       // Log the final number of finance properties to be displayed
       print(
           "Total finance properties to display: ${_filteredFinanceProperties.length}");
@@ -688,6 +721,7 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
       }
     }
   }
+
 
   Future<Map<String, dynamic>> _fetchLatestMessage(
       String chatRoomId, CollectionReference collection) async {
@@ -805,10 +839,11 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
           ),
           backgroundColor: Colors.green,
           iconTheme: const IconThemeData(color: Colors.white),
-          bottom: const TabBar(
+          bottom: TabBar(
+            controller: _tabController,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
-            tabs: [
+            tabs: const [
               Tab(
                 text: 'User Queries',
               ),
@@ -821,232 +856,237 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
         body: KeyboardListener(
           focusNode: _focusNode,
           onKeyEvent: _handleKeyEvent,
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              Column(
+          child: Builder(
+            builder: (context) {
+              return TabBarView(
+                controller: _tabController,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: TextField(
-                      controller: searchController,
-                      onChanged: (value) {
-                        setState(() {});
-                      },
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.search),
-                        hintText: "Search Chats",
+                  Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: TextField(
+                          controller: searchController,
+                          onChanged: (value) {
+                            setState(() {});
+                          },
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.search),
+                            hintText: "Search Chats",
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  Expanded(
-                      child:Scrollbar(
-                        controller: _userChatScrollController,
-                        thickness: 10,
-                        radius: const Radius.circular(10),
-                        thumbVisibility: true,
-                        child: _allChats.isEmpty
-                            ? const Center(child: Text('No chat rooms available'))
-                            : ListView.builder(
-                          controller: _userChatScrollController,
-                                itemCount: _allChats.length,
-                                itemBuilder: (context, index) {
-                                  final chatData = _allChats[index];
-                                  print(
-                                      "Displaying chat room: ${chatData['chatRoomId']} for user: ${chatData['accountNumber']}");
-                                  
-                                  String chatRoomID =
-                                      chatData['accountNumber'] ?? 'Unknown';
-                                  String usersName =
-                                      '${chatData['firstName'] ?? 'Unknown'} ${chatData['lastName'] ?? ''}';
-                                  String usersProperty =
-                                      chatData['address'] ?? 'Unknown';
-                                  String number =
-                                      chatData['phoneNumber'] ?? 'Unknown';
-                                  bool hasUnreadMessages =
-                                      chatData['hasUnreadMessages'] ?? false;
-                                  return Card(
-                                    margin: const EdgeInsets.only(
-                                        left: 10, right: 10, top: 5, bottom: 5),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(20.0),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          const Center(
-                                            child: Text(
-                                              'Chat Room',
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 10),
-                                          Text(
-                                            'Chat from: $usersName',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w400,
-                                            ),
-                                          ),
-                                          Text(
-                                            'Property: $usersProperty',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w400,
-                                            ),
-                                          ),
-                                          Text(
-                                            'Number: $number',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w400,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 10),
-                                          Stack(
+                      Expanded(
+                          child:Scrollbar(
+                            controller: _userChatScrollController,
+                            thickness: 10,
+                            radius: const Radius.circular(10),
+                            thumbVisibility: true,
+                            child: _allChats.isEmpty
+                                ? const Center(child: Text('No chat rooms available'))
+                                : ListView.builder(
+                              controller: _userChatScrollController,
+                                    itemCount: _allChats.length,
+                                    itemBuilder: (context, index) {
+                                      final chatData = _allChats[index];
+                                      print(
+                                          "Displaying chat room: ${chatData['chatRoomId']} for user: ${chatData['accountNumber']}");
+
+                                      String chatRoomID =
+                                          chatData['accountNumber'] ?? 'Unknown';
+                                      String usersName =
+                                          '${chatData['firstName'] ?? 'Unknown'} ${chatData['lastName'] ?? ''}';
+                                      String usersProperty =
+                                          chatData['address'] ?? 'Unknown';
+                                      String number =
+                                          chatData['phoneNumber'] ?? 'Unknown';
+                                      bool hasUnreadMessages =
+                                          chatData['hasUnreadMessages'] ?? false;
+                                      return Card(
+                                        margin: const EdgeInsets.only(
+                                            left: 10, right: 10, top: 5, bottom: 5),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(20.0),
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              ChatButtonWidget(
-                                                chatRoomId:
-                                                    chatData['chatRoomId'] ??
-                                                        'Unknown',
-                                                usersName:
-                                                    chatData['accountNumber'] ??
-                                                        'Unknown',
-                                                chatCollectionRef:
-                                                    _chatsList!, // Temporary placeholder for CollectionReference
-                                                refreshChatList:
-                                                    fetchAndStoreAllChats,
-                                                isLocalMunicipality:
-                                                    isLocalMunicipality,
-                                                districtId: districtId,
-                                                municipalityId:
-                                                    chatData['municipalityId'] ??
-                                                        municipalityId,
-                                                hasUnreadMessages:
-                                                    chatData['hasUnreadMessages'] ??
-                                                        false,
+                                              const Center(
+                                                child: Text(
+                                                  'Chat Room',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 10),
+                                              Text(
+                                                'Chat from: $usersName',
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w400,
+                                                ),
+                                              ),
+                                              Text(
+                                                'Property: $usersProperty',
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w400,
+                                                ),
+                                              ),
+                                              Text(
+                                                'Number: $number',
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w400,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 10),
+                                              Stack(
+                                                children: [
+                                                  ChatButtonWidget(
+                                                    chatRoomId:
+                                                        chatData['chatRoomId'] ??
+                                                            'Unknown',
+                                                    usersName:
+                                                        chatData['accountNumber'] ??
+                                                            'Unknown',
+                                                    chatCollectionRef:
+                                                        _chatsList!, // Temporary placeholder for CollectionReference
+                                                    refreshChatList:
+                                                        fetchAndStoreAllChats,
+                                                    isLocalMunicipality:
+                                                        isLocalMunicipality,
+                                                    districtId: districtId,
+                                                    municipalityId:
+                                                        chatData['municipalityId'] ??
+                                                            municipalityId,
+                                                    hasUnreadMessages:
+                                                        chatData['hasUnreadMessages'] ??
+                                                            false,
+                                                  ),
+                                                ],
                                               ),
                                             ],
                                           ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                      )),
-                ],
-              ),
-              // Payment Queries Tab
-              Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: TextField(
-                      controller: financeSearchController,
-                      onChanged: (value) {
-                        setState(
-                            () {}); // Update the state when search input changes
-                      },
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.search),
-                        hintText: "Search Finance Chats",
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Scrollbar(
-                      controller: _financeChatScrollController,
-                      thickness: 10,
-                      radius: const Radius.circular(10),
-                      thumbVisibility: true,
-                      child: _allFinanceChats.isEmpty
-                          ? const Center(
-                              child: Text('No finance chat rooms available'))
-                          : ListView.builder(
-                        controller: _financeChatScrollController,
-                              itemCount: _allFinanceChats.length,
-                              itemBuilder: (context, index) {
-                                final property = _allFinanceChats[index];
-                                String chatRoomID = property['phoneNumber'] ??
-                                    'Unknown'; // Extract the phone number here
-                                String usersName = property['accountNumber'] ??
-                                    'Unknown'; // Extract the account number
-                                String usersDetails =
-                                    '${property['firstName'] ?? 'Unknown'} ${property['lastName'] ?? ''}';
-                                String usersProperty =
-                                    property['address'] ?? 'Unknown';
-                                return Card(
-                                  margin: const EdgeInsets.only(
-                                      left: 10, right: 10, top: 5, bottom: 5),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(20.0),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Center(
-                                          child: Text(
-                                            'Chat Room',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
                                         ),
-                                        const SizedBox(height: 10),
-                                        Text(
-                                          'Chat from: $usersDetails',
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Property: $usersProperty',
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Number: $chatRoomID',
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w400,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 10),
-                                        ChatButtonFinanceWidget(
-                                          chatRoomId:
-                                              chatRoomID, // Pass the correct phone number
-                                          userFinanceName:
-                                              usersName, // Pass the account number as user name
-                                          chatFinCollectionRef: _chatsListFinance!,
-                                          isLocalMunicipality: isLocalMunicipality,
-                                          districtId: districtId,
-                                          municipalityId: municipalityId,
-                                          refreshChatList:
-                                              fetchAndStoreAllFinanceChats,
-                                          hasUnreadMessages:
-                                              property['hasUnreadMessages'] ??
-                                                  false,
-                                        ),
-                                      ],
-                                    ),
+                                      );
+                                    },
                                   ),
-                                );
-                              },
-                            ),
-                    ),
+                          )),
+                    ],
                   ),
+                  // Payment Queries Tab
+                  Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: TextField(
+                          controller: financeSearchController,
+                          onChanged: (value) {
+                            setState(
+                                () {}); // Update the state when search input changes
+                          },
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.search),
+                            hintText: "Search Finance Chats",
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Scrollbar(
+                          controller: _financeChatScrollController,
+                          thickness: 10,
+                          radius: const Radius.circular(10),
+                          thumbVisibility: true,
+                          child: _allFinanceChats.isEmpty
+                              ? const Center(
+                              child: Text('No finance chat rooms available'))
+                              : ListView.builder(
+                            controller: _financeChatScrollController,
+                            itemCount: _allFinanceChats.length,
+                            itemBuilder: (context, index) {
+                              final property = _allFinanceChats[index];
+                              String chatRoomID =
+                                  property['phoneNumber'] ?? 'Unknown'; // Extract phone number
+                              String usersName =
+                                  property['accountNumber'] ?? 'Unknown'; // Extract account number
+                              String usersDetails =
+                                  '${property['firstName'] ?? 'Unknown'} ${property['lastName'] ?? ''}';
+                              String usersProperty = property['address'] ?? 'Unknown';
+                              bool hasUnreadMessages =
+                                  property['hasUnreadMessages'] ?? false;
+
+                              // Debugging print statement to confirm data source
+                              print(
+                                  "Displaying finance chat room: $chatRoomID for user: $usersName");
+
+                              return Card(
+                                margin: const EdgeInsets.only(
+                                    left: 10, right: 10, top: 5, bottom: 5),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20.0),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Center(
+                                        child: Text(
+                                          'Chat Room',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        'Chat from: $usersDetails',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Property: $usersProperty',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Number: $chatRoomID',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      ChatButtonFinanceWidget(
+                                        chatRoomId: chatRoomID,
+                                        userFinanceName: usersName,
+                                        chatFinCollectionRef: _chatsListFinance!,
+                                        isLocalMunicipality: isLocalMunicipality,
+                                        districtId: districtId,
+                                        municipalityId: municipalityId,
+                                        refreshChatList: fetchAndStoreAllFinanceChats,
+                                        hasUnreadMessages: hasUnreadMessages,
+                                      ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                      ),
+                    ],
+                  )
                 ],
-              )
-            ],
+              );
+            }
           ),
         ),
       ),

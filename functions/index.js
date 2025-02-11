@@ -1,3 +1,4 @@
+const {onObjectFinalized} = require("firebase-functions/v2");
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const sharp = require("sharp");
@@ -8,67 +9,67 @@ admin.initializeApp();
 const storage = new Storage();
 
 // Existing compress image function
-exports.compressImage =
- functions.storage.object().onFinalize(async (object) => {
-   if (!object.contentType || !object.contentType.startsWith("image/")) {
-     functions.logger.log("No content type specified or not an image.");
-     return;
-   }
+exports.compressImage = onObjectFinalized(async (event) => {
+  const object = event.data;
 
-   const bucket = storage.bucket(object.bucket);
-   const filePath = object.name;
-   const pathSegments = filePath.split("/");
-   const chatType = pathSegments[0];
-   const fileName = pathSegments.pop();
+  if (!object.contentType || !object.contentType.startsWith("image/")) {
+    functions.logger.log("No content type specified or not an image.");
+    return;
+  }
+  const bucket = storage.bucket(object.bucket);
+  const filePath = object.name;
+  const pathSegments = filePath.split("/");
+  const chatType = pathSegments[0];
+  const fileName = pathSegments.pop();
 
-   const metadataKey = `compressed_${chatType}`;
-   if (object.metadata && object.metadata[metadataKey] === "true") {
-     functions.logger.log("Already processed image for this chat type.");
-     return;
-   }
+  const metadataKey = `compressed_${chatType}`;
+  if (object.metadata && object.metadata[metadataKey] === "true") {
+    functions.logger.log("Already processed image for this chat type.");
+    return;
+  }
 
-   const tempFilePath = `/tmp/${fileName}`;
-   const tempCompressedPath = `/tmp/compressed_${fileName}`;
+  const tempFilePath = `/tmp/${fileName}`;
+  const tempCompressedPath = `/tmp/compressed_${fileName}`;
 
-   try {
-     await bucket.file(filePath).download({
-       destination: tempFilePath,
-     });
+  try {
+    await bucket.file(filePath).download({
+      destination: tempFilePath,
+    });
 
-     await sharp(tempFilePath)
-         .resize(1024)
-         .jpeg({quality: 50})
-         .toFile(tempCompressedPath);
+    await sharp(tempFilePath)
+        .resize(1024)
+        .jpeg({quality: 50})
+        .toFile(tempCompressedPath);
 
-     await bucket.upload(tempCompressedPath, {
-       destination: filePath,
-       metadata: {
-         metadata: {
-           [metadataKey]: "true",
-         },
-       },
-     });
+    await bucket.upload(tempCompressedPath, {
+      destination: filePath,
+      metadata: {
+        metadata: {
+          [metadataKey]: "true",
+        },
+      },
+    });
 
-     functions.logger.log(
-         `Document compressed and uploaded successfully for ${chatType}.`,
-     );
+    functions.logger.log(
+        `Document compressed and uploaded successfully for ${chatType}.`,
+    );
 
-     try {
-       const [metadata] = await bucket.file(filePath).getMetadata();
-       if (!metadata.metadata || metadata.metadata[metadataKey] !== "true") {
-         await bucket.file(filePath).delete();
-         functions.logger.log(`Original file deleted: ${filePath}`);
-       }
-     } catch (error) {
-       functions.logger.error(
-           `Failed to delete the original file: ${filePath}`,
-           error,
-       );
-     }
-   } catch (error) {
-     functions.logger.error(`Error during processing: ${error}`, error);
-   }
- });
+    try {
+      const [metadata] = await bucket.file(filePath).getMetadata();
+      if (!metadata.metadata || metadata.metadata[metadataKey] !== "true") {
+        await bucket.file(filePath).delete();
+        functions.logger.log(`Original file deleted: ${filePath}`);
+      }
+    } catch (error) {
+      functions.logger.error(
+          `Failed to delete the original file: ${filePath}`,
+          error,
+      );
+    }
+  } catch (error) {
+    functions.logger.error(`Error during processing: ${error}`, error);
+  }
+});
 
 /**
  * Helper function to introduce a delay in milliseconds.
@@ -118,57 +119,52 @@ function extractMonthFromUploadPath(filePath) {
   return null; // Return null if the expected structure is not found
 }
 
-exports.organizeInvoiceUpload = functions.storage.object().onFinalize(
-    async (object) => {
-      const filePath = object.name; // e.g., "pdfs/inbox/October/123456789.pdf"
-      if (!filePath.includes("inbox")) {
-        functions.logger.log("File is already in the final location,skipping.");
-        return;
-      }
-      const fileName = path.basename(filePath); // Extract "123456789.pdf"
-      const accountNumber = fileName.split(".")[0]; // Extract "123456789"
+exports.organizeInvoiceUpload = onObjectFinalized(async (event) => {
+  const object = event.data;
+  const filePath = object.name; // e.g., "pdfs/inbox/October/123456789.pdf"
 
-      functions.logger.log(
-          `Processing file for account number: ${accountNumber}`,
-      );
+  if (!filePath.includes("inbox")) {
+    functions.logger.log("File is already in the final location, skipping.");
+    return;
+  }
 
-      // Extract the month from the path (e.g., "October")
-      const month = extractMonthFromUploadPath(filePath);
+  const fileName = path.basename(filePath); // Extract "123456789.pdf"
+  const accountNumber = fileName.split(".")[0]; // Extract "123456789"
 
-      if (!month) {
-        functions.logger.error("No valid month found in the file path.");
-        return;
-      }
+  functions.logger.log(`Processing file for account number: ${accountNumber}`);
 
-      // Fetch user data from Firestore using accountNumber
-      const propertiesRef = admin
-          .firestore()
-          .collectionGroup("properties")
-          .where("accountNumber", "==", accountNumber);
-      const snapshot = await propertiesRef.get();
+  const month = extractMonthFromUploadPath(filePath);
 
-      if (snapshot.empty) {
-        functions.logger.log(
-            `No matching property found for account number: ${accountNumber}`,
-        );
-        return;
-      }
+  if (!month) {
+    functions.logger.error("No valid month found in the file path.");
+    return;
+  }
 
-      // Assuming only one property matches the account number
-      const propertyData = snapshot.docs[0].data();
-      const cellNumber = propertyData.cellNumber;
-      const propertyAddress = propertyData.address;
+  // Fetch user data from Firestore using accountNumber
+  const propertiesRef = admin.firestore()
+      .collectionGroup("properties")
+      .where("accountNumber", "==", accountNumber);
+  const snapshot = await propertiesRef.get();
+
+  if (snapshot.empty) {
+    functions.logger.log(
+        `No matching property found for account number: ${accountNumber}`);
+    return;
+  }
+  const propertyData = snapshot.docs[0].data();
+  const cellNumber = propertyData.cellNumber;
+  const propertyAddress = propertyData.address;
 
 
-      const destinationPath = `pdfs/${month}/${cellNumber}/` +
-      `${propertyAddress}/${accountNumber}.pdf`;
+  const destinationPath = `pdfs/${month}/${cellNumber}/` +
+  `${propertyAddress}/${accountNumber}.pdf`;
 
-      try {
-        const bucket = storage.bucket(object.bucket);
-        await moveFileWithRetry(bucket, filePath, destinationPath);
-      } catch (error) {
-        functions.logger.error(`Error moving file: ${error}`);
-      }
-    },
+  try {
+    const bucket = storage.bucket(object.bucket);
+    await moveFileWithRetry(bucket, filePath, destinationPath);
+  } catch (error) {
+    functions.logger.error(`Error moving file: ${error}`);
+  }
+},
 );
 

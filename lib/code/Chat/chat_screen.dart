@@ -348,6 +348,8 @@ import 'dart:io';
 import 'package:mime/mime.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:universal_html/html.dart' as html;
+import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 
 class Chat extends StatefulWidget {
   final String chatRoomId;
@@ -391,12 +393,13 @@ class _ChatState extends State<Chat> {
   late CollectionReference _chatsList;
   TextEditingController messageEditingController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  String? propertyAddress;
 
   @override
   void initState() {
     super.initState();
     print('Initializing chat with chatRoomId: ${widget.chatRoomId}');
-
+    fetchPropertyAddress();
     // Initialize _chatsList with the passed chatCollectionRef from the widget
     initializeChatCollectionReference();
     createOrUpdateChatRoom();
@@ -448,6 +451,22 @@ class _ChatState extends State<Chat> {
 
   void fetchChats() {
     chats = _chatsList.orderBy('time', descending: false).snapshots();
+  }
+
+
+  Future<void> fetchPropertyAddress() async {
+    String? address = await getPropertyAddress(
+      widget.userName ?? '',
+      widget.districtId,
+      widget.municipalityId,
+      widget.isLocalMunicipality,
+    );
+
+    if (mounted) {
+      setState(() {
+        propertyAddress = address ?? 'Unknown Property';
+      });
+    }
   }
 
   Future<void> createOrUpdateChatRoom() async {
@@ -514,6 +533,49 @@ class _ChatState extends State<Chat> {
       }
     });
   }
+
+  Future<String?> getPropertyAddress(
+      String accountNumber, String districtId, String municipalityId, bool isLocalMunicipality) async {
+    try {
+      QuerySnapshot propertiesSnapshot;
+
+      if (isLocalMunicipality) {
+        // 🔍 Search in the Local Municipality collection
+        propertiesSnapshot = await FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .collection('properties')
+            .where('accountNumber', isEqualTo: accountNumber)
+            .limit(1)
+            .get();
+      } else {
+        // 🔍 Search in the District Municipality collection
+        propertiesSnapshot = await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('properties')
+            .where('accountNumber', isEqualTo: accountNumber)
+            .limit(1)
+            .get();
+      }
+
+      if (propertiesSnapshot.docs.isNotEmpty) {
+        var propertyData = propertiesSnapshot.docs.first.data() as Map<String, dynamic>;
+        String propertyAddress = propertyData['address'];
+        print('✅ Property Address Found: $propertyAddress');
+        return propertyAddress;
+      } else {
+        print('❌ No property found for account number: $accountNumber');
+        return null;
+      }
+    } catch (e) {
+      print('🚨 Error fetching property address: $e');
+      return null;
+    }
+  }
+
 
   void markMessagesAsRead(String phoneNumber, String? accountNumber) async {
     CollectionReference chatsCollection;
@@ -759,6 +821,52 @@ class _ChatState extends State<Chat> {
     }
   }
 
+  Future<void> uploadFileWeb() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.any, // ✅ Allow all file types
+    );
+
+    if (result != null) {
+      PlatformFile pickedFile = result.files.first;
+      Uint8List? fileBytes = pickedFile.bytes;
+      String fileName = pickedFile.name;
+      String cellNumber = FirebaseAuth.instance.currentUser!.phoneNumber ?? "unknown";
+
+      if (fileBytes == null) {
+        Fluttertoast.showToast(msg: "Error: Could not read file data.");
+        return;
+      }
+
+      try {
+        String filePath = 'chat_files/$cellNumber/${widget.chatRoomId}/$fileName';
+        final ref = FirebaseStorage.instance.ref().child(filePath);
+
+        SettableMetadata metadata = SettableMetadata(
+          contentType: pickedFile.extension == 'jpg' || pickedFile.extension == 'png'
+              ? 'image/${pickedFile.extension}'
+              : 'application/octet-stream',
+        );
+
+        // ✅ Upload file bytes to Firebase Storage
+        TaskSnapshot uploadTask = await ref.putData(fileBytes, metadata);
+
+        if (uploadTask.state == TaskState.success) {
+          String fileUrl = await ref.getDownloadURL();
+          sendMessage(chatRoomId: widget.chatRoomId, text: "", fileUrl: fileUrl);
+          Fluttertoast.showToast(msg: "Upload Successful!");
+        } else {
+          Fluttertoast.showToast(msg: "Upload failed.");
+        }
+      } catch (e) {
+        print("🚨 Upload error: $e");
+        Fluttertoast.showToast(msg: "Error uploading file.");
+      }
+    } else {
+      Fluttertoast.showToast(msg: "No file selected.");
+    }
+  }
+
+
   void showUploadOptions() {
     showModalBottomSheet(
       context: context,
@@ -766,26 +874,40 @@ class _ChatState extends State<Chat> {
         return SafeArea(
           child: Wrap(
             children: <Widget>[
-              ListTile(
+              if (kIsWeb)
+                ListTile(
+                  leading: const Icon(Icons.upload_file),
+                  title: const Text('Upload File'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    uploadFileWeb(); // 🌐 Handle file uploads for web
+                  },
+                )
+              else ...[
+                ListTile(
                   leading: const Icon(Icons.photo_library),
                   title: const Text('Upload Image'),
                   onTap: () {
                     Navigator.pop(context);
-                    uploadImage();
-                  }),
-              ListTile(
+                    uploadImage(); // 📸 Handle image uploads for mobile
+                  },
+                ),
+                ListTile(
                   leading: const Icon(Icons.insert_drive_file),
                   title: const Text('Upload Document'),
                   onTap: () {
                     Navigator.pop(context);
-                    uploadDocument();
-                  }),
+                    uploadDocument(); // 📄 Handle document uploads for mobile
+                  },
+                ),
+              ],
             ],
           ),
         );
       },
     );
   }
+
 
   // void sendMessage({
   //   String? text,
@@ -1037,7 +1159,7 @@ class _ChatState extends State<Chat> {
 
   @override
   Widget build(BuildContext context) {
-    String chatTo = widget.userName ?? 'Administrator Chat';
+    String chatTo = propertyAddress ?? 'Administrator Queries';
 
     return WillPopScope(
       onWillPop: () async {
@@ -1270,131 +1392,3 @@ TextStyle biggerTextStyle() {
   return const TextStyle(color: Colors.white, fontSize: 17);
 }
 
-class DatabaseMethods {
-  final String districtId;
-  final String municipalityId;
-
-  DatabaseMethods({required this.districtId, required this.municipalityId});
-
-  Future<void> addUserInfo(userData) async {
-    FirebaseFirestore.instance
-        .collection("users")
-        .add(userData)
-        .catchError((e) {
-      print(e.toString());
-    });
-  }
-
-  Future<QuerySnapshot> getUserInfo(String phone) async {
-    try {
-      return await FirebaseFirestore.instance
-          .collection('districts')
-          .doc(districtId)
-          .collection('municipalities')
-          .doc(municipalityId)
-          .collection('users')
-          .where("cellNumber", isEqualTo: phone)
-          .get();
-    } catch (e) {
-      print(e.toString());
-      rethrow;
-    }
-  }
-
-  Future<QuerySnapshot> searchByName(String searchField) async {
-    try {
-      return FirebaseFirestore.instance
-          .collection('districts')
-          .doc(districtId)
-          .collection('municipalities')
-          .doc(municipalityId)
-          .collection("users")
-          .where('firstName', isEqualTo: searchField)
-          .get();
-    } catch (e) {
-      print(e.toString());
-      rethrow;
-    }
-  }
-
-  Future<bool> addChatRoom(
-      Map<String, dynamic> chatRoom, String chatRoomId) async {
-    print(
-        'Adding chat room with districtId: $districtId, municipalityId: $municipalityId, chatRoomId: $chatRoomId');
-
-    try {
-      await FirebaseFirestore.instance
-          .collection('districts')
-          .doc(districtId)
-          .collection('municipalities')
-          .doc(municipalityId)
-          .collection("chatRoom")
-          .doc(chatRoomId)
-          .set(chatRoom);
-      return true;
-    } catch (e) {
-      print(e);
-      return false;
-    }
-  }
-
-  Future<Stream<QuerySnapshot>> getChats(String chatRoomId) async {
-    print(
-        'Fetching chats for districtId: $districtId, municipalityId: $municipalityId, chatRoomId: $chatRoomId');
-    return FirebaseFirestore.instance
-        .collection('districts')
-        .doc(districtId)
-        .collection('municipalities')
-        .doc(municipalityId)
-        .collection("chatRoom")
-        .doc(chatRoomId)
-        .collection("chats")
-        .orderBy('time')
-        .snapshots();
-  }
-
-  Future<DocumentReference<Map<String, dynamic>>> addMessage(
-      String chatRoomId, Map<String, dynamic> chatMessageData) async {
-    try {
-      return await FirebaseFirestore.instance
-          .collection('districts')
-          .doc(districtId)
-          .collection('municipalities')
-          .doc(municipalityId)
-          .collection("chatRoom")
-          .doc(chatRoomId)
-          .collection("chats")
-          .add(chatMessageData);
-    } catch (e) {
-      print(e.toString());
-      rethrow; // Re-throw the error so it can be handled by the calling function
-    }
-  }
-
-  Future<Stream<QuerySnapshot>> getUserChats(String itIsMyName) async {
-    return FirebaseFirestore.instance
-        .collection('districts')
-        .doc(districtId)
-        .collection('municipalities')
-        .doc(municipalityId)
-        .collection("chatRoom")
-        .where('users', arrayContains: itIsMyName)
-        .snapshots();
-  }
-
-  Future<void> addChatDocName(
-      DocumentSnapshot? documentSnapshot, String chatRoomId) async {
-    final CollectionReference namedChatAdd = FirebaseFirestore.instance
-        .collection('districts')
-        .doc(districtId)
-        .collection('municipalities')
-        .doc(municipalityId)
-        .collection("chatRoom");
-
-    if (documentSnapshot != null) {
-      await namedChatAdd.add({
-        "chatRoom": chatRoomId,
-      });
-    }
-  }
-}

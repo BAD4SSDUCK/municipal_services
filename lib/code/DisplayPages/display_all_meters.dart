@@ -356,7 +356,7 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
 
   Future<void> fetchPropertiesByMunicipality(String municipality) async {
     try {
-      // Fetch properties for the selected municipality
+      print("Fetching properties for selected municipality: $municipality");
       QuerySnapshot propertiesSnapshot = await FirebaseFirestore.instance
           .collection('districts')
           .doc(districtId)
@@ -365,15 +365,11 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
           .collection('properties')
           .get();
 
-      // Log the properties fetched
-      print(
-          'Properties fetched for $municipality: ${propertiesSnapshot.docs.length}');
       if (mounted) {
         setState(() {
-          _fetchedProperties =
-              propertiesSnapshot.docs; // Store filtered properties
-          print(
-              "Number of properties fetched: ${_fetchedProperties.length}"); // Debugging to ensure properties are set
+          _fetchedProperties = propertiesSnapshot.docs;
+          municipalityId = municipality; // Update municipalityId
+          print("Updated municipalityId: $municipalityId");
         });
       }
     } catch (e) {
@@ -381,12 +377,26 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
     }
   }
 
-  Future<String> fetchPropertyAddress(String userNumber, String wMeterNumber, String districtId, String municipalityId, bool isLocalMunicipality) async {
+
+  Future<String> fetchPropertyAddress(
+      String userNumber,
+      String wMeterNumber,
+      String districtId,
+      String municipalityId,
+      bool isLocalMunicipality) async {
     try {
       QuerySnapshot propertyQuery;
 
+      print('Fetching property address with:');
+      print('User Number: $userNumber');
+      print('Water Meter Number: $wMeterNumber');
+      print('District ID: $districtId');
+      print('Municipality ID: $municipalityId');
+      print('Is Local Municipality: $isLocalMunicipality');
+
       if (isLocalMunicipality) {
         // Query for local municipality properties
+        print('Query Path: localMunicipalities/$municipalityId/properties');
         propertyQuery = await FirebaseFirestore.instance
             .collection('localMunicipalities')
             .doc(municipalityId)
@@ -397,6 +407,8 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
             .get();
       } else {
         // Query for district-based properties
+        print(
+            'Query Path: districts/$districtId/municipalities/$municipalityId/properties');
         propertyQuery = await FirebaseFirestore.instance
             .collection('districts')
             .doc(districtId)
@@ -410,28 +422,30 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
       }
 
       if (propertyQuery.docs.isNotEmpty) {
-        var propertyData = propertyQuery.docs.first.data() as Map<String, dynamic>;
+        print('Property found: ${propertyQuery.docs.first.data()}');
+        var propertyData =
+        propertyQuery.docs.first.data() as Map<String, dynamic>;
 
-        if (propertyData != null) {
-          String? address = propertyData['address'];
-
-          if (address != null) {
-            address = address.replaceAll(RegExp(r'[/\\?%*:|"<>]'), '_');
-            return address;
-          } else {
-            throw Exception("Address not found for user number: $userNumber and meter number: $wMeterNumber");
-          }
+        String? address = propertyData['address'];
+        if (address != null) {
+          // Sanitize address
+          address = address.replaceAll(RegExp(r'[/\\?%*:|"<>]'), '_');
+          print('Sanitized Address: $address');
+          return address;
         } else {
-          throw Exception("Property data not found for user number: $userNumber and meter number: $wMeterNumber");
+          throw Exception(
+              "Address not found for user number: $userNumber and meter number: $wMeterNumber");
         }
       } else {
-        throw Exception("No property found for user number: $userNumber and meter number: $wMeterNumber");
+        throw Exception(
+            "No property found for user number: $userNumber and meter number: $wMeterNumber");
       }
     } catch (e) {
       print('Error fetching property details: $e');
       return 'Unknown Address'; // Return a default value if an error occurs
     }
   }
+
 
 
   // void fetchProperties() async {
@@ -2665,7 +2679,8 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                             selectedMunicipality == "Select Municipality") {
                           fetchPropertiesForAllMunicipalities();
                         } else {
-                          fetchPropertiesByMunicipality(newValue!);
+                          municipalityId = newValue!;
+                          fetchPropertiesByMunicipality(newValue);
                         }
                       });
                     }

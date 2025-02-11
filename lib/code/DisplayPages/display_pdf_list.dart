@@ -17,13 +17,15 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import 'package:municipal_services/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_services/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_services/code/Chat/chat_screen_finance.dart';
 import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
-
 import 'display_property_trend.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:universal_html/html.dart' as html;
+
+
 //View Invoice
 class UsersPdfListViewPage extends StatefulWidget {
   final String userNumber;
@@ -202,27 +204,27 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
     return true;
   }
 
-  Future<void> downloadPDF(String url, String fileName) async {
-    try {
-      // Get the external storage directory
-      final directory = await getExternalStorageDirectory();
-      final filePath = '${directory?.path}/$fileName';
-
-      // Use Dio to download the file
-      final response = await Dio().download(url, filePath);
-      if (response.statusCode == 200) {
-        print("Downloaded the file at $filePath");
-        // Optionally open or share the file here
-        Fluttertoast.showToast(msg: "Download Successful!");
-      } else {
-        throw Exception("Failed to download file with status code: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("Error downloading file: $e");
-      Fluttertoast.showToast(msg: "Unable to download statement.");
-      throw Exception("Error in downloading file: $e"); // Properly throwing an exception with a message
-    }
-  }
+  // Future<void> downloadPDF(String url, String fileName) async {
+  //   try {
+  //     // Get the external storage directory
+  //     final directory = await getExternalStorageDirectory();
+  //     final filePath = '${directory?.path}/$fileName';
+  //
+  //     // Use Dio to download the file
+  //     final response = await Dio().download(url, filePath);
+  //     if (response.statusCode == 200) {
+  //       print("Downloaded the file at $filePath");
+  //       // Optionally open or share the file here
+  //       Fluttertoast.showToast(msg: "Download Successful!");
+  //     } else {
+  //       throw Exception("Failed to download file with status code: ${response.statusCode}");
+  //     }
+  //   } catch (e) {
+  //     print("Error downloading file: $e");
+  //     Fluttertoast.showToast(msg: "Unable to download statement.");
+  //     throw Exception("Error in downloading file: $e"); // Properly throwing an exception with a message
+  //   }
+  // }
 
   Widget firebasePDFCard(CollectionReference<Object?> pdfDataStream) {
     return Expanded(
@@ -345,7 +347,10 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                             BasicIconButtonGrey(
                               onPress: () async {
                                 _onSubmit();
-                                String accountNumberPDF = filteredProperty['accountNumber'];
+                                // String accountNumberPDF = filteredProperty['accountNumber'];
+                                // String monthToUse = dropdownValue == 'Select Month' ? formattedDate : dropdownValue;
+                                // getPDFByAccMon(accountNumberPDF, monthToUse);
+                                String accountNumberPDF = widget.accountNumber;
                                 String monthToUse = dropdownValue == 'Select Month' ? formattedDate : dropdownValue;
                                 getPDFByAccMon(accountNumberPDF, monthToUse);
                               },
@@ -610,130 +615,110 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
     );
   }
 
-  ///This function gets the document on the firestore in the month that we are in as well as if the document name contains the properties account number
-  // void getPDFByAccMon(String accNum, String month) async{
+  // void getPDFByAccMon(String accNum, String month) async {
   //   Fluttertoast.showToast(
-  //       msg: "Now downloading your statement!\nPlease wait a few seconds!");
+  //       msg: "Now downloading your statement!\nPlease wait a few seconds!"
+  //   );
   //
-  //   final storageRef = FirebaseStorage.instance.ref().child("pdfs/$month");
-  //   final listResult = await storageRef.listAll();
-  //   int list = 0;
-  //   for (var prefix in listResult.prefixes) {
-  //     print('The ref is ::: $prefix');
-  //     // The prefixes under storageRef.
-  //     // You can call listAll() recursively on them.
-  //   }
-  //   for (var item in listResult.items) {
-  //     print('The item is ::: $item');
-  //     list++;
-  //     // The items under storageRef.
-  //     try {
-  //     if (item.toString().contains(accNum)) {
-  //       final url = item.fullPath;
-  //       print('The url is ::: $url');
-  //       final file = await PDFApi.loadFirebase(url);
-  //       try {
-  //         if(item.toString().contains(accNum)){
-  //         Fluttertoast.showToast(msg: "Download Successful!");
-  //         if(context.mounted)openPDF(context, file);
+  //   // Ensure the address is trimmed and formatted consistently
+  //   String formattedAddress = widget.propertyAddress.trim(); // Trim any extra spaces
+  //
+  //   // Print statements to debug the exact path being used
+  //   print('Attempting to list files in path: pdfs/$month/${widget.userNumber}/$formattedAddress/');
+  //
+  //   // Reference the storage path based on the formatted address
+  //   final storageRef = FirebaseStorage.instance.ref().child("pdfs/$month/${widget.userNumber}/$formattedAddress");
+  //
+  //   try {
+  //     final listResult = await storageRef.listAll();
+  //
+  //     print('List of files found at path: pdfs/$month/${widget.userNumber}/$formattedAddress/');
+  //     if (listResult.items.isEmpty) {
+  //       print('No files found at this path.');
+  //     }
+  //
+  //     for (var item in listResult.items) {
+  //       print('File found: ${item.name}');
+  //
+  //       // Check if the file name contains the selected account number
+  //       if (item.name.contains(accNum)) {
+  //         print('Found a matching file: ${item.name}');
+  //
+  //         final url = await item.getDownloadURL(); // Get the download URL
+  //         print('Download URL: $url');
+  //
+  //
+  //         if (kIsWeb) {
+  //           // **📌 For Web: Open in New Tab**
+  //           html.window.open(url, "_blank");
+  //           Fluttertoast.showToast(msg: "Statement opened in a new tab.");
+  //         } else {
+  //           // **📌 For Mobile: Use Download Manager**
+  //           await downloadFileUsingDownloadManager(url, 'statement_$accNum.pdf');
+  //           Fluttertoast.showToast(msg: "Download started.");
   //         }
-  //       } catch (e) {
-  //         Fluttertoast.showToast(msg: "Unable to download statement.");
-  //         if (context.mounted) {
-  //           showDialog(
-  //               barrierDismissible: false,
-  //               context: context,
-  //               builder: (context) {
-  //                 return
-  //                   AlertDialog(
-  //                     shape: const RoundedRectangleBorder(
-  //                         borderRadius:
-  //                         BorderRadius.all(Radius.circular(16))),
-  //                     title: const Text("Statement Download Error"),
-  //                     content: const Text(
-  //                         "Would you like to contact the municipality for assistance on this error?"),
-  //                     actions: [
-  //                       IconButton(
-  //                         onPressed: () {
-  //                           Navigator.of(context).pop();
-  //                         },
-  //                         icon: const Icon(
-  //                           Icons.cancel,
-  //                           color: Colors.red,
-  //                         ),
-  //                       ),
-  //                       IconButton(
-  //                         onPressed: () {
-  //                           final Uri _tel = Uri.parse('tel:+27${0800001868}');
-  //                           launchUrl(_tel);
-  //                           Navigator.of(context).pop();
-  //                         },
-  //                         icon: const Icon(
-  //                           Icons.done,
-  //                           color: Colors.green,
-  //                         ),
-  //                       ),
-  //                     ],
-  //                   );
-  //               });
-  //         }
+  //         break; // Exit loop after starting the download
+  //       } else {
+  //         print('File does not match account number: ${item.name}');
   //       }
   //     }
-  //     } catch(e) {
-  //       print('error::: $e');
-  //       Fluttertoast.showToast(msg: "Unable to download statement.");
-  //     }
-  //
+  //   } catch (e) {
+  //     print('Error during file listing or download process: $e');
+  //     Fluttertoast.showToast(msg: "Unable to download statement.");
   //   }
   // }
+
   void getPDFByAccMon(String accNum, String month) async {
     Fluttertoast.showToast(
         msg: "Now downloading your statement!\nPlease wait a few seconds!"
     );
 
-    // Ensure the address is trimmed and formatted consistently
-    String formattedAddress = widget.propertyAddress.trim(); // Trim any extra spaces
+    String formattedAddress = widget.propertyAddress.trim(); // Trim spaces
 
-    // Print statements to debug the exact path being used
-    print('Attempting to list files in path: pdfs/$month/${widget.userNumber}/$formattedAddress/');
+    print('📂 Attempting to list files in path: pdfs/$month/${widget.userNumber}/$formattedAddress/');
 
-    // Reference the storage path based on the formatted address
-    final storageRef = FirebaseStorage.instance.ref().child("pdfs/$month/${widget.userNumber}/$formattedAddress");
+    final storageRef = FirebaseStorage.instance.ref()
+        .child("pdfs/$month/${widget.userNumber}/$formattedAddress");
 
     try {
       final listResult = await storageRef.listAll();
 
-      print('List of files found at path: pdfs/$month/${widget.userNumber}/$formattedAddress/');
       if (listResult.items.isEmpty) {
-        print('No files found at this path.');
+        print('❌ No files found at this path.');
+        Fluttertoast.showToast(msg: "No statement found for this property.");
+        return;
       }
 
       for (var item in listResult.items) {
-        print('File found: ${item.name}');
+        print('📄 Found File: ${item.name}');
 
-        // Check if the file name contains the selected account number
         if (item.name.contains(accNum)) {
-          print('Found a matching file: ${item.name}');
+          print('✅ Matching statement found: ${item.name}');
 
-          final url = await item.getDownloadURL(); // Get the download URL
-          print('Download URL: $url');
+          final url = await item.getDownloadURL();
+          print('🔗 Download URL: $url');
 
-          // Attempt to download the file using the Download Manager
-          await downloadFileUsingDownloadManager(url, 'statement_$accNum.pdf');
+          if (kIsWeb) {
+            html.window.open(url, "_blank");
+            Fluttertoast.showToast(msg: "Statement opened in a new tab.");
+          } else {
+            // ✅ Open in the device browser instead of downloading manually
+            openURL(url);
+            Fluttertoast.showToast(msg: "Opening statement in browser...");
+          }
 
-          Fluttertoast.showToast(msg: "Download started.");
-          break; // Exit loop after starting the download
-        } else {
-          print('File does not match account number: ${item.name}');
+          return;
         }
       }
+
+      print('❌ No matching statement found.');
+      Fluttertoast.showToast(msg: "No matching statement found for this account.");
+
     } catch (e) {
-      print('Error during file listing or download process: $e');
-      Fluttertoast.showToast(msg: "Unable to download statement.");
+      print('🚨 Error downloading statement: $e');
+      Fluttertoast.showToast(msg: "Error downloading statement.");
     }
   }
-
-
 
 
   Future<void> downloadFileUsingDownloadManager(String url, String fileName) async {
@@ -754,18 +739,25 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
     }
   }
 
-  Future<File> _downloadFile(String url, String filename) async {
-    final appDocDir = await getApplicationDocumentsDirectory();
-    final localFile = File('${appDocDir.path}/$filename');
-
+  Future<File?> _downloadFile(String url, String filename) async {
     try {
-      final response = await http.get(Uri.parse(url));
-      final file = await localFile.writeAsBytes(response.bodyBytes);
-      return file;
+      final appDocDir = await getApplicationDocumentsDirectory();
+      final localFile = File('${appDocDir.path}/$filename');
+
+      final response = await Dio().download(url, localFile.path);
+      if (response.statusCode == 200) {
+        print("✅ File downloaded to ${localFile.path}");
+        return localFile;
+      } else {
+        throw Exception("Failed to download file with status code: ${response.statusCode}");
+      }
     } catch (e) {
-      throw Exception('Failed to download file: $e');
+      print("🚨 Error downloading file: $e");
+      Fluttertoast.showToast(msg: "Unable to download statement.");
+      return null;
     }
   }
+
 
   void setMonthLimits(String currentMonth) {
     String month1 = 'January';
@@ -895,28 +887,39 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
       ];
     }
   }
+  void openPDF(BuildContext context, File? file, String? webUrl) async {
+    if (kIsWeb) {
+      // ✅ Web: Open PDF in a new tab
+      if (webUrl != null && webUrl.isNotEmpty) {
+        html.window.open(webUrl, "_blank");
+      } else {
+        Fluttertoast.showToast(msg: "Failed to open PDF: No URL available.");
+      }
+    } else {
+      // ✅ Mobile: Open URL in Browser Instead of Downloading Manually
+      if (webUrl != null && webUrl.isNotEmpty) {
+        openURL(webUrl); // ✅ Open in browser
+      } else {
+        Fluttertoast.showToast(msg: "Error: Unable to open statement.");
+      }
+    }
+  }
 
-  ///pdf view loader getting file name onPress/onTap that passes pdf filename to this class.
-  void openPDF(BuildContext context, File file) => Navigator.of(context).push(
-    MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
-  );
-  // void openPDF(BuildContext context, String fileUrl) async {
-  //   try {
-  //     final uri = Uri.parse(fileUrl);
-  //     final response = await http.get(uri);
-  //     final documentDirectory = await getApplicationDocumentsDirectory();
-  //     final file = File('${documentDirectory.path}/invoice.pdf');
-  //
-  //     file.writeAsBytesSync(response.bodyBytes);
-  //
-  //     Navigator.of(context).push(
-  //       MaterialPageRoute(
-  //         builder: (context) => PDFViewerPage(file: file),
-  //       ),
-  //     );
-  //   } catch (e) {
-  //     print('Error downloading or opening file: $e');
-  //     Fluttertoast.showToast(msg: "Unable to download or open file.");
-  //   }
-  // }
+  /// ✅ Method to open the URL in the device's default browser
+  void openURL(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      print('🚨 Could not launch $url');
+      Fluttertoast.showToast(msg: "Error: Unable to open statement.");
+    }
+  }
+
+
+
+///pdf view loader getting file name onPress/onTap that passes pdf filename to this class.
+  // void openPDF(BuildContext context, File file) => Navigator.of(context).push(
+  //   MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
+  // );
+
 }

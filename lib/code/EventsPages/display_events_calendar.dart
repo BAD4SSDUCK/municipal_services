@@ -35,13 +35,16 @@ class _EventsCalendarState extends State<EventsCalendar> {
   }
 
   Future<void> _fetchCalendarEvents() async {
-    // Replace 'municipalityId' with the actual municipality ID relevant to the user
-    String municipalityId = await _getUserMunicipalityId();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String municipalityId = prefs.getString('municipalityId') ?? '';
+    bool isLocalMunicipality = prefs.getBool('isLocalMunicipality') ?? false;
+    String districtId = prefs.getString('districtId') ?? '';
 
-    CollectionReference calendarCollection = FirebaseFirestore.instance
-        .collection('localMunicipalities')
-        .doc(municipalityId)
-        .collection('calendar');
+    String path = isLocalMunicipality
+        ? 'localMunicipalities/$municipalityId/calendar'
+        : 'districts/$districtId/municipalities/$municipalityId/calendar';
+
+    CollectionReference calendarCollection = FirebaseFirestore.instance.collection(path);
 
     var data = await calendarCollection.get();
 
@@ -64,6 +67,7 @@ class _EventsCalendarState extends State<EventsCalendar> {
       _selectedEvents.value = _getEventsForDay(_selectedDay!);
     });
   }
+
 
   Future<String> _getUserMunicipalityId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
