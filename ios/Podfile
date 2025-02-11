@@ -1,5 +1,8 @@
 platform :ios, '14.0'
 
+# Ensure Flutter tools are available
+require_relative '../flutter_tools/bin/flutter_podhelper'
+
 use_frameworks!
 use_modular_headers!
 
