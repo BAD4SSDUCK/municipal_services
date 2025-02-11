@@ -1,7 +1,8 @@
 platform :ios, '14.0'
 
 # Ensure Flutter tools are available
-require_relative '../flutter/bin/flutter_podhelper'
+flutter_root = `flutter --cache-dir`.strip
+require File.expand_path("#{flutter_root}/bin/flutter_podhelper", __dir__)
 
 use_frameworks!
 use_modular_headers!
