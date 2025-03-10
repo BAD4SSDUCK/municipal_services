@@ -344,78 +344,89 @@ class _ChatFinanceState extends State<ChatFinance> {
   }
 
 
-  Widget chatMessages() {
+  Widget chatMessages(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: chats,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return const Center(child: Text("Error loading messages"));
-        } else if (!snapshot.hasData || snapshot.data?.docs.isEmpty == true) {
-          return const Center(child: Text("No messages found"));
-        }
-
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToBottom();
+          if (_scrollController.hasClients) {
+            _scrollToBottom();
+          }
         });
 
-        // Debug: print the number of documents found
-        print("Messages count: ${snapshot.data?.docs.length}");
+        if (snapshot.hasData) {
+          var currentUserIdentifier = FirebaseAuth.instance.currentUser!.phoneNumber != null
+              ? FirebaseAuth.instance.currentUser!.phoneNumber!
+              : FirebaseAuth.instance.currentUser!.email!;
 
-        return SingleChildScrollView(
-          reverse: true,
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            children: [
-              ListView.builder(
-                controller: _scrollController,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: snapshot.data?.docs.length ?? 0,
-                itemBuilder: (context, index) {
-                  var data = snapshot.data?.docs[index].data() as Map<String, dynamic>;
+          // ✅ Check unread messages and mark as read if necessary
+          snapshot.data?.docs.forEach((doc) {
+            var data = doc.data() as Map<String, dynamic>;
+            var sendBy = data["sendBy"];
 
-                  // Debug: print the data of each message
-                  print("Message data: $data");
+            if ((sendBy != currentUserIdentifier) &&
+                ((currentUserIdentifier.contains('@') && !data["isReadByMunicipalUser"]) ||
+                    (!currentUserIdentifier.contains('@') && !data["isReadByRegularUser"]))) {
+              doc.reference.update({
+                currentUserIdentifier.contains('@') ? "isReadByMunicipalUser" : "isReadByRegularUser": true,
+              });
+            }
+          });
 
-                  String currentUserIdentifier;
-
-                  // Determine the current user's identifier (phone number or email)
-                  if (FirebaseAuth.instance.currentUser != null) {
-                    if (FirebaseAuth.instance.currentUser!.phoneNumber != null &&
-                        FirebaseAuth.instance.currentUser!.phoneNumber!.isNotEmpty) {
-                      currentUserIdentifier = FirebaseAuth.instance.currentUser!.phoneNumber!;
-                    } else {
-                      currentUserIdentifier = FirebaseAuth.instance.currentUser!.email!;
-                    }
-                  } else {
-                    currentUserIdentifier = 'Unknown User';
-                  }
-
-                  // Check if the message was sent by the current user
-                  bool sendByMe = data["sendBy"] == currentUserIdentifier;
-
-                  // Debug: print whether the message was sent by the current user
-                  print("Message sent by me: $sendByMe");
-
-                  return MessageTile(
-                    message: data["message"],
-                    sendByMe: sendByMe,
-                    timestamp: data["time"],
-                    isRead:data[currentUserIdentifier.contains('@') ? "isReadByMunicipalUser" : "isReadByRegularUser"],
-                    fileUrl: data["fileUrl"],
-                    sendBy: data["sendBy"],
-                  );
-                },
+          // ✅ If there are NO messages, show a background message
+          if (snapshot.data!.docs.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  "Leave a message for any payment disputes, and someone will get back to you.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade600, // Light grey text
+                  ),
+                ),
               ),
-              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-            ],
-          ),
-        );
+            );
+          }
+
+          // ✅ Display messages normally when they exist
+          return SingleChildScrollView(
+            reverse: true,
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                ListView.builder(
+                  controller: _scrollController,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: snapshot.data?.docs.length ?? 0,
+                  itemBuilder: (context, index) {
+                    var data = snapshot.data?.docs[index].data() as Map<String, dynamic>;
+                    bool sendByMe = data["sendBy"] == currentUserIdentifier;
+
+                    return MessageTile(
+                      message: data["message"],
+                      sendByMe: sendByMe,
+                      timestamp: data["time"],
+                      sendBy: data["sendBy"],
+                      isRead: data[currentUserIdentifier.contains('@') ? "isReadByMunicipalUser" : "isReadByRegularUser"],
+                      fileUrl: data["fileUrl"],
+                    );
+                  },
+                ),
+                SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+              ],
+            ),
+          );
+        } else {
+          return const Center(child: CircularProgressIndicator());
+        }
       },
     );
   }
+
 
 
 
@@ -876,7 +887,7 @@ class _ChatFinanceState extends State<ChatFinance> {
                 ? const Center(
               child: CircularProgressIndicator(),
             )
-                : chatMessages(),
+                : chatMessages(context),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

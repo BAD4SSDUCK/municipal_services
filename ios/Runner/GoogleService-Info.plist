@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>183405317738-prm2lrdungpl7h5vdvgjsk2hle5d3qpl.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAPo3Ee5Vj4c-5s8fvPrfqCb3-YzZVDyiI</string>
+	<key>GCM_SENDER_ID</key>
+	<string>183405317738</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>www.cyberfox.co.za.Municipal-Services</string>
+	<key>PROJECT_ID</key>
+	<string>municipal-tracker-msunduzi</string>
+	<key>STORAGE_BUCKET</key>
+	<string>municipal-tracker-msunduzi.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:183405317738:ios:17caa5da55571599790413</string>
+</dict>
+</plist>

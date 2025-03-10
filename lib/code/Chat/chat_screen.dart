@@ -1107,7 +1107,7 @@ class _ChatState extends State<Chat> {
               ? FirebaseAuth.instance.currentUser!.phoneNumber!
               : FirebaseAuth.instance.currentUser!.email!;
 
-          // Check unread messages and mark as read if the user is not the sender
+          // ✅ Check unread messages and mark as read if necessary
           snapshot.data?.docs.forEach((doc) {
             var data = doc.data() as Map<String, dynamic>;
             var sendBy = data["sendBy"];
@@ -1115,13 +1115,31 @@ class _ChatState extends State<Chat> {
             if ((sendBy != currentUserIdentifier) &&
                 ((currentUserIdentifier.contains('@') && !data["isReadByMunicipalUser"]) ||
                     (!currentUserIdentifier.contains('@') && !data["isReadByRegularUser"]))) {
-              // Update `isReadBy...` status based on user type
               doc.reference.update({
                 currentUserIdentifier.contains('@') ? "isReadByMunicipalUser" : "isReadByRegularUser": true,
               });
             }
           });
 
+          // ✅ If there are NO messages, show a background message
+          if (snapshot.data!.docs.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  "Leave a message for any queries, and someone will get back to you.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade600, // Light grey text
+                  ),
+                ),
+              ),
+            );
+          }
+
+          // ✅ Display messages normally when they exist
           return SingleChildScrollView(
             reverse: true,
             physics: const BouncingScrollPhysics(),
@@ -1151,11 +1169,12 @@ class _ChatState extends State<Chat> {
             ),
           );
         } else {
-          return Container();
+          return const Center(child: CircularProgressIndicator());
         }
       },
     );
   }
+
 
   @override
   Widget build(BuildContext context) {

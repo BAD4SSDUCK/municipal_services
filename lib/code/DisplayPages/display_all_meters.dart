@@ -74,6 +74,7 @@ bool adminAcc = false;
 
 List<Map<String, dynamic>> _allProps = [];
 List<Map<String, dynamic>> _filteredProps = [];
+Map<String, String> imageCacheMap = {}; // Stores property image URLs
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
 
@@ -84,19 +85,29 @@ class FireStorageService extends ChangeNotifier{
   }
 }
 
-Future<String> _getImageW(BuildContext context, String? imagePath) async {
+Future<String> _getImageW(BuildContext context, String? imagePath, String propertyAddress) async {
   if (imagePath == null) {
     throw Exception('Image path cannot be null');
   }
+
+  // ✅ Check cache before fetching
+  if (imageCacheMap.containsKey(propertyAddress)) {
+    print("🔄 Using cached image for $propertyAddress");
+    return imageCacheMap[propertyAddress]!; // Return cached URL
+  }
+
   try {
-    String imageUrl =
-    await FirebaseStorage.instance.ref(imagePath).getDownloadURL();
-    return imageUrl; // Returns the image URL
+    String imageUrl = await FirebaseStorage.instance.ref(imagePath).getDownloadURL();
+
+    // ✅ Cache image URL to prevent repeated loading
+    imageCacheMap[propertyAddress] = imageUrl;
+    return imageUrl;
   } catch (e) {
-    print('Failed to load image: $e');
+    print('Failed to load image for $propertyAddress: $e');
     throw Exception('Failed to load image');
   }
 }
+
 
 // final CollectionReference _propList =
 // FirebaseFirestore.instance.collection('properties');
@@ -116,6 +127,11 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
   List<QueryDocumentSnapshot<Object?>> _fetchedProperties = [];
   final FocusNode _focusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
+  String currentMonth = DateFormat.MMMM().format(DateTime.now()); // Example: February
+  String previousMonth = DateFormat.MMMM().format(DateTime.now().subtract(Duration(days: 30))); // Example: January
+  Map<String, String> previousMonthReadings = {}; // Store previous readings per address
+  Map<String, String> currentMonthReadings = {};
+  Map<String, DateTime?> latestImageTimestamps = {}; // Stores the latest upload timestamp for each property
 
   @override
   void initState() {
@@ -130,6 +146,12 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
         fetchMunicipalities(); // Fetch municipalities after user details are loaded
       }
     });
+    fetchAllPreviousMonthReadings().then((_) {
+      if (mounted) {
+        setState(() {}); // Refresh UI after loading data
+      }
+    });
+
     _searchBarController.addListener(filterProperties);
   }
 
@@ -446,6 +468,106 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
     }
   }
 
+  Future<void> fetchAllPreviousMonthReadings() async {
+    try {
+      int currentYear = DateTime.now().year;
+      int previousYear = currentYear - 1;
+
+      String currentMonth = DateFormat.MMMM().format(DateTime.now()); // Example: March
+      String prevMonth = DateFormat.MMMM().format(DateTime.now().subtract(Duration(days: 30))); // Example: February
+
+      String prevMonthYear = (currentMonth == "January") ? previousYear.toString() : currentYear.toString();
+      String currentMonthYear = currentYear.toString(); // Always use the current year for current readings
+
+      previousMonthReadings.clear(); // Clear previous data
+      currentMonthReadings.clear();  // Clear current month data
+
+      if (widget.isLocalMunicipality) {
+        // ✅ Local Municipality: Fetch readings from the correct paths
+        CollectionReference consumptionCollection = FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(widget.municipalityId)
+            .collection('consumption');
+
+        // Fetch **Previous Month's Readings**
+        QuerySnapshot prevQuerySnapshot = await consumptionCollection
+            .doc(prevMonthYear) // Year Folder
+            .collection(prevMonth) // Previous Month Collection
+            .get();
+
+        if (prevQuerySnapshot.docs.isNotEmpty) {
+          for (var doc in prevQuerySnapshot.docs) {
+            var data = doc.data() as Map<String, dynamic>;
+            previousMonthReadings[data['address']] = data['water_meter_reading'] ?? "N/A";
+          }
+        }
+
+        // Fetch **Current Month's Readings**
+        QuerySnapshot currentQuerySnapshot = await consumptionCollection
+            .doc(currentMonthYear) // Year Folder
+            .collection(currentMonth) // Current Month Collection
+            .get();
+
+        if (currentQuerySnapshot.docs.isNotEmpty) {
+          for (var doc in currentQuerySnapshot.docs) {
+            var data = doc.data() as Map<String, dynamic>;
+            currentMonthReadings[data['address']] = data['water_meter_reading'] ?? "N/A";
+          }
+        }
+      } else {
+        // ✅ District Municipality: Fetch readings for ALL municipalities under the district
+        CollectionReference municipalitiesCollection = FirebaseFirestore.instance
+            .collection('districts')
+            .doc(widget.districtId)
+            .collection('municipalities');
+
+        QuerySnapshot municipalitiesSnapshot = await municipalitiesCollection.get();
+
+        for (var municipalityDoc in municipalitiesSnapshot.docs) {
+          String municipalityId = municipalityDoc.id;
+
+          CollectionReference consumptionCollection = municipalitiesCollection
+              .doc(municipalityId)
+              .collection('consumption');
+
+          // Fetch **Previous Month's Readings**
+          QuerySnapshot prevQuerySnapshot = await consumptionCollection
+              .doc(prevMonthYear) // Year Folder
+              .collection(prevMonth) // Previous Month Collection
+              .get();
+
+          if (prevQuerySnapshot.docs.isNotEmpty) {
+            for (var doc in prevQuerySnapshot.docs) {
+              var data = doc.data() as Map<String, dynamic>;
+              previousMonthReadings[data['address']] = data['water_meter_reading'] ?? "N/A";
+            }
+          }
+
+          // Fetch **Current Month's Readings**
+          QuerySnapshot currentQuerySnapshot = await consumptionCollection
+              .doc(currentMonthYear) // Year Folder
+              .collection(currentMonth) // Current Month Collection
+              .get();
+
+          if (currentQuerySnapshot.docs.isNotEmpty) {
+            for (var doc in currentQuerySnapshot.docs) {
+              var data = doc.data() as Map<String, dynamic>;
+              currentMonthReadings[data['address']] = data['water_meter_reading'] ?? "N/A";
+            }
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {}); // Refresh UI
+      }
+
+      print("✅ Fetch complete: Previous Month ($prevMonthYear/$prevMonth), Current Month ($currentMonthYear/$currentMonth)");
+
+    } catch (e) {
+      print("❌ Error fetching previous and current month readings: $e");
+    }
+  }
 
 
   // void fetchProperties() async {
@@ -731,6 +853,85 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
       }
     }
   }
+
+
+  Future<void> fetchLatestUploadTimestamp(String propertyAddress, String propPhoneNum) async {
+    if (propPhoneNum.isEmpty) return; // Ensure phone number is set
+
+    print("🔍 Fetching latest timestamp in PropertyMetersAll...");
+    print("➡️ Using Phone Number: $propPhoneNum");
+    print("➡️ District ID: $districtId");
+    print("➡️ Municipality ID: $municipalityId");
+    print("➡️ Property Address (Formatted): $propertyAddress");
+
+    Timestamp? fetchedTimestamp = await getLatestUploadTimestamp(
+      districtId,
+      municipalityId,
+      propPhoneNum,
+      propertyAddress,
+    );
+
+    if (fetchedTimestamp != null) {
+      DateTime newTimestamp = fetchedTimestamp.toDate();
+
+      // ✅ Only update UI if timestamp has changed
+      if (latestImageTimestamps[propertyAddress] != newTimestamp) {
+        setState(() {
+          latestImageTimestamps[propertyAddress] = newTimestamp;
+        });
+        print("📅 Updated Timestamp for $propertyAddress: $newTimestamp");
+      } else {
+        print("✅ No timestamp change, avoiding unnecessary UI rebuild.");
+      }
+    }
+  }
+
+
+  Future<Timestamp?> getLatestUploadTimestamp(
+      String? districtId, String municipalityId, String userPhoneNumber, String propertyAddress) async {
+    try {
+      QuerySnapshot querySnapshot;
+
+      if (districtId != null && districtId.isNotEmpty) {
+        // 🔹 District-based municipality
+        querySnapshot = await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('actionLogs')
+            .doc(userPhoneNumber)
+            .collection(propertyAddress)
+            .orderBy('timestamp', descending: true) // Get latest entry
+            .limit(1)
+            .get();
+      } else {
+        // 🔹 Local municipality
+        querySnapshot = await FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .collection('actionLogs')
+            .doc(userPhoneNumber)
+            .collection(propertyAddress)
+            .orderBy('timestamp', descending: true)
+            .limit(1)
+            .get();
+      }
+
+      if (querySnapshot.docs.isNotEmpty) {
+        return querySnapshot.docs.first['timestamp']; // Return latest timestamp
+      } else {
+        print("⚠️ No timestamp found for $propertyAddress");
+        return null; // No records found
+      }
+    } catch (e) {
+      print("❌ Error fetching timestamp: $e");
+      return null;
+    }
+  }
+
+
+
 
   Future<void> _notifyThisUser([DocumentSnapshot? documentSnapshot]) async {
 
@@ -1520,7 +1721,9 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
               // Extract property details
               String wMeterNumber = documentSnapshot['water_meter_number'];
               String propPhoneNum = documentSnapshot['cellNumber'];
-
+              String propertyAddress = documentSnapshot['address']; // Get address for lookup
+              String previousReading = previousMonthReadings[propertyAddress] ?? "N/A"; // Retrieve previous reading
+              String currentReading = currentMonthReadings[propertyAddress] ?? "N/A";
               String billMessage; // A check for if payment is outstanding or not
               if (documentSnapshot['eBill'] != '' &&
                   documentSnapshot['eBill'] != 'R0,000.00' &&
@@ -1568,7 +1771,12 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                       ),
                       const SizedBox(height: 5),
                       Text(
-                        'Water Meter Reading: ${documentSnapshot['water_meter_reading']}',
+                        'Previous Month ($previousMonth) Reading: $previousReading', // ✅ Add previous month's reading
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Water Meter Reading: $currentReading',
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                       ),
                       const SizedBox(height: 5),
@@ -1608,10 +1816,11 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                           municipalityId,
                           isLocalMunicipality,
                         ).then((propertyAddress) {
+                          fetchLatestUploadTimestamp(propertyAddress, propPhoneNum);
                           print('Property Address retrieved: $propertyAddress');
                           String imagePath = 'files/meters/$formattedMonth/$propPhoneNum/$propertyAddress/water/$wMeterNumber.jpg';
                           print('Constructed Image Path: $imagePath');
-                          return _getImageW(context, imagePath);
+                          return _getImageW(context, imagePath,propertyAddress);
                         }),
                         builder: (context, snapshot) {
                           if (snapshot.hasData && snapshot.connectionState == ConnectionState.done) {
@@ -1663,9 +1872,24 @@ class _PropertyMetersAllState extends State<PropertyMetersAll> {
                           }
                         },
                       ),
-                      Text(
-                        billMessage,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                      Center(
+                        child: Text(
+                          latestImageTimestamps[propertyAddress] != null
+                              ? "📅 Image uploaded on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(latestImageTimestamps[propertyAddress]!)}"
+                              : "⚠️ No upload history available.",
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.blueGrey,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Center(
+                        child: Text(
+                          billMessage,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
                       ),
                       const SizedBox(height: 10),
                       Column(

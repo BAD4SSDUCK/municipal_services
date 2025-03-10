@@ -90,6 +90,7 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
   double? latitude; // Define latitude
   double? longitude; // Define longitude
   DocumentSnapshot? documentSnapshot;
+  String? currentMonthReading;
 
   @override
   void initState() {
@@ -163,11 +164,12 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
               if (municipalityRef != null && districtRef != null) {
                 districtId = districtRef.id;
                 municipalityId = municipalityRef.id;
-
-                setState(() {
-                  propertyAddress = propertyDoc['address']
-                      .replaceAll(RegExp(r'[/\\?%*:|"<>]'), '_');
-                });
+                  if(mounted) {
+                    setState(() {
+                      propertyAddress = propertyDoc['address']
+                          .replaceAll(RegExp(r'[/\\?%*:|"<>]'), '_');
+                    });
+                  }
               }
             } else {
               print('No property found with the selected account number.');
@@ -177,10 +179,14 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
           }
         }
       }
-      setState(() {});
+         if(mounted) {
+           setState(() {});
+         }
     } catch (e) {
       print('Error fetching user details: $e');
-      setState(() {});
+      if(mounted) {
+        setState(() {});
+      }
     }
   }
 
@@ -226,9 +232,6 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
       print('No image selected.');
     }
   }
-
-
-
 
   Future<bool> validateProperty() async {
     if (widget.isLocalMunicipality) {
@@ -280,10 +283,12 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
 
         if (propertyQuery.docs.isNotEmpty) {
           var propertyData = propertyQuery.docs.first.data();
-          setState(() {
-            propertyAddress =
-                propertyData['address']; // Properly format the address
-          });
+          if(mounted) {
+            setState(() {
+              propertyAddress =
+              propertyData['address']; // Properly format the address
+            });
+          }
           print("Correct property address fetched: $propertyAddress");
         } else {
           print(
@@ -338,20 +343,61 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
     }
   }
 
-  Future<void> _showMeterReadingUpdateUI(BuildContext parentContext, DocumentSnapshot documentSnapshot) async {
+  Future<void> _showMeterReadingUpdateUI(BuildContext parentContext) async {
+    String currentYear = DateFormat('yyyy').format(DateTime.now());
+    String currentMonth = DateFormat.MMMM().format(DateTime.now()); // Example: February
+    String initialReading = "0"; // Default if no previous reading is found
+
+    try {
+      // ✅ Define Firestore path based on municipality type
+      CollectionReference consumptionCollection;
+      if (widget.isLocalMunicipality) {
+        consumptionCollection = FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(widget.municipalityId)
+            .collection('consumption')
+            .doc(currentYear)
+            .collection(currentMonth);
+      } else {
+        consumptionCollection = FirebaseFirestore.instance
+            .collection('districts')
+            .doc(widget.districtId)
+            .collection('municipalities')
+            .doc(widget.municipalityId)
+            .collection('consumption')
+            .doc(currentYear)
+            .collection(currentMonth);
+      }
+
+      // ✅ Fetch the latest reading for the current month
+      QuerySnapshot querySnapshot = await consumptionCollection
+          .where('address', isEqualTo: widget.propertyAddress)
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        var data = querySnapshot.docs.first.data() as Map<String, dynamic>;
+        initialReading = data['water_meter_reading'] ?? "0"; // Set initial value
+      }
+
+    } catch (e) {
+      print("❌ Error fetching consumption reading: $e");
+    }
+
+    // ✅ Create the text controller using the fetched value
     final TextEditingController waterMeterReadingController =
-    TextEditingController(text: documentSnapshot['water_meter_reading']);
+    TextEditingController(text: initialReading);
 
     await showModalBottomSheet(
       isScrollControlled: true,
-      backgroundColor: Colors.transparent, // Make the background transparent
+      backgroundColor: Colors.transparent,
       context: parentContext,
       builder: (BuildContext ctx) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return Container(
               decoration: BoxDecoration(
-                color: Colors.white, // Match the background color to a dialog
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Padding(
@@ -368,10 +414,7 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                     children: [
                       const Text(
                         'Update Water Meter Reading',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 20),
                       TextField(
@@ -382,21 +425,20 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                         decoration: InputDecoration(
                           labelText: 'Water Meter Reading',
                           labelStyle: const TextStyle(
-                            color: Colors.blue, // Change the labelText color here
-                            fontSize: 16, // Adjust the font size
-                            fontWeight: FontWeight.bold, // Make the label bold
+                            color: Colors.blue,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Colors.green, width: 2.0), // Change color here
+                            borderSide: const BorderSide(color: Colors.green, width: 2.0),
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        cursorColor: Colors.green, // Change cursor color
+                        cursorColor: Colors.green,
                       ),
-
                       const SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -411,12 +453,12 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                             ),
                             onPressed: () {
-                              Navigator.of(context).pop(); // Close the bottom sheet
+                              Navigator.of(context).pop();
                             },
                             child: const Text('Cancel'),
                           ),
                           const SizedBox(width: 10),
-                          isLoadingMeter // Display CircularProgressIndicator when loading
+                          isLoadingMeter
                               ? const CircularProgressIndicator()
                               : ElevatedButton(
                             style: ElevatedButton.styleFrom(
@@ -425,61 +467,54 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10.0),
                               ),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 10),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                             ),
                             onPressed: () async {
-                              final String waterMeterReading =
-                                  waterMeterReadingController.text;
+                              final String waterMeterReading = waterMeterReadingController.text;
 
                               if (waterMeterReading.isNotEmpty) {
-                                if(mounted) {
+                                if (mounted) {
                                   setState(() {
-                                    isLoadingMeter = true; // Set loading state
+                                    isLoadingMeter = true;
                                   });
                                 }
                                 try {
-                                  await documentSnapshot.reference.update({
-                                    'water_meter_reading': waterMeterReading,
-                                  });
+                                  // ✅ Update the reading in the `consumption` collection
+                                  String updatedReading = await _callMeterReadingServiceAfterUpload(waterMeterReading);
 
-                                  // Call the service to handle backend updates
-                                  await _callMeterReadingServiceAfterUpload();
+                                  // ✅ Immediately update the UI with the new value
+                                  if (mounted) {
+                                    setState(() {
+                                      currentMonthReading = updatedReading; // ✅ Update displayed value
+                                    });
+                                  }
 
-                                  Navigator.pop(ctx); // Close the bottom sheet
-                                  ScaffoldMessenger.of(parentContext)
-                                      .showSnackBar(
+                                  Navigator.pop(ctx);
+                                  ScaffoldMessenger.of(parentContext).showSnackBar(
                                     const SnackBar(
-                                      content: Text(
-                                          "Meter readings updated successfully"),
+                                      content: Text("Meter readings updated successfully"),
                                       duration: Duration(seconds: 2),
                                     ),
                                   );
                                 } catch (e) {
-                                  print(
-                                      "Error updating water meter reading in UI: $e");
-                                  ScaffoldMessenger.of(parentContext)
-                                      .showSnackBar(
+                                  print("Error updating water meter reading: $e");
+                                  ScaffoldMessenger.of(parentContext).showSnackBar(
                                     const SnackBar(
-                                      content: Text(
-                                          "Failed to update meter reading"),
+                                      content: Text("Failed to update meter reading"),
                                       duration: Duration(seconds: 2),
                                     ),
                                   );
                                 } finally {
-                                  if(mounted) {
+                                  if (mounted) {
                                     setState(() {
-                                      isLoadingMeter =
-                                      false; // Reset loading state
+                                      isLoadingMeter = false;
                                     });
                                   }
                                 }
                               } else {
-                                ScaffoldMessenger.of(parentContext)
-                                    .showSnackBar(
+                                ScaffoldMessenger.of(parentContext).showSnackBar(
                                   const SnackBar(
-                                    content: Text(
-                                        "Please fill in the meter reading."),
+                                    content: Text("Please fill in the meter reading."),
                                     duration: Duration(seconds: 2),
                                   ),
                                 );
@@ -501,53 +536,65 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
   }
 
 
+
   // Updated method to call the meter reading service
-  Future<void> _callMeterReadingServiceAfterUpload() async {
-    QuerySnapshot propertySnapshot;
-    if (widget.isLocalMunicipality) {
-      propertySnapshot = await FirebaseFirestore.instance
-          .collection('localMunicipalities')
-          .doc(widget.municipalityId)
-          .collection('properties')
-          .where('cellNumber', isEqualTo: widget.userNumber)
+  Future<String> _callMeterReadingServiceAfterUpload(String waterMeterReading) async {
+    try {
+      String currentYear = DateFormat('yyyy').format(DateTime.now());
+      String currentMonth = DateFormat.MMMM().format(DateTime.now());
+
+      // ✅ Define Firestore path based on municipality type
+      CollectionReference consumptionCollection;
+      if (widget.isLocalMunicipality) {
+        consumptionCollection = FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(widget.municipalityId)
+            .collection('consumption')
+            .doc(currentYear)
+            .collection(currentMonth);
+      } else {
+        consumptionCollection = FirebaseFirestore.instance
+            .collection('districts')
+            .doc(widget.districtId)
+            .collection('municipalities')
+            .doc(widget.municipalityId)
+            .collection('consumption')
+            .doc(currentYear)
+            .collection(currentMonth);
+      }
+
+      // ✅ Query for the correct document
+      QuerySnapshot querySnapshot = await consumptionCollection
           .where('address', isEqualTo: widget.propertyAddress)
           .limit(1)
           .get();
-    } else {
-      propertySnapshot = await FirebaseFirestore.instance
-          .collection('districts')
-          .doc(widget.districtId)
-          .collection('municipalities')
-          .doc(widget.municipalityId)
-          .collection('properties')
-          .where('cellNumber', isEqualTo: widget.userNumber)
-          .where('address', isEqualTo: widget.propertyAddress)
-          .limit(1)
-          .get();
-    }
 
-    if (propertySnapshot.docs.isNotEmpty) {
-      DocumentSnapshot documentSnapshot = propertySnapshot.docs.first;
+      if (querySnapshot.docs.isNotEmpty) {
+        // ✅ Update existing document
+        DocumentSnapshot documentSnapshot = querySnapshot.docs.first;
+        await documentSnapshot.reference.update({
+          'water_meter_reading': waterMeterReading,
+          'timestamp': Timestamp.now(),
+        });
+      } else {
+        // ✅ If no document exists, create a new one
+        await consumptionCollection.doc(widget.propertyAddress).set({
+          'address': widget.propertyAddress,
+          'water_meter_number': widget.meterNumber,
+          'water_meter_reading': waterMeterReading,
+          'timestamp': Timestamp.now(),
+        });
+      }
 
-      CollectionReference propList = documentSnapshot.reference.parent;
-
-      await WaterMeterReadingService.updateWaterMeterData(
-        documentSnapshot: documentSnapshot,
-        propList: propList,
-        municipalityUserEmail: widget.municipalityUserEmail,
-        districtId: widget.districtId,
-        municipalityId: widget.municipalityId,
-        isLocalMunicipality: widget.isLocalMunicipality,
-      );
-    } else {
-      Fluttertoast.showToast(
-          msg: "Error: Property not found. Cannot update meter reading.");
-      print(
-          'Error: Property not found for user number ${widget.userNumber} and address ${widget.propertyAddress}.');
+      print("✅ Meter reading updated successfully!");
+      return waterMeterReading;
+    } catch (e) {
+      print("❌ Error updating meter reading: $e");
+      throw e;
     }
   }
 
-  Future imgFromCamera(BuildContext parentContext) async {
+  Future<void> imgFromCamera(BuildContext parentContext) async {
     // Get location data
     LocationData? locationData = await _getLocation();
 
@@ -557,9 +604,15 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
     );
 
     if (pickedFile != null) {
-      setState(() {
-        _photo = File(pickedFile.path); // Set the image without uploading
-      });
+      final tempFile = File(pickedFile.path);
+      if(mounted) {
+        setState(() {
+          _photo = tempFile;
+          _selectedFileBytes = _photo!.readAsBytesSync(); // ✅ Convert to bytes for preview
+          _selectedFileName = "${widget.meterNumber}.jpg"; // ✅ Rename file // Set the image without uploading
+        });
+      }
+      print("Camera image selected: $_selectedFileName");
 
       if (locationData != null) {
         latitude = locationData.latitude!; // Store latitude
@@ -767,10 +820,11 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
   }
 
 
-  Future uploadFile(double latitude, double longitude) async {
+  Future<bool> uploadFile(double latitude, double longitude) async {
     if (_photo == null) {
       print('No image selected.');
-      return;
+      Fluttertoast.showToast(msg: "Please select an image first!");
+      return false; // ✅ Return false if no image was selected
     }
 
     final String fileName = '${widget.meterNumber}.jpg';
@@ -779,19 +833,14 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
 
     try {
       final ref = firebase_storage.FirebaseStorage.instance.ref(destination);
-      final mimeType =
-          lookupMimeType(_photo!.path) ?? 'application/octet-stream';
+      final mimeType = lookupMimeType(_photo!.path) ?? 'application/octet-stream';
       final metadata = firebase_storage.SettableMetadata(contentType: mimeType);
 
-      // Upload the image
       await ref.putFile(_photo!, metadata);
       String fileUrl = await ref.getDownloadURL();
       print('Image uploaded successfully to: $destination');
       print('File URL: $fileUrl');
-      print(
-          'Calling logWMeterUploadAction with details: fileUrl=$fileUrl, userNumber=${widget.userNumber}, propertyAddress=${widget.propertyAddress}, municipalityUserEmail=${widget.municipalityUserEmail}, latitude=$latitude, longitude=$longitude');
 
-      // Log the upload and include the location data
       await logWMeterUploadAction(
         fileUrl,
         "Upload Water Meter Image",
@@ -802,15 +851,20 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
         longitude,
       );
 
-      if(mounted) {
+      if (mounted) {
         setState(() {
           _photo = null;
         });
       }
+
+      // ✅ Return true to indicate successful upload
+      return true;
     } catch (e) {
       print('Error uploading image: $e');
+      return false; // ✅ Return false if upload failed
     }
   }
+
 
   void _showPicker(context) {
     showModalBottomSheet(
@@ -871,9 +925,6 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
     }
   }
 
-
-
-
   Future<void> _uploadFileToFirebase(Uint8List fileBytes, String fileName) async {
     final String destination =
         'files/meters/$formattedDate/${widget.userNumber}/${widget.propertyAddress}/water/$fileName';
@@ -903,8 +954,6 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
       print('Error uploading image: $e');
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -974,31 +1023,43 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                 onTap: isLoading
                     ? null // Disable button when loading
                     : () async {
-                  if (_selectedFileBytes != null && _selectedFileName != null) {
-                    if(mounted) {
+                  if (_photo != null || (_selectedFileBytes != null && _selectedFileName != null)) {
+                    if (mounted) {
                       setState(() {
                         isLoading = true;
                       });
                     }
                     try {
-                      await _uploadFileToFirebase(_selectedFileBytes!, _selectedFileName!).then((_) async {
-                        // Fetch document snapshot after successful upload
+                      bool uploadSuccess = false;
+
+                      if (_selectedFileBytes != null && _selectedFileName != null) {
+                        await _uploadFileToFirebase(_selectedFileBytes!, _selectedFileName!);
+                        uploadSuccess = true; // ✅ Set to true if upload is successful
+                      } else if (_photo != null) {
+                        uploadSuccess = await uploadFile(latitude ?? 0.0, longitude ?? 0.0); // ✅ Capture return value
+                      }
+
+                      if (uploadSuccess) {
+                        // ✅ Fetch document snapshot after successful upload
                         await _fetchDocumentSnapshot();
 
-                        // Show UI only if document snapshot is available
+                        // ✅ Show UI only if document snapshot is available
                         if (documentSnapshot != null) {
-                          await _showMeterReadingUpdateUI(context, documentSnapshot!);
-                          Navigator.of(context).pop();
+                          await _showMeterReadingUpdateUI(context);
+                          Navigator.of(context).pop(true); // ✅ Return true to indicate success
                         } else {
                           Fluttertoast.showToast(msg: "Error: Could not fetch property details after upload.");
                         }
-                      });
 
-                      Fluttertoast.showToast(msg: "Successfully Uploaded!\nWater Meter Image!");
+                        Fluttertoast.showToast(msg: "Successfully Uploaded!\nWater Meter Image!");
+                      }
+                    } catch (e) {
+                      print("Error uploading image: $e");
                     } finally {
-                      if(mounted) {
+                      if (mounted) {
                         setState(() {
                           isLoading = false;
+                          
                         });
                       }
                     }
@@ -1027,6 +1088,7 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                 ),
               ),
             ),
+
             const SizedBox(height: 10),
           ],
         ),

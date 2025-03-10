@@ -67,6 +67,10 @@ bool visibilityState1 = true;
 bool visibilityState2 = false;
 bool adminAcc = false;
 
+String currentMonth = DateFormat.MMMM().format(DateTime.now()); // Example: February
+String previousMonth = DateFormat.MMMM().format(DateTime.now().subtract(Duration(days: 30))); // Example: January
+Map<String, String> previousMonthReadings = {}; // Store previous readings per address
+Map<String, String> currentMonthReadings = {};
 
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
 
@@ -165,6 +169,12 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
         fetchMunicipalities(); // Fetch municipalities after user details are loaded
       }
     });
+    fetchAllPreviousMonthReadings().then((_) {
+      if (mounted) {
+        setState(() {}); // Refresh UI after data is loaded
+      }
+    });
+
     _searchController.addListener(_onSearchChanged);
     checkAdmin();
     super.initState();
@@ -677,7 +687,110 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
    }
  }
 
-  @override
+ Future<void> fetchAllPreviousMonthReadings() async {
+   try {
+     int currentYear = DateTime.now().year;
+     int previousYear = currentYear - 1;
+
+     String currentMonth = DateFormat.MMMM().format(DateTime.now()); // Example: March
+     String prevMonth = DateFormat.MMMM().format(DateTime.now().subtract(Duration(days: 30))); // Example: February
+
+     String prevMonthYear = (currentMonth == "January") ? previousYear.toString() : currentYear.toString();
+     String currentMonthYear = currentYear.toString(); // Always use the current year for current readings
+
+     previousMonthReadings.clear(); // Clear previous data
+     currentMonthReadings.clear();  // Clear current month data
+
+     if (widget.isLocalMunicipality) {
+       // ✅ Local Municipality: Fetch readings from the correct paths
+       CollectionReference consumptionCollection = FirebaseFirestore.instance
+           .collection('localMunicipalities')
+           .doc(widget.municipalityId)
+           .collection('consumption');
+
+       // Fetch **Previous Month's Readings**
+       QuerySnapshot prevQuerySnapshot = await consumptionCollection
+           .doc(prevMonthYear) // Year Folder
+           .collection(prevMonth) // Previous Month Collection
+           .get();
+
+       if (prevQuerySnapshot.docs.isNotEmpty) {
+         for (var doc in prevQuerySnapshot.docs) {
+           var data = doc.data() as Map<String, dynamic>;
+           previousMonthReadings[data['address']] = data['water_meter_reading'] ?? "N/A";
+         }
+       }
+
+       // Fetch **Current Month's Readings**
+       QuerySnapshot currentQuerySnapshot = await consumptionCollection
+           .doc(currentMonthYear) // Year Folder
+           .collection(currentMonth) // Current Month Collection
+           .get();
+
+       if (currentQuerySnapshot.docs.isNotEmpty) {
+         for (var doc in currentQuerySnapshot.docs) {
+           var data = doc.data() as Map<String, dynamic>;
+           currentMonthReadings[data['address']] = data['water_meter_reading'] ?? "N/A";
+         }
+       }
+     } else {
+       // ✅ District Municipality: Fetch readings for ALL municipalities under the district
+       CollectionReference municipalitiesCollection = FirebaseFirestore.instance
+           .collection('districts')
+           .doc(widget.districtId)
+           .collection('municipalities');
+
+       QuerySnapshot municipalitiesSnapshot = await municipalitiesCollection.get();
+
+       for (var municipalityDoc in municipalitiesSnapshot.docs) {
+         String municipalityId = municipalityDoc.id;
+
+         CollectionReference consumptionCollection = municipalitiesCollection
+             .doc(municipalityId)
+             .collection('consumption');
+
+         // Fetch **Previous Month's Readings**
+         QuerySnapshot prevQuerySnapshot = await consumptionCollection
+             .doc(prevMonthYear) // Year Folder
+             .collection(prevMonth) // Previous Month Collection
+             .get();
+
+         if (prevQuerySnapshot.docs.isNotEmpty) {
+           for (var doc in prevQuerySnapshot.docs) {
+             var data = doc.data() as Map<String, dynamic>;
+             previousMonthReadings[data['address']] = data['water_meter_reading'] ?? "N/A";
+           }
+         }
+
+         // Fetch **Current Month's Readings**
+         QuerySnapshot currentQuerySnapshot = await consumptionCollection
+             .doc(currentMonthYear) // Year Folder
+             .collection(currentMonth) // Current Month Collection
+             .get();
+
+         if (currentQuerySnapshot.docs.isNotEmpty) {
+           for (var doc in currentQuerySnapshot.docs) {
+             var data = doc.data() as Map<String, dynamic>;
+             currentMonthReadings[data['address']] = data['water_meter_reading'] ?? "N/A";
+           }
+         }
+       }
+     }
+
+     if (mounted) {
+       setState(() {}); // Refresh UI
+     }
+
+     print("✅ Fetch complete: Previous Month ($prevMonthYear/$prevMonth), Current Month ($currentMonthYear/$currentMonth)");
+
+   } catch (e) {
+     print("❌ Error fetching previous and current month readings: $e");
+   }
+ }
+
+
+
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[350],
@@ -2389,8 +2502,19 @@ class _UsersConnectionsAllState extends State<UsersConnectionsAll> {
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          'Water Meter Reading: ${_allPropertyResults[index]['water_meter_reading']}',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                          'Previous Month ($previousMonth) Reading: ${previousMonthReadings[_allPropertyResults[index]['address']] ?? "N/A"}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          'Water Meter Reading for $currentMonth: ${currentMonthReadings[_allPropertyResults[index]['address']] ?? "N/A"}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
                         const SizedBox(height: 5),
                         Text(

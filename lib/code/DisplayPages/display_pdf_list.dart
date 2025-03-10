@@ -115,7 +115,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
   @override
   void initState() {
     dropdownValue = formattedDate;
-    setMonthLimits(formattedDate);
+    setMonthLimits();
     _initializeFirestoreReference();
     super.initState();
   }
@@ -514,6 +514,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
 
   @override
   Widget build(BuildContext context) {
+    setMonthLimits();
     return Scaffold(
       backgroundColor: Colors.grey[350],
       appBar: AppBar(
@@ -567,25 +568,20 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                         fillColor: Colors.white,
                         filled: true,
                         suffixIcon: DropdownButtonFormField<String>(
-                          value: dropdownValue,
-                          items: dropdownMonths
-                              .map<DropdownMenuItem<String>>((String value) {
+                          value: dropdownValue, // Ensure this value is valid
+                          items: dropdownMonths.map<DropdownMenuItem<String>>((String value) {
                             return DropdownMenuItem<String>(
                               value: value,
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 0.0, horizontal: 20.0),
-                                child: Text(
-                                  value,
-                                  style: const TextStyle(fontSize: 16),
-                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 0.0, horizontal: 20.0),
+                                child: Text(value, style: const TextStyle(fontSize: 16)),
                               ),
                             );
                           }).toList(),
                           onChanged: (String? newValue) {
-                            if(mounted) {
+                            if (mounted && newValue != null) {
                               setState(() {
-                                dropdownValue = newValue!;
+                                dropdownValue = newValue;
                               });
                             }
                           },
@@ -594,8 +590,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                             child: Icon(Icons.arrow_circle_down_sharp),
                           ),
                           iconEnabledColor: Colors.green,
-                          style: const TextStyle(
-                              color: Colors.black, fontSize: 18),
+                          style: const TextStyle(color: Colors.black, fontSize: 18),
                           dropdownColor: Colors.grey[50],
                           isExpanded: true,
                         ),
@@ -669,11 +664,10 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
   // }
 
   void getPDFByAccMon(String accNum, String month) async {
-    Fluttertoast.showToast(
-        msg: "Now downloading your statement!\nPlease wait a few seconds!"
-    );
+    Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait a few seconds!");
 
-    String formattedAddress = widget.propertyAddress.trim(); // Trim spaces
+    // Trim spaces to avoid incorrect Firebase pathing
+    String formattedAddress = widget.propertyAddress.trim();
 
     print('📂 Attempting to list files in path: pdfs/$month/${widget.userNumber}/$formattedAddress/');
 
@@ -702,7 +696,6 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
             html.window.open(url, "_blank");
             Fluttertoast.showToast(msg: "Statement opened in a new tab.");
           } else {
-            // ✅ Open in the device browser instead of downloading manually
             openURL(url);
             Fluttertoast.showToast(msg: "Opening statement in browser...");
           }
@@ -719,6 +712,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
       Fluttertoast.showToast(msg: "Error downloading statement.");
     }
   }
+
 
 
   Future<void> downloadFileUsingDownloadManager(String url, String fileName) async {
@@ -759,134 +753,31 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
   }
 
 
-  void setMonthLimits(String currentMonth) {
-    String month1 = 'January';
-    String month2 = 'February';
-    String month3 = 'March';
-    String month4 = 'April';
-    String month5 = 'May';
-    String month6 = 'June';
-    String month7 = 'July';
-    String month8 = 'August';
-    String month9 = 'September';
-    String month10 = 'October';
-    String month11 = 'November';
-    String month12 = 'December';
+  void setMonthLimits() {
+    DateTime now = DateTime.now();
+    DateTime previousMonthDate = now.subtract(Duration(days: 30)); // Previous month
+    String previousMonth = DateFormat('MMMM').format(previousMonthDate); // Format as full month name
 
-    if (currentMonth.contains(month1)) {
-      dropdownMonths = [
-        'Select Month',
-        month10,
-        month11,
-        month12,
-        currentMonth,
-      ];
-    } else if (currentMonth.contains(month2)) {
-      dropdownMonths = [
-        'Select Month',
-        month11,
-        month12,
-        month1,
-        currentMonth,
-      ];
-    } else if (currentMonth.contains(month3)) {
-      dropdownMonths = [
-        'Select Month',
-        month12,
-        month1,
-        month2,
-        currentMonth,
-      ];
-    } else if (currentMonth.contains(month4)) {
-      dropdownMonths = [
-        'Select Month',
-        month1,
-        month2,
-        month3,
-        currentMonth,
-      ];
-    } else if (currentMonth.contains(month5)) {
-      dropdownMonths = [
-        'Select Month',
-        month2,
-        month3,
-        month4,
-        currentMonth,
-      ];
-    } else if (currentMonth.contains(month6)) {
-      dropdownMonths = [
-        'Select Month',
-        month3,
-        month4,
-        month5,
-        currentMonth,
-      ];
-    } else if (currentMonth.contains(month7)) {
-      dropdownMonths = [
-        'Select Month',
-        month4,
-        month5,
-        month6,
-        currentMonth,
-      ];
-    } else if (currentMonth.contains(month8)) {
-      dropdownMonths = [
-        'Select Month',
-        month5,
-        month6,
-        month7,
-        currentMonth,
-      ];
-    } else if (currentMonth.contains(month9)) {
-      dropdownMonths = [
-        'Select Month',
-        month6,
-        month7,
-        month8,
-        currentMonth,
-      ];
-    } else if (currentMonth.contains(month10)) {
-      dropdownMonths = [
-        'Select Month',
-        month7,
-        month8,
-        month9,
-        currentMonth,
-      ];
-    } else if (currentMonth.contains(month11)) {
-      dropdownMonths = [
-        'Select Month',
-        month8,
-        month9,
-        month10,
-        currentMonth,
-      ];
-    } else if (currentMonth.contains(month12)) {
-      dropdownMonths = [
-        'Select Month',
-        month9,
-        month10,
-        month11,
-        currentMonth,
-      ];
-    } else {
-      dropdownMonths = [
-        'Select Month',
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December'
-      ];
+    // Generate the last 3 months before the previous month
+    String month1 = DateFormat('MMMM').format(previousMonthDate.subtract(Duration(days: 30)));
+    String month2 = DateFormat('MMMM').format(previousMonthDate.subtract(Duration(days: 60)));
+    String month3 = DateFormat('MMMM').format(previousMonthDate.subtract(Duration(days: 90)));
+
+    dropdownMonths = [
+      'Select Month',
+      month3,
+      month2,
+      month1,
+      previousMonth, // The most recent available statement
+    ];
+
+    // ✅ Ensure dropdownValue is in the list to prevent assertion errors
+    if (!dropdownMonths.contains(dropdownValue)) {
+      dropdownValue = previousMonth; // Set default to previous month
     }
   }
+
+
   void openPDF(BuildContext context, File? file, String? webUrl) async {
     if (kIsWeb) {
       // ✅ Web: Open PDF in a new tab

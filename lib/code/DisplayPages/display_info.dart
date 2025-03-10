@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -76,7 +77,7 @@ bool visibilityState1 = true;
 bool visibilityState2 = false;
 
 bool imgUploadCheck = false;
-
+DateTime? latestUploadTimestamp; // Variable to store the latest timestamp
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
 
 class FireStorageService extends ChangeNotifier {
@@ -140,6 +141,10 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
 
   var _isLoading = false;
   bool _isLoadingProp = true;
+  String currentMonth = DateFormat.MMMM().format(DateTime.now()); // Example: February
+  String previousMonth = DateFormat.MMMM().format(DateTime.now().subtract(Duration(days: 30))); // Example: January
+  String? previousMonthReading;
+  String?currentMonthReading;
 
   @override
   void initState() {
@@ -181,7 +186,15 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
     propPhoneNum = widget.property.cellNum;
     wMeterNumber = widget.property.waterMeterNum;
     // Adjust the query to listen only to the selected property
-
+    _fetchLatestUploadTimestamp();
+    fetchMeterReadings().then((readings) {
+      if (mounted) {
+        setState(() {
+          previousMonthReading = readings["previous"];  // Extract previous month reading
+          currentMonthReading = readings["current"];    // Extract current month reading
+        });
+      }
+    });
   }
 
   @override
@@ -419,6 +432,159 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
       print("User is not authenticated or phone number is not available.");
     }
   }
+
+  Future<Timestamp?> getLatestUploadTimestamp(
+      String? districtId, String municipalityId, String userPhoneNumber, String propertyAddress) async {
+    try {
+      QuerySnapshot querySnapshot;
+
+      if (districtId != null && districtId.isNotEmpty) {
+        // District-based municipality
+        querySnapshot = await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('actionLogs')
+            .doc(userPhoneNumber)
+            .collection(propertyAddress)
+            .orderBy('timestamp', descending: true) // Get latest entry
+            .limit(1)
+            .get();
+      } else {
+        // Local municipality
+        querySnapshot = await FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .collection('actionLogs')
+            .doc(userPhoneNumber)
+            .collection(propertyAddress)
+            .orderBy('timestamp', descending: true)
+            .limit(1)
+            .get();
+      }
+
+      if (querySnapshot.docs.isNotEmpty) {
+        return querySnapshot.docs.first['timestamp']; // Return latest timestamp
+      } else {
+        return null; // No records found
+      }
+    } catch (e) {
+      print("❌ Error fetching timestamp: $e");
+      return null;
+    }
+  }
+
+
+  Future<void> _fetchLatestUploadTimestamp() async {
+    FirebaseAuth auth = FirebaseAuth.instance;
+    User? user = auth.currentUser;
+
+    if (user != null) {
+      Timestamp? timestamp = await getLatestUploadTimestamp(
+        widget.districtId,
+        widget.municipalityId,
+        user.phoneNumber ?? "",
+        widget.propertyAddress,
+      );
+
+      if (mounted) {
+        setState(() {
+          latestUploadTimestamp = timestamp?.toDate();
+        });
+      }
+      print("📅 Latest Upload Timestamp Updated: $latestUploadTimestamp");
+    }
+  }
+
+  Future<Map<String, String>> fetchMeterReadings() async {
+    try {
+      DateTime now = DateTime.now();
+      DateTime prevMonthDate = now.subtract(const Duration(days: 30));
+      String currentMonth = DateFormat.MMMM().format(now); // Example: "February"
+      String previousMonth = DateFormat.MMMM().format(prevMonthDate); // Example: "January"
+      String currentYear = DateFormat('yyyy').format(now); // Example: "2025"
+      String previousYear = DateFormat('yyyy').format(now.subtract(const Duration(days: 365))); // Example: "2024"
+
+      // Determine the correct year for previous month
+      String prevMonthYear = (previousMonth == "December" && now.month == 1) ? previousYear : currentYear;
+      print("📅 Fetching meter readings for:");
+      print("🔹 Previous Month: $previousMonth ($prevMonthYear)");
+      print("🔹 Current Month: $currentMonth ($currentYear)");
+
+      Map<String, String> readings = {
+        "previous": "N/A",
+        "current": "N/A",
+      };
+
+      Future<DocumentSnapshot> fetchReading(String year, String month) async {
+        DocumentReference propertyDoc;
+
+        if (widget.isLocalMunicipality) {
+          propertyDoc = FirebaseFirestore.instance
+              .collection('localMunicipalities')
+              .doc(widget.municipalityId)
+              .collection('consumption')
+              .doc(year)
+              .collection(month)
+              .doc(widget.propertyAddress);
+        } else {
+          propertyDoc = FirebaseFirestore.instance
+              .collection('districts')
+              .doc(widget.districtId)
+              .collection('municipalities')
+              .doc(widget.municipalityId)
+              .collection('consumption')
+              .doc(year)
+              .collection(month)
+              .doc(widget.propertyAddress);
+        }
+
+        return await propertyDoc.get();
+      }
+
+      // Fetch Previous Month Reading
+      DocumentSnapshot prevMonthSnapshot = await fetchReading(prevMonthYear, previousMonth);
+      if (prevMonthSnapshot.exists) {
+        var data = prevMonthSnapshot.data() as Map<String, dynamic>;
+        readings["previous"] = data['water_meter_reading'] ?? "N/A";
+        print("✅ Previous Month Reading: ${readings["previous"]}");
+      } else {
+        print("❌ No Previous Month Reading Found");
+      }
+
+      // Fetch Current Month Reading
+      DocumentSnapshot currentMonthSnapshot = await fetchReading(currentYear, currentMonth);
+      if (currentMonthSnapshot.exists) {
+        var data = currentMonthSnapshot.data() as Map<String, dynamic>;
+        readings["current"] = data['water_meter_reading'] ?? "N/A";
+        print("✅ Current Month Reading: ${readings["current"]}");
+      } else {
+        print("❌ No Current Month Reading Found");
+      }
+
+      return readings;
+    } catch (e) {
+      print("🚨 Error fetching meter readings: $e");
+      return {
+        "previous": "N/A",
+        "current": "N/A",
+      };
+    }
+  }
+
+  Future<void> _fetchLatestWaterMeterReading() async {
+    Map<String, String> readings = await fetchMeterReadings();
+
+    if (mounted) {
+      setState(() {
+        previousMonthReading = readings["previous"] ?? "N/A";
+        currentMonthReading = readings["current"] ?? "N/A";
+      });
+    }
+    print("📊 Updated Readings - Previous: $previousMonthReading | Current: $currentMonthReading");
+  }
+
 
 
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
@@ -1479,7 +1645,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
           );
         });
   }
-
+  DateTime testDate = DateTime(2024, 3, 28);
   void _resetTextFields() {
     _accountNumberController.text = '';
     _addressController.text = '';
@@ -1616,9 +1782,21 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                               height: 5,
                             ),
                             Text(
-                              'Water Meter Reading: ${documentSnapshot['water_meter_reading']}',
+                              'Previous Month ($previousMonth) Reading: $previousMonthReading',
                               style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            Text(
+                              'Water Meter Reading for $currentMonth: $currentMonthReading',
+                              style: const TextStyle(
+                                               fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
                             const SizedBox(
                               height: 5,
@@ -1932,8 +2110,10 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           right: 8,
                                         ),
                                         // Adding some space between the buttons
-                                        child: BasicIconButtonGrey(
-                                          onPress: () async {
+                                        child: ElevatedButton.icon(
+                                          onPressed: DateTime.now().day >= 28
+                                              ? null // Fully disables button functionality
+                                              : () async {
                                             wMeterNumber =
                                             documentSnapshot['water_meter_number'];
                                             propPhoneNum =
@@ -1960,29 +2140,32 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                                     IconButton(
                                                       onPressed: () async {
                                                         Fluttertoast.showToast(
-                                                            msg:
-                                                            "Uploading a new image\nwill replace current image!");
+                                                          msg: "Uploading a new image\nwill replace current image!",
+                                                        );
+
                                                         Navigator.pop(context);
-                                                        // Navigate to the image upload page
-                                                        Navigator.push(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                                builder: (
-                                                                    context) =>
-                                                                    ImageUploadWater(
-                                                                      userNumber: propPhoneNum,
-                                                                      meterNumber: wMeterNumber,
-                                                                      propertyAddress: widget
-                                                                          .propertyAddress,
-                                                                      districtId: widget
-                                                                          .districtId ??
-                                                                          '',
-                                                                      municipalityId: widget
-                                                                          .municipalityId,
-                                                                      isLocalMunicipality:
-                                                                      widget
-                                                                          .isLocalMunicipality,
-                                                                    )));
+
+                                                        // ✅ Wait for the ImageUploadWater screen to return a result
+                                                        bool? uploadCompleted = await Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (context) => ImageUploadWater(
+                                                              userNumber: propPhoneNum,
+                                                              meterNumber: wMeterNumber,
+                                                              propertyAddress: widget.propertyAddress,
+                                                              districtId: widget.districtId ?? '',
+                                                              municipalityId: widget.municipalityId,
+                                                              isLocalMunicipality: widget.isLocalMunicipality,
+                                                            ),
+                                                          ),
+                                                        );
+
+                                                        // ✅ Only refresh the timestamp if the upload was successful
+                                                        if (uploadCompleted == true) {
+                                                          await _fetchLatestUploadTimestamp();
+                                                          await _fetchLatestWaterMeterReading();
+
+                                                        }
                                                       },
                                                       icon: const Icon(
                                                         Icons.done,
@@ -1994,13 +2177,41 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                               },
                                             );
                                           },
-                                          labelText: 'Update water meter\n image and reading',
-                                          fSize: 15,
-                                          faIcon: const FaIcon(
+                                          icon: FaIcon(
                                             Icons.camera_alt,
+                                            color: DateTime.now().day >= 28 ? Colors.grey.shade500 : Colors.black, // Icon fades when disabled
                                           ),
-                                          fgColor: Colors.black38,
-                                          btSize: const Size(100, 38),
+                                          label: Text(
+                                            DateTime.now().day >= 28
+                                                ? 'Meter uploads can only be\ndone before the 28th'
+                                                : 'Update water meter\nimage and reading',
+                                            textAlign: TextAlign.center,
+                                            style: GoogleFonts.tenorSans(
+                                              color: DateTime.now().day >= 28 ? Colors.white : Colors.black, // White text when disabled
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            minimumSize: const Size(200, 50), // Match other buttons
+                                            backgroundColor: DateTime.now().day >= 28
+                                                ? Colors.grey.shade600 // Dark grey when disabled
+                                                : Colors.white70, // Normal white background when enabled
+                                            foregroundColor: DateTime.now().day >= 28
+                                                ? Colors.white // White text/icon when disabled
+                                                : Colors.black, // Black text/icon when enabled
+                                            disabledForegroundColor: Colors.white, // Ensure text stays white when disabled
+                                            disabledBackgroundColor: Colors.grey.shade600, // Ensure background stays dark grey when disabled
+                                            side: BorderSide(
+                                              width: 1,
+                                              color: DateTime.now().day >= 28 ? Colors.grey.shade700 : Colors.black38, // Darker border when disabled
+                                            ),
+                                            shadowColor: DateTime.now().day >= 28 ? Colors.transparent : Colors.black, // Remove shadow when disabled
+                                            elevation: DateTime.now().day >= 28 ? 0 : 3, // No elevation for disabled button
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -2233,6 +2444,20 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                     ),
                                   ),
                                 ),
+                                const SizedBox(height: 10),
+                                Center(
+                                  child: Text(
+                                    latestUploadTimestamp != null
+                                        ? "📅 Image uploaded on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(latestUploadTimestamp!)}"
+                                        : "⚠️ No upload history available.",
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.blueGrey,
+                                    ),textAlign: TextAlign.center,
+                                  ),
+                                ),
+
                                 const SizedBox(
                                   height: 10,
                                 ),
@@ -2291,44 +2516,29 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                                     "Now opening your statement!\nPlease wait a few seconds!");
 
                                                 _onSubmit(); // Handle any necessary updates
+                                                // Get the previous month instead of the current one
+                                                String previousMonth = DateFormat('MMMM').format(DateTime.now().subtract(Duration(days: 30)));
 
                                                 // Ensure the address is trimmed and formatted consistently
-                                                String formattedAddress = widget
-                                                    .propertyAddress
-                                                    .trim(); // Trim any extra spaces
-                                                String formattedMonth =
-                                                DateFormat('MMMM')
-                                                    .format(DateTime.now());
+                                                String formattedAddress = widget.propertyAddress.trim(); // Trim any extra spaces
 
                                                 // Print statements to debug the exact path being used
-                                                print(
-                                                    'Attempting to list files in path: pdfs/$formattedMonth/${widget
-                                                        .userNumber}/$formattedAddress/');
+                                                print('Attempting to list files in path: pdfs/$previousMonth/${widget.userNumber}/$formattedAddress/');
 
                                                 // Reference the storage path based on the formatted address
-                                                final storageRef = FirebaseStorage
-                                                    .instance
+                                                final storageRef = FirebaseStorage.instance
                                                     .ref()
-                                                    .child(
-                                                    "pdfs/$formattedMonth/${widget
-                                                        .userNumber}/$formattedAddress");
+                                                    .child("pdfs/$previousMonth/${widget.userNumber}/$formattedAddress");
 
                                                 try {
-                                                  final listResult =
-                                                  await storageRef
-                                                      .listAll();
+                                                  final listResult = await storageRef.listAll();
 
                                                   // Log the number of files found
-                                                  print(
-                                                      'Files found in directory: ${listResult
-                                                          .items.length}');
+                                                  print('Files found in directory: ${listResult.items.length}');
 
                                                   // If no files are found, inform the user
-                                                  if (listResult
-                                                      .items.isEmpty) {
-                                                    Fluttertoast.showToast(
-                                                        msg:
-                                                        "No files found in the directory.");
+                                                  if (listResult.items.isEmpty) {
+                                                    Fluttertoast.showToast(msg: "No files found in the directory.");
                                                     return;
                                                   }
 

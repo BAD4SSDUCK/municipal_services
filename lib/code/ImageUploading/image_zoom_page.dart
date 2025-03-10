@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:easy_image_viewer/easy_image_viewer.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -162,7 +163,8 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
       DateFormat.MMMMd().format(now); //format for Day Month only
   bool _meterReadingUpdatedFirst = false;
   bool _imageUploadedFirst = false;
-
+  String currentMonth = DateFormat.MMMM().format(DateTime.now()); // Example: February
+  String previousMonth = DateFormat.MMMM().format(DateTime.now().subtract(Duration(days: 30)));
   String dropdownValue = 'Select Month';
   List<String> dropdownMonths = [
     'Select Month',
@@ -179,11 +181,13 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
     'November',
     'December'
   ];
+  DateTime? latestUploadTimestamp; // Variable to store timestamp
   CollectionReference? _propList;
   @override
   void initState() {
     super.initState();
     fetchUserDetails();
+    fetchMeterReadings();
     print('ImageZoomPage Init:');
     print('Municipality Email: ${widget.municipalityUserEmail}');
     print('District ID: ${widget.districtId}');
@@ -195,21 +199,24 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
     super.dispose();
   }
 
+  DateTime testDate = DateTime(2024, 3, 28);
+  bool _hasFetchedTimestamp = false; // Prevent multiple calls
+  String? previousMonthReading = "N/A"; // Holds previous month reading
+  String? currentMonthReading = "N/A"; // Holds current month reading
+
   Future<void> fetchUserDetails() async {
     try {
       User? user = FirebaseAuth.instance.currentUser;
-
       if (user != null) {
-        print(
-            'Fetching properties for ${widget.isLocalMunicipality ? "local" : "district"} municipality.');
+        print('Fetching properties for ${widget.isLocalMunicipality ? "local" : "district"} municipality.');
 
+        // Determine the correct Firestore path
         if (widget.isLocalMunicipality) {
           _propList = FirebaseFirestore.instance
               .collection('localMunicipalities')
               .doc(widget.municipalityId)
               .collection('properties');
-          print(
-              'Query Path: localMunicipalities/${widget.municipalityId}/properties');
+          print('Query Path: localMunicipalities/${widget.municipalityId}/properties');
         } else {
           _propList = FirebaseFirestore.instance
               .collection('districts')
@@ -217,32 +224,43 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
               .collection('municipalities')
               .doc(widget.municipalityId)
               .collection('properties');
-          print(
-              'Query Path: districts/${widget.districtId}/municipalities/${widget.municipalityId}/properties');
+          print('Query Path: districts/${widget.districtId}/municipalities/${widget.municipalityId}/properties');
         }
 
-        // Execute a test query with the provided address to ensure the path is correct
         final snapshot = await _propList!
             .where('address', isEqualTo: widget.addressSnap)
             .limit(1)
             .get();
 
         if (snapshot.docs.isNotEmpty) {
+          var document = snapshot.docs.first;
+          var data = document.data() as Map<String, dynamic>;
+
+          String retrievedPhoneNumber = data['cellNumber'] ?? "";
+          String retrievedMeterNumber = data['water_meter_number'] ?? "";
+
+          if (mounted) {
+            setState(() {
+              propPhoneNum = retrievedPhoneNumber;
+              wMeterNumber = retrievedMeterNumber;
+              print('✅ Property phone number retrieved: $propPhoneNum');
+            });
+
+            // Call fetchLatestUploadTimestamp only ONCE after getting the phone number
+            if (!_hasFetchedTimestamp && propPhoneNum.isNotEmpty) {
+              _hasFetchedTimestamp = true;
+              fetchLatestUploadTimestamp();
+            }
+          }
           print('Test Query Result: ${snapshot.docs.first.data()}');
         } else {
-          print(
-              'No matching property found with address: ${widget.addressSnap}');
+          print('⚠️ No matching property found with address: ${widget.addressSnap}');
         }
-          if(mounted) {
-            setState(() {
-              print('Initialized _propList or loaded municipality list');
-            });
-          }
       } else {
         print("No current user found.");
       }
     } catch (e) {
-      print('Error fetching user details: $e');
+      print('❌ Error fetching user details: $e');
     }
   }
 
@@ -397,6 +415,158 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
       print('Error logging water meter reading update: $e');
     }
   }
+
+
+  Future<void> fetchLatestUploadTimestamp() async {
+    if (propPhoneNum.isEmpty) return; // Ensure phone number is set
+
+    print("🔍 Fetching latest timestamp in ImageZoomPage...");
+    print("➡️ Using Phone Number: $propPhoneNum");
+    print("➡️ District ID: ${widget.districtId}");
+    print("➡️ Municipality ID: ${widget.municipalityId}");
+    print("➡️ Property Address (Formatted): ${widget.addressSnap}");
+
+    Timestamp? fetchedTimestamp = await getLatestUploadTimestamp(
+      widget.districtId,
+      widget.municipalityId,
+      propPhoneNum,
+      widget.addressSnap,
+    );
+
+    if (fetchedTimestamp != null) {
+      DateTime newTimestamp = fetchedTimestamp.toDate();
+
+      // Ensure the timestamp is updated correctly
+      if (mounted) {
+        setState(() {
+          latestUploadTimestamp = newTimestamp;
+          print("📅 Latest Upload Timestamp Updated: $latestUploadTimestamp");
+        });
+      }
+    }
+  }
+
+  Future<Timestamp?> getLatestUploadTimestamp(
+      String? districtId, String municipalityId, String userPhoneNumber, String propertyAddress) async {
+    try {
+      QuerySnapshot querySnapshot;
+
+      if (districtId != null && districtId.isNotEmpty) {
+        // District-based municipality
+        querySnapshot = await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('actionLogs')
+            .doc(userPhoneNumber)
+            .collection(propertyAddress)
+            .orderBy('timestamp', descending: true) // Get latest entry
+            .limit(1)
+            .get();
+      } else {
+        // Local municipality
+        querySnapshot = await FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .collection('actionLogs')
+            .doc(userPhoneNumber)
+            .collection(propertyAddress)
+            .orderBy('timestamp', descending: true)
+            .limit(1)
+            .get();
+      }
+
+      if (querySnapshot.docs.isNotEmpty) {
+        return querySnapshot.docs.first['timestamp']; // Return latest timestamp
+      } else {
+        return null; // No records found
+      }
+    } catch (e) {
+      print("❌ Error fetching timestamp: $e");
+      return null;
+    }
+  }
+
+  Future<void> fetchMeterReadings() async {
+    try {
+      int currentYear = DateTime.now().year;
+      int previousYear = currentYear - 1;
+
+      String currentMonth = DateFormat.MMMM().format(DateTime.now()); // Example: March
+      String prevMonth = DateFormat.MMMM().format(DateTime.now().subtract(Duration(days: 30))); // Example: February
+
+      // If it's January, use December of the previous year
+      String prevMonthYear = (currentMonth == "January") ? previousYear.toString() : currentYear.toString();
+      String currentMonthYear = currentYear.toString(); // Always use the current year for current readings
+
+      String propertyAddress = widget.addressSnap.trim(); // Get the property address
+
+      // Initialize Firestore references based on municipality type
+      CollectionReference consumptionCollection;
+      if (widget.isLocalMunicipality) {
+        consumptionCollection = FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(widget.municipalityId)
+            .collection('consumption');
+      } else {
+        consumptionCollection = FirebaseFirestore.instance
+            .collection('districts')
+            .doc(widget.districtId)
+            .collection('municipalities')
+            .doc(widget.municipalityId)
+            .collection('consumption');
+      }
+
+      // Fetch **Previous Month's Reading**
+      DocumentSnapshot prevReadingDoc = await consumptionCollection
+          .doc(prevMonthYear) // Year folder
+          .collection(prevMonth) // Month collection
+          .doc(propertyAddress) // Property address document
+          .get();
+
+      String prevReading = prevReadingDoc.exists
+          ? (prevReadingDoc.data() as Map<String, dynamic>)['water_meter_reading'] ?? "N/A"
+          : "N/A";
+
+      print("📊 Previous Month ($prevMonthYear/$prevMonth) Reading: $prevReading");
+
+      // Fetch **Current Month's Reading**
+      DocumentSnapshot currentReadingDoc = await consumptionCollection
+          .doc(currentMonthYear) // Year folder
+          .collection(currentMonth) // Month collection
+          .doc(propertyAddress) // Property address document
+          .get();
+
+      String currentReading = currentReadingDoc.exists
+          ? (currentReadingDoc.data() as Map<String, dynamic>)['water_meter_reading'] ?? "N/A"
+          : "N/A";
+
+      print("📊 Current Month ($currentMonthYear/$currentMonth) Reading: $currentReading");
+
+      // ✅ Update UI with fetched readings
+      if (mounted) {
+        setState(() {
+          previousMonthReading = prevReading;
+          currentMonthReading = currentReading;
+        });
+      }
+    } catch (e) {
+      print("❌ Error fetching meter readings: $e");
+    }
+  }
+
+  Future<void> _fetchLatestWaterMeterReadingMunicipal() async {
+    await fetchMeterReadings(); // Call the existing method to get readings
+
+    if (mounted) {
+      setState(() {
+        // No need to manually update variables, `fetchMeterReadings()` already updates state
+      });
+    }
+    print("📊 Updated Municipal Readings - Previous: $previousMonthReading | Current: $currentMonthReading");
+  }
+
 
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
     _accountNumberController.text = '';
@@ -1331,6 +1501,9 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
 
                     print('Correct water meter number: $wMeterNumber');
                     print('Property phone number: $propPhoneNum');
+                    // Future.microtask(() {
+                    //   fetchLatestUploadTimestamp();
+                    // });
                   }
 
                   String billMessage;
@@ -1770,6 +1943,20 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                                     child: CircularProgressIndicator());
                               },
                             ),
+                            const SizedBox(height: 10),
+                            Center(
+                              child: Text(
+                                latestUploadTimestamp != null
+                                    ? "📅 Image uploaded on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(latestUploadTimestamp!)}"
+                                    : "⚠️ No upload history available.",
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.blueGrey,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
 
                             // InkWell(
                             //   ///onTap allows to open image upload page if user taps on the image.
@@ -1873,8 +2060,10 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                             // ),
 
                             Center(
-                              child: BasicIconButtonGrey(
-                                onPress: () async {
+                              child: ElevatedButton.icon(
+                                onPressed: DateTime.now().day >= 28
+                                    ? null // Fully disables button functionality
+                                    : () async {
                                   wMeterNumber =
                                       documentSnapshot['water_meter_number'];
                                   propPhoneNum = documentSnapshot['cellNumber'];
@@ -1910,32 +2099,44 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                                                     "Navigating to ImageUploadWater:");
                                                 print(
                                                     "User Email: ${widget.municipalityUserEmail}");
-                                                print("District ID: ${widget.districtId}");
-                                                print("Municipality ID: ${widget.municipalityId}");
+                                                print(
+                                                    "District ID: ${widget.districtId}");
+                                                print(
+                                                    "Municipality ID: ${widget.municipalityId}");
                                                 Navigator.pop(context);
-                                                Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            ImageUploadWater(
-                                                              userNumber:
-                                                                  propPhoneNum,
-                                                              meterNumber:
-                                                                  wMeterNumber,
-                                                              municipalityUserEmail:
-                                                                  widget
-                                                                      .municipalityUserEmail,
-                                                              propertyAddress:
-                                                                  propertyAddress, // Pass property address
-                                                              districtId: widget
-                                                                  .districtId, // Pass districtId
-                                                              municipalityId: widget
-                                                                  .municipalityId,
-                                                              isLocalMunicipality:
-                                                                  widget
-                                                                      .isLocalMunicipality,
-                                                              isLocalUser: widget.isLocalUser,
-                                                            )));
+                                                bool? uploadCompleted = await Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        ImageUploadWater(
+                                                      userNumber: propPhoneNum,
+                                                      meterNumber: wMeterNumber,
+                                                      municipalityUserEmail: widget
+                                                          .municipalityUserEmail,
+                                                      propertyAddress:
+                                                          propertyAddress, // Pass property address
+                                                      districtId: widget
+                                                          .districtId, // Pass districtId
+                                                      municipalityId:
+                                                          widget.municipalityId,
+                                                      isLocalMunicipality: widget
+                                                          .isLocalMunicipality,
+                                                      isLocalUser:
+                                                          widget.isLocalUser,
+                                                    ),
+                                                  ),);
+                                                if (uploadCompleted == true) {
+                                                  print("✅ Upload completed successfully! Refreshing timestamp...");
+
+                                                  /// **Ensure UI Refresh**
+                                                  await fetchLatestUploadTimestamp();
+                                                  await _fetchLatestWaterMeterReadingMunicipal();
+                                                  if (mounted) {
+                                                    setState(() {}); // Force rebuild
+                                                  }
+                                                } else {
+                                                  print("⚠️ Upload was not completed.");
+                                                }
                                               },
                                               icon: const Icon(
                                                 Icons.done,
@@ -1946,14 +2147,41 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                                         );
                                       });
                                 },
-                                labelText:
-                                    'Update water meter image and reading',
-                                fSize: 16,
-                                faIcon: const FaIcon(
+                                icon: FaIcon(
                                   Icons.camera_alt,
+                                  color: DateTime.now().day >= 28 ? Colors.grey.shade500 : Colors.black, // Icon fades when disabled
                                 ),
-                                fgColor: Colors.black38,
-                                btSize: const Size(100, 38),
+                                label: Text(
+                                  DateTime.now().day >= 28
+                                      ? 'Meter uploads can only be\ndone before the 28th'
+                                      : 'Update water meter\nimage and reading',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.tenorSans(
+                                    color: DateTime.now().day >= 28 ? Colors.white : Colors.black, // White text when disabled
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  minimumSize: const Size(200, 50), // Match other buttons
+                                  backgroundColor: DateTime.now().day >= 28
+                                      ? Colors.grey.shade600 // Dark grey when disabled
+                                      : Colors.white70, // Normal white background when enabled
+                                  foregroundColor: DateTime.now().day >= 28
+                                      ? Colors.white // White text/icon when disabled
+                                      : Colors.black, // Black text/icon when enabled
+                                  disabledForegroundColor: Colors.white, // Ensure text stays white when disabled
+                                  disabledBackgroundColor: Colors.grey.shade600, // Ensure background stays dark grey when disabled
+                                  side: BorderSide(
+                                    width: 1,
+                                    color: DateTime.now().day >= 28 ? Colors.grey.shade700 : Colors.black38, // Darker border when disabled
+                                  ),
+                                  shadowColor: DateTime.now().day >= 28 ? Colors.transparent : Colors.black, // Remove shadow when disabled
+                                  elevation: DateTime.now().day >= 28 ? 0 : 3, // No elevation for disabled button
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
                               ),
                             ),
 
@@ -1965,15 +2193,19 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w400),
                             ),
-
                             const SizedBox(
                               height: 5,
                             ),
                             Text(
-                              'Water Meter Reading: ${documentSnapshot['water_meter_reading']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
+                              'Previous Month ($previousMonth) Reading: ${previousMonthReading ?? "N/A"}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                             ),
+                            const SizedBox(height: 5),
+                            Text(
+                              'Current Month ($currentMonth) Reading: ${currentMonthReading ?? "N/A"}',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+
 
                             // Center(
                             //   child: BasicIconButtonGrey(

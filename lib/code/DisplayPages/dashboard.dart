@@ -124,9 +124,13 @@ class _MainMenuState extends State<MainMenu> {
           false; // Data is loaded, user can now interact with the menu
         });
       }
+      print("🚀 Initializing Version Fetch...");
+      getVersionStream();
       checkForUnreadMessages();
       checkForUnreadFinanceMessages();
     });
+    //migrateConsumptionDataTo2024();
+
     setupNotificationListener();
     checkForUnreadCouncilMessages();
     fetchUserProperties();
@@ -768,6 +772,70 @@ class _MainMenuState extends State<MainMenu> {
     });
   }
 
+  // Future<void> migrateConsumptionDataTo2024() async {
+  //   try {
+  //     // 🔹 Define Firestore reference (fetch all districts)
+  //     QuerySnapshot districtsSnapshot = await FirebaseFirestore.instance.collection('districts').get();
+  //
+  //     for (var districtDoc in districtsSnapshot.docs) {
+  //       String districtId = districtDoc.id;
+  //
+  //       // 🔹 Get municipalities under each district
+  //       QuerySnapshot municipalitiesSnapshot = await districtDoc.reference.collection('municipalities').get();
+  //
+  //       for (var municipalityDoc in municipalitiesSnapshot.docs) {
+  //         String municipalityId = municipalityDoc.id;
+  //
+  //         // 🔹 Get all monthly documents in the old structure
+  //         QuerySnapshot oldConsumptionData = await municipalityDoc.reference.collection('consumption').get();
+  //
+  //         for (var monthDoc in oldConsumptionData.docs) {
+  //           String month = monthDoc.id; // Example: "March"
+  //
+  //           // 🔹 Get all addresses under each month
+  //           QuerySnapshot addressSnapshot = await monthDoc.reference.collection('address').get();
+  //
+  //           for (var addressDoc in addressSnapshot.docs) {
+  //             String propertyAddress = addressDoc.id;
+  //             Map<String, dynamic> oldData = addressDoc.data() as Map<String, dynamic>;
+  //
+  //             // 🔹 Move data to the new "2024" structure
+  //             DocumentReference newDocRef = FirebaseFirestore.instance
+  //                 .collection('districts')
+  //                 .doc(districtId)
+  //                 .collection('municipalities')
+  //                 .doc(municipalityId)
+  //                 .collection('consumption')
+  //                 .doc("2024") // ✅ New Yearly Folder
+  //                 .collection(month)
+  //                 .doc(propertyAddress);
+  //
+  //             await newDocRef.set(oldData, SetOptions(merge: true));
+  //
+  //             print("✅ Migrated: $propertyAddress from $month to 2024 folder");
+  //
+  //             // (Optional) 🔥 Delete old data after migration
+  //             await addressDoc.reference.delete();
+  //           }
+  //
+  //           // (Optional) 🔥 Delete old month document if empty
+  //           QuerySnapshot checkIfEmpty = await monthDoc.reference.collection('address').get();
+  //           if (checkIfEmpty.docs.isEmpty) {
+  //             await monthDoc.reference.delete();
+  //           }
+  //         }
+  //       }
+  //     }
+  //
+  //     print("🎉 Migration to 2024 completed successfully!");
+  //   } catch (e) {
+  //     print("🚨 Migration failed: $e");
+  //   }
+  // }
+
+
+
+
   // void saveToken(String token) async {
   //   await FirebaseFirestore.instance.collection("UserToken").doc(user.phoneNumber).set({
   //     'token': token,
@@ -853,13 +921,13 @@ class _MainMenuState extends State<MainMenu> {
     });
   }
 
-  // bool visShow = true;
-  // bool visHide = false;
-  // bool visLocked = false;
-  // bool visFeatureMode = false;
-  // bool visPremium = true;
-  //
-  // List _allVersionResults = [];
+  bool visShow = true;
+  bool visHide = false;
+  bool visLocked = false;
+  bool visFeatureMode = false;
+  bool visPremium = true;
+
+  List _allVersionResults = [];
 
   final CollectionReference _chatRoom =
   FirebaseFirestore.instance.collection('chatRoom');
@@ -938,103 +1006,104 @@ class _MainMenuState extends State<MainMenu> {
     }
   }
 
+  void getVersionStream() async {
+    print("📢 Fetching version data...");
+
+    print("🛠️ Checking IDs before Firestore query...");
+    print("🔍 isLocalMunicipality: $isLocalMunicipality");
+    print("🏙️ municipalityId: $municipalityId");
+    print("🌍 districtId: $districtId");
+
+    // Ensure IDs are not empty
+    if (municipalityId.isEmpty || (!isLocalMunicipality && districtId.isEmpty)) {
+      print("❌ Error: Either municipalityId or districtId is empty!");
+      return;
+    }
+
+    try {
+      var data = await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .collection('version')
+          .get(const GetOptions(source: Source.server));
+
+      if (mounted) {
+        setState(() {
+          _allVersionResults = data.docs;
+        });
+
+        print("✅ Fetched ${_allVersionResults.length} version documents.");
+        getVersionDetails();
+      }
+    } catch (e) {
+      print("❌ Failed to fetch version data: $e");
+    }
+  }
 
 
 
+  void getVersionDetails() async {
+    print("🔍 Checking version details...");
+
+    if (_allVersionResults.isEmpty) {
+      print("❌ Error: No version documents found!");
+      return;
+    }
+
+    String activeVersion = _allVersionResults[0]['version'].toString(); // Ensure correct index
+    print("📌 Active Version from Firestore: $activeVersion");
+
+    // Fetch version document
+    try {
+      var versionDoc = await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .collection('version')
+          .doc('current')
+          .collection('current-version')
+          .doc('current')
+          .get(const GetOptions(source: Source.server)); // Forces fresh fetch
 
 
-  // void getVersionStream() async {
-  //   try {
-  //     var data = await FirebaseFirestore.instance.collection('version').get();
-  //     if (mounted) {  // Check if the widget is still in the widget tree
-  //       setState(() {
-  //         _allVersionResults = data.docs;
-  //       });
-  //       getVersionDetails();  // Make sure any further method calls inside this block also respect the lifecycle
-  //     }
-  //   } catch (e) {
-  //     print('Failed to fetch version data: $e');
-  //   }
-  // }
-  // void getVersionStream() async {
-  //   try {
-  //     var data = await FirebaseFirestore.instance
-  //         .collection('districts')
-  //         .doc(widget.property.districtId)
-  //         .collection('municipalities')
-  //         .doc(widget.property.municipalityId)
-  //         .collection('version')
-  //         .get();
-  //     if (mounted) {  // Check if the widget is still in the widget tree
-  //       setState(() {
-  //         _allVersionResults = data.docs;
-  //       });
-  //       getVersionDetails();  // Make sure any further method calls inside this block also respect the lifecycle
-  //     }
-  //   } catch (e) {
-  //     print('Failed to fetch version data: $e');
-  //   }
-  // }
+      if (!versionDoc.exists) {
+        print("❌ No 'current' document found in Firestore.");
+        return;
+      }
 
-  // void getVersionDetails() async {
-  //   String activeVersion = _allVersionResults[2]['version'].toString();
-  //   var versionData = await FirebaseFirestore.instance.collection('version').doc('current').collection('current-version').where('version', isEqualTo: activeVersion).get();
-  //   String currentVersion = versionData.docs[0].data()['version'];
-  //
-  //   for (var versionSnapshot in _allVersionResults) {
-  //     var version = versionSnapshot['version'].toString();
-  //
-  //     if (currentVersion == version) {
-  //       if (currentVersion == 'Unpaid') {
-  //         visLocked = true;
-  //         visFeatureMode = true;
-  //         visPremium = true;
-  //       } else if (currentVersion == 'Paid') {
-  //         visLocked = false;
-  //         visFeatureMode = false;
-  //         visPremium = true;
-  //       } else if (currentVersion == 'Premium') {
-  //         visLocked = false;
-  //         visFeatureMode = false;
-  //         visPremium = false;
-  //       }
-  //     }
-  //   }
-  // }
-  // void getVersionDetails() async {
-  //   String activeVersion = _allVersionResults[2]['version'].toString();
-  //   var versionData = await FirebaseFirestore.instance
-  //       .collection('districts')
-  //       .doc(widget.property.districtId)
-  //       .collection('municipalities')
-  //       .doc(widget.property.municipalityId)
-  //       .collection('version')
-  //       .doc('current')
-  //       .collection('current-version')
-  //       .where('version', isEqualTo: activeVersion)
-  //       .get();
-  //   String currentVersion = versionData.docs[0].data()['version'];
-  //
-  //   for (var versionSnapshot in _allVersionResults) {
-  //     var version = versionSnapshot['version'].toString();
-  //
-  //     if (currentVersion == version) {
-  //       if (currentVersion == 'Unpaid') {
-  //         visLocked = true;
-  //         visFeatureMode = true;
-  //         visPremium = true;
-  //       } else if (currentVersion == 'Paid') {
-  //         visLocked = false;
-  //         visFeatureMode = false;
-  //         visPremium = true;
-  //       } else if (currentVersion == 'Premium') {
-  //         visLocked = false;
-  //         visFeatureMode = false;
-  //         visPremium = false;
-  //       }
-  //     }
-  //   }
-  // }
+      String fetchedVersion = versionDoc.data()?['version'] ?? "Unknown";
+      print("✅ Retrieved version from Firestore: $fetchedVersion");
+
+      // Match version and set visibility
+      if (fetchedVersion == 'Unpaid') {
+        visLocked = true;
+        visFeatureMode = true;
+        visPremium = true;
+      } else if (fetchedVersion == 'Paid') {
+        visLocked = false;
+        visFeatureMode = false;
+        visPremium = true;
+      } else if (fetchedVersion == 'Premium') {
+        visLocked = false;
+        visFeatureMode = false;
+        visPremium = false;
+      } else {
+        print("❌ No matching version found in Firestore.");
+      }
+
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      print("🚨 Error fetching version details: $e");
+    }
+  }
+
+
+
 
 //   @override
 //   Widget build(BuildContext context) {
@@ -1709,7 +1778,8 @@ class _MainMenuState extends State<MainMenu> {
   Future<void> _navigateToChat(BuildContext context) async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+      String? selectedPropertyAccountNumber = prefs.getString(
+          'selectedPropertyAccountNo');
 
       if (selectedPropertyAccountNumber == null) {
         print('Error: selectedPropertyAccountNumber is null.');
@@ -1723,7 +1793,8 @@ class _MainMenuState extends State<MainMenu> {
           .get();
 
       if (propertySnapshot.docs.isEmpty) {
-        print('Error: No property found for account number $selectedPropertyAccountNumber.');
+        print(
+            'Error: No property found for account number $selectedPropertyAccountNumber.');
         Fluttertoast.showToast(msg: "Property not found.");
         return;
       }
@@ -1760,15 +1831,17 @@ class _MainMenuState extends State<MainMenu> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => Chat(
-            chatRoomId: phoneNumber,
-            userName: selectedPropertyAccountNumber,
-            chatCollectionRef: chatCollectionRef,
-            refreshChatList: checkForUnreadMessages, // Callback to refresh badge
-            isLocalMunicipality: isLocalMunicipality,
-            districtId: districtId ?? '',
-            municipalityId: municipalityId,
-          ),
+          builder: (context) =>
+              Chat(
+                chatRoomId: phoneNumber,
+                userName: selectedPropertyAccountNumber,
+                chatCollectionRef: chatCollectionRef,
+                refreshChatList: checkForUnreadMessages,
+                // Callback to refresh badge
+                isLocalMunicipality: isLocalMunicipality,
+                districtId: districtId ?? '',
+                municipalityId: municipalityId,
+              ),
         ),
       );
     } catch (e) {
@@ -1788,15 +1861,18 @@ class _MainMenuState extends State<MainMenu> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => UsersTableViewPage(
-          property: currentProperty,
-          userNumber: currentProperty.cellNum,
-          accountNumber: currentProperty.accountNo,
-          propertyAddress: currentProperty.address,
-          districtId: currentProperty.isLocalMunicipality ? '' : currentProperty.districtId,
-          municipalityId: currentProperty.municipalityId,
-          isLocalMunicipality: currentProperty.isLocalMunicipality,
-        ),
+        builder: (context) =>
+            UsersTableViewPage(
+              property: currentProperty,
+              userNumber: currentProperty.cellNum,
+              accountNumber: currentProperty.accountNo,
+              propertyAddress: currentProperty.address,
+              districtId: currentProperty.isLocalMunicipality
+                  ? ''
+                  : currentProperty.districtId,
+              municipalityId: currentProperty.municipalityId,
+              isLocalMunicipality: currentProperty.isLocalMunicipality,
+            ),
       ),
     );
   }
@@ -1804,7 +1880,8 @@ class _MainMenuState extends State<MainMenu> {
   Future<void> _navigateToNotices(BuildContext context) async {
     // Fetch the selected property account number from SharedPreferences
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+    String? selectedPropertyAccountNumber = prefs.getString(
+        'selectedPropertyAccountNo');
 
     // Check if the account number exists
     if (selectedPropertyAccountNumber == null) {
@@ -1824,9 +1901,11 @@ class _MainMenuState extends State<MainMenu> {
         DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
 
         // Retrieve the property details
-        bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality') as bool;
+        bool isLocalMunicipality = propertyDoc.get(
+            'isLocalMunicipality') as bool;
         String municipalityId = propertyDoc.get('municipalityId') as String;
-        String? districtId = propertyDoc.data().toString().contains('districtId')
+        String? districtId = propertyDoc.data().toString().contains(
+            'districtId')
             ? propertyDoc.get('districtId') as String
             : null;
 
@@ -1834,16 +1913,18 @@ class _MainMenuState extends State<MainMenu> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => NoticeScreen(
-              selectedPropertyAccountNumber: selectedPropertyAccountNumber,
-              isLocalMunicipality: isLocalMunicipality,
-              municipalityId: municipalityId,
-              districtId: districtId, // Can be null for local municipalities
-            ),
+            builder: (context) =>
+                NoticeScreen(
+                  selectedPropertyAccountNumber: selectedPropertyAccountNumber,
+                  isLocalMunicipality: isLocalMunicipality,
+                  municipalityId: municipalityId,
+                  districtId: districtId, // Can be null for local municipalities
+                ),
           ),
         );
       } else {
-        print('Error: No property found for account number $selectedPropertyAccountNumber.');
+        print(
+            'Error: No property found for account number $selectedPropertyAccountNumber.');
         Fluttertoast.showToast(msg: "No property found for selected account.");
       }
     } catch (e) {
@@ -1856,7 +1937,8 @@ class _MainMenuState extends State<MainMenu> {
     try {
       // Fetch the selected property account number from SharedPreferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+      String? selectedPropertyAccountNumber = prefs.getString(
+          'selectedPropertyAccountNo');
 
       if (selectedPropertyAccountNumber == null) {
         print('Error: selectedPropertyAccountNumber is null.');
@@ -1874,9 +1956,11 @@ class _MainMenuState extends State<MainMenu> {
         DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
 
         // Retrieve the required property details
-        bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality') as bool;
+        bool isLocalMunicipality = propertyDoc.get(
+            'isLocalMunicipality') as bool;
         String municipalityId = propertyDoc.get('municipalityId') as String;
-        String? districtId = propertyDoc.data().toString().contains('districtId')
+        String? districtId = propertyDoc.data().toString().contains(
+            'districtId')
             ? propertyDoc.get('districtId') as String
             : null;
 
@@ -1884,18 +1968,20 @@ class _MainMenuState extends State<MainMenu> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => UsersPdfListViewPage(
-              userNumber: propertyDoc.get('cellNumber'),
-              propertyAddress: propertyDoc.get('address'),
-              accountNumber: propertyDoc.get('accountNumber'),
-              isLocalMunicipality: isLocalMunicipality,
-              municipalityId: municipalityId,
-              districtId: districtId, // Can be null for local municipalities
-            ),
+            builder: (context) =>
+                UsersPdfListViewPage(
+                  userNumber: propertyDoc.get('cellNumber'),
+                  propertyAddress: propertyDoc.get('address'),
+                  accountNumber: propertyDoc.get('accountNumber'),
+                  isLocalMunicipality: isLocalMunicipality,
+                  municipalityId: municipalityId,
+                  districtId: districtId, // Can be null for local municipalities
+                ),
           ),
         );
       } else {
-        print('Error: No property found for account number $selectedPropertyAccountNumber.');
+        print(
+            'Error: No property found for account number $selectedPropertyAccountNumber.');
         Fluttertoast.showToast(msg: "No property found for selected account.");
       }
     } catch (e) {
@@ -1909,14 +1995,15 @@ class _MainMenuState extends State<MainMenu> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => WaterSanitationReportMenu(
-            currentProperty: currentProperty,
-            isLocalMunicipality: currentProperty.isLocalMunicipality,
-            municipalityId: currentProperty.municipalityId,
-            districtId: currentProperty.isLocalMunicipality
-                ? null
-                : currentProperty.districtId, // null if local
-          ),
+          builder: (context) =>
+              WaterSanitationReportMenu(
+                currentProperty: currentProperty,
+                isLocalMunicipality: currentProperty.isLocalMunicipality,
+                municipalityId: currentProperty.municipalityId,
+                districtId: currentProperty.isLocalMunicipality
+                    ? null
+                    : currentProperty.districtId, // null if local
+              ),
         ),
       );
     } else {
@@ -2070,10 +2157,15 @@ class _MainMenuState extends State<MainMenu> {
                       GridView.count(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: MediaQuery.of(context).size.width < 600 ? 2 : 3, // 2 columns on mobile, 3 on web
+                        crossAxisCount: MediaQuery
+                            .of(context)
+                            .size
+                            .width < 600 ? 2 : 3,
+                        // 2 columns on mobile, 3 on web
                         mainAxisSpacing: 20.h,
                         crossAxisSpacing: 20.w,
-                        childAspectRatio: 1, // Ensures square buttons
+                        childAspectRatio: 1,
+                        // Ensures square buttons
                         children: [
 
                           // Admin Chat
@@ -2086,6 +2178,8 @@ class _MainMenuState extends State<MainMenu> {
                               await _navigateToChat(context);
                             },
                             showBadge: hasUnreadMessages,
+                            lockFeature: visLocked || visFeatureMode ||
+                                visPremium, // 🔒 Lock this menu
                           ),
 
                           // View Details
@@ -2110,7 +2204,11 @@ class _MainMenuState extends State<MainMenu> {
                                 onTap: () async {
                                   await _navigateToNotices(context);
                                 },
-                                showBadge: notificationProvider.hasUnreadNotices, // ✅ Keeps the logic inside the Consumer
+                                showBadge: notificationProvider
+                                    .hasUnreadNotices,
+                                // ✅ Keeps the logic inside the Consumer
+                                lockFeature: visLocked || visFeatureMode ||
+                                    visPremium, // 🔒 Lock this menu
                               );
                             },
                           ),
@@ -2147,6 +2245,8 @@ class _MainMenuState extends State<MainMenu> {
                             onTap: () async {
                               await _navigateToReportFault(context);
                             },
+                            lockFeature: visLocked || visFeatureMode ||
+                                visPremium, // 🔒 Lock this menu
                           ),
                         ],
                       ),
@@ -2184,21 +2284,45 @@ class _MainMenuState extends State<MainMenu> {
     required Size size,
     required VoidCallback onTap,
     bool showBadge = false,
+    bool lockFeature = false, // 🔒 Added Lock Feature Parameter
   }) {
     return Stack(
       children: [
         ElevatedIconButton(
-          onPress: onTap,
+          onPress: lockFeature
+              ? () {
+            Fluttertoast.showToast(
+              msg: "Feature Locked!",
+              gravity: ToastGravity.CENTER,
+            );
+          }
+              : onTap,
           labelText: label,
           fSize: 17.sp,
-          faIcon: FaIcon(icon),
-          fgColor: color,
+          faIcon: FaIcon(
+            icon,
+            color: lockFeature
+                ? Colors.grey.shade500
+                : color, // Dim icon when locked
+          ),
+          fgColor: lockFeature ? Colors.grey.shade500 : color,
+          // Dim text when locked
           btSize: size,
         ),
-        if (showBadge)
+        if (lockFeature) // 🔒 Add small lock icon inside the button
           Positioned(
-            right: 0,
-            top: 0,
+            top: size.height * 0.70,
+            right: size.height*0.70,
+            child: const Icon(
+              Icons.lock,
+              color: Colors.black,
+              size: 22,
+            ),
+          ),
+        if (showBadge) // 🔴 Show notification badge
+          Positioned(
+            right: 5,
+            top: 5,
             child: Container(
               padding: EdgeInsets.all(3.w),
               decoration: BoxDecoration(
@@ -2223,9 +2347,7 @@ class _MainMenuState extends State<MainMenu> {
       ],
     );
   }
-
 }
-
 
 
   void openPDF(BuildContext context, File file) => Navigator.of(context).push(

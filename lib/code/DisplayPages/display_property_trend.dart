@@ -296,48 +296,74 @@ class _PropertyTrendState extends State<PropertyTrend> {
   }
 
   Future<void> getWaterReadings() async {
-    setState(() {
-      isLoading = true; // Start loading data
-    });
+    if (mounted) {
+      setState(() {
+        isLoading = true; // Start loading data
+      });
+    }
 
     waterReadings.clear();  // Clear previous data
     waterMeterSpots.clear(); // Clear previous spots
     invalidWaterSpots.clear(); // Clear invalid spots
     double lastValidReading = 0.0;
 
+    int currentYear = DateTime.now().year;
+    int previousYear = currentYear - 1;
+
     try {
       for (int i = 0; i < months.length; i++) {
-        var propertyData = await _consumptionCollection
-            .doc(months[i])
-            .collection('address')
-            .where('address', isEqualTo: widget.addressTarget.trim())
+        String yearToUse = currentYear.toString(); // Default to current year
+
+        // Special case: If it's January, fetch the previous year's December reading
+        if (months[i] == "December") {
+          if (DateTime.now().month == 1) {
+            yearToUse = previousYear.toString(); // Use last year's December
+          } else {
+            yearToUse = currentYear.toString(); // Use current year’s December
+          }
+        }
+
+        // 🔹 Firestore Path Debugging
+        String firestorePath = "$yearToUse/${months[i]}/${widget.addressTarget.trim()}";
+        print("📌 Constructed Firestore Path: $_consumptionCollection/$firestorePath");
+
+        var propertyDoc = await _consumptionCollection
+            .doc(yearToUse) // Use the correct year folder
+            .collection(months[i]) // Access the month
+            .doc(widget.addressTarget.trim()) // Directly reference the property address document
             .get();
 
-        if (propertyData.docs.isNotEmpty) {
-          var firstDocData = propertyData.docs.first.data();
-          var reading = double.parse(firstDocData['water_meter_reading'] ?? '0');
+        if (propertyDoc.exists) {
+          var firstDocData = propertyDoc.data();
+          print("✅ Data Found for ${months[i]} ($yearToUse): $firstDocData");
+
+          var readingStr = firstDocData?['water_meter_reading'] ?? '0';
+          double reading = double.tryParse(readingStr) ?? 0.0;
+
+          print("📊 Parsed Reading for ${months[i]} ($yearToUse): $reading");
 
           if (reading > 1000) {
-            reading = log(reading);
+            reading = log(reading); // Apply log scaling if needed
           }
-
 
           if (reading > 0) {
             lastValidReading = reading;
             waterMeterSpots.add(FlSpot(i.toDouble(), reading));
           } else {
-            // If no valid reading, add to invalidWaterSpots
             invalidWaterSpots.add(FlSpot(i.toDouble(), lastValidReading));
           }
 
           waterReadings.add(lastValidReading);
         } else {
-          // No data for the current month
+          // ❗ No data found for the month
+          print("⚠️ No data found for $firestorePath");
           waterReadings.add(lastValidReading); // Use last valid reading
           invalidWaterSpots.add(FlSpot(i.toDouble(), lastValidReading));
         }
       }
 
+      // 🔹 Debug the Water Meter Spots Data
+      print("📊 Final Water Meter Spots: $waterMeterSpots");
 
       // Calculate the current month index (January = 0, February = 1, etc.)
       DateTime now = DateTime.now();
@@ -347,7 +373,7 @@ class _PropertyTrendState extends State<PropertyTrend> {
       prepareWaterReadings(); // Prepare graph data points
 
     } catch (e) {
-      debugPrint("Error fetching water readings: $e");
+      debugPrint("❌ Error fetching water readings: $e");
       if (waterReadings.isNotEmpty) {
         waterReadings.add(waterReadings.last);
       } else {
@@ -355,11 +381,12 @@ class _PropertyTrendState extends State<PropertyTrend> {
       }
     }
 
-    setState(() {
-      isLoading = false; // Stop loading
-    });
+    if (mounted) {
+      setState(() {
+        isLoading = false; // Stop loading
+      });
+    }
   }
-
 
   void prepareWaterReadings() {
     waterMeterSpots.clear();  // Clear previous spots
@@ -367,10 +394,11 @@ class _PropertyTrendState extends State<PropertyTrend> {
       double reading = waterReadings[i];
       waterMeterSpots.add(FlSpot(i.toDouble(), reading));
     }
-    debugPrint('Water Meter Spots: $waterMeterSpots');  // Debug print spots for checking
-    setState(() {});
+    debugPrint('Water Meter Spots: $waterMeterSpots');
+         if(mounted) { // Debug print spots for checking
+           setState(() {});
+         }
   }
-
 
   Future<void> getCollectionData() async {
     for (int i = 0; i < months.length; i++) {
