@@ -116,6 +116,7 @@ dependencies:
   flutter_chat_bubble: ^2.0.0
   mobx: ^2.0.6+1
   flutter_mobx: ^2.0.4
+  google_mobile_ads: ^5.2.0
 
 dev_dependencies:
   flutter_test:

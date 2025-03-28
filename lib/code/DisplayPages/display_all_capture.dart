@@ -195,12 +195,28 @@ class _AllPropCaptureState extends State<AllPropCapture> {
               }
 
               isLocalUser = userData['isLocalUser'] ?? false;
+              userRole = userData['userRole'] ?? 'Unknown';
+
+              print('🏙 District ID: $districtId');
+              print('🏛 Municipality ID: $municipalityId');
+              print('📌 isLocalMunicipality: $isLocalMunicipality');
+              print('👤 User Role: $userRole');
             });
           }
           if (isLocalMunicipality || isLocalUser) {
             fetchPropertiesForLocalMunicipality();
           } else {
             fetchMunicipalities();
+          }
+          if (userRole == 'Employee') {
+            print("✅ Employee detected - Fetching all properties...");
+            fetchPropertiesForAllMunicipalities();
+          }
+
+          // 🛠 Admin or Administrator should see all properties
+          if (userRole == 'Admin' || userRole == 'Administrator') {
+            print("✅ Admin detected - Fetching all properties...");
+            fetchPropertiesForAllMunicipalities();
           }
         }
       }

@@ -95,25 +95,32 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
   @override
   void initState() {
     super.initState();
-    FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: false);
+    FirebaseFirestore.instance.settings =
+        const Settings(persistenceEnabled: false);
     faultFocusNode.requestFocus();
     noFaultFocusNode.requestFocus();
     _tabController = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      resetFaultsList();
+    });
     _tabController.addListener(() {
       if (_tabController.index == 0) {
         faultFocusNode.requestFocus();
+        print(
+            "🔄 Tab switched to 'All Department Faults'. Resetting faults...");
+        resetFaultsList();
       } else if (_tabController.index == 1) {
         noFaultFocusNode.requestFocus();
+        print("🔍 Tab switched to 'Unassigned Faults'. Filtering...");
+        filterUnassignedFaults();
       }
     });
-
+    resetFaultsList();
     faultFocusNode.requestFocus();
 
     // Listeners for scroll position
-    _allFaultsScrollController.addListener(() {
-    });
-    _unassignedFaultsScrollController.addListener(() {
-    });
+    _allFaultsScrollController.addListener(() {});
+    _unassignedFaultsScrollController.addListener(() {});
     fetchUserDetails().then((_) {
       print("initState - isLocalMunicipality: $isLocalMunicipality");
       print("initState - districtId: $districtId");
@@ -123,7 +130,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
       if (isLocalMunicipality) {
         fetchFaultsForLocalMunicipality();
       } else if (!isLocalMunicipality && municipalityId.isEmpty) {
-        fetchFaultsForAllMunicipalities(); // Fetch all faults for district-level user
+        resetFaultsList(); // Fetch all faults for district-level user
       } else {
         fetchFaultsByMunicipality(
             municipalityId); // Fetch faults for specific municipality
@@ -136,10 +143,10 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
       // Fetch similar faults based on department
       if (myDepartment == "Water & Sanitation") {
         getSimilarFaultStreamWater();
-     // } else if (myDepartment == "Waste Management") {
+        // } else if (myDepartment == "Waste Management") {
         //getSimilarFaultStreamWaste();
-    //  } else if (myDepartment == "Roadworks") {
-       // getSimilarFaultStreamRoad();
+        //  } else if (myDepartment == "Roadworks") {
+        // getSimilarFaultStreamRoad();
       }
     }).catchError((error) {
       print("Error in fetchUserDetails: $error");
@@ -318,6 +325,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
   bool visStage3 = false;
   bool visStage4 = false;
   bool visStage5 = false;
+  List unassignedResults = [];
 
   final CollectionReference _listUser =
       FirebaseFirestore.instance.collection('users');
@@ -360,11 +368,12 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
     }
   }
 
-  Future<void> fetchFaultsForAllMunicipalities() async {
+  Future<List<QueryDocumentSnapshot<Object?>>>
+      fetchFaultsForAllMunicipalities() async {
     try {
       if (districtId.isEmpty) {
         print("Error: District ID is empty.");
-        return;
+        return [];
       }
 
       print(
@@ -381,10 +390,10 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
 
       if (municipalities.isEmpty) {
         print("No municipalities found under district: $districtId");
-        return;
+        return [];
       }
 
-      List<QueryDocumentSnapshot> allFaults = [];
+      List<QueryDocumentSnapshot<Object?>> allFaults = [];
 
       // Step 2: Fetch faults for each municipality
       for (var municipality in municipalities) {
@@ -403,59 +412,105 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
         allFaults.addAll(faultsSnapshot.docs);
       }
 
-      // Step 3: Store and update the state with all faults
-      if (allFaults.isEmpty) {
-        print("No faults found for all municipalities under the district.");
-      } else {
-        print("Fetched ${allFaults.length} faults from all municipalities.");
-      }
-
-      if (mounted) {
-        setState(() {
-          _allFaultResults = allFaults; // Store all fetched faults
-        });
-      }
+      print("✅ Fetched ${allFaults.length} faults from all municipalities.");
+      return allFaults;
     } catch (e) {
       print("Error fetching faults for all municipalities: $e");
+      return [];
     }
   }
 
-  Future<void> fetchFaultsForLocalMunicipality() async {
+  void resetFaultsList() async {
+    print("🔄 Resetting faults list...");
+
+    List<QueryDocumentSnapshot<Object?>> fetchedFaults = [];
+
+    if (isLocalMunicipality) {
+      fetchedFaults = await fetchFaultsForLocalMunicipality();
+    } else if (!isLocalMunicipality &&
+        selectedMunicipality == "Select Municipality") {
+      fetchedFaults = await fetchFaultsForAllMunicipalities();
+    } else {
+      fetchedFaults = await fetchFaultsByMunicipality(selectedMunicipality!);
+    }
+
+    print("✅ Restored full fault list. Total faults: ${fetchedFaults.length}");
+
+    if (mounted) {
+      setState(() {
+        _allFaultResults = fetchedFaults;
+      });
+    }
+  }
+
+  void filterUnassignedFaults() async {
+    print("🔍 ENTERED filterUnassignedFaults()");
+
+    List<QueryDocumentSnapshot<Object?>> fetchedFaults = [];
+
+    if (isLocalMunicipality) {
+      print("🏢 Fetching faults for Local Municipality...");
+      fetchedFaults = await fetchFaultsForLocalMunicipality();
+    } else if (!isLocalMunicipality && selectedMunicipality == "Select Municipality") {
+      print("🌍 Fetching faults for ALL municipalities...");
+      fetchedFaults = await fetchFaultsForAllMunicipalities();
+    } else {
+      print("🏙️ Fetching faults for selected municipality: $selectedMunicipality...");
+      fetchedFaults = await fetchFaultsByMunicipality(selectedMunicipality!);
+    }
+
+    print("✅ Fetched ${fetchedFaults.length} total faults.");
+
+    // Apply filter: Keep only Stage 1 faults
+    List<QueryDocumentSnapshot<Object?>> unassignedFaults = fetchedFaults.where((faultSnapshot) {
+      try {
+        var data = faultSnapshot.data() as Map<String, dynamic>;
+        bool isStage1 = data.containsKey('faultStage') && data['faultStage'] == 1;
+        print("🔎 Checking fault: ${data['ref']} - Stage: ${data['faultStage']} - Match: $isStage1");
+        return isStage1;
+      } catch (e) {
+        print("⚠️ Error filtering unassigned faults: $e");
+        return false;
+      }
+    }).toList();
+
+    print("✅ FINAL Unassigned Faults Count: ${unassignedFaults.length}");
+
+    if (mounted) {
+      setState(() {
+        _allFaultResults = unassignedFaults;
+      });
+    }
+  }
+
+
+  Future<List<QueryDocumentSnapshot<Object?>>>
+      fetchFaultsForLocalMunicipality() async {
     if (municipalityId.isEmpty) {
       print("Error: municipalityId is empty. Cannot fetch properties.");
-      return;
+      return [];
     }
 
     try {
-      print("Fetching properties for local municipality: $municipalityId");
+      print("Fetching faults for local municipality: $municipalityId");
 
-      // Fetch properties only for the specific municipality the user belongs to
       QuerySnapshot propertiesSnapshot = await FirebaseFirestore.instance
           .collection('localMunicipalities')
-          .doc(municipalityId) // The local municipality ID for the user
+          .doc(municipalityId)
           .collection('faultReporting')
           .get();
 
-      // Check if any properties were fetched
-      if (propertiesSnapshot.docs.isNotEmpty) {
-        if (mounted) {
-          setState(() {
-            _allFaultResults =
-                propertiesSnapshot.docs; // Store fetched properties
-          });
-        }
-        print('Properties fetched for local municipality: $municipalityId');
-        print(
-            'Number of properties fetched: ${propertiesSnapshot.docs.length}');
-      } else {
-        print("No properties found for local municipality: $municipalityId");
-      }
+      print(
+          "✅ Fetched ${propertiesSnapshot.docs.length} faults for local municipality.");
+      return propertiesSnapshot.docs;
     } catch (e) {
-      print('Error fetching properties for local municipality: $e');
+      print("Error fetching faults for local municipality: $e");
+      return [];
     }
   }
 
-  Future<void> fetchFaultsByMunicipality(String municipalityId) async {
+  Future<List<QueryDocumentSnapshot<Object?>>> fetchFaultsByMunicipality(
+      String municipalityId) async {
     try {
       print("Fetching faults for selected municipality: $municipalityId");
 
@@ -468,16 +523,11 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
           .get();
 
       print(
-          'Fetched ${faultSnapshot.docs.length} faults for municipality: $municipalityId');
-
-      if (mounted) {
-        setState(() {
-          _allFaultResults = faultSnapshot.docs;
-          print('State updated, faults stored: ${_allFaultResults.length}');
-        });
-      }
+          "✅ Fetched ${faultSnapshot.docs.length} faults for municipality: $municipalityId");
+      return faultSnapshot.docs;
     } catch (e) {
-      print('Error fetching faults for municipality: $e');
+      print("Error fetching faults for municipality: $e");
+      return [];
     }
   }
 
@@ -511,7 +561,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const ReportBuilderFaults()),
+                        MaterialPageRoute(
+                            builder: (context) => const ReportBuilderFaults()),
                       );
                     },
                     icon: const Icon(
@@ -539,7 +590,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const FaultTaskScreenArchive()),
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                const FaultTaskScreenArchive()),
                       );
                     },
                     icon: const Icon(
@@ -551,22 +604,31 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
               ),
             ),
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
-            tabs: [
+            onTap: (index) {
+              if (index == 0) {
+                // "All Faults" tab
+                resetFaultsList(); // No filter
+              }
+              if (index == 1) {
+                // "Unassigned Faults" tab
+                filterUnassignedFaults(); // Apply filter for stage 1 faults
+              }
+            },
+            tabs: const [
               Tab(
                 text: 'All Department Faults',
-                icon: FaIcon(Icons.bar_chart),
+                icon: FaIcon(Icons.handyman),
               ),
               Tab(
                 text: 'Unassigned Faults',
-                icon: FaIcon(Icons.handyman),
+                icon: FaIcon(Icons.pending_actions),
               ),
             ],
           ),
         ),
-
         body: TabBarView(controller: _tabController, children: [
           ///Tab for all faults
           Column(
@@ -584,16 +646,29 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                         value: selectedMunicipality,
                         hint: const Text('Select Municipality'),
                         isExpanded: true,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedMunicipality = newValue!;
+                        onChanged: (String? newValue) async {
+                          if (mounted) {
+                            setState(() {
+                              selectedMunicipality = newValue!;
+                            });
+
+                            List<QueryDocumentSnapshot<Object?>> fetchedFaults;
+
                             if (selectedMunicipality == "Select Municipality") {
-                              fetchFaultsForAllMunicipalities(); // Fetch faults for all municipalities
+                              fetchedFaults =
+                                  await fetchFaultsForAllMunicipalities();
                             } else {
-                              fetchFaultsByMunicipality(
-                                  newValue); // Fetch faults for a specific municipality
+                              fetchedFaults = await fetchFaultsByMunicipality(
+                                  selectedMunicipality!);
                             }
-                          });
+
+                            if (mounted) {
+                              setState(() {
+                                _allFaultResults =
+                                    fetchedFaults; // ✅ Immediately update UI
+                              });
+                            }
+                          }
                         },
                         items: [
                           const DropdownMenuItem<String>(
@@ -676,10 +751,12 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                   );
                                 }).toList(),
                                 onChanged: (String? newValue) {
-                                  setState(() {
-                                    dropdownValue = newValue!;
-                                    stageResultsList();
-                                  });
+                                  if (mounted) {
+                                    setState(() {
+                                      dropdownValue = newValue!;
+                                      stageResultsList();
+                                    });
+                                  }
                                 },
                                 icon: const Padding(
                                   padding: EdgeInsets.only(left: 10, right: 10),
@@ -710,9 +787,11 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                   leading: const Icon(Icons.search),
                   hintText: "Search",
                   onChanged: (value) async {
-                    setState(() {
-                      searchText = value;
-                    });
+                    if (mounted) {
+                      setState(() {
+                        searchText = value;
+                      });
+                    }
                   },
                 ),
               ),
@@ -739,17 +818,43 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                         value: selectedMunicipality,
                         hint: const Text('Select Municipality'),
                         isExpanded: true,
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedMunicipality = newValue!;
+                        onChanged: (String? newValue) async {
+                          if (mounted) {
+                            print("🔍 Municipality changed to: $newValue");
+
+                            // Update selected municipality
+                            setState(() {
+                              selectedMunicipality = newValue!;
+                            });
+
+                            List<QueryDocumentSnapshot<Object?>> fetchedFaults = [];
+
                             if (selectedMunicipality == "Select Municipality") {
-                              fetchFaultsForAllMunicipalities(); // Fetch faults for all municipalities
+                              print("🔄 Fetching all faults for all municipalities...");
+                              fetchedFaults = await fetchFaultsForAllMunicipalities();
                             } else {
-                              fetchFaultsByMunicipality(
-                                  newValue); // Fetch faults for a specific municipality
+                              print("🏙️ Fetching faults for selected municipality: $selectedMunicipality...");
+                              fetchedFaults = await fetchFaultsByMunicipality(selectedMunicipality!);
                             }
-                          });
-                        },
+
+                            print("✅ Fetched ${fetchedFaults.length} faults for $selectedMunicipality");
+
+                            if (mounted) {
+                              setState(() {
+                                _allFaultResults = fetchedFaults;
+                              });
+
+                              // 🛑 Ensure filtering runs AFTER the faults are fully updated
+                              Future.delayed(Duration.zero, () {
+                                print("🔥 Triggering Immediate Filtering for Unassigned Faults...");
+                                filterUnassignedFaults();
+                              });
+                            }
+                          }
+                        }
+
+
+                        ,
                         items: [
                           const DropdownMenuItem<String>(
                             value: "Select Municipality",
@@ -781,9 +886,11 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                   leading: const Icon(Icons.search),
                   hintText: "Search",
                   onChanged: (value) async {
-                    setState(() {
-                      searchText = value;
-                    });
+                    if (mounted) {
+                      setState(() {
+                        searchText = value;
+                      });
+                    }
                   },
                 ),
               ),
@@ -1256,7 +1363,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
       }
     } else {
       ///for web version
-      final apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
+      const apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
       final encodedAddress = Uri.encodeComponent(address);
       final url =
           'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey&libraries=maps,drawing,visualization,places,routes&callback=initMap';
@@ -1442,25 +1549,25 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
     }
 
     // Update the state with the filtered results
-    setState(() {
-      _unassignedFaultResults = showResults;
-    });
+    if (mounted) {
+      setState(() {
+        _unassignedFaultResults = showResults;
+      });
+    }
   }
 
-  stageResultsList() async {
+  Future<void> stageResultsList() async {
     var showResults = [];
-    int dropdownNo = 1;
 
     if (dropdownValue != 'Filter Fault Stage') {
       // Fetch faults based on the user's role and selection
       if (isLocalMunicipality) {
-        await fetchFaultsForLocalMunicipality(); // Fetch faults for the local municipality
+        await fetchFaultsForLocalMunicipality();
       } else if (!isLocalMunicipality &&
           selectedMunicipality == "Select Municipality") {
-        await fetchFaultsForAllMunicipalities(); // Fetch faults for all municipalities in the district
+        await fetchFaultsForAllMunicipalities();
       } else {
-        await fetchFaultsByMunicipality(
-            selectedMunicipality!); // Fetch faults for the selected municipality
+        await fetchFaultsByMunicipality(selectedMunicipality!);
       }
 
       // Filter results based on the selected stage
@@ -1480,22 +1587,23 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
         }
       }
     } else {
-      // If no filter is applied, fetch all faults and display them
+      // ✅ FIX: If resetting filter, fetch all faults again to restore the full list
       if (isLocalMunicipality) {
-        await fetchFaultsForLocalMunicipality();
+        showResults = await fetchFaultsForLocalMunicipality();
       } else if (!isLocalMunicipality &&
           selectedMunicipality == "Select Municipality") {
-        await fetchFaultsForAllMunicipalities();
+        showResults = await fetchFaultsForAllMunicipalities();
       } else {
-        await fetchFaultsByMunicipality(selectedMunicipality!);
+        showResults = await fetchFaultsByMunicipality(selectedMunicipality!);
       }
-      showResults = List.from(_allFaultResults);
     }
 
-    // Update the state with the filtered results
-    setState(() {
-      _allFaultResults = showResults;
-    });
+    if (mounted) {
+      // ✅ Update the state with either the filtered or restored full dataset
+      setState(() {
+        _allFaultResults = showResults;
+      });
+    }
   }
 
   void checkRole() {
@@ -1621,10 +1729,10 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
   void fetchSimilarFaultsBasedOnDepartment() {
     if (myDepartment == "Water & Sanitation") {
       getSimilarFaultStreamWater();
-    // } else if (myDepartment == "Waste Management") {
-    //   getSimilarFaultStreamWaste();
-    // } else if (myDepartment == "Roadworks") {
-    //   getSimilarFaultStreamRoad();
+      // } else if (myDepartment == "Waste Management") {
+      //   getSimilarFaultStreamWaste();
+      // } else if (myDepartment == "Roadworks") {
+      //   getSimilarFaultStreamRoad();
     } else if (myDepartment == "Service Provider") {
       getSimilarFaultStreamWater();
       // getSimilarFaultStreamWaste();
@@ -1880,9 +1988,10 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                       String status = (fault['faultResolved'] == false)
                           ? "Pending"
                           : "Completed";
-                      bool showNotification = (fault['attendeeAllocated'] == '' ||
-                          fault['faultStage'] == 1 ||
-                          fault['faultResolved'] == false);
+                      bool showNotification =
+                          (fault['attendeeAllocated'] == '' ||
+                              fault['faultStage'] == 1 ||
+                              fault['faultResolved'] == false);
 
                       var faultAddress = (fault['address'] != null &&
                               fault['address'].isNotEmpty)
@@ -1977,7 +2086,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                 Text(
                                   'Reference Number: ${fault['ref']}',
                                   style: const TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w400),
                                 ),
                                 const SizedBox(height: 5),
                                 if (fault['accountNumber'] != "") ...[
@@ -1993,20 +2103,23 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                 Text(
                                   'Street Address of Fault: $faultAddress',
                                   style: const TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w400),
                                 ),
                                 const SizedBox(height: 5),
 
                                 Text(
                                   'Fault Type: $faultType',
                                   style: const TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w400),
                                 ),
                                 const SizedBox(height: 5),
                                 Text(
                                   'Date of Fault Report: $dateReported',
                                   style: const TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w400),
                                 ),
                                 const SizedBox(height: 5),
 
@@ -2100,7 +2213,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                 Text(
                                   'Resolve State: $status',
                                   style: const TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w400),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w400),
                                 ),
                                 const SizedBox(height: 5),
 
@@ -2150,13 +2264,15 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                                         ? municipalityId
                                                         : selectedMunicipality!;
 
-                                                if (municipalityContext.isEmpty) {
+                                                if (municipalityContext
+                                                    .isEmpty) {
                                                   Fluttertoast.showToast(
                                                     msg:
                                                         "Invalid municipality selection or missing municipality.",
                                                     toastLength:
                                                         Toast.LENGTH_SHORT,
-                                                    gravity: ToastGravity.CENTER,
+                                                    gravity:
+                                                        ToastGravity.CENTER,
                                                   );
                                                   return;
                                                 }
@@ -2169,7 +2285,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                                     builder: (context) =>
                                                         ImageZoomFaultPage(
                                                       imageName: cleanedAddress,
-                                                      dateReported: dateReported,
+                                                      dateReported:
+                                                          dateReported,
                                                       municipalityId:
                                                           selectedMunicipality ??
                                                               '',
@@ -2184,7 +2301,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                                 Fluttertoast.showToast(
                                                   msg:
                                                       "Error: Unable to view fault image.",
-                                                  toastLength: Toast.LENGTH_SHORT,
+                                                  toastLength:
+                                                      Toast.LENGTH_SHORT,
                                                   gravity: ToastGravity.CENTER,
                                                 );
                                               }
@@ -2222,13 +2340,15 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                                         ? municipalityId
                                                         : selectedMunicipality!;
 
-                                                if (municipalityContext.isEmpty) {
+                                                if (municipalityContext
+                                                    .isEmpty) {
                                                   Fluttertoast.showToast(
                                                     msg:
                                                         "Invalid municipality selection or missing municipality.",
                                                     toastLength:
                                                         Toast.LENGTH_SHORT,
-                                                    gravity: ToastGravity.CENTER,
+                                                    gravity:
+                                                        ToastGravity.CENTER,
                                                   );
                                                   return;
                                                 }
@@ -2254,7 +2374,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                                 Fluttertoast.showToast(
                                                   msg:
                                                       "Error: Unable to view location.",
-                                                  toastLength: Toast.LENGTH_SHORT,
+                                                  toastLength:
+                                                      Toast.LENGTH_SHORT,
                                                   gravity: ToastGravity.CENTER,
                                                 );
                                               }
@@ -2307,19 +2428,23 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                                       actions: [
                                                         IconButton(
                                                           onPressed: () {
-                                                            Navigator.of(context)
+                                                            Navigator.of(
+                                                                    context)
                                                                 .pop();
                                                           },
                                                           icon: const Icon(
                                                               Icons.cancel,
-                                                              color: Colors.red),
+                                                              color:
+                                                                  Colors.red),
                                                         ),
                                                         IconButton(
                                                           onPressed: () {
-                                                            final Uri tel = Uri.parse(
-                                                                'tel:$reporterContact');
+                                                            final Uri tel =
+                                                                Uri.parse(
+                                                                    'tel:$reporterContact');
                                                             launchUrl(tel);
-                                                            Navigator.of(context)
+                                                            Navigator.of(
+                                                                    context)
                                                                 .pop();
                                                           },
                                                           icon: const Icon(
@@ -2335,7 +2460,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                                 Fluttertoast.showToast(
                                                   msg:
                                                       "Error: Unable to call reporter.",
-                                                  toastLength: Toast.LENGTH_SHORT,
+                                                  toastLength:
+                                                      Toast.LENGTH_SHORT,
                                                   gravity: ToastGravity.CENTER,
                                                 );
                                               }
@@ -2384,13 +2510,15 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                                         ? municipalityId
                                                         : selectedMunicipality!;
 
-                                                if (municipalityContext.isEmpty) {
+                                                if (municipalityContext
+                                                    .isEmpty) {
                                                   Fluttertoast.showToast(
                                                     msg:
                                                         "Invalid municipality selection or missing municipality.",
                                                     toastLength:
                                                         Toast.LENGTH_SHORT,
-                                                    gravity: ToastGravity.CENTER,
+                                                    gravity:
+                                                        ToastGravity.CENTER,
                                                   );
                                                   return;
                                                 }
@@ -2399,9 +2527,10 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                               },
                                               labelText: 'Reassign',
                                               fSize: 14,
-                                              faIcon: const FaIcon(Icons.update),
-                                              fgColor:
-                                                  Theme.of(context).primaryColor,
+                                              faIcon:
+                                                  const FaIcon(Icons.update),
+                                              fgColor: Theme.of(context)
+                                                  .primaryColor,
                                               btSize: const Size(50, 38),
                                             ),
                                           ],
@@ -2418,7 +2547,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                                         "Please select a municipality first!",
                                                     toastLength:
                                                         Toast.LENGTH_SHORT,
-                                                    gravity: ToastGravity.CENTER,
+                                                    gravity:
+                                                        ToastGravity.CENTER,
                                                   );
                                                   return;
                                                 }
@@ -2434,7 +2564,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                                 Fluttertoast.showToast(
                                                   msg:
                                                       "Invalid municipality selection or missing municipality.",
-                                                  toastLength: Toast.LENGTH_SHORT,
+                                                  toastLength:
+                                                      Toast.LENGTH_SHORT,
                                                   gravity: ToastGravity.CENTER,
                                                 );
                                                 return;
@@ -3025,445 +3156,206 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
   // }
 
   Widget unassignedFaultCard() {
-    List unassignedResults =
-        _allFaultResults.where((fault) => fault['faultStage'] == 1).toList();
+    // Ensure faults are properly extracted before filtering
+    List unassignedResults = _unassignedFaultResults;
 
-    if (unassignedResults.isNotEmpty) {
-
-      return GestureDetector(
-        onTap: () {
-          // Refocus when tapping within the tab content
-          noFaultFocusNode.requestFocus();
-        },
-        child: KeyboardListener(
-          focusNode: noFaultFocusNode,
-          onKeyEvent: (KeyEvent event) {
-            if (event is KeyDownEvent) {
-              final double pageScrollAmount =
-                  _unassignedFaultsScrollController.position.viewportDimension;
-
-              if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-                _unassignedFaultsScrollController.animateTo(
-                  _unassignedFaultsScrollController.offset + 50,
-                  duration: const Duration(milliseconds: 100),
-                  curve: Curves.easeIn,
-                );
-              } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-                _unassignedFaultsScrollController.animateTo(
-                  _unassignedFaultsScrollController.offset - 50,
-                  duration: const Duration(milliseconds: 100),
-                  curve: Curves.easeIn,
-                );
-              } else if (event.logicalKey == LogicalKeyboardKey.pageDown) {
-                _unassignedFaultsScrollController.animateTo(
-                  _unassignedFaultsScrollController.offset + pageScrollAmount,
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeIn,
-                );
-              } else if (event.logicalKey == LogicalKeyboardKey.pageUp) {
-                _unassignedFaultsScrollController.animateTo(
-                  _unassignedFaultsScrollController.offset - pageScrollAmount,
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeIn,
-                );
-              }
-            }
-          },
-          child: Scrollbar(
-            controller: _unassignedFaultsScrollController,
-            thickness: 12, // Customize the thickness of the scrollbar
-            radius: const Radius.circular(8), // Rounded edges for the scrollbar
-            thumbVisibility: true,
-            trackVisibility: true, // Makes the track visible as well
-            interactive: true,
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    controller: _unassignedFaultsScrollController,
-                    shrinkWrap: true,
-                    itemCount: unassignedResults.length,
-                    itemBuilder: (context, index) {
-                      if (index >= unassignedResults.length) {
-                        return const SizedBox();
-                      }
-
-                      var fault = unassignedResults[index];
-                      String status = (fault['faultResolved'] == false)
-                          ? "Pending"
-                          : "Completed";
-                      bool showNotification = (fault['attendeeAllocated'] == '' ||
-                          fault['faultStage'] == 1 ||
-                          fault['faultResolved'] == false);
-
-                      var faultAddress = (fault['address'] != null &&
-                              fault['address'].isNotEmpty)
-                          ? fault['address']
-                          : 'No address provided';
-                      var faultType = (fault['faultType'] != null &&
-                              fault['faultType'].isNotEmpty)
-                          ? fault['faultType']
-                          : 'No fault type provided';
-
-                      var dateReported;
-                      if (fault['dateReported'] is Timestamp) {
-                        dateReported = DateFormat('yyyy-MM-dd – kk:mm').format(
-                          fault['dateReported'].toDate(),
-                        );
-                      } else {
-                        dateReported =
-                            fault['dateReported']; // If it's already a string
-                      }
-
-                      String cleanedAddress =
-                          faultAddress.replaceAll(RegExp(r'[\/:*?"<>|]'), '');
-
-                      return Card(
-                        margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
-                        child: Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Center(
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment
-                                      .center, // Align items vertically in the center
-                                  children: [
-                                    Visibility(
-                                      visible: showNotification,
-                                      child: const Column(
-                                        // Use Column to stack notification and text vertically
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Icon(Icons.notification_important,
-                                              color: Colors.red),
-                                          SizedBox(width: 5),
-                                          Text(
-                                            'Attention needed!',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.red,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    // Centralize "Fault Information" again
-                                    const Expanded(
-                                      child: Center(
-                                        // This centers the "Fault Information" text
-                                        child: Text(
-                                          'Fault Information',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                          textAlign: TextAlign
-                                              .center, // Ensure text is centered
-                                        ),
-                                      ),
-                                    ),
-                                    Visibility(
-                                      visible: visNotification,
-                                      child: const Icon(
-                                        Icons.notification_important,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              const SizedBox(height: 10),
-                              Text(
-                                'Reference Number: ${fault['ref']}',
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w400),
-                              ),
-                              const SizedBox(height: 5),
-                              if (fault['accountNumber'] != "") ...[
-                                Text(
-                                  'Reporter Account Number: ${fault['accountNumber']}',
-                                  style: const TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w400),
-                                ),
-                                const SizedBox(height: 5),
-                              ],
-                              Text(
-                                'Street Address of Fault: $faultAddress',
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w400),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                'Fault Type: $faultType',
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w400),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                'Date of Fault Report: $dateReported',
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w400),
-                              ),
-                              const SizedBox(height: 5),
-
-                              // Fault Description Section
-                              if (fault['faultDescription'] != "") ...[
-                                Text(
-                                  'Fault Description: ${fault['faultDescription']}',
-                                  style: const TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w400),
-                                ),
-                                const SizedBox(height: 5),
-                              ],
-
-                              // Manager Allocated Section
-                              if (fault['managerAllocated'] != "") ...[
-                                Text(
-                                  'Manager Allocated: ${fault['managerAllocated']}',
-                                  style: const TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w400),
-                                ),
-                                const SizedBox(height: 5),
-                              ],
-
-                              // Attendee Allocated Section
-                              if (fault['attendeeAllocated'] != "") ...[
-                                Text(
-                                  'Attendee Allocated: ${fault['attendeeAllocated']}',
-                                  style: const TextStyle(
-                                      fontSize: 16, fontWeight: FontWeight.w400),
-                                ),
-                                const SizedBox(height: 5),
-                              ],
-
-                              Text(
-                                'Resolve State: $status',
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w400),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                'Fault Stage: ${fault['faultStage'].toString()}',
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    color:
-                                        getFaultStageColor(fault['faultStage'])),
-                              ),
-                              const SizedBox(height: 10),
-
-                              // Wrap the action buttons to prevent overflow on small screens
-                              Center(
-                                child: Wrap(
-                                  spacing: 8.0,
-                                  runSpacing: 10.0,
-                                  alignment: WrapAlignment.center,
-                                  children: [
-                                    BasicIconButtonGrey(
-                                      onPress: () async {
-                                        if (!isLocalUser &&
-                                            !isLocalMunicipality) {
-                                          if (selectedMunicipality == null ||
-                                              selectedMunicipality ==
-                                                  "Select Municipality") {
-                                            Fluttertoast.showToast(
-                                              msg:
-                                                  "Please select a municipality first!",
-                                              toastLength: Toast.LENGTH_SHORT,
-                                              gravity: ToastGravity.CENTER,
-                                            );
-                                            return;
-                                          }
-                                        }
-
-                                        String municipalityContext =
-                                            isLocalMunicipality || isLocalUser
-                                                ? municipalityId
-                                                : selectedMunicipality!;
-
-                                        if (municipalityContext.isEmpty) {
-                                          Fluttertoast.showToast(
-                                            msg:
-                                                "Invalid municipality selection or missing municipality.",
-                                            toastLength: Toast.LENGTH_SHORT,
-                                            gravity: ToastGravity.CENTER,
-                                          );
-                                          return;
-                                        }
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                ImageZoomFaultPage(
-                                              imageName: cleanedAddress,
-                                              dateReported: dateReported,
-                                              isLocalMunicipality:
-                                                  isLocalMunicipality,
-                                              districtId: districtId,
-                                              municipalityId: municipalityId,
-                                              isLocalUser: isLocalUser,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      labelText: 'View Fault Image',
-                                      fSize: 14,
-                                      faIcon: const FaIcon(Icons.zoom_in),
-                                      fgColor: Colors.grey,
-                                      btSize: const Size(90,
-                                          38), // Adjusted size to fit smaller screens
-                                    ),
-                                    BasicIconButtonGrey(
-                                      onPress: () async {
-                                        if (!isLocalUser &&
-                                            !isLocalMunicipality) {
-                                          if (selectedMunicipality == null ||
-                                              selectedMunicipality ==
-                                                  "Select Municipality") {
-                                            Fluttertoast.showToast(
-                                              msg:
-                                                  "Please select a municipality first!",
-                                              toastLength: Toast.LENGTH_SHORT,
-                                              gravity: ToastGravity.CENTER,
-                                            );
-                                            return;
-                                          }
-                                        }
-
-                                        String municipalityContext =
-                                            isLocalMunicipality || isLocalUser
-                                                ? municipalityId
-                                                : selectedMunicipality!;
-
-                                        if (municipalityContext.isEmpty) {
-                                          Fluttertoast.showToast(
-                                            msg:
-                                                "Invalid municipality selection or missing municipality.",
-                                            toastLength: Toast.LENGTH_SHORT,
-                                            gravity: ToastGravity.CENTER,
-                                          );
-                                          return;
-                                        }
-                                        accountNumberRep = fault['accountNumber'];
-                                        locationGivenRep = fault['address'];
-
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => MapScreenProp(
-                                              propAddress: locationGivenRep,
-                                              propAccNumber: accountNumberRep,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      labelText: 'Location',
-                                      fSize: 14,
-                                      faIcon: const FaIcon(Icons.map),
-                                      fgColor: Colors.green,
-                                      btSize: const Size(90,
-                                          38), // Adjusted size to fit smaller screens
-                                    ),
-                                    BasicIconButtonGrey(
-                                      onPress: () async {
-                                        if (!isLocalUser &&
-                                            !isLocalMunicipality) {
-                                          if (selectedMunicipality == null ||
-                                              selectedMunicipality ==
-                                                  "Select Municipality") {
-                                            Fluttertoast.showToast(
-                                              msg:
-                                                  "Please select a municipality first!",
-                                              toastLength: Toast.LENGTH_SHORT,
-                                              gravity: ToastGravity.CENTER,
-                                            );
-                                            return;
-                                          }
-                                        }
-
-                                        String municipalityContext =
-                                            isLocalMunicipality || isLocalUser
-                                                ? municipalityId
-                                                : selectedMunicipality!;
-
-                                        if (municipalityContext.isEmpty) {
-                                          Fluttertoast.showToast(
-                                            msg:
-                                                "Invalid municipality selection or missing municipality.",
-                                            toastLength: Toast.LENGTH_SHORT,
-                                            gravity: ToastGravity.CENTER,
-                                          );
-                                          return;
-                                        }
-                                        showDialog(
-                                          barrierDismissible: false,
-                                          context: context,
-                                          builder: (context) {
-                                            return AlertDialog(
-                                              shape: const RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.all(
-                                                      Radius.circular(16))),
-                                              title: const Text("Call Reporter!"),
-                                              content: const Text(
-                                                  "Would you like to call the individual who logged the fault?"),
-                                              actions: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  icon: const Icon(
-                                                    Icons.cancel,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () {
-                                                    reporterCellGiven =
-                                                        fault['reporterContact'];
-                                                    final Uri tel = Uri.parse(
-                                                        'tel:${reporterCellGiven.toString()}');
-                                                    launchUrl(tel);
-                                                    Navigator.of(context).pop();
-                                                  },
-                                                  icon: const Icon(Icons.done,
-                                                      color: Colors.green),
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        );
-                                      },
-                                      labelText: 'Call User',
-                                      fSize: 14,
-                                      faIcon: const FaIcon(Icons.call),
-                                      fgColor: Colors.orange,
-                                      btSize: const Size(90,
-                                          38), // Adjusted size to fit smaller screens
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
+    // If no faults found, show message
+    if (unassignedResults.isEmpty) {
+      return const Center(
+        child: Text(
+          "No unassigned faults found.",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       );
-    } else {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
     }
+
+    return GestureDetector(
+      onTap: () {
+        noFaultFocusNode.requestFocus();
+      },
+      child: KeyboardListener(
+        focusNode: noFaultFocusNode,
+        onKeyEvent: (KeyEvent event) {
+          if (event is KeyDownEvent) {
+            final double pageScrollAmount =
+                _unassignedFaultsScrollController.position.viewportDimension;
+
+            if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+              _unassignedFaultsScrollController.animateTo(
+                _unassignedFaultsScrollController.offset + 50,
+                duration: const Duration(milliseconds: 100),
+                curve: Curves.easeIn,
+              );
+            } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+              _unassignedFaultsScrollController.animateTo(
+                _unassignedFaultsScrollController.offset - 50,
+                duration: const Duration(milliseconds: 100),
+                curve: Curves.easeIn,
+              );
+            } else if (event.logicalKey == LogicalKeyboardKey.pageDown) {
+              _unassignedFaultsScrollController.animateTo(
+                _unassignedFaultsScrollController.offset + pageScrollAmount,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeIn,
+              );
+            } else if (event.logicalKey == LogicalKeyboardKey.pageUp) {
+              _unassignedFaultsScrollController.animateTo(
+                _unassignedFaultsScrollController.offset - pageScrollAmount,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeIn,
+              );
+            }
+          }
+        },
+        child: Scrollbar(
+          controller: _unassignedFaultsScrollController,
+          thickness: 12,
+          radius: const Radius.circular(8),
+          thumbVisibility: true,
+          trackVisibility: true,
+          interactive: true,
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.builder(
+                  controller: _unassignedFaultsScrollController,
+                  shrinkWrap: true,
+                  itemCount: unassignedResults.length,
+                  itemBuilder: (context, index) {
+                    // if (index >= unassignedResults.length) {
+                    //   return const SizedBox();
+                    // }
+
+                    // Extract fault data correctly
+                    var faultData =
+                        unassignedResults[index].data() as Map<String, dynamic>;
+
+                    String status = (faultData['faultResolved'] == false)
+                        ? "Pending"
+                        : "Completed";
+                    bool showNotification =
+                        (faultData['attendeeAllocated'] == '' ||
+                            faultData['faultStage'] == 1 ||
+                            faultData['faultResolved'] == false);
+
+                    var faultAddress = (faultData['address'] != null &&
+                            faultData['address'].isNotEmpty)
+                        ? faultData['address']
+                        : 'No address provided';
+                    var faultType = (faultData['faultType'] != null &&
+                            faultData['faultType'].isNotEmpty)
+                        ? faultData['faultType']
+                        : 'No fault type provided';
+
+                    var dateReported;
+                    if (faultData['dateReported'] is Timestamp) {
+                      dateReported = DateFormat('yyyy-MM-dd – kk:mm').format(
+                        faultData['dateReported'].toDate(),
+                      );
+                    } else {
+                      dateReported = faultData['dateReported'];
+                    }
+
+                    String cleanedAddress =
+                        faultAddress.replaceAll(RegExp(r'[\/:*?"<>|]'), '');
+
+                    return Card(
+                      margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Visibility(
+                                    visible: showNotification,
+                                    child: const Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Icon(Icons.notification_important,
+                                            color: Colors.red),
+                                        SizedBox(width: 5),
+                                        Text(
+                                          'Attention needed!',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.red,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Expanded(
+                                    child: Center(
+                                      child: Text(
+                                        'Fault Information',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                                  Visibility(
+                                    visible: visNotification,
+                                    child: const Icon(
+                                      Icons.notification_important,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Reference Number: ${faultData['ref']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5),
+                            if (faultData['accountNumber'] != "") ...[
+                              Text(
+                                'Reporter Account Number: ${faultData['accountNumber']}',
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 5),
+                            ],
+                            Text(
+                              'Street Address of Fault: $faultAddress',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              'Fault Type: $faultType',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              'Date of Fault Report: $dateReported',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
   }
 
   Future<void> _updateReport([DocumentSnapshot? documentSnapshot]) async {
@@ -3508,10 +3400,10 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
       // Initialize dropdown values and fields
       String dropdownValue = 'Water and Sanitation';
       dropdownValue = documentSnapshot['faultType'];
-      String? dropdownValue3 = _employeesUserNames.isNotEmpty && _employeesUserNames.contains(_employeesUserNames.first)
+      String? dropdownValue3 = _employeesUserNames.isNotEmpty &&
+              _employeesUserNames.contains(_employeesUserNames.first)
           ? _employeesUserNames.first
           : null;
-
 
       print('Updating fault with ID: ${documentSnapshot.id}');
 
@@ -3729,7 +3621,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                               ),
                             ),
                             items: <String>[
-                            //  'Select Department...',
+                              //  'Select Department...',
                               'Water & Sanitation',
                               // 'Roadworks',
                               // 'Waste Management'
@@ -3805,13 +3697,14 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                           "faultStage": 2,
                                           "depAllocated": dropdownValue,
                                           "attendeeAllocated": dropdownValue3,
-                                          "adminComment": _commentController.text,
+                                          "adminComment":
+                                              _commentController.text,
                                         });
-                                        print("Update successful: Fault stage updated to 2.");
+                                        print(
+                                            "Update successful: Fault stage updated to 2.");
                                       } catch (e) {
                                         print("Update failed: $e");
                                       }
-
 
                                       _commentController.clear();
                                       dropdownValue = 'Water & Sanitation';
@@ -3910,7 +3803,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
     // Initialize dropdowns and text field for reallocation
     String dropdownValue = 'Water and Sanitation';
     dropdownValue = documentSnapshot['faultType'];
-    String? dropdownValue3 = _employeesUserNames.isNotEmpty && _employeesUserNames.contains(_employeesUserNames.first)
+    String? dropdownValue3 = _employeesUserNames.isNotEmpty &&
+            _employeesUserNames.contains(_employeesUserNames.first)
         ? _employeesUserNames.first
         : null;
     _commentController.clear();
@@ -4048,22 +3942,24 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
               actions: [
                 // Custom button styles
                 ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.green,
-                    // Customize text color
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.green,
+                      // Customize text color
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
                     ),
-                  ),
-                  child: const Text('Reassign'),
+                    child: const Text('Reassign'),
                     onPressed: () async {
                       final String userComment = _commentController.text;
                       final String? attendeeAllocated = dropdownValue3;
 
-                      if (attendeeAllocated == null || attendeeAllocated == 'Assign User...') {
+                      if (attendeeAllocated == null ||
+                          attendeeAllocated == 'Assign User...') {
                         Fluttertoast.showToast(
-                          msg: 'Please allocate the fault to a new fault attendee!',
+                          msg:
+                              'Please allocate the fault to a new fault attendee!',
                           gravity: ToastGravity.CENTER,
                         );
                         return;
@@ -4071,7 +3967,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
 
                       if (userComment.isEmpty) {
                         Fluttertoast.showToast(
-                          msg: 'Please provide reasoning for your reallocation!',
+                          msg:
+                              'Please provide reasoning for your reallocation!',
                           gravity: ToastGravity.CENTER,
                         );
                         return;
@@ -4084,14 +3981,17 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                           "faultResolved": false,
                           "faultStage": 2,
                         });
-                        print("Reassignment successful: Fault updated to stage 2.");
+                        print(
+                            "Reassignment successful: Fault updated to stage 2.");
                         Fluttertoast.showToast(
                           msg: 'Fault reassigned successfully!',
                           gravity: ToastGravity.CENTER,
                         );
                         await fetchFaultsForAllMunicipalities();
-                        if(mounted){// Or the specific function you use
-                        setState(() {});}
+                        if (mounted) {
+                          // Or the specific function you use
+                          setState(() {});
+                        }
                       } catch (e) {
                         print("Error during reassignment: $e");
                         Fluttertoast.showToast(
@@ -4107,11 +4007,11 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                       dropdownValue3 = 'Assign User...';
                       _faultResolvedController = false;
 
-                      visStage1 = visStage2 = visStage3 = visStage4 = visStage5 = false;
+                      visStage1 =
+                          visStage2 = visStage3 = visStage4 = visStage5 = false;
 
                       Navigator.of(context).pop(); // Close the dialog
-                    }
-                ),
+                    }),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
@@ -4134,7 +4034,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
     );
   }
 
-  Future<void> _managersReassignWorker([DocumentSnapshot? documentSnapshot]) async {
+  Future<void> _managersReassignWorker(
+      [DocumentSnapshot? documentSnapshot]) async {
     if (documentSnapshot == null) return;
     String municipalityContext = isLocalMunicipality || isLocalUser
         ? municipalityId
@@ -4168,7 +4069,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
     // Initialize dropdowns and text field for reallocation
     String dropdownValue = 'Water and Sanitation';
     dropdownValue = documentSnapshot['faultType'];
-    String? dropdownValue2 = _employeesUserNames.isNotEmpty && _employeesUserNames.contains(_employeesUserNames.first)
+    String? dropdownValue2 = _employeesUserNames.isNotEmpty &&
+            _employeesUserNames.contains(_employeesUserNames.first)
         ? _employeesUserNames.first
         : null;
 
@@ -4463,7 +4365,8 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
     // Initialize dropdowns and text field for reallocation
     String dropdownValue = 'Water and Sanitation';
     dropdownValue = documentSnapshot['faultType'];
-    String? dropdownValue2 = _employeesUserNames.isNotEmpty && _employeesUserNames.contains(_employeesUserNames.first)
+    String? dropdownValue2 = _employeesUserNames.isNotEmpty &&
+            _employeesUserNames.contains(_employeesUserNames.first)
         ? _employeesUserNames.first
         : null;
 

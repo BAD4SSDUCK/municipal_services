@@ -27,6 +27,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 //View Details user side
 class UsersTableViewPage extends StatefulWidget {
@@ -145,10 +146,14 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   String previousMonth = DateFormat.MMMM().format(DateTime.now().subtract(Duration(days: 30))); // Example: January
   String? previousMonthReading;
   String?currentMonthReading;
+  RewardedAd? _rewardedAd;
+  bool _isAdLoaded = false;
+  bool _isLoadingAd = true;
 
   @override
   void initState() {
     super.initState();
+    if (!kIsWeb) _loadRewardedAd();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final propertyProvider = Provider.of<PropertyProvider>(
           context, listen: false);
@@ -585,6 +590,150 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
     print("📊 Updated Readings - Previous: $previousMonthReading | Current: $currentMonthReading");
   }
 
+  void _loadRewardedAd() {
+    if (kIsWeb) return;
+    print("🔄 Loading a new rewarded ad...");
+    if (mounted) {
+      setState(() {
+        _isLoadingAd = true; // Mark as loading
+      });
+    }
+    RewardedAd.load(
+      adUnitId: 'ca-app-pub-3940256099942544/5224354917', // Test Ad Unit
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (RewardedAd ad) {
+          if(mounted) {
+            setState(() {
+              _rewardedAd = ad;
+              _isAdLoaded = true;
+              _isLoadingAd = false; // Mark as loaded
+              print("✅ Rewarded Ad Loaded");
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          print("❌ Failed to Load Rewarded Ad: $error");
+          if(mounted) {
+            setState(() {
+              _isAdLoaded = false;
+              _isLoadingAd = false; // Mark as done loading
+              _rewardedAd = null;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+
+  Future<void> _showRewardedAd() async {
+    if (kIsWeb) {
+      print("🌐 Web detected, skipping ad and downloading statement directly.");
+      _fetchAndOpenStatement();
+      return;
+    }
+    if (_isLoadingAd) {
+      Fluttertoast.showToast(msg: "🔄 Ad is still loading... Please wait.");
+      return; // Prevent access until loading completes
+    }
+
+    if (_rewardedAd == null || !_isAdLoaded) {
+      print("⚠️ Ad not loaded, opening statement directly.");
+      _fetchAndOpenStatement();
+      _loadRewardedAd(); // Reload the ad even if it failed
+      return;
+    }
+
+    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (RewardedAd ad) {
+        print("✅ Ad Dismissed. Opening statement.");
+        ad.dispose();
+        _fetchAndOpenStatement(); // Open the statement AFTER the ad is closed
+        _loadRewardedAd(); // Load a new ad for next attempt
+      },
+      onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+        print("❌ Failed to Show Ad: $error. Opening statement.");
+        ad.dispose();
+        _fetchAndOpenStatement(); // Open the statement since ad failed
+        _loadRewardedAd(); // Reload the ad
+      },
+    );
+
+    _rewardedAd!.show(onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+      print("🎉 User watched ad, unlocking statement.");
+    });
+        if(mounted) {
+          setState(() {
+            _rewardedAd = null;
+            _isAdLoaded = false;
+          });
+        }
+  }
+
+
+  void _fetchAndOpenStatement() async {
+    Fluttertoast.showToast(
+        msg: "Now opening your statement!\nPlease wait a few seconds!");
+
+    // Handle any necessary updates
+    String previousMonth = DateFormat('MMMM').format(DateTime.now().subtract(Duration(days: 30)));
+    String formattedAddress = widget.propertyAddress.trim();
+
+    print('Attempting to list files in path: pdfs/$previousMonth/${widget.userNumber}/$formattedAddress/');
+
+    final storageRef = FirebaseStorage.instance
+        .ref()
+        .child("pdfs/$previousMonth/${widget.userNumber}/$formattedAddress");
+
+    try {
+      final listResult = await storageRef.listAll();
+
+      print('Files found in directory: ${listResult.items.length}');
+
+      if (listResult.items.isEmpty) {
+        Fluttertoast.showToast(msg: "No files found in the directory.");
+        return;
+      }
+
+      bool found = false;
+      String? webPdfUrl;
+      File? mobilePdfFile;
+
+      for (var item in listResult.items) {
+        if (item.name.contains(widget.accountNumber)) {
+          print('Found matching file: ${item.name}');
+          webPdfUrl = await item.getDownloadURL();
+          print('Download URL: $webPdfUrl');
+
+          if (!kIsWeb) {
+            final directory = await getApplicationDocumentsDirectory();
+            final filePath = '${directory.path}/${item.name}';
+            final response = await Dio().download(webPdfUrl, filePath);
+
+            if (response.statusCode == 200) {
+              mobilePdfFile = File(filePath);
+              Fluttertoast.showToast(msg: "Successful!");
+            } else {
+              Fluttertoast.showToast(msg: "Failed to download PDF.");
+            }
+          }
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        Fluttertoast.showToast(msg: "No matching invoice found.");
+        return;
+      }
+
+      openPDF(context, mobilePdfFile, webPdfUrl);
+    } catch (e) {
+      print('Error opening PDF: $e');
+      Fluttertoast.showToast(msg: "Unable to open statement.");
+    }
+  }
 
 
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
@@ -2511,79 +2660,80 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           children: [
                                             BasicIconButtonGrey(
                                               onPress: () async {
-                                                Fluttertoast.showToast(
-                                                    msg:
-                                                    "Now opening your statement!\nPlease wait a few seconds!");
-
-                                                _onSubmit(); // Handle any necessary updates
-                                                // Get the previous month instead of the current one
-                                                String previousMonth = DateFormat('MMMM').format(DateTime.now().subtract(Duration(days: 30)));
-
-                                                // Ensure the address is trimmed and formatted consistently
-                                                String formattedAddress = widget.propertyAddress.trim(); // Trim any extra spaces
-
-                                                // Print statements to debug the exact path being used
-                                                print('Attempting to list files in path: pdfs/$previousMonth/${widget.userNumber}/$formattedAddress/');
-
-                                                // Reference the storage path based on the formatted address
-                                                final storageRef = FirebaseStorage.instance
-                                                    .ref()
-                                                    .child("pdfs/$previousMonth/${widget.userNumber}/$formattedAddress");
-
-                                                try {
-                                                  final listResult = await storageRef.listAll();
-
-                                                  // Log the number of files found
-                                                  print('Files found in directory: ${listResult.items.length}');
-
-                                                  // If no files are found, inform the user
-                                                  if (listResult.items.isEmpty) {
-                                                    Fluttertoast.showToast(msg: "No files found in the directory.");
-                                                    return;
-                                                  }
-
-                                                  bool found = false;
-                                                  String? webPdfUrl;
-                                                  File? mobilePdfFile;
-
-                                                  for (var item in listResult.items) {
-                                                    if (item.name.contains(widget.accountNumber)) {
-                                                      print('Found matching file: ${item.name}');
-
-                                                      // ✅ Get the download URL for web
-                                                      webPdfUrl = await item.getDownloadURL();
-                                                      print('Download URL: $webPdfUrl');
-
-                                                      if (!kIsWeb) {
-                                                        // ✅ Mobile: Download the PDF locally
-                                                        final directory = await getApplicationDocumentsDirectory();
-                                                        final filePath = '${directory.path}/${item.name}';
-                                                        final response = await Dio().download(webPdfUrl, filePath);
-
-                                                        if (response.statusCode == 200) {
-                                                          mobilePdfFile = File(filePath);
-                                                          Fluttertoast.showToast(msg: "Successful!");
-                                                        } else {
-                                                          Fluttertoast.showToast(msg: "Failed to download PDF.");
-                                                        }
-                                                      }
-
-                                                      found = true;
-                                                      break;
-                                                    }
-                                                  }
-
-                                                  if (!found) {
-                                                    Fluttertoast.showToast(msg: "No matching invoice found.");
-                                                    return;
-                                                  }
-
-                                                  // ✅ Open PDF: Mobile (file) | Web (URL)
-                                                  openPDF(context, mobilePdfFile, webPdfUrl);
-                                                } catch (e) {
-                                                  print('Error opening PDF: $e');
-                                                  Fluttertoast.showToast(msg: "Unable to open statement.");
-                                                }
+                                                // Fluttertoast.showToast(
+                                                //     msg:
+                                                //     "Now opening your statement!\nPlease wait a few seconds!");
+                                                //
+                                                // _onSubmit(); // Handle any necessary updates
+                                                // // Get the previous month instead of the current one
+                                                // String previousMonth = DateFormat('MMMM').format(DateTime.now().subtract(Duration(days: 30)));
+                                                //
+                                                // // Ensure the address is trimmed and formatted consistently
+                                                // String formattedAddress = widget.propertyAddress.trim(); // Trim any extra spaces
+                                                //
+                                                // // Print statements to debug the exact path being used
+                                                // print('Attempting to list files in path: pdfs/$previousMonth/${widget.userNumber}/$formattedAddress/');
+                                                //
+                                                // // Reference the storage path based on the formatted address
+                                                // final storageRef = FirebaseStorage.instance
+                                                //     .ref()
+                                                //     .child("pdfs/$previousMonth/${widget.userNumber}/$formattedAddress");
+                                                //
+                                                // try {
+                                                //   final listResult = await storageRef.listAll();
+                                                //
+                                                //   // Log the number of files found
+                                                //   print('Files found in directory: ${listResult.items.length}');
+                                                //
+                                                //   // If no files are found, inform the user
+                                                //   if (listResult.items.isEmpty) {
+                                                //     Fluttertoast.showToast(msg: "No files found in the directory.");
+                                                //     return;
+                                                //   }
+                                                //
+                                                //   bool found = false;
+                                                //   String? webPdfUrl;
+                                                //   File? mobilePdfFile;
+                                                //
+                                                //   for (var item in listResult.items) {
+                                                //     if (item.name.contains(widget.accountNumber)) {
+                                                //       print('Found matching file: ${item.name}');
+                                                //
+                                                //       // ✅ Get the download URL for web
+                                                //       webPdfUrl = await item.getDownloadURL();
+                                                //       print('Download URL: $webPdfUrl');
+                                                //
+                                                //       if (!kIsWeb) {
+                                                //         // ✅ Mobile: Download the PDF locally
+                                                //         final directory = await getApplicationDocumentsDirectory();
+                                                //         final filePath = '${directory.path}/${item.name}';
+                                                //         final response = await Dio().download(webPdfUrl, filePath);
+                                                //
+                                                //         if (response.statusCode == 200) {
+                                                //           mobilePdfFile = File(filePath);
+                                                //           Fluttertoast.showToast(msg: "Successful!");
+                                                //         } else {
+                                                //           Fluttertoast.showToast(msg: "Failed to download PDF.");
+                                                //         }
+                                                //       }
+                                                //
+                                                //       found = true;
+                                                //       break;
+                                                //     }
+                                                //   }
+                                                //
+                                                //   if (!found) {
+                                                //     Fluttertoast.showToast(msg: "No matching invoice found.");
+                                                //     return;
+                                                //   }
+                                                //
+                                                //   // ✅ Open PDF: Mobile (file) | Web (URL)
+                                                //   openPDF(context, mobilePdfFile, webPdfUrl);
+                                                // } catch (e) {
+                                                //   print('Error opening PDF: $e');
+                                                //   Fluttertoast.showToast(msg: "Unable to open statement.");
+                                               // }
+                                                _showRewardedAd();
                                               },
                                               labelText: 'Invoice',
                                               fSize: 16,

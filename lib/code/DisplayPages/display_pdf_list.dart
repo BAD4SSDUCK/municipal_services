@@ -24,7 +24,7 @@ import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
 import 'display_property_trend.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:universal_html/html.dart' as html;
-
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 //View Invoice
 class UsersPdfListViewPage extends StatefulWidget {
@@ -103,6 +103,9 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
 
   Timer? timer;
   var _isLoading = false;
+  RewardedAd? _rewardedAd;
+  bool _isAdLoaded = false;
+  bool _isLoadingAd = true;
 
   void _onSubmit() {
     setState(() => _isLoading = true);
@@ -114,6 +117,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
 
   @override
   void initState() {
+    if (!kIsWeb) _loadRewardedAd();
     dropdownValue = formattedDate;
     setMonthLimits();
     _initializeFirestoreReference();
@@ -225,6 +229,127 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
   //     throw Exception("Error in downloading file: $e"); // Properly throwing an exception with a message
   //   }
   // }
+
+  void _loadRewardedAd() {
+    if (kIsWeb) return;
+    print("🔄 Loading a new rewarded ad...");
+    if(mounted) {
+      setState(() {
+        _isLoadingAd = true;
+      });
+    }
+    RewardedAd.load(
+      adUnitId: 'ca-app-pub-3940256099942544/5224354917', // Test Ad Unit
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (RewardedAd ad) {
+          if(mounted) {
+            setState(() {
+              _rewardedAd = ad;
+              _isAdLoaded = true;
+              _isLoadingAd = false;
+              print("✅ Rewarded Ad Loaded");
+            });
+          }
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          print("❌ Failed to Load Rewarded Ad: $error");
+          if(mounted) {
+            setState(() {
+              _isAdLoaded = false;
+              _isLoadingAd = false;
+              _rewardedAd = null;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> _showRewardedAd() async {
+    if (kIsWeb) {
+      print("🌐 Web detected, skipping ad and downloading statement directly.");
+      _downloadInvoice();
+      return;
+    }
+    if (_isLoadingAd) {
+      Fluttertoast.showToast(msg: "🔄 Ad is still loading... Please wait.");
+      return;
+    }
+
+    if (_rewardedAd == null || !_isAdLoaded) {
+      print("⚠️ Ad not loaded, downloading statement directly.");
+      _downloadInvoice();
+      _loadRewardedAd(); // Reload the ad even if it failed
+      return;
+    }
+
+    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (RewardedAd ad) {
+        print("✅ Ad Dismissed. Downloading statement.");
+        ad.dispose();
+        _downloadInvoice(); // Download invoice AFTER ad is closed
+        _loadRewardedAd(); // Load new ad for the next attempt
+      },
+      onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+        print("❌ Failed to Show Ad: $error. Downloading statement.");
+        ad.dispose();
+        _downloadInvoice(); // Download invoice even if ad fails
+        _loadRewardedAd();
+      },
+    );
+
+    _rewardedAd!.show(onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+      print("🎉 User watched ad, unlocking statement download.");
+    });
+      if(mounted) {
+        setState(() {
+          _rewardedAd = null;
+          _isAdLoaded = false;
+        });
+      }
+  }
+
+  void _downloadInvoice() {
+    Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait...");
+
+    String formattedAddress = widget.propertyAddress.trim();
+    String monthToUse = dropdownValue == 'Select Month' ? formattedDate : dropdownValue;
+
+    print('📂 Fetching statement from: pdfs/$monthToUse/${widget.userNumber}/$formattedAddress/');
+
+    final storageRef = FirebaseStorage.instance.ref()
+        .child("pdfs/$monthToUse/${widget.userNumber}/$formattedAddress");
+
+    storageRef.listAll().then((listResult) async {
+      if (listResult.items.isEmpty) {
+        Fluttertoast.showToast(msg: "No statement found for this property.");
+        return;
+      }
+
+      for (var item in listResult.items) {
+        if (item.name.contains(widget.accountNumber)) {
+          String downloadUrl = await item.getDownloadURL();
+          print('🔗 Download URL: $downloadUrl');
+
+          if (kIsWeb) {
+            html.window.open(downloadUrl, "_blank");
+          } else {
+            openURL(downloadUrl);
+          }
+
+          Fluttertoast.showToast(msg: "Opening statement...");
+          return;
+        }
+      }
+
+      Fluttertoast.showToast(msg: "No matching statement found.");
+    }).catchError((error) {
+      print('🚨 Error downloading statement: $error');
+      Fluttertoast.showToast(msg: "Error downloading statement.");
+    });
+  }
+
 
   Widget firebasePDFCard(CollectionReference<Object?> pdfDataStream) {
     return Expanded(
@@ -352,7 +477,8 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                 // getPDFByAccMon(accountNumberPDF, monthToUse);
                                 String accountNumberPDF = widget.accountNumber;
                                 String monthToUse = dropdownValue == 'Select Month' ? formattedDate : dropdownValue;
-                                getPDFByAccMon(accountNumberPDF, monthToUse);
+                               // getPDFByAccMon(accountNumberPDF, monthToUse);
+                                _showRewardedAd();
                               },
                               labelText: 'Invoice',
                               fSize: 16,
@@ -715,42 +841,42 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
 
 
 
-  Future<void> downloadFileUsingDownloadManager(String url, String fileName) async {
-    final status = await Permission.storage.request();
-
-    if (status.isGranted) {
-      final taskId = await FlutterDownloader.enqueue(
-        url: url,
-        savedDir: '/storage/emulated/0/Download', // This saves the file to the Downloads directory
-        fileName: fileName,
-        showNotification: true, // show download progress in status bar (for Android)
-        openFileFromNotification: true, // click on notification to open downloaded file (for Android)
-      );
-      print('Download started with taskId: $taskId');
-    } else {
-      print('Permission denied to access storage');
-      Fluttertoast.showToast(msg: "Permission denied to access storage.");
-    }
-  }
-
-  Future<File?> _downloadFile(String url, String filename) async {
-    try {
-      final appDocDir = await getApplicationDocumentsDirectory();
-      final localFile = File('${appDocDir.path}/$filename');
-
-      final response = await Dio().download(url, localFile.path);
-      if (response.statusCode == 200) {
-        print("✅ File downloaded to ${localFile.path}");
-        return localFile;
-      } else {
-        throw Exception("Failed to download file with status code: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("🚨 Error downloading file: $e");
-      Fluttertoast.showToast(msg: "Unable to download statement.");
-      return null;
-    }
-  }
+  // Future<void> downloadFileUsingDownloadManager(String url, String fileName) async {
+  //   final status = await Permission.storage.request();
+  //
+  //   if (status.isGranted) {
+  //     final taskId = await FlutterDownloader.enqueue(
+  //       url: url,
+  //       savedDir: '/storage/emulated/0/Download', // This saves the file to the Downloads directory
+  //       fileName: fileName,
+  //       showNotification: true, // show download progress in status bar (for Android)
+  //       openFileFromNotification: true, // click on notification to open downloaded file (for Android)
+  //     );
+  //     print('Download started with taskId: $taskId');
+  //   } else {
+  //     print('Permission denied to access storage');
+  //     Fluttertoast.showToast(msg: "Permission denied to access storage.");
+  //   }
+  // }
+  //
+  // Future<File?> _downloadFile(String url, String filename) async {
+  //   try {
+  //     final appDocDir = await getApplicationDocumentsDirectory();
+  //     final localFile = File('${appDocDir.path}/$filename');
+  //
+  //     final response = await Dio().download(url, localFile.path);
+  //     if (response.statusCode == 200) {
+  //       print("✅ File downloaded to ${localFile.path}");
+  //       return localFile;
+  //     } else {
+  //       throw Exception("Failed to download file with status code: ${response.statusCode}");
+  //     }
+  //   } catch (e) {
+  //     print("🚨 Error downloading file: $e");
+  //     Fluttertoast.showToast(msg: "Unable to download statement.");
+  //     return null;
+  //   }
+  // }
 
 
   void setMonthLimits() {
@@ -778,23 +904,23 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
   }
 
 
-  void openPDF(BuildContext context, File? file, String? webUrl) async {
-    if (kIsWeb) {
-      // ✅ Web: Open PDF in a new tab
-      if (webUrl != null && webUrl.isNotEmpty) {
-        html.window.open(webUrl, "_blank");
-      } else {
-        Fluttertoast.showToast(msg: "Failed to open PDF: No URL available.");
-      }
-    } else {
-      // ✅ Mobile: Open URL in Browser Instead of Downloading Manually
-      if (webUrl != null && webUrl.isNotEmpty) {
-        openURL(webUrl); // ✅ Open in browser
-      } else {
-        Fluttertoast.showToast(msg: "Error: Unable to open statement.");
-      }
-    }
-  }
+  // void openPDF(BuildContext context, File? file, String? webUrl) async {
+  //   if (kIsWeb) {
+  //     // ✅ Web: Open PDF in a new tab
+  //     if (webUrl != null && webUrl.isNotEmpty) {
+  //       html.window.open(webUrl, "_blank");
+  //     } else {
+  //       Fluttertoast.showToast(msg: "Failed to open PDF: No URL available.");
+  //     }
+  //   } else {
+  //     // ✅ Mobile: Open URL in Browser Instead of Downloading Manually
+  //     if (webUrl != null && webUrl.isNotEmpty) {
+  //       openURL(webUrl); // ✅ Open in browser
+  //     } else {
+  //       Fluttertoast.showToast(msg: "Error: Unable to open statement.");
+  //     }
+  //   }
+  // }
 
   /// ✅ Method to open the URL in the device's default browser
   void openURL(String url) async {

@@ -22,6 +22,7 @@ import 'code/Models/notify_provider.dart';
 import 'code/main_page.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 // void main() async{
 //
@@ -162,6 +163,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
   HttpOverrides.global = MyHttpOverrides();
 
   if (!foundation.kIsWeb && (io.Platform.isAndroid || io.Platform.isIOS)) {
