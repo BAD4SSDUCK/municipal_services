@@ -91,6 +91,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
   final ScrollController _allFaultsScrollController = ScrollController();
   final ScrollController _unassignedFaultsScrollController = ScrollController();
   late TabController _tabController;
+  StreamSubscription<QuerySnapshot>? _faultsSubscription;
 
   @override
   void initState() {
@@ -101,21 +102,18 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
     noFaultFocusNode.requestFocus();
     _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      resetFaultsList();
     });
     _tabController.addListener(() {
       if (_tabController.index == 0) {
         faultFocusNode.requestFocus();
         print(
             "🔄 Tab switched to 'All Department Faults'. Resetting faults...");
-        resetFaultsList();
       } else if (_tabController.index == 1) {
         noFaultFocusNode.requestFocus();
         print("🔍 Tab switched to 'Unassigned Faults'. Filtering...");
         filterUnassignedFaults();
       }
     });
-    resetFaultsList();
     faultFocusNode.requestFocus();
 
     // Listeners for scroll position
@@ -125,21 +123,13 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
       print("initState - isLocalMunicipality: $isLocalMunicipality");
       print("initState - districtId: $districtId");
       print("initState - municipalityId: $municipalityId");
-
-      // Fetch faults based on user type
-      if (isLocalMunicipality) {
-        fetchFaultsForLocalMunicipality();
-      } else if (!isLocalMunicipality && municipalityId.isEmpty) {
-        resetFaultsList(); // Fetch all faults for district-level user
-      } else {
-        fetchFaultsByMunicipality(
-            municipalityId); // Fetch faults for specific municipality
+      if (!isLocalMunicipality && (selectedMunicipality == null || selectedMunicipality!.isEmpty)) {
+        selectedMunicipality = "Select Municipality";
       }
 
       fetchMunicipalities(); // Fetch all municipalities under district
-
+      setupRealTimeFaultListener(); // 👈 Add this line
       checkRole(); // Initialize role-based streams or settings
-
       // Fetch similar faults based on department
       if (myDepartment == "Water & Sanitation") {
         getSimilarFaultStreamWater();
@@ -171,6 +161,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
     noFaultFocusNode.dispose();
     _allFaultsScrollController.dispose();
     _unassignedFaultsScrollController.dispose();
+    _faultsSubscription?.cancel();
     _tabController.dispose();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
@@ -344,21 +335,25 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
         print("Municipalities fetched: ${municipalitiesSnapshot.docs.length}");
 
         if (municipalitiesSnapshot.docs.isNotEmpty && mounted) {
-          setState(() {
-            municipalities = municipalitiesSnapshot.docs
-                .map((doc) =>
-                    doc.id) // Using document ID as the municipality name
-                .toList();
+          if(mounted) {
+            setState(() {
+              municipalities = municipalitiesSnapshot.docs
+                  .map((doc) =>
+              doc.id) // Using document ID as the municipality name
+                  .toList();
 
-            print("Municipalities list: $municipalities");
-            selectedMunicipality =
-                "Select Municipality"; // Ensure dropdown default value
-          });
+              print("Municipalities list: $municipalities");
+              selectedMunicipality =
+              "Select Municipality"; // Ensure dropdown default value
+            });
+          }
         } else {
-          setState(() {
-            municipalities = []; // Clear if nothing found
-            print("No municipalities found");
-          });
+          if(mounted) {
+            setState(() {
+              municipalities = []; // Clear if nothing found
+              print("No municipalities found");
+            });
+          }
         }
       } else {
         print("districtId is empty or null.");
@@ -439,6 +434,54 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
     if (mounted) {
       setState(() {
         _allFaultResults = fetchedFaults;
+      });
+    }
+  }
+
+  void setupRealTimeFaultListener() {
+    if (_faultsSubscription != null) {
+      _faultsSubscription!.cancel(); // Cancel previous listener
+    }
+
+    if (isLocalMunicipality) {
+      _faultsSubscription = FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId)
+          .collection('faultReporting')
+          .snapshots()
+          .listen((snapshot) {
+        if (mounted) {
+          setState(() {
+            _allFaultResults = snapshot.docs;
+          });
+        }
+      });
+    } else if (!isLocalMunicipality &&
+        selectedMunicipality == "Select Municipality") {
+      _faultsSubscription = FirebaseFirestore.instance
+          .collectionGroup('faultReporting')
+          .snapshots()
+          .listen((snapshot) {
+        if (mounted) {
+          setState(() {
+            _allFaultResults = snapshot.docs;
+          });
+        }
+      });
+    } else if (!isLocalMunicipality && selectedMunicipality != null) {
+      _faultsSubscription = FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(selectedMunicipality!)
+          .collection('faultReporting')
+          .snapshots()
+          .listen((snapshot) {
+        if (mounted) {
+          setState(() {
+            _allFaultResults = snapshot.docs;
+          });
+        }
       });
     }
   }
@@ -646,30 +689,19 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                         value: selectedMunicipality,
                         hint: const Text('Select Municipality'),
                         isExpanded: true,
-                        onChanged: (String? newValue) async {
-                          if (mounted) {
+                        onChanged: (String? newValue) {
+                          if (newValue != null && mounted) {
                             setState(() {
-                              selectedMunicipality = newValue!;
+                              selectedMunicipality = newValue;
                             });
 
-                            List<QueryDocumentSnapshot<Object?>> fetchedFaults;
+                            print("🔄 Municipality changed: $selectedMunicipality");
 
-                            if (selectedMunicipality == "Select Municipality") {
-                              fetchedFaults =
-                                  await fetchFaultsForAllMunicipalities();
-                            } else {
-                              fetchedFaults = await fetchFaultsByMunicipality(
-                                  selectedMunicipality!);
-                            }
-
-                            if (mounted) {
-                              setState(() {
-                                _allFaultResults =
-                                    fetchedFaults; // ✅ Immediately update UI
-                              });
-                            }
+                            // ✅ Re-subscribe to correct fault stream
+                            setupRealTimeFaultListener();
                           }
                         },
+
                         items: [
                           const DropdownMenuItem<String>(
                             value: "Select Municipality",
@@ -692,7 +724,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                 ),
 
               const SizedBox(height: 10),
-
               Center(
                 child: Column(
                   children: [
@@ -805,7 +836,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
               ),
             ],
           ),
-
           ///Tab for unassigned faults
           Column(
             children: [
@@ -823,10 +853,11 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                             print("🔍 Municipality changed to: $newValue");
 
                             // Update selected municipality
-                            setState(() {
-                              selectedMunicipality = newValue!;
-                            });
-
+                            if(mounted) {
+                              setState(() {
+                                selectedMunicipality = newValue!;
+                              });
+                            }
                             List<QueryDocumentSnapshot<Object?>> fetchedFaults = [];
 
                             if (selectedMunicipality == "Select Municipality") {
@@ -851,10 +882,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                               });
                             }
                           }
-                        }
-
-
-                        ,
+                        },
                         items: [
                           const DropdownMenuItem<String>(
                             value: "Select Municipality",
@@ -875,7 +903,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                         ],
                       )),
                 ),
-
               /// Search bar
               Padding(
                 padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 5.0),
@@ -894,7 +921,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                   },
                 ),
               ),
-
               /// Search bar end
               Expanded(
                 child: unassignedFaultCard(),
@@ -3536,11 +3562,22 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                             ),
                             onPressed: () async {
                               if (_commentController.text.isNotEmpty) {
+                                final currentUser = FirebaseAuth.instance.currentUser;
+                                String currentEmail = currentUser?.email ?? '';
+
+                                final docSnapshot = await faultDocRef.get();
+                                final currentData = docSnapshot.data() as Map<String, dynamic>;
+
                                 await faultDocRef.update({
                                   "managerCom2": _commentController.text,
                                   "faultResolved": false,
+                                  "managerEmail": currentEmail,
+                                  "adminEmail": currentData["adminEmail"] ?? "",
+                                  "employeeEmail": currentData["employeeEmail"] ?? "",
                                   "faultStage": 4,
                                 });
+
+
 
                                 _commentController.clear();
                                 dropdownValue = 'Select Department...';
@@ -3587,8 +3624,18 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                             ),
                             onPressed: () async {
                               if (_commentController.text.isNotEmpty) {
+                                final currentUser = FirebaseAuth.instance.currentUser;
+                                String currentEmail = currentUser?.email ?? '';
+
+// Fetch current document data to preserve admin/manager email
+                                final docSnapshot = await faultDocRef.get();
+                                final currentData = docSnapshot.data() as Map<String, dynamic>;
+
                                 await faultDocRef.update({
                                   "attendeeCom1": _commentController.text,
+                                  "employeeEmail": currentEmail,
+                                  "managerEmail": currentData["managerEmail"] ?? "",
+                                  "adminEmail": currentData["adminEmail"] ?? "",
                                   "faultStage": 3,
                                 });
 
@@ -3694,14 +3741,44 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                         dropdownValue == 'Water & Sanitation') {
                                       try {
                                         await faultDocRef.update({
-                                          "faultStage": 2,
                                           "depAllocated": dropdownValue,
                                           "attendeeAllocated": dropdownValue3,
                                           "adminComment":
                                               _commentController.text,
+                                          "faultStage": 2,
                                         });
                                         print(
                                             "Update successful: Fault stage updated to 2.");
+
+                                        // ✅ Step 2: Get current admin email
+                                        final currentUser = FirebaseAuth.instance.currentUser;
+                                        final currentAdminEmail = currentUser?.email ?? "";
+
+                                        // ✅ Step 3: Lookup assigned employee's email
+                                        String? assignedEmployeeEmail;
+                                        try {
+                                          final employeeSnapshot = await FirebaseFirestore.instance
+                                              .collection(isLocalMunicipality
+                                              ? 'localMunicipalities/$municipalityContext/users'
+                                              : 'districts/$districtId/municipalities/$municipalityContext/users')
+                                              .where('userName', isEqualTo: dropdownValue3)
+                                              .limit(1)
+                                              .get();
+
+                                          if (employeeSnapshot.docs.isNotEmpty) {
+                                            assignedEmployeeEmail = employeeSnapshot.docs.first['email'];
+                                          }
+                                        } catch (e) {
+                                          print("Error fetching employee email: $e");
+                                        }
+
+                                        // ✅ Step 4: Update fault document with emails
+                                        await faultDocRef.update({
+                                          "adminEmail": currentAdminEmail,
+                                          if (assignedEmployeeEmail != null)
+                                            "employeeEmail": assignedEmployeeEmail,
+                                        });
+
                                       } catch (e) {
                                         print("Update failed: $e");
                                       }
@@ -4444,7 +4521,7 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Reason for returning fault',
+                        'Reason for returning fault OR Approval comment',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -4490,10 +4567,17 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
 
                     if (userComment.isNotEmpty) {
                       // Update the fault stage to 3 and save the manager's comment
+                      final docSnapshot = await faultDocRef.get();
+                      final currentData = docSnapshot.data() as Map<String, dynamic>;
+
                       await faultDocRef.update({
-                        "managerReturnCom": userComment, // Save the comment
-                        "faultStage": 3, // Set to Stage 3
+                        "managerReturnCom": userComment,
+                        "employeeEmail": currentData["employeeEmail"] ?? "",
+                        "managerEmail": currentData["managerEmail"] ?? "",
+                        "adminEmail": currentData["adminEmail"] ?? "",
+                        "faultStage": 3,
                       });
+
 
                       // Close the dialog after successful update
                       Navigator.of(context).pop();
@@ -4523,10 +4607,20 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
 
                     if (adminComment.isNotEmpty) {
                       // Update the fault to mark as completed and move to Stage 5
+                      // Get current user email and write to fault doc as adminEmail
+                      final currentUser = FirebaseAuth.instance.currentUser;
+                      final currentEmail = currentUser?.email ?? "";
+
+                      final docSnapshot = await faultDocRef.get();
+                      final currentData = docSnapshot.data() as Map<String, dynamic>;
+
                       await faultDocRef.update({
                         "adminComment": adminComment,
-                        "faultStage": 5, // Set to Stage 5 (Completed)
-                        "faultResolved": true, // Mark as resolved
+                        "faultResolved": true,
+                        "adminEmail": currentEmail,
+                        "employeeEmail": currentData["employeeEmail"] ?? "",
+                        "managerEmail": currentData["managerEmail"] ?? "",
+                        "faultStage": 5,
                       });
 
                       // Close the dialog after successful update

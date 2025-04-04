@@ -178,8 +178,8 @@ exports.organizeInvoiceUpload = onObjectFinalized(
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "dxander25@gmail.com",
-    pass: "nwxe uofz mjrl bhgf",
+    user: "cyberfoxitsa@gmail.com",
+    pass: "bwwo amjd azes fncb",
   },
 });
 
@@ -207,9 +207,6 @@ async function handleFaultEmail(event) {
     return;
   }
 
-
-  const municipalityId = event.params.municipalityId;
-  const isLocal = event.params.isLocal === true;
   const faultStage = after.faultStage || null;
   const referenceNumber = after.ref || "No Ref";
   const assignedEmployee = after.attendeeAllocated || null;
@@ -229,62 +226,18 @@ async function handleFaultEmail(event) {
     return;
   }
 
-  // 🔍 Build user collection path
-  const basePath = isLocal ?
-   "localMunicipalities" :
-   `districts/${event.params.districtId}/municipalities`;
-
-
-  const usersRef = admin.firestore()
-      .collection(basePath)
-      .doc(municipalityId)
-      .collection("users");
-
   let employeeEmail = "";
   let managerEmail = "";
   let adminEmail = "";
 
-  try {
-    if (assignedEmployee) {
-      const empSnapshot = await usersRef
-          .where("userName", "==", assignedEmployee)
-          .limit(1)
-          .get();
+  // 🎯 Use directly written emails from the fault document
+  employeeEmail = after.employeeEmail || "";
+  managerEmail = after.managerEmail || "";
+  adminEmail = after.adminEmail || "";
 
-      if (!empSnapshot.empty) {
-        employeeEmail = empSnapshot.docs[0].data().email;
-        console.log(`📧 Employee Email: ${employeeEmail}`);
-      }
-    }
-
-    if (assignedManager) {
-      const managerSnapshot = await usersRef
-          .where("userName", "==", assignedManager)
-          .limit(1)
-          .get();
-
-      if (!managerSnapshot.empty) {
-        managerEmail = managerSnapshot.docs[0].data().email;
-        console.log(`📧 Manager Email: ${managerEmail}`);
-      }
-    }
-
-    if (assignedAdmin) {
-      const adminSnapshot = await usersRef
-          .where("userName", "==", assignedAdmin)
-          .limit(1)
-          .get();
-
-      if (!adminSnapshot.empty) {
-        adminEmail = adminSnapshot.docs[0].data().email;
-        console.log(`📧 Admin Email: ${adminEmail}`);
-      }
-    }
-  } catch (error) {
-    console.error("🔥 Error fetching emails:", error);
-    return;
-  }
-
+  console.log(`📧 Employee Email: ${employeeEmail}`);
+  console.log(`📧 Manager Email: ${managerEmail}`);
+  console.log(`📧 Admin Email: ${adminEmail}`);
 
   // 📨 Determine who to notify
   let recipientEmail = "";
@@ -309,14 +262,50 @@ async function handleFaultEmail(event) {
       emailBody =
         `<p>Dear ${assignedEmployee},</p>` +
         "<p>You have been assigned a new fault to attend to.</p>" +
-        "<p><strong>Reference Number:</strong> " +
-        `${referenceNumber}</p>` +
-        "<p>Please log into the Municipal Services App to view details.</p>" +
+          "<p>Below are the details:</p>" +
+        `<ul>
+          <li><strong>Reference Number:</strong> ${referenceNumber}</li>
+          <li><strong>Address:</strong> ${after.address}</li>
+          <li><strong>Department:</strong> ${after.depAllocated}</li>
+          <li><strong>Reported On:</strong> ${after.dateReported}</li>
+          <li><strong>Description:</strong> ${after.faultDescription}</li>
+        </ul>` +
+        "<p>Please log into the Municipal Services App to respond.</p>" +
         "<p>Thank you for your service.</p>" +
         "<p>Regards,<br/>Municipal Services App</p>";
       break;
 
     case 3:
+      subject = `↩️ Fault Returned: ${referenceNumber}`;
+      emailBody =
+        "<p>The fault <strong>" + referenceNumber +
+        "</strong> has been returned for further " +
+        "action.</p>" +
+        "<p>Please check the app for additional instructions.</p>" +
+        "<p>Regards,<br/>Municipal Services App</p>";
+
+      // Check if fault was returned from Stage 4 (admin review)
+      if (event.data.before.data().faultStage === 4) {
+        const recipients = [employeeEmail, managerEmail].filter(Boolean);
+
+        await Promise.all(recipients.map(async (email) => {
+          const mailOptions = {
+            from: "Municipal Services App <cyberfoxitsa@gmail.com>",
+            to: email,
+            subject,
+            html: "<p>Dear User,</p>" + emailBody,
+          };
+          try {
+            await transporter.sendMail(mailOptions);
+            console.log(`📨 Email sent to: ${email}`);
+          } catch (error) {
+            console.error(`❌ Failed to send email to ${email}:`, error);
+          }
+        }));
+        return; // prevent sending the default admin-only email
+      }
+
+      // Normal case: employee marks fault as in progress
       subject = `⚙️ Work In Progress: ${referenceNumber}`;
       recipientEmail = adminEmail;
       emailBody =
@@ -332,22 +321,53 @@ async function handleFaultEmail(event) {
       recipientEmail = adminEmail;
       emailBody =
         "<p>Dear Admin,</p>" +
-        "<p>The fault <strong>" +
-        `${referenceNumber}</strong> is now under review.</p>` +
+        "<p>The fault <strong>" + referenceNumber +
+        "</strong> is now under review.</p>" +
+        "<p><strong>Department:</strong><br/>" +
+          (after.depAllocated || "") + "</p>" +
+        "<p><strong>Address:</strong> " + (after.address || "") + "</p>" +
+        "<p><strong>Description:</strong> " + (after.faultDescription || "") +
+        "</p>" +
         "<p>Please verify and confirm the status.</p>" +
         "<p>Regards,<br/>Municipal Services App</p>";
       break;
 
-    case 5:
+    case 5: {
       subject = `🎉 Fault Resolved: ${referenceNumber}`;
-      recipientEmail = adminEmail;
       emailBody =
-        "<p>Dear Admin,</p>" +
-        "<p>The fault <strong>" +
-        `${referenceNumber}</strong> has been resolved.</p>` +
-        "<p>Please confirm and archive if no further action is required.</p>" +
-        "<p>Thank you for using the Municipal Services App.</p>";
+        "<p>Dear Team,</p>" +
+        "<p>The fault <strong>" + referenceNumber +
+        "</strong> has been resolved.</p>" +
+        "<p><strong>Department:</strong><br/>" +
+          (after.depAllocated || "") + "</p>" +
+        "<p><strong>Address:</strong> " + (after.address || "") + "</p>" +
+        "<p><strong>Description:</strong> " + (after.faultDescription || "") +
+        "</p>" +
+        "<p>Marked as resolved by the administrator.</p>" +
+        "<p>Thank you for your contributions.</p>" +
+        "<p>Regards,<br/>Municipal Services App</p>";
+
+      const recipients = [employeeEmail, managerEmail].filter(Boolean);
+      if (recipients.length === 0) {
+        console.log("⚠️ No manager or employee email found. Skipping email.");
+        return;
+      }
+
+      const mailOptions = {
+        from: "Municipal Services App <cyberfoxitsa@gmail.com>",
+        to: recipients.join(","),
+        subject,
+        html: emailBody,
+      };
+
+      try {
+        await transporter.sendMail(mailOptions);
+        console.log(`📨 Email sent to: ${recipients.join(", ")}`);
+      } catch (error) {
+        console.error("❌ Failed to send email:", error);
+      }
       break;
+    }
 
     default:
       console.log("⚠️ No email required for this stage.");
@@ -356,7 +376,7 @@ async function handleFaultEmail(event) {
   // ✉️ Send email
   if (recipientEmail) {
     const mailOptions = {
-      from: "Municipal Services App <dxander25@gmail.com>",
+      from: "Municipal Services App <cyberfoxitsa@gmail.com>",
       to: recipientEmail,
       subject,
       html: emailBody,
