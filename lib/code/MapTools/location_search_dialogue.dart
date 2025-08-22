@@ -5,8 +5,7 @@ import 'package:geocoding/geocoding.dart' as geo;
 import 'package:get/get.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:google_maps_webservice/places.dart';
-
+import 'package:google_places_autocomplete_text_field/google_places_autocomplete_text_field.dart';
 import 'package:municipal_services/code/MapTools/location_controller.dart';
 
 class LocationSearchDialogue extends StatelessWidget {

@@ -59,14 +59,42 @@ class MainPage extends StatelessWidget {
   final PropertyService _propertyService = PropertyService();
 
   Future<Property?> _loadSelectedProperty() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? accountNo = prefs.getString('selectedPropertyAccountNo');
-    bool? isLocalMunicipality = prefs.getBool('isLocalMunicipality');
+    final prefs = await SharedPreferences.getInstance();
+    final accountNo = prefs.getString('selectedPropertyAccountNo');
+    final isLocalMunicipality = prefs.getBool('isLocalMunicipality');
+
     if (accountNo != null && isLocalMunicipality != null) {
-      return _propertyService.fetchPropertyByAccountNo(accountNo,isLocalMunicipality);
+      final result = await _propertyService.fetchPropertyByAccountNo(accountNo, isLocalMunicipality);
+
+      if (result != null) {
+        final Property property = result['property'] as Property;
+        final String matchedField = result['matchedField'] as String;
+
+        // Save the matched field in SharedPreferences
+        await prefs.setString('matchedAccountField', matchedField);
+
+        print("✅ Loaded selected property account number: $accountNo");
+        print("📌 Matched account field: $matchedField");
+        print("🏘️ Loaded property address: ${property.address}");
+        print("🌍 isLocalMunicipality: $isLocalMunicipality");
+
+        return property;
+      } else {
+        print("❌ Main Page:No property matched the account number: $accountNo");
+      }
+    } else {
+      print("Main Page⚠️ SharedPreferences values are missing. accountNo: $accountNo, isLocalMunicipality: $isLocalMunicipality");
     }
+
     return null;
   }
+
+  Future<String?> getMatchedAccountField() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('matchedAccountField');
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -82,34 +110,51 @@ class MainPage extends StatelessWidget {
           bool isEmailUser = user?.email?.isNotEmpty ?? false;
 
           if (isEmailUser) {
-            // Here we fetch whether the user is from a local municipality
             return FutureBuilder<DocumentSnapshot>(
               future: FirebaseFirestore.instance
                   .collectionGroup('users')
-                  .where('email', isEqualTo: user?.email)
+                  .where('email', isEqualTo: user!.email)
                   .limit(1)
                   .get()
                   .then((value) => value.docs.first),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  if (snapshot.hasError) {
-                    return Text("Error loading user data: ${snapshot.error}");
-                  }
-
-                  if (snapshot.hasData && snapshot.data != null) {
-                    final bool isLocalMunicipality = snapshot.data?.get('isLocalMunicipality') ?? false;
-
-                    // Pass the isLocalMunicipality parameter to HomeManagerScreen
-                    return HomeManagerScreen(isLocalMunicipality: isLocalMunicipality);
-                  }
-
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Text("Error loading user data: ${snapshot.error}");
+                }
+                if (!snapshot.hasData || snapshot.data == null) {
                   return const Text("No user data found.");
                 }
 
-                return const CircularProgressIndicator();
+                final bool isLocalMunicipality =
+                    snapshot.data!.get('isLocalMunicipality') ?? false;
+
+                // 🔑 Now fetch claims to get `superadmin`
+                return FutureBuilder<IdTokenResult>(
+                  future: FirebaseAuth.instance.currentUser!.getIdTokenResult(true),
+                  builder: (context, tokenSnap) {
+                    if (tokenSnap.connectionState != ConnectionState.done) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (tokenSnap.hasError) {
+                      return Text("Error loading claims: ${tokenSnap.error}");
+                    }
+                    final isSuperadmin =
+                        tokenSnap.data?.claims?['superadmin'] == true;
+
+                    return HomeManagerScreen(
+                      isLocalMunicipality: isLocalMunicipality,
+                      isSuperadmin: isSuperadmin,
+                    );
+                  },
+                );
               },
             );
-          } else if (phoneNumber != null) {
+          }
+
+          else if (phoneNumber != null) {
             return FutureBuilder<Property?>(
               future: _loadSelectedProperty(),
               builder: (context, propertySnapshot) {
@@ -142,11 +187,33 @@ class MainPage extends StatelessWidget {
                           if (properties != null && properties.isNotEmpty) {
                             // Pass the isLocalMunicipality flag from the fetched properties
                             bool isLocalMunicipality = properties.any((property) => property.isLocalMunicipality);
-                            return PropertySelectionScreen(
-                              properties: properties,
-                              userPhoneNumber: phoneNumber,
-                              isLocalMunicipality: isLocalMunicipality,  // Pass isLocalMunicipality
+                            Property firstProp = properties.first;
+                            return FutureBuilder<Map<String, bool>>(
+                              future: fetchMunicipalityUtilityTypes(
+                                firstProp.municipalityId,
+                                firstProp.districtId,
+                                firstProp.isLocalMunicipality,
+                              ),
+                              builder: (context, utilitySnapshot) {
+                                if (utilitySnapshot.connectionState == ConnectionState.waiting) {
+                                  return const CircularProgressIndicator();
+                                } else if (utilitySnapshot.hasError || !utilitySnapshot.hasData) {
+                                  return const Text("Error fetching utility types.");
+                                }
+
+                                final handlesWater = utilitySnapshot.data!['handlesWater']!;
+                                final handlesElectricity = utilitySnapshot.data!['handlesElectricity']!;
+
+                                return PropertySelectionScreen(
+                                  properties: properties,
+                                  userPhoneNumber: phoneNumber,
+                                  isLocalMunicipality: isLocalMunicipality,
+                                  handlesWater: handlesWater,
+                                  handlesElectricity: handlesElectricity,
+                                );
+                              },
                             );
+
                           }
 
                           return const Text("No properties found for this number.");
@@ -203,6 +270,50 @@ Future<List<Property>> fetchProperties(String phoneNumber) async {
   return properties;
 }
 
+Future<Map<String, bool>> fetchMunicipalityUtilityTypes(
+    String municipalityId, String? districtId, bool isLocalMunicipality) async {
+  bool handlesWater = false;
+  bool handlesElectricity = false;
+
+  try {
+    if (isLocalMunicipality) {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId)
+          .get();
+
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        final utilityTypes = List<String>.from(data['utilityType'] ?? []);
+        handlesWater = utilityTypes.contains('water');
+        handlesElectricity = utilityTypes.contains('electricity');
+      }
+    } else if (districtId != null) {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .get();
+
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        final utilityTypes = List<String>.from(data['utilityType'] ?? []);
+        handlesWater = utilityTypes.contains('water');
+        handlesElectricity = utilityTypes.contains('electricity');
+      }
+    }
+  } catch (e) {
+    print('Error fetching utility types: $e');
+  }
+
+  return {
+    'handlesWater': handlesWater,
+    'handlesElectricity': handlesElectricity,
+  };
+}
+
+
 // Fetch the total count of properties linked to the user's phone number
 Future<int> fetchPropertyCount(String phoneNumber) async {
   QuerySnapshot propertiesSnapshot = await FirebaseFirestore.instance
@@ -210,4 +321,36 @@ Future<int> fetchPropertyCount(String phoneNumber) async {
       .where('cellNumber', isEqualTo: phoneNumber)
       .get();
   return propertiesSnapshot.docs.length;
+}
+
+class _EmailLoginInfo {
+  final bool isLocalMunicipality;
+  final bool isSuperadmin;
+  _EmailLoginInfo({
+    required this.isLocalMunicipality,
+    required this.isSuperadmin,
+  });
+}
+
+Future<_EmailLoginInfo> _fetchEmailLoginInfo(User user) async {
+  // Refresh so the latest custom claims are available
+  final token = await user.getIdTokenResult(true);
+  final claims = token.claims ?? {};
+  final isSuperadmin = claims['superadmin'] == true;
+
+  // Discover whether this email user belongs to a local municipality
+  final q = await FirebaseFirestore.instance
+      .collectionGroup('users')
+      .where('email', isEqualTo: user.email)
+      .limit(1)
+      .get();
+
+  final bool isLocalMunicipality = q.docs.isNotEmpty
+      ? (q.docs.first.data()['isLocalMunicipality'] ?? false)
+      : false;
+
+  return _EmailLoginInfo(
+    isLocalMunicipality: isLocalMunicipality,
+    isSuperadmin: isSuperadmin,
+  );
 }

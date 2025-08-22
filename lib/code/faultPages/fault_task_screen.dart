@@ -1070,10 +1070,11 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
         print('Water Fault fetched: ${fault.data()}');
         // You can now process each fault to calculate distances or other logic as needed
       }
-
-      setState(() {
-        _similarFaultResults = queryWaterSnapshot.docs;
-      });
+        if(mounted) {
+          setState(() {
+            _similarFaultResults = queryWaterSnapshot.docs;
+          });
+        }
     } catch (e) {
       print('Error fetching Water & Sanitation faults: $e');
     }
@@ -1320,9 +1321,11 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
   }
 
   void toggleVisibilityNotification() {
-    setState(() {
-      visNotification = !visNotification;
-    });
+    if(mounted) {
+      setState(() {
+        visNotification = !visNotification;
+      });
+    }
   }
 
   void addressConvert(String address) async {
@@ -3577,8 +3580,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                   "faultStage": 4,
                                 });
 
-
-
                                 _commentController.clear();
                                 dropdownValue = 'Select Department...';
                                 dropdownValue3 = 'Assign User...';
@@ -3586,8 +3587,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                 visStage1 = visStage2 =
                                     visStage3 = visStage4 = visStage5 = false;
 
-                                if (context.mounted)
+                                if (context.mounted) {
                                   Navigator.of(context).pop();
+                                }
                               } else {
                                 _showToast(
                                     'Please provide a comment before updating the fault.');
@@ -3638,7 +3640,6 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                   "adminEmail": currentData["adminEmail"] ?? "",
                                   "faultStage": 3,
                                 });
-
                                 _commentController.clear();
                                 dropdownValue = 'Select Department...';
                                 dropdownValue3 = 'Assign User...';
@@ -3646,8 +3647,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                                 visStage1 = visStage2 =
                                     visStage3 = visStage4 = visStage5 = false;
 
-                                if (context.mounted)
+                                if (context.mounted) {
                                   Navigator.of(context).pop();
+                                }
                               } else {
                                 _showToast(
                                     'Please provide a comment before confirming assignment.');
@@ -3679,10 +3681,12 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                               );
                             }).toList(),
                             onChanged: (String? newValue) {
-                              setState(() {
-                                dropdownValue = newValue!;
-                                getUserDepartmentDetails();
-                              });
+                              if(mounted) {
+                                setState(() {
+                                  dropdownValue = newValue!;
+                                  getUserDepartmentDetails();
+                                });
+                              }
                             },
                           ),
                           const SizedBox(height: 16),
@@ -3702,9 +3706,11 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                               );
                             }).toList(),
                             onChanged: (String? newValue) {
-                              setState(() {
-                                dropdownValue3 = newValue!;
-                              });
+                              if(mounted) {
+                                setState(() {
+                                  dropdownValue3 = newValue!;
+                                });
+                              }
                             },
                           ),
                           const SizedBox(height: 16),
@@ -3985,9 +3991,11 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                             );
                           }).toList(),
                           onChanged: (String? newValue) {
-                            setState(() {
-                              dropdownValue3 = newValue!;
-                            });
+                            if(mounted) {
+                              setState(() {
+                                dropdownValue3 = newValue!;
+                              });
+                            }
                           },
                         ),
                       ),
@@ -4262,9 +4270,11 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                             );
                           }).toList(),
                           onChanged: (String? newValue) {
-                            setState(() {
-                              dropdownValue2 = newValue!;
-                            });
+                            if(mounted) {
+                              setState(() {
+                                dropdownValue2 = newValue!;
+                              });
+                            }
                           },
                         ),
                       ),
@@ -4797,9 +4807,11 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
                             );
                           }).toList(),
                           onChanged: (String? newValue) {
-                            setState(() {
-                              dropdownValue = newValue!;
-                            });
+                            if(mounted) {
+                              setState(() {
+                                dropdownValue = newValue!;
+                              });
+                            }
                           },
                         ),
                       ),

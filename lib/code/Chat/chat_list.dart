@@ -8,6 +8,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:municipal_services/code/Chat/chat_screen.dart' as chat;
@@ -20,7 +21,7 @@ import '../Models/notify_provider.dart';
 import 'chat_screen.dart';
 import 'chat_screen_finance.dart';
 import 'package:provider/provider.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ChatList extends StatefulWidget {
   const ChatList({super.key, });
@@ -92,7 +93,6 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
     _tabController.dispose();
     super.dispose();
   }
-
 
 
   Future<void> initializeData() async {
@@ -204,183 +204,298 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
     try {
       print("Fetching all chats across municipalities within the district");
 
-      // Using collectionGroup on chatRoom to fetch all documents under this collection name
       QuerySnapshot chatSnapshot = await FirebaseFirestore.instance
-          .collectionGroup(
-              'chatRoom') // Target all subcollections named chatRoom
+          .collectionGroup('chatRoom')
           .get();
 
       List<Map<String, dynamic>> allChats = [];
-      bool anyUnreadMessages = false;
+      Map<String, List<String>> utilityTypeCache = {};
 
       for (var chatDoc in chatSnapshot.docs) {
-        String phoneNumber = chatDoc
-            .id; // This is the document ID, which represents the user’s phone number
-        String? municipalityId = chatDoc.reference.parent.parent
-            ?.id; // Extract municipality ID if available
+        String phoneNumber = chatDoc.id;
+        String? municipalityId = chatDoc.reference.parent.parent?.id;
 
-        // Now we need to access the 'accounts' subcollection within this chatRoom document
-        QuerySnapshot accountsSnapshot =
-            await chatDoc.reference.collection('accounts').get();
+        if (municipalityId == null) continue;
+
+        // Get utilityType from cache or Firestore
+        if (!utilityTypeCache.containsKey(municipalityId)) {
+          final municipalitySnap = await FirebaseFirestore.instance
+              .collection('districts')
+              .doc(districtId)
+              .collection('municipalities')
+              .doc(municipalityId)
+              .get();
+
+          final utilityType = List<String>.from(municipalitySnap.get('utilityType') ?? []);
+          utilityTypeCache[municipalityId] = utilityType;
+        }
+
+        final currentUtilityType = utilityTypeCache[municipalityId]!;
+
+        QuerySnapshot accountsSnapshot = await chatDoc.reference.collection('accounts').get();
 
         for (var accountDoc in accountsSnapshot.docs) {
-          String accountNumber =
-              accountDoc.id; // This is the account number for the property
+          String accountNumber = accountDoc.id;
+          String? matchedField;
+          QuerySnapshot propertySnapshot;
 
-          // Fetch property details using the account number
-          QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
-              .collectionGroup('properties')
-              .where('accountNumber', isEqualTo: accountNumber)
+          // Match based on utility type
+          if (currentUtilityType.contains('water') && !currentUtilityType.contains('electricity')) {
+            matchedField = 'accountNumber';
+            propertySnapshot = await FirebaseFirestore.instance
+                .collection('districts')
+                .doc(districtId)
+                .collection('municipalities')
+                .doc(municipalityId)
+                .collection('properties')
+                .where('accountNumber', isEqualTo: accountNumber)
+                .limit(1)
+                .get();
+          } else if (!currentUtilityType.contains('water') && currentUtilityType.contains('electricity')) {
+            matchedField = 'electricityAccountNumber';
+            propertySnapshot = await FirebaseFirestore.instance
+                .collection('districts')
+                .doc(districtId)
+                .collection('municipalities')
+                .doc(municipalityId)
+                .collection('properties')
+                .where('electricityAccountNumber', isEqualTo: accountNumber)
+                .limit(1)
+                .get();
+          } else {
+            // Handles both
+            propertySnapshot = await FirebaseFirestore.instance
+                .collection('districts')
+                .doc(districtId)
+                .collection('municipalities')
+                .doc(municipalityId)
+                .collection('properties')
+                .where('accountNumber', isEqualTo: accountNumber)
+                .limit(1)
+                .get();
+
+            if (propertySnapshot.docs.isNotEmpty) {
+              matchedField = 'accountNumber';
+            } else {
+              propertySnapshot = await FirebaseFirestore.instance
+                  .collection('districts')
+                  .doc(districtId)
+                  .collection('municipalities')
+                  .doc(municipalityId)
+                  .collection('properties')
+                  .where('electricityAccountNumber', isEqualTo: accountNumber)
+                  .limit(1)
+                  .get();
+              if (propertySnapshot.docs.isNotEmpty) {
+                matchedField = 'electricityAccountNumber';
+              }
+            }
+          }
+
+          if (propertySnapshot.docs.isEmpty) {
+            print("❌ No property found for: $accountNumber in $municipalityId");
+            continue;
+          }
+
+          var propertyData = propertySnapshot.docs.first.data() as Map<String, dynamic>;
+
+          // Fetch unread and latest messages
+          QuerySnapshot unreadMessagesSnapshot = await accountDoc.reference
+              .collection('chats')
+              .where('isReadByMunicipalUser', isEqualTo: false)
+              .where('sendBy', isNotEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
+              .get();
+
+          QuerySnapshot latestMessageSnapshot = await accountDoc.reference
+              .collection('chats')
+              .orderBy('time', descending: true)
               .limit(1)
               .get();
 
-          Map<String, dynamic> propertyData = {};
+          bool hasUnreadMessages = unreadMessagesSnapshot.docs.isNotEmpty;
 
-          if (propertySnapshot.docs.isNotEmpty) {
-            propertyData =
-                propertySnapshot.docs.first.data() as Map<String, dynamic>;
-          }
+          String latestMessage = latestMessageSnapshot.docs.isNotEmpty
+              ? latestMessageSnapshot.docs.first['message']
+              : "No messages yet.";
 
-          // Fetch the latest chat message for this account under the 'chats' subcollection
-          // Update real-time listener logic in fetchAndStoreAllChats
-          await accountDoc.reference.collection('chats')
-              .where('isReadByMunicipalUser', isEqualTo: false)
-              .where('sendBy', isNotEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
-              .snapshots().listen((snapshot) {
-            bool hasUnreadMessages = snapshot.docs.isNotEmpty;
-            anyUnreadMessages = anyUnreadMessages || hasUnreadMessages;
+          dynamic latestMessageTime = latestMessageSnapshot.docs.isNotEmpty
+              ? latestMessageSnapshot.docs.first['time']
+              : 0;
 
-            if (mounted) {
-              setState(() {
-                // Find the chat if it already exists
-                int existingChatIndex = allChats.indexWhere((chat) =>
-                chat['phoneNumber'] == phoneNumber && chat['accountNumber'] == accountNumber
-                );
-
-                if (existingChatIndex != -1) {
-                  // Update the existing chat entry's unread status
-                  allChats[existingChatIndex]['hasUnreadMessages'] = hasUnreadMessages;
-
-                  // Check that there are documents in the snapshot before accessing the first one
-                  if (snapshot.docs.isNotEmpty) {
-                    allChats[existingChatIndex]['latestMessage'] = snapshot.docs.first['message'];
-                    allChats[existingChatIndex]['latestMessageTime'] = snapshot.docs.first['time'];
-                  }
-                } else {
-                  // If not found, add a new entry
-                  allChats.add({
-                    'chatRoomId': phoneNumber,
-                    'municipalityId': municipalityId,
-                    'accountNumber': accountNumber,
-                    'firstName': propertyData['firstName'] ?? 'Unknown',
-                    'lastName': propertyData['lastName'] ?? '',
-                    'address': propertyData['address'] ?? 'Unknown',
-                    'phoneNumber': phoneNumber,
-                    'hasUnreadMessages': hasUnreadMessages,
-                    'latestMessage': snapshot.docs.isNotEmpty ? snapshot.docs.first['message'] : "No messages yet.",
-                    'latestMessageTime': snapshot.docs.isNotEmpty ? snapshot.docs.first['time'] : 0,
-                  });
-                }
-              });
-            }
+          allChats.add({
+            'chatRoomId': phoneNumber,
+            'municipalityId': municipalityId,
+            'accountNumber': accountNumber,
+            'matchedAccountField': matchedField ?? '',
+            'firstName': propertyData['firstName'] ?? 'Unknown',
+            'lastName': propertyData['lastName'] ?? '',
+            'address': propertyData['address'] ?? 'Unknown',
+            'phoneNumber': phoneNumber,
+            'hasUnreadMessages': hasUnreadMessages,
+            'latestMessage': latestMessage,
+            'latestMessageTime': latestMessageTime,
           });
         }
       }
+
+      // Sort by latest message time
+      allChats.sort((a, b) =>
+          (b['latestMessageTime'] ?? 0).compareTo(a['latestMessageTime'] ?? 0));
+
       if (mounted) {
         setState(() {
           _allChats = allChats;
         });
       }
+
+      print("✅ All general chats fetched: ${_allChats.length}");
     } catch (e) {
-      print("Error fetching chats: $e");
+      print("❌ Error fetching general chats: $e");
     }
   }
 
   Future<void> fetchAndStoreAllFinanceChats() async {
     try {
-      print("Fetching all finance chats across municipalities within the district");
-
-      QuerySnapshot chatSnapshot = await FirebaseFirestore.instance
-          .collectionGroup('chatRoomFinance') // Target all subcollections named chatRoomFinance
-          .get();
-      print("Fetched ${chatSnapshot.docs.length} finance chat documents");
       List<Map<String, dynamic>> allFinanceChats = [];
-      bool anyUnreadFinanceMessages = false;
 
-      for (var chatDoc in chatSnapshot.docs) {
-        String phoneNumber = chatDoc.id; // Document ID representing the user’s phone number
-        String? municipalityId = chatDoc.reference.parent.parent?.id; // Extract municipality ID if available
-        print("Processing chat document: ${chatDoc.id}");
-        // Access the 'accounts' subcollection within this chatRoom document
-        QuerySnapshot accountsSnapshot = await chatDoc.reference.collection('accounts').get();
+      if (!isLocalMunicipality) {
+        // 1. Fetch all municipalities under the district
+        QuerySnapshot municipalitiesSnapshot = await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .get();
 
-        for (var accountDoc in accountsSnapshot.docs) {
-          String accountNumber = accountDoc.id; // Account number for the property
+        for (var municipalityDoc in municipalitiesSnapshot.docs) {
+          String currentMunicipalityId = municipalityDoc.id;
 
-          // Fetch property details using the account number
-          QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
-              .collectionGroup('properties')
-              .where('accountNumber', isEqualTo: accountNumber)
-              .limit(1)
-              .get();
+          // 2. Get utilityType array
+          List<dynamic> utilityType = municipalityDoc.get('utilityType') ?? [];
+          bool handlesWater = utilityType.contains('water');
+          bool handlesElectricity = utilityType.contains('electricity');
 
-          Map<String, dynamic> propertyData = {};
+          // 3. Access chatRoomFinance
+          CollectionReference chatRoomFinanceRef = FirebaseFirestore.instance
+              .collection('districts')
+              .doc(districtId)
+              .collection('municipalities')
+              .doc(currentMunicipalityId)
+              .collection('chatRoomFinance');
 
-          if (propertySnapshot.docs.isNotEmpty) {
-            propertyData = propertySnapshot.docs.first.data() as Map<String, dynamic>;
-          }
+          QuerySnapshot chatRoomDocs = await chatRoomFinanceRef.get();
+          print("Fetched ${chatRoomDocs.docs.length} finance chat documents");
 
-          // Real-time listener for unread messages
-          accountDoc.reference.collection('chats')
-              .where('isReadByMunicipalUser', isEqualTo: false)
-              .where('sendBy', isNotEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
-              .snapshots().listen((snapshot) {
-            bool hasUnreadMessages = snapshot.docs.isNotEmpty;
-            anyUnreadFinanceMessages = anyUnreadFinanceMessages || hasUnreadMessages;
+          for (var chatRoomDoc in chatRoomDocs.docs) {
+            String phoneNumber = chatRoomDoc.id;
 
-            if (mounted) {
-              setState(() {
-                // Find the chat if it already exists
-                int existingChatIndex = allFinanceChats.indexWhere((chat) =>
-                chat['phoneNumber'] == phoneNumber && chat['accountNumber'] == accountNumber
-                );
+            QuerySnapshot accountsSnapshot = await chatRoomDoc.reference
+                .collection('accounts')
+                .get();
 
-                if (existingChatIndex != -1) {
-                  // Update the existing chat entry's unread status
-                  allFinanceChats[existingChatIndex]['hasUnreadMessages'] = hasUnreadMessages;
+            for (var accountDoc in accountsSnapshot.docs) {
+              String accountId = accountDoc.id;
+              String? matchedField;
+              QuerySnapshot propSnapshot;
 
-                  // Only update latest message and time if there are documents
-                  if (snapshot.docs.isNotEmpty) {
-                    allFinanceChats[existingChatIndex]['latestMessage'] = snapshot.docs.first['message'];
-                    allFinanceChats[existingChatIndex]['latestMessageTime'] = snapshot.docs.first['time'];
-                  }
+              // 4. Determine which field to match
+              if (handlesWater && !handlesElectricity) {
+                matchedField = 'accountNumber';
+                propSnapshot = await FirebaseFirestore.instance
+                    .collection('districts')
+                    .doc(districtId)
+                    .collection('municipalities')
+                    .doc(currentMunicipalityId)
+                    .collection('properties')
+                    .where('accountNumber', isEqualTo: accountId)
+                    .get();
+              } else if (!handlesWater && handlesElectricity) {
+                matchedField = 'electricityAccountNumber';
+                propSnapshot = await FirebaseFirestore.instance
+                    .collection('districts')
+                    .doc(districtId)
+                    .collection('municipalities')
+                    .doc(currentMunicipalityId)
+                    .collection('properties')
+                    .where('electricityAccountNumber', isEqualTo: accountId)
+                    .get();
+              } else {
+                // Handles both
+                propSnapshot = await FirebaseFirestore.instance
+                    .collection('districts')
+                    .doc(districtId)
+                    .collection('municipalities')
+                    .doc(currentMunicipalityId)
+                    .collection('properties')
+                    .where('accountNumber', isEqualTo: accountId)
+                    .get();
+
+                if (propSnapshot.docs.isEmpty) {
+                  propSnapshot = await FirebaseFirestore.instance
+                      .collection('districts')
+                      .doc(districtId)
+                      .collection('municipalities')
+                      .doc(currentMunicipalityId)
+                      .collection('properties')
+                      .where('electricityAccountNumber', isEqualTo: accountId)
+                      .get();
+
+                  matchedField = 'electricityAccountNumber';
                 } else {
-                  // If not found, add a new entry
-                  allFinanceChats.add({
-                    'chatRoomId': phoneNumber,
-                    'municipalityId': municipalityId,
-                    'accountNumber': accountNumber,
-                    'firstName': propertyData['firstName'] ?? 'Unknown',
-                    'lastName': propertyData['lastName'] ?? '',
-                    'address': propertyData['address'] ?? 'Unknown',
-                    'phoneNumber': phoneNumber,
-                    'hasUnreadMessages': hasUnreadMessages,
-                    'latestMessage': snapshot.docs.isNotEmpty ? snapshot.docs.first['message'] : "No messages yet.",
-                    'latestMessageTime': snapshot.docs.isNotEmpty ? snapshot.docs.first['time'] : 0,
-                  });
+                  matchedField = 'accountNumber';
                 }
-              });
+              }
+
+              if (propSnapshot.docs.isEmpty) {
+                print("No properties found for $accountId = $accountId under chat document: $phoneNumber");
+                continue;
+              }
+
+              var propertyData = propSnapshot.docs.first.data() as Map<String, dynamic>;
+
+              propertyData['chatRoomId'] = phoneNumber;
+              propertyData['accountNumber'] = accountId;
+              propertyData['municipalityId'] = currentMunicipalityId;
+              propertyData['matchedAccountField'] = matchedField;
+
+              // Get unread messages
+              QuerySnapshot unreadMessagesSnapshot = await accountDoc.reference
+                  .collection('chats')
+                  .where('isReadByMunicipalUser', isEqualTo: false)
+                  .where('sendBy', isNotEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
+                  .get();
+
+              // Get latest message
+              QuerySnapshot latestMessageSnapshot = await accountDoc.reference
+                  .collection('chats')
+                  .orderBy('time', descending: true)
+                  .limit(1)
+                  .get();
+
+              bool hasUnreadMessages = unreadMessagesSnapshot.docs.isNotEmpty;
+              propertyData['hasUnreadMessages'] = hasUnreadMessages;
+
+              if (latestMessageSnapshot.docs.isNotEmpty) {
+                var latestMessageData = latestMessageSnapshot.docs.first.data() as Map<String, dynamic>?;
+                propertyData['latestMessageTime'] = latestMessageData?['time'] ?? 0;
+                propertyData['latestMessage'] = latestMessageData?['message'] ?? "No messages yet.";
+              }
+
+              allFinanceChats.add(propertyData);
             }
+          }
+        }
+
+        // Sort by latest message time
+        allFinanceChats.sort((a, b) =>
+            (b['latestMessageTime'] ?? 0).compareTo(a['latestMessageTime'] ?? 0));
+
+        if (mounted) {
+          setState(() {
+            _allFinanceChats = allFinanceChats;
           });
         }
-      }
-      print("Final processed finance chats: $allFinanceChats");
 
-      if (mounted) {
-        setState(() {
-          _allFinanceChats = allFinanceChats;
-          print("All finance chats set in state: $_allFinanceChats");
-        });
+        print("All finance chats set in state: $_allFinanceChats");
       }
     } catch (e) {
       print("Error fetching finance chats: $e");
@@ -390,6 +505,7 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
   Future<void> fetchAndGroupChats() async {
     try {
       List<Map<String, dynamic>> allPropertiesWithMessages = [];
+      Map<String, List<String>> utilityTypeCache = {};
 
       if (!isLocalMunicipality) {
         // Fetch all municipalities under the specified district
@@ -399,9 +515,27 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
             .collection('municipalities')
             .get();
 
-        // Iterate over each municipality in the district
         for (var municipalityDoc in municipalitiesSnapshot.docs) {
           String currentMunicipalityId = municipalityDoc.id;
+
+          // Fetch and cache utilityType
+          if (!utilityTypeCache.containsKey(currentMunicipalityId)) {
+            DocumentSnapshot utilSnap = await FirebaseFirestore.instance
+                .collection('districts')
+                .doc(districtId)
+                .collection('municipalities')
+                .doc(currentMunicipalityId)
+                .get();
+
+            List<String> utilityTypes = List<String>.from(utilSnap.get('utilityType') ?? []);
+            utilityTypeCache[currentMunicipalityId] = utilityTypes;
+          }
+
+          final currentUtilityType = utilityTypeCache[currentMunicipalityId]!;
+          String matchedAccountField = 'accountNumber';
+          if (currentUtilityType.contains('electricity') && !currentUtilityType.contains('water')) {
+            matchedAccountField = 'electricityAccountNumber';
+          }
 
           CollectionReference chatsCollection = FirebaseFirestore.instance
               .collection('districts')
@@ -416,71 +550,65 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
             String phoneNumber = phoneNumberDoc.id;
 
             QuerySnapshot accountsSnapshot =
-                await phoneNumberDoc.reference.collection('accounts').get();
+            await phoneNumberDoc.reference.collection('accounts').get();
 
             for (var accountDoc in accountsSnapshot.docs) {
               String accountNumber = accountDoc.id;
 
-              // Fetch properties filtered by account number and municipality
+              // Match property using the correct field
               QuerySnapshot propSnapshot = await FirebaseFirestore.instance
                   .collection('districts')
                   .doc(districtId)
                   .collection('municipalities')
                   .doc(currentMunicipalityId)
                   .collection('properties')
-                  .where('accountNumber', isEqualTo: accountNumber)
+                  .where(matchedAccountField, isEqualTo: accountNumber)
+                  .limit(1)
                   .get();
 
               if (propSnapshot.docs.isNotEmpty) {
-                var propertyData =
-                    propSnapshot.docs.first.data() as Map<String, dynamic>;
+                Map<String, dynamic> propertyData =
+                propSnapshot.docs.first.data() as Map<String, dynamic>;
+
                 propertyData['phoneNumber'] = phoneNumber;
                 propertyData['accountNumber'] = accountNumber;
+                propertyData['matchedAccountField'] = matchedAccountField;
                 propertyData['municipalityId'] = currentMunicipalityId;
 
-                // Check for unread messages and get the latest message
-                QuerySnapshot unreadMessagesSnapshot = await phoneNumberDoc
-                    .reference
-                    .collection('accounts')
-                    .doc(accountNumber)
+                // Fetch unread status and latest message
+                QuerySnapshot unreadMessagesSnapshot = await accountDoc.reference
                     .collection('chats')
                     .where('isRead', isEqualTo: false)
                     .get();
 
-                QuerySnapshot latestMessageSnapshot = await phoneNumberDoc
-                    .reference
-                    .collection('accounts')
-                    .doc(accountNumber)
+                QuerySnapshot latestMessageSnapshot = await accountDoc.reference
                     .collection('chats')
                     .orderBy('time', descending: true)
                     .limit(1)
                     .get();
 
-                bool hasUnreadMessages = unreadMessagesSnapshot.docs.isNotEmpty;
-                propertyData['hasUnreadMessages'] = hasUnreadMessages;
+                propertyData['hasUnreadMessages'] = unreadMessagesSnapshot.docs.isNotEmpty;
 
                 if (latestMessageSnapshot.docs.isNotEmpty) {
-                  var latestMessageData = latestMessageSnapshot.docs.first
-                      .data() as Map<String, dynamic>?;
+                  Map<String, dynamic> latestMessage =
+                  latestMessageSnapshot.docs.first.data() as Map<String, dynamic>;
 
-                  propertyData['latestMessageTime'] =
-                      latestMessageData?['time'] ?? 0;
-                  propertyData['latestMessage'] =
-                      latestMessageData?['message'] ?? "No messages yet.";
+                  propertyData['latestMessage'] = latestMessage['message'] ?? 'No messages yet.';
+                  propertyData['latestMessageTime'] = latestMessage['time'] ?? 0;
                 }
 
                 allPropertiesWithMessages.add(propertyData);
-
-                print(
-                    'Processing property with accountNumber: $accountNumber and phoneNumber: $phoneNumber');
+                print('✅ Grouped property with $matchedAccountField: $accountNumber for $phoneNumber');
+              } else {
+                print('⚠️ No matching property for $matchedAccountField: $accountNumber in $currentMunicipalityId');
               }
             }
           }
         }
 
         // Sort by latest message time
-        allPropertiesWithMessages.sort((a, b) => (b['latestMessageTime'] as int)
-            .compareTo(a['latestMessageTime'] as int));
+        allPropertiesWithMessages.sort((a, b) =>
+            (b['latestMessageTime'] ?? 0).compareTo(a['latestMessageTime'] ?? 0));
 
         if (mounted) {
           setState(() {
@@ -489,7 +617,7 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
         }
       }
     } catch (e) {
-      print('Error fetching or grouping chats: $e');
+      print('❌ Error fetching or grouping chats: $e');
       if (mounted) {
         setState(() {
           _filteredProperties = [];
@@ -525,18 +653,18 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
         await doc.reference.update({'isRead': true});
       }
     }
-
-
     // Immediately update the specific chat entry
     if (mounted) {
       setState(() {
         // Find and update the specific chat entry without refetching everything
         _allChats = _allChats.map((chat) {
-          if (chat['phoneNumber'] == phoneNumber && chat['accountNumber'] == accountNumber) {
+
+          if (chat['phoneNumber'] == phoneNumber && accountNumber== accountNumber) {
             chat['hasUnreadMessages'] = false;
           }
           return chat;
         }).toList();
+
       });
     }
   }
@@ -576,11 +704,13 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
     if (mounted) {
       setState(() {
         _allFinanceChats = _allFinanceChats.map((chat) {
-          if (chat['phoneNumber'] == phoneNumber && chat['accountNumber'] == accountNumber) {
+
+          if (chat['phoneNumber'] == phoneNumber && accountNumber == accountNumber) {
             chat['hasUnreadMessages'] = false;
           }
           return chat;
         }).toList();
+
       });
     }
   }
@@ -609,7 +739,6 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
 
   Future<void> fetchAndGroupFinanceChats() async {
     try {
-      // Step 1: Fetch all finance chat rooms from the chatRoomFinance collection
       QuerySnapshot chatRoomSnapshot = await _chatsListFinance!.get();
 
       if (chatRoomSnapshot.docs.isEmpty) {
@@ -622,106 +751,129 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
         return;
       }
 
-      // Step 2: Create a list of chatRoomIds from the finance chatRoom collection
-      List<String> chatRoomIds =
-      chatRoomSnapshot.docs.map((doc) => doc.id).toList();
+      print("Total finance chat rooms fetched: ${chatRoomSnapshot.docs.length}");
 
-      // Log the number of finance chat rooms found
-      print("Total finance chat rooms fetched: ${chatRoomIds.length}");
-
-      // Step 3: Fetch properties whose accountNumbers match the finance chatRoomIds
       List<Map<String, dynamic>> financePropertiesWithMessages = [];
+      Map<String, List<String>> utilityTypeCache = {}; // Cache utilityType per municipality
 
-      for (var phoneNumberDoc in chatRoomSnapshot.docs) {
-        String phoneNumber = phoneNumberDoc.id;
+      if (!isLocalMunicipality) {
+        // Fetch all municipalities under the specified district
+        QuerySnapshot municipalitiesSnapshot = await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .get();
 
-        print("Processing chat document: $phoneNumber");
+        for (var municipalityDoc in municipalitiesSnapshot.docs) {
+          String currentMunicipalityId = municipalityDoc.id;
 
-        // Fetch the accounts subcollection for each phone number
-        QuerySnapshot accountsSnapshot =
-        await phoneNumberDoc.reference.collection('accounts').get();
-
-        if (accountsSnapshot.docs.isEmpty) {
-          print("No accounts found under chat document: $phoneNumber");
-          continue; // Skip if no accounts are found
-        }
-
-        for (var accountDoc in accountsSnapshot.docs) {
-          String accountNumber = accountDoc.id;
-
-          print("Processing account document: $accountNumber");
-
-          // Fetch properties whose accountNumber matches the account number under the phone number
-          QuerySnapshot propSnapshot = await _propList!
-              .where('accountNumber', isEqualTo: accountNumber)
-              .get();
-
-          if (propSnapshot.docs.isNotEmpty) {
-            var propertyData =
-            propSnapshot.docs.first.data() as Map<String, dynamic>;
-
-            // Step 4: Fetch the latest message for this account
-            var latestMessageSnapshot = await phoneNumberDoc.reference
-                .collection('accounts')
-                .doc(accountNumber)
-                .collection('chats')
-                .orderBy('time', descending: true)
+          // Fetch and cache utilityType
+          if (!utilityTypeCache.containsKey(currentMunicipalityId)) {
+            DocumentSnapshot utilSnap = await FirebaseFirestore.instance
+                .collection('districts')
+                .doc(districtId)
+                .collection('municipalities')
+                .doc(currentMunicipalityId)
                 .get();
 
-            if (latestMessageSnapshot.docs.isEmpty) {
-              print("No messages found for accountNumber: $accountNumber");
-              propertyData['latestMessageTime'] = 0;
-              propertyData['latestMessage'] = "No messages yet.";
-            } else {
-              var latestMessage = latestMessageSnapshot.docs.first.data();
-              print("Latest message data: $latestMessage");
+            List<String> utilityTypes = List<String>.from(utilSnap.get('utilityType') ?? []);
+            utilityTypeCache[currentMunicipalityId] = utilityTypes;
+          }
 
-              // Null-safe checks for latestMessage['time'] and ['message']
-              propertyData['latestMessageTime'] =
-                  latestMessage['time'] ?? 0; // Fallback to 0 if null
-              propertyData['latestMessage'] =
-                  latestMessage['message'] ?? "No messages yet."; // Fallback
+          final currentUtilityType = utilityTypeCache[currentMunicipalityId]!;
+          String matchedAccountField = 'accountNumber';
+          if (currentUtilityType.contains('electricity') && !currentUtilityType.contains('water')) {
+            matchedAccountField = 'electricityAccountNumber';
+          }
+
+          CollectionReference chatsCollection = FirebaseFirestore.instance
+              .collection('districts')
+              .doc(districtId)
+              .collection('municipalities')
+              .doc(currentMunicipalityId)
+              .collection('chatRoomFinance');
+
+          QuerySnapshot chatRoomSnapshot = await chatsCollection.get();
+
+          for (var phoneNumberDoc in chatRoomSnapshot.docs) {
+            String phoneNumber = phoneNumberDoc.id;
+
+            QuerySnapshot accountsSnapshot =
+            await phoneNumberDoc.reference.collection('accounts').get();
+
+            for (var accountDoc in accountsSnapshot.docs) {
+              String accountNumber = accountDoc.id;
+
+              // Match property using the correct field
+              QuerySnapshot propSnapshot = await FirebaseFirestore.instance
+                  .collection('districts')
+                  .doc(districtId)
+                  .collection('municipalities')
+                  .doc(currentMunicipalityId)
+                  .collection('properties')
+                  .where(matchedAccountField, isEqualTo: accountNumber)
+                  .limit(1)
+                  .get();
+
+              if (propSnapshot.docs.isNotEmpty) {
+                Map<String, dynamic> propertyData =
+                propSnapshot.docs.first.data() as Map<String, dynamic>;
+
+                propertyData['phoneNumber'] = phoneNumber;
+                propertyData['accountNumber'] = accountNumber;
+                propertyData['matchedAccountField'] = matchedAccountField;
+                propertyData['municipalityId'] = currentMunicipalityId;
+
+                // Fetch unread status and latest message
+                QuerySnapshot unreadMessagesSnapshot = await accountDoc.reference
+                    .collection('chats')
+                    .where('isRead', isEqualTo: false)
+                    .get();
+
+                QuerySnapshot latestMessageSnapshot = await accountDoc.reference
+                    .collection('chats')
+                    .orderBy('time', descending: true)
+                    .limit(1)
+                    .get();
+
+                propertyData['hasUnreadMessages'] = unreadMessagesSnapshot.docs.isNotEmpty;
+
+                if (latestMessageSnapshot.docs.isNotEmpty) {
+                  Map<String, dynamic> latestMessage =
+                  latestMessageSnapshot.docs.first.data() as Map<String, dynamic>;
+
+                  propertyData['latestMessage'] = latestMessage['message'] ?? 'No messages yet.';
+                  propertyData['latestMessageTime'] = latestMessage['time'] ?? 0;
+                }
+
+                financePropertiesWithMessages.add(propertyData);
+                print('✅ Grouped property with $matchedAccountField: $accountNumber for $phoneNumber');
+              } else {
+                print('⚠️ No matching property for $matchedAccountField: $accountNumber in $currentMunicipalityId');
+              }
             }
-
-            // Add property and chat message data
-            propertyData['accountNumber'] = accountNumber;
-            propertyData['phoneNumber'] = phoneNumber;
-            financePropertiesWithMessages.add(propertyData);
-
-            print(
-                'Added finance property with accountNumber: $accountNumber and phoneNumber: $phoneNumber');
-          } else {
-            print(
-                "No properties found for accountNumber: $accountNumber under chat document: $phoneNumber");
           }
         }
-      }
 
-      // Step 5: Sort the list by the latest message time (most recent first)
-      financePropertiesWithMessages.sort((a, b) =>
-          (b['latestMessageTime'] as int)
-              .compareTo(a['latestMessageTime'] as int));
+        // Sort by latest message time
+        financePropertiesWithMessages.sort((a, b) =>
+            (b['latestMessageTime'] ?? 0).compareTo(a['latestMessageTime'] ?? 0));
 
-      // Step 6: Update the UI with the processed and sorted finance properties
-      if (context.mounted) {
-        setState(() {
-          _filteredFinanceProperties = financePropertiesWithMessages;
-        });
+        if (mounted) {
+          setState(() {
+            _filteredFinanceProperties = financePropertiesWithMessages;
+          });
+        }
       }
-      print("Updated _allFinanceChats: $_allFinanceChats");
-      // Log the final number of finance properties to be displayed
-      print(
-          "Total finance properties to display: ${_filteredFinanceProperties.length}");
     } catch (e) {
-      print('Error fetching or grouping finance chats: $e');
-      if (context.mounted) {
+      print('❌ Error fetching or grouping chats: $e');
+      if (mounted) {
         setState(() {
-          _filteredFinanceProperties = [];
+          _filteredFinanceProperties= [];
         });
       }
     }
   }
-
 
   Future<Map<String, dynamic>> _fetchLatestMessage(
       String chatRoomId, CollectionReference collection) async {
@@ -834,7 +986,7 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
         backgroundColor: Colors.grey[350],
         appBar: AppBar(
           title: const Text(
-            'Chat Rooms List',
+            'Queries List',
             style: TextStyle(color: Colors.white),
           ),
           backgroundColor: Colors.green,
@@ -872,7 +1024,7 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
                           },
                           decoration: const InputDecoration(
                             prefixIcon: Icon(Icons.search),
-                            hintText: "Search Chats",
+                            hintText: "Search Queries",
                           ),
                         ),
                       ),
@@ -883,7 +1035,7 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
                             radius: const Radius.circular(10),
                             thumbVisibility: true,
                             child: _allChats.isEmpty
-                                ? const Center(child: Text('No chat rooms available'))
+                                ? const Center(child: Text('No queries available'))
                                 : ListView.builder(
                               controller: _userChatScrollController,
                                     itemCount: _allChats.length,
@@ -902,6 +1054,36 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
                                           chatData['phoneNumber'] ?? 'Unknown';
                                       bool hasUnreadMessages =
                                           chatData['hasUnreadMessages'] ?? false;
+
+                                      String matchedField = 'accountNumber';
+                                      String matchedAccountNumber = '';
+                                      Map<String, String> chatRoomAccountsMap = {};
+
+                                       // Ensure utilityType is parsed safely
+                                      final utilityTypeList = chatData['utilityType'] is List
+                                          ? List<String>.from(chatData['utilityType'])
+                                          : [];
+
+                                      if (utilityTypeList.contains('electricity') && !utilityTypeList.contains('water')) {
+                                        matchedField = 'electricityAccountNumber';
+                                        matchedAccountNumber = chatData['electricityAccountNumber'] ?? '';
+                                        chatRoomAccountsMap = {
+                                          'accountNumber': '',
+                                          'electricityAccountNumber': matchedAccountNumber,
+                                        };
+                                      } else {
+                                        matchedField = 'accountNumber';
+                                        matchedAccountNumber = chatData['accountNumber'] ?? '';
+                                        chatRoomAccountsMap = {
+                                          'accountNumber': matchedAccountNumber,
+                                          'electricityAccountNumber': '',
+                                        };
+                                      }
+
+                                      print("🟠 Final matchedField = $matchedField");
+                                      print("🟠 Final chatRoomAccountsMap = $chatRoomAccountsMap");
+
+
                                       return Card(
                                         margin: const EdgeInsets.only(
                                             left: 10, right: 10, top: 5, bottom: 5),
@@ -914,7 +1096,7 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
                                             children: [
                                               const Center(
                                                 child: Text(
-                                                  'Chat Room',
+                                                  'User Queries',
                                                   style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w700,
@@ -923,7 +1105,7 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
                                               ),
                                               const SizedBox(height: 10),
                                               Text(
-                                                'Chat from: $usersName',
+                                                'Query from: $usersName',
                                                 style: const TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w400,
@@ -950,9 +1132,7 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
                                                     chatRoomId:
                                                         chatData['chatRoomId'] ??
                                                             'Unknown',
-                                                    usersName:
-                                                        chatData['accountNumber'] ??
-                                                            'Unknown',
+                                                    usersName: matchedAccountNumber,
                                                     chatCollectionRef:
                                                         _chatsList!, // Temporary placeholder for CollectionReference
                                                     refreshChatList:
@@ -966,6 +1146,8 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
                                                     hasUnreadMessages:
                                                         chatData['hasUnreadMessages'] ??
                                                             false,
+                                                    chatRoomAccountsMap: chatRoomAccountsMap,
+
                                                   ),
                                                 ],
                                               ),
@@ -991,7 +1173,7 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
                           },
                           decoration: const InputDecoration(
                             prefixIcon: Icon(Icons.search),
-                            hintText: "Search Finance Chats",
+                            hintText: "Search Finance Queries",
                           ),
                         ),
                       ),
@@ -1003,25 +1185,49 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
                           thumbVisibility: true,
                           child: _allFinanceChats.isEmpty
                               ? const Center(
-                              child: Text('No finance chat rooms available'))
+                              child: Text('No finance queries available'))
                               : ListView.builder(
                             controller: _financeChatScrollController,
                             itemCount: _allFinanceChats.length,
                             itemBuilder: (context, index) {
                               final property = _allFinanceChats[index];
                               String chatRoomID =
-                                  property['phoneNumber'] ?? 'Unknown'; // Extract phone number
-                              String usersName =
-                                  property['accountNumber'] ?? 'Unknown'; // Extract account number
-                              String usersDetails =
-                                  '${property['firstName'] ?? 'Unknown'} ${property['lastName'] ?? ''}';
-                              String usersProperty = property['address'] ?? 'Unknown';
+                                  property['accountNumber'] ?? 'Unknown';
+                              String usersProperty =
+                                  property['address'] ?? 'Unknown';
+                              String number =
+                                  property['cellNumber'] ?? 'Unknown';
                               bool hasUnreadMessages =
                                   property['hasUnreadMessages'] ?? false;
+                              String userName =
+                                  '${property['firstName'] ?? 'Unknown'} ${property['lastName'] ?? ''}';
+                              String matchedField = 'accountNumber';
+                              String matchedAccountNumber = '';
+                              Map<String, String> chatRoomAccountsMap = {};
 
-                              // Debugging print statement to confirm data source
-                              print(
-                                  "Displaying finance chat room: $chatRoomID for user: $usersName");
+                              // Ensure utilityType is parsed safely
+                              final utilityTypeList = property['utilityType'] is List
+                                  ? List<String>.from(property['utilityType'])
+                                  : [];
+
+                              if (utilityTypeList.contains('electricity') && !utilityTypeList.contains('water')) {
+                                matchedField = 'electricityAccountNumber';
+                                matchedAccountNumber = property['electricityAccountNumber'] ?? '';
+                                chatRoomAccountsMap = {
+                                  'accountNumber': '',
+                                  'electricityAccountNumber': matchedAccountNumber,
+                                };
+                              } else {
+                                matchedField = 'accountNumber';
+                                matchedAccountNumber = property['accountNumber'] ?? '';
+                                chatRoomAccountsMap = {
+                                  'accountNumber': matchedAccountNumber,
+                                  'electricityAccountNumber': '',
+                                };
+                              }
+
+                              print("🟠 Final matchedField = $matchedField");
+                              print("🟠 Final chatRoomAccountsMap = $chatRoomAccountsMap");
 
                               return Card(
                                 margin: const EdgeInsets.only(
@@ -1034,7 +1240,7 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
                                     children: [
                                       const Center(
                                         child: Text(
-                                          'Chat Room',
+                                          'Finance Queries',
                                           style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w700,
@@ -1043,7 +1249,7 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
                                       ),
                                       const SizedBox(height: 10),
                                       Text(
-                                        'Chat from: $usersDetails',
+                                        'Query from: $userName',
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w400,
@@ -1057,7 +1263,7 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
                                         ),
                                       ),
                                       Text(
-                                        'Number: $chatRoomID',
+                                        'Number: $number',
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w400,
@@ -1065,14 +1271,21 @@ class _ChatListState extends State<ChatList> with TickerProviderStateMixin {
                                       ),
                                       const SizedBox(height: 10),
                                       ChatButtonFinanceWidget(
-                                        chatRoomId: chatRoomID,
-                                        userFinanceName: usersName,
+                                        chatRoomId:
+                                        property['chatRoomId'] ??
+                                            'Unknown',
+                                        userFinanceName: matchedAccountNumber,
                                         chatFinCollectionRef: _chatsListFinance!,
                                         isLocalMunicipality: isLocalMunicipality,
                                         districtId: districtId,
-                                        municipalityId: municipalityId,
+                                        municipalityId:
+                                        property['municipalityId'] ??
+                                            municipalityId,
+                                        hasUnreadMessages:
+                                        property['hasUnreadMessages'] ??
+                                            false,
                                         refreshChatList: fetchAndStoreAllFinanceChats,
-                                        hasUnreadMessages: hasUnreadMessages,
+                                        chatRoomAccountsMap: chatRoomAccountsMap,
                                       ),
                                           ],
                                         ),
@@ -1104,7 +1317,7 @@ class ChatButtonWidget extends StatelessWidget {
   final String districtId;
   final String municipalityId;
   final bool hasUnreadMessages;
-
+  final Map<String, String> chatRoomAccountsMap;
   const ChatButtonWidget({
     super.key,
     required this.chatRoomId,
@@ -1115,6 +1328,7 @@ class ChatButtonWidget extends StatelessWidget {
     required this.districtId,
     required this.municipalityId,
     required this.hasUnreadMessages,
+    required this.chatRoomAccountsMap,
   });
 
   @override
@@ -1126,10 +1340,48 @@ class ChatButtonWidget extends StatelessWidget {
           BasicIconButtonGrey(
             onPress: () async {
               final chatCollectionRef = isLocalMunicipality
-                  ? FirebaseFirestore.instance.collection('localMunicipalities').doc(municipalityId).collection('chatRoom')
-                  : FirebaseFirestore.instance.collection('districts').doc(districtId).collection('municipalities').doc(municipalityId).collection('chatRoom');
+                  ? FirebaseFirestore.instance
+                  .collection('localMunicipalities')
+                  .doc(municipalityId)
+                  .collection('chatRoom')
+                  : FirebaseFirestore.instance
+                  .collection('districts')
+                  .doc(districtId)
+                  .collection('municipalities')
+                  .doc(municipalityId)
+                  .collection('chatRoom');
+
+              // 🧠 Resolve correct property by checking both account fields
+              QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
+                  .collectionGroup('properties')
+                  .where('accountNumber', isEqualTo: usersName)
+                  .get();
+
+              if (propertySnapshot.docs.isEmpty) {
+                propertySnapshot = await FirebaseFirestore.instance
+                    .collectionGroup('properties')
+                    .where('electricityAccountNumber', isEqualTo: usersName)
+                    .get();
+              }
+
+              if (propertySnapshot.docs.isEmpty) {
+                print("❌ No property found for userName = $usersName");
+                Fluttertoast.showToast(msg: "Property not found.");
+                return;
+              }
+
+              final propertyDoc = propertySnapshot.docs.first;
+              final String waterAccount = propertyDoc['accountNumber'] ?? '';
+              final String electricityAccount = propertyDoc['electricityAccountNumber'] ?? '';
+
+              final Map<String, String> resolvedAccountMap = {
+                'accountNumber': waterAccount,
+                'electricityAccountNumber': electricityAccount,
+              };
+
               final chatListState = context.findAncestorStateOfType<_ChatListState>();
               chatListState?.markMessagesAsReadForMunicipalUser(chatRoomId, usersName);
+
               await Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -1141,6 +1393,7 @@ class ChatButtonWidget extends StatelessWidget {
                     isLocalMunicipality: isLocalMunicipality,
                     districtId: districtId,
                     municipalityId: municipalityId,
+                    chatRoomAccountsMap: resolvedAccountMap,
                   ),
                 ),
               );
@@ -1189,6 +1442,7 @@ class ChatButtonFinanceWidget extends StatelessWidget {
   final String municipalityId;
   final Function refreshChatList;
   final bool hasUnreadMessages;
+  final Map<String, String> chatRoomAccountsMap;
 
   const ChatButtonFinanceWidget({
     super.key,
@@ -1200,6 +1454,7 @@ class ChatButtonFinanceWidget extends StatelessWidget {
     required this.municipalityId,
     required this.refreshChatList,
     required this.hasUnreadMessages,
+    required this.chatRoomAccountsMap,
   });
 
   @override
@@ -1210,9 +1465,45 @@ class ChatButtonFinanceWidget extends StatelessWidget {
         children: [
           BasicIconButtonGrey(
             onPress: () async {
-              final chatFinCollectionRef = isLocalMunicipality
-                  ? FirebaseFirestore.instance.collection('localMunicipalities').doc(municipalityId).collection('chatRoomFinance')
-                  : FirebaseFirestore.instance.collection('districts').doc(districtId).collection('municipalities').doc(municipalityId).collection('chatRoomFinance');
+              final chatCollectionRef = isLocalMunicipality
+                  ? FirebaseFirestore.instance
+                  .collection('localMunicipalities')
+                  .doc(municipalityId)
+                  .collection('chatRoomFinance')
+                  : FirebaseFirestore.instance
+                  .collection('districts')
+                  .doc(districtId)
+                  .collection('municipalities')
+                  .doc(municipalityId)
+                  .collection('chatRoomFinance');
+
+              // 🧠 Resolve correct property by checking both account fields
+              QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
+                  .collectionGroup('properties')
+                  .where('accountNumber', isEqualTo: userFinanceName)
+                  .get();
+
+              if (propertySnapshot.docs.isEmpty) {
+                propertySnapshot = await FirebaseFirestore.instance
+                    .collectionGroup('properties')
+                    .where('electricityAccountNumber', isEqualTo: userFinanceName)
+                    .get();
+              }
+
+              if (propertySnapshot.docs.isEmpty) {
+                print("❌ No property found for userName = $userFinanceName");
+                Fluttertoast.showToast(msg: "Property not found.");
+                return;
+              }
+
+              final propertyDoc = propertySnapshot.docs.first;
+              final String waterAccount = propertyDoc['accountNumber'] ?? '';
+              final String electricityAccount = propertyDoc['electricityAccountNumber'] ?? '';
+
+              final Map<String, String> resolvedAccountMap = {
+                'accountNumber': waterAccount,
+                'electricityAccountNumber': electricityAccount,
+              };
 
               final chatListState = context.findAncestorStateOfType<_ChatListState>();
               chatListState?.markFinanceMessagesAsReadForMunicipalUser(chatRoomId, userFinanceName);
@@ -1220,14 +1511,15 @@ class ChatButtonFinanceWidget extends StatelessWidget {
               await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>  ChatFinance(
+                  builder: (context) => ChatFinance(
                     chatRoomId: chatRoomId,
                     userName: userFinanceName,
-                    chatFinCollectionRef:  chatFinCollectionRef,
+                    chatFinCollectionRef: chatCollectionRef,
                     refreshChatList: refreshChatList,
                     isLocalMunicipality: isLocalMunicipality,
                     districtId: districtId,
                     municipalityId: municipalityId,
+                    chatRoomAccountsMap: resolvedAccountMap,
                   ),
                 ),
               );

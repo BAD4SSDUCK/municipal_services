@@ -16,16 +16,17 @@ class Property {
   String firstName;
   String lastName;
   String id;
-  // bool imgStateE;
+  bool imgStateE;
   bool imgStateW;
-  // String meterNum;
-  // String meterReading;
+  String electricityMeterNum;
+  String meterReading;
   String waterMeterNum;
   String waterMeterReading;
   String uid;
   String districtId; // New field
   String municipalityId; // New field
   bool isLocalMunicipality;
+  String electricityAccountNo;
 
   Property({
     this.documentId,
@@ -37,21 +38,24 @@ class Property {
     required this.firstName,
     required this.lastName,
     required this.id,
-    // required this.imgStateE,
+    required this.imgStateE,
     required this.imgStateW,
-    // required this.meterNum,
-    // required this.meterReading,
+    required this.electricityMeterNum,
+    required this.meterReading,
     required this.waterMeterNum,
     required this.waterMeterReading,
     required this.uid,
     required this.districtId, // Initialize new field
     required this.municipalityId, // Initialize new field
     required this.isLocalMunicipality,
+    required this. electricityAccountNo,
+
   });
 
   factory Property.fromJson(Map<String, dynamic> json) => Property(
       documentId: json["Document ID"],
       accountNo: json["accountNumber"],
+      electricityAccountNo: json["electricityAccountNumber"] ?? '',
       address: json["address"],
       areaCode: json["areaCode"],
       cellNum: json["cellNumber"],
@@ -59,10 +63,10 @@ class Property {
       firstName: json["firstName"],
       lastName: json["lastName"],
       id: json["idNumber"],
-      // imgStateE: json["imgStateE"],
+      imgStateE: json["imgStateE"],
       imgStateW: json["imgStateW"],
-      // meterNum: json["meter_number"],
-      // meterReading: json["meter_reading"],
+      electricityMeterNum: json["meter_number"],
+      meterReading: json["meter_reading"],
       waterMeterNum: json["water_meter_number"],
       waterMeterReading: json["water_meter_reading"],
       uid: json["userID"],
@@ -75,6 +79,7 @@ class Property {
   Map<String, dynamic> toJson() => {
     'Document ID': documentId,
     'accountNumber': accountNo,
+    'electricityAccountNumber': electricityAccountNo,
     'address': address,
     'areaCode': areaCode,
     'cellNumber': cellNum,
@@ -82,10 +87,10 @@ class Property {
     'firstName': firstName,
     'lastName': lastName,
     'idNumber': id,
-    // 'imgStateE': imgStateE,
+     'imgStateE': imgStateE,
     'imgStateW': imgStateW,
-    // 'meter_number': meterNum,
-    // 'meter_reading': meterReading,
+    'meter_number': electricityMeterNum,
+    'meter_reading': meterReading,
     'water_meter_number': waterMeterNum,
     'water_meter_reading': waterMeterReading,
     'userID': uid,
@@ -95,26 +100,33 @@ class Property {
   };
 
   // creating a property object from a firebase snapshot
-  Property.fromSnapshot(DocumentSnapshot snapshot) :
-        documentId = snapshot.id,
-        accountNo = snapshot['accountNumber'],
-        address = snapshot['address'],
-        areaCode = snapshot['areaCode'],
-        cellNum = snapshot['cellNumber'],
-        eBill = snapshot['eBill'],
-        firstName = snapshot['firstName'],
-        lastName = snapshot['lastName'],
-        id = snapshot['idNumber'],
-        // imgStateE = snapshot['imgStateE'],
-        imgStateW = snapshot['imgStateW'],
-        // meterNum = snapshot['meter_number'],
-        // meterReading = snapshot['meter_reading'],
-        waterMeterNum = snapshot['water_meter_number'],
-        waterMeterReading = snapshot['water_meter_reading'],
-        uid = snapshot['userID'],
-        districtId = snapshot['districtId'],// Retrieve from snapshot
-        municipalityId = snapshot['municipalityId'],
-        isLocalMunicipality = snapshot['isLocalMunicipality'];
+  factory Property.fromSnapshot(DocumentSnapshot snapshot) {
+    final data = snapshot.data() as Map<String, dynamic>;
+
+    return Property(
+      documentId: snapshot.id,
+      accountNo: data['accountNumber'] ?? '',
+      electricityAccountNo: data.containsKey('electricityAccountNumber') ? data['electricityAccountNumber'] ?? '' : '',
+      address: data['address'] ?? '',
+      areaCode: data['areaCode'] ?? '',
+      cellNum: data['cellNumber'] ?? '',
+      eBill: data['eBill'] ?? '',
+      firstName: data['firstName'] ?? '',
+      lastName: data['lastName'] ?? '',
+      id: data['idNumber'] ?? '',
+      imgStateE: data['imgStateE'] ?? '',
+      imgStateW: data['imgStateW'] ?? '',
+      electricityMeterNum: data['meter_number'] ?? '',
+      meterReading: data['meter_reading'] ?? '',
+      waterMeterNum: data['water_meter_number'] ?? '',
+      waterMeterReading: data['water_meter_reading'] ?? '',
+      uid: data['userID'] ?? '',
+      districtId: data.containsKey('districtId') ? data['districtId'] ?? '' : '',
+      municipalityId: data['municipalityId'] ?? '',
+      isLocalMunicipality: data['isLocalMunicipality'] ?? false,
+    );
+  }
+
 
   Map<String, Icon> types() => {
     "car": Icon(Icons.directions_car, size: 50),

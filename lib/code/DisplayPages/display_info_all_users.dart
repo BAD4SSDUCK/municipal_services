@@ -41,6 +41,7 @@ class UsersPropsAll extends StatefulWidget {
   final String municipalityId;
   final bool isLocalMunicipality;
   final bool isLocalUser;
+
   const UsersPropsAll({
     super.key,
     this.municipalityUserEmail,
@@ -67,7 +68,7 @@ DateTime now = DateTime.now();
 String phoneNum = '';
 String accountNumberAll = '';
 String locationGivenAll = '';
-// String eMeterNumber = '';
+String eMeterNumber = '';
 String accountNumberW = '';
 String locationGivenW = '';
 String wMeterNumber = '';
@@ -75,7 +76,7 @@ String addressForTrend = '';
 String propPhoneNum = '';
 String imageName = '';
 String addressSnap = '';
-
+String imageElectricName = '';
 late String billMessage;
 
 ///A check for if payment is outstanding or not
@@ -90,10 +91,16 @@ bool visCapture = false;
 bool visDev = false;
 bool imgUploadCheck = false;
 
-String currentMonth = DateFormat.MMMM().format(DateTime.now()); // Example: February
-String previousMonth = DateFormat.MMMM().format(DateTime.now().subtract(Duration(days: 30))); // Example: January
-Map<String, String> previousMonthReadings = {}; // Store previous readings per address
+String currentMonth =
+    DateFormat.MMMM().format(DateTime.now()); // Example: February
+String previousMonth = DateFormat.MMMM()
+    .format(DateTime.now().subtract(Duration(days: 30))); // Example: January
+Map<String, String> previousMonthReadings =
+    {}; // Store previous readings per address
 Map<String, String> currentMonthReadings = {};
+Map<String, String> previousMonthElectricReadings =
+    {}; // Store previous readings per address
+Map<String, String> currentMonthElectricReadings = {};
 final FirebaseStorage imageStorage = firebase_storage.FirebaseStorage.instance;
 
 class FireStorageService extends ChangeNotifier {
@@ -195,8 +202,8 @@ Future<String> _getImageW(BuildContext context, String imagePath) async {
 // final CollectionReference _propList =
 //     FirebaseFirestore.instance.collection('properties');
 
-class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProviderStateMixin {
-
+class _UsersPropsAllState extends State<UsersPropsAll>
+    with SingleTickerProviderStateMixin {
   //CollectionReference? _propList;
   Query<Map<String, dynamic>>? _propList;
   Property? property;
@@ -214,15 +221,23 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
   final FocusNode _focusNodeTab1 = FocusNode();
   final FocusNode _focusNodeTab2 = FocusNode();
   late TabController _tabController;
+  List<String> utilityTypes = [];
+  bool handlesWater = false;
+  bool handlesElectricity = false;
+  String? previousWaterReading;
+  String? currentWaterReading;
+  String? previousElectricityReading;
+  String? currentElectricityReading;
+  DateTime? latestWaterUploadTimestamp;
+  DateTime? latestElectricityUploadTimestamp;
+  Map<String, List<String>> municipalityUtilityMap = {};
 
   @override
   void initState() {
     super.initState();
     print("Initializing UsersPropsAllState...");
-    print(districtId);
     _tabController = TabController(length: 2, vsync: this);
 
-    // Add a listener to switch focus when changing tabs
     _tabController.addListener(() {
       if (_tabController.index == 0) {
         _focusNodeTab1.requestFocus();
@@ -231,32 +246,36 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
       }
     });
 
-    // Initial focus request for Tab 1
-    print("Requesting initial focus for Tab 1");
     _focusNodeTab1.requestFocus();
 
-    // Listeners for scroll position
     _scrollControllerTab1.addListener(() {
-      print("Tab 1 ScrollController position: ${_scrollControllerTab1.position.pixels}");
+      print(
+          "Tab 1 ScrollController position: ${_scrollControllerTab1.position.pixels}");
     });
     _scrollControllerTab2.addListener(() {
-      print("Tab 2 ScrollController position: ${_scrollControllerTab2.position.pixels}");
+      print(
+          "Tab 2 ScrollController position: ${_scrollControllerTab2.position.pixels}");
     });
 
-
     fetchAllPreviousMonthReadings().then((_) {
-      if (mounted) {
-        setState(() {}); // Refresh UI after data is loaded
-      }
+      if (mounted) setState(() {});
+    });
+    fetchAllPreviousMonthElectricityReadings().then((_) {
+      if (mounted) setState(() {});
     });
 
     fetchUserDetails().then((_) {
+      print("After fetchUserDetails:");
+      print("districtId: $districtId");
+      print("municipalityId: $municipalityId");
+      print("isLocalMunicipality: $isLocalMunicipality");
+
+      fetchMunicipalityUtilityTypes(); // ✅ now runs AFTER IDs are set
+
       if (isLocalUser) {
-        // For local municipality users, fetch properties only for their municipality
         fetchPropertiesForLocalMunicipality();
       } else {
-        // For district-level users, fetch properties for all municipalities
-        fetchMunicipalities(); // Fetch municipalities after user details are loaded
+        fetchMunicipalities();
       }
     });
 
@@ -317,7 +336,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
 
         if (userSnapshot.docs.isNotEmpty) {
           var userDoc = userSnapshot.docs.first;
-          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
 
           var userPathSegments = userDoc.reference.path.split('/');
 
@@ -353,7 +373,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
           } else if (municipalityId.isNotEmpty) {
             await fetchPropertiesByMunicipality(municipalityId);
           } else {
-            print("Error: municipalityId is empty for the local municipality user.");
+            print(
+                "Error: municipalityId is empty for the local municipality user.");
           }
         } else {
           print('No user document found.');
@@ -369,6 +390,49 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
     }
   }
 
+  Future<void> fetchMunicipalityUtilityTypes() async {
+    if (isLocalMunicipality) {
+      // 🔹 Local municipality: fetch single utility type
+      final docRef = FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId);
+
+      final snapshot = await docRef.get();
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        final utilityTypes = List<String>.from(data['utilityType'] ?? []);
+        handlesWater = utilityTypes.contains('water');
+        handlesElectricity = utilityTypes.contains('electricity');
+      }
+    } else {
+      // 🔹 District municipality: fetch utility types for all child municipalities
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .get();
+
+      bool foundWater = false;
+      bool foundElectricity = false;
+
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+        if (data.containsKey('utilityType')) {
+          final types = List<String>.from(data['utilityType']);
+          if (types.contains('water')) foundWater = true;
+          if (types.contains('electricity')) foundElectricity = true;
+        }
+      }
+
+      handlesWater = foundWater;
+      handlesElectricity = foundElectricity;
+    }
+
+    print("💧 [UsersPropsAll] handlesWater = $handlesWater");
+    print("⚡ [UsersPropsAll] handlesElectricity = $handlesElectricity");
+
+    if (mounted) setState(() {});
+  }
 
   void _onSubmit() {
     setState(() => _isLoading = true);
@@ -466,7 +530,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
       String accountNumber,
       String municipalityContext,
       BuildContext context) async {
-    String formattedAddress = propertyAddress.replaceAll(' ', '_'); // Make address Firebase-compatible
+    String formattedAddress = propertyAddress.replaceAll(
+        ' ', '_'); // Make address Firebase-compatible
     String month = DateFormat('MMMM').format(DateTime.now());
     String path = 'pdfs/$month/$userNumber/$formattedAddress/';
 
@@ -483,7 +548,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
 
         try {
           item = listResult.items.firstWhere(
-                (element) => element.name.contains(accountNumber),
+            (element) => element.name.contains(accountNumber),
           );
         } catch (e) {
           item = null; // Handle the case where no matching item is found
@@ -516,15 +581,14 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
     }
   }
 
-
-
   // text fields' controllers
   final _accountNumberController = TextEditingController();
+  final _electricityAccountController=TextEditingController();
   final _addressController = TextEditingController();
   final _areaCodeController = TextEditingController();
   final _wardController = TextEditingController();
-  // final _meterNumberController = TextEditingController();
-  // final _meterReadingController = TextEditingController();
+  final _meterNumberController = TextEditingController();
+  final _meterReadingController = TextEditingController();
   final _waterMeterController = TextEditingController();
   final _waterMeterReadingController = TextEditingController();
   final _cellNumberController = TextEditingController();
@@ -672,10 +736,16 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
         var lastName = propSnapshot['lastName'].toString().toLowerCase();
         var fullName = '$firstName $lastName';
         var cellNumber = propSnapshot['cellNumber'].toString().toLowerCase();
-        var accountNumber=propSnapshot['accountNumber'].toString().toLowerCase();
+        var accountNumber = propSnapshot
+                .data()
+                .toString()
+                .contains('electricityAccountNumber')
+            ? propSnapshot['electricityAccountNumber'].toString().toLowerCase()
+            : propSnapshot['accountNumber'].toString().toLowerCase();
 
         if (address.contains(searchLower) ||
-            fullName.contains(searchLower) || // Search full name instead of first and last separately
+            fullName.contains(
+                searchLower) || // Search full name instead of first and last separately
             cellNumber.contains(searchLower) ||
             accountNumber.contains(searchLower)) {
           showResults.add(propSnapshot);
@@ -700,6 +770,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
     try {
       if (districtId.isNotEmpty) {
         print("Fetching municipalities under district: $districtId");
+
         // Fetch all municipalities under the district
         var municipalitiesSnapshot = await FirebaseFirestore.instance
             .collection('districts')
@@ -708,24 +779,37 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
             .get();
 
         print("Municipalities fetched: ${municipalitiesSnapshot.docs.length}");
+
         if (mounted) {
           setState(() {
-            if (municipalitiesSnapshot.docs.isNotEmpty) {
-              municipalities = municipalitiesSnapshot.docs
-                  .map((doc) =>
-                      doc.id) // Using document ID as the municipality name
-                  .toList();
-              print("Municipalities list: $municipalities");
-            } else {
-              print("No municipalities found");
-              municipalities = []; // No municipalities found
+            municipalities = [];
+            municipalityUtilityMap.clear();
+
+            for (var doc in municipalitiesSnapshot.docs) {
+              final municipalityId = doc.id;
+              final data = doc.data();
+
+              municipalities.add(municipalityId);
+
+              // Extract utilityType if available
+              if (data.containsKey('utilityType')) {
+                final List<String> utilityTypes =
+                    List<String>.from(data['utilityType']);
+                municipalityUtilityMap[municipalityId] = utilityTypes;
+                print("✅ $municipalityId utilityTypes: $utilityTypes");
+              } else {
+                municipalityUtilityMap[municipalityId] = [];
+                print("⚠️ $municipalityId has no utilityType field.");
+              }
             }
 
-            // Ensure selectedMunicipality is "Select Municipality" by default
-            selectedMunicipality = "Select Municipality";
-            print("Selected Municipality: $selectedMunicipality");
+            print("Municipality list: $municipalities");
+            print("Utility map: $municipalityUtilityMap");
 
-            // Fetch properties for all municipalities initially
+            // Set dropdown default
+            selectedMunicipality = "Select Municipality";
+
+            // Fetch all properties for district-wide view
             fetchPropertiesForAllMunicipalities();
           });
         }
@@ -739,7 +823,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
         }
       }
     } catch (e) {
-      print('Error fetching municipalities: $e');
+      print('❌ Error fetching municipalities: $e');
     }
   }
 
@@ -974,14 +1058,19 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
       int currentYear = DateTime.now().year;
       int previousYear = currentYear - 1;
 
-      String currentMonth = DateFormat.MMMM().format(DateTime.now()); // Example: March
-      String prevMonth = DateFormat.MMMM().format(DateTime.now().subtract(Duration(days: 30))); // Example: February
+      String currentMonth =
+          DateFormat.MMMM().format(DateTime.now()); // Example: March
+      String prevMonth = DateFormat.MMMM().format(DateTime.now()
+          .subtract(const Duration(days: 30))); // Example: February
 
-      String prevMonthYear = (currentMonth == "January") ? previousYear.toString() : currentYear.toString();
-      String currentMonthYear = currentYear.toString(); // Always use the current year for current readings
+      String prevMonthYear = (currentMonth == "January")
+          ? previousYear.toString()
+          : currentYear.toString();
+      String currentMonthYear = currentYear
+          .toString(); // Always use the current year for current readings
 
       previousMonthReadings.clear(); // Clear previous data
-      currentMonthReadings.clear();  // Clear current month data
+      currentMonthReadings.clear(); // Clear current month data
 
       if (widget.isLocalMunicipality) {
         // ✅ Local Municipality: Fetch readings from the correct paths
@@ -999,7 +1088,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
         if (prevQuerySnapshot.docs.isNotEmpty) {
           for (var doc in prevQuerySnapshot.docs) {
             var data = doc.data() as Map<String, dynamic>;
-            previousMonthReadings[data['address']] = data['water_meter_reading'] ?? "N/A";
+            previousMonthReadings[data['address']] =
+                data['water_meter_reading'] ?? "N/A";
           }
         }
 
@@ -1012,17 +1102,20 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
         if (currentQuerySnapshot.docs.isNotEmpty) {
           for (var doc in currentQuerySnapshot.docs) {
             var data = doc.data() as Map<String, dynamic>;
-            currentMonthReadings[data['address']] = data['water_meter_reading'] ?? "N/A";
+            currentMonthReadings[data['address']] =
+                data['water_meter_reading'] ?? "N/A";
           }
         }
       } else {
         // ✅ District Municipality: Fetch readings for ALL municipalities under the district
-        CollectionReference municipalitiesCollection = FirebaseFirestore.instance
+        CollectionReference municipalitiesCollection = FirebaseFirestore
+            .instance
             .collection('districts')
             .doc(widget.districtId)
             .collection('municipalities');
 
-        QuerySnapshot municipalitiesSnapshot = await municipalitiesCollection.get();
+        QuerySnapshot municipalitiesSnapshot =
+            await municipalitiesCollection.get();
 
         for (var municipalityDoc in municipalitiesSnapshot.docs) {
           String municipalityId = municipalityDoc.id;
@@ -1040,7 +1133,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
           if (prevQuerySnapshot.docs.isNotEmpty) {
             for (var doc in prevQuerySnapshot.docs) {
               var data = doc.data() as Map<String, dynamic>;
-              previousMonthReadings[data['address']] = data['water_meter_reading'] ?? "N/A";
+              previousMonthReadings[data['address']] =
+                  data['water_meter_reading'] ?? "N/A";
             }
           }
 
@@ -1053,7 +1147,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
           if (currentQuerySnapshot.docs.isNotEmpty) {
             for (var doc in currentQuerySnapshot.docs) {
               var data = doc.data() as Map<String, dynamic>;
-              currentMonthReadings[data['address']] = data['water_meter_reading'] ?? "N/A";
+              currentMonthReadings[data['address']] =
+                  data['water_meter_reading'] ?? "N/A";
             }
           }
         }
@@ -1063,16 +1158,124 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
         setState(() {}); // Refresh UI
       }
 
-      print("✅ Fetch complete: Previous Month ($prevMonthYear/$prevMonth), Current Month ($currentMonthYear/$currentMonth)");
-
+      print(
+          "✅ Fetch complete: Previous Month ($prevMonthYear/$prevMonth), Current Month ($currentMonthYear/$currentMonth)");
     } catch (e) {
       print("❌ Error fetching previous and current month readings: $e");
     }
   }
 
+  Future<void> fetchAllPreviousMonthElectricityReadings() async {
+    try {
+      int currentYear = DateTime.now().year;
+      int previousYear = currentYear - 1;
 
+      String currentMonth =
+          DateFormat.MMMM().format(DateTime.now()); // Example: March
+      String prevMonth = DateFormat.MMMM().format(DateTime.now()
+          .subtract(const Duration(days: 30))); // Example: February
 
+      String prevMonthYear = (currentMonth == "January")
+          ? previousYear.toString()
+          : currentYear.toString();
+      String currentMonthYear = currentYear
+          .toString(); // Always use the current year for current readings
 
+      previousMonthElectricReadings.clear(); // Clear previous data
+      currentMonthElectricReadings.clear(); // Clear current month data
+
+      if (widget.isLocalMunicipality) {
+        // ✅ Local Municipality: Fetch readings from the correct paths
+        CollectionReference consumptionCollection = FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(widget.municipalityId)
+            .collection('consumption');
+
+        // Fetch **Previous Month's Readings**
+        QuerySnapshot prevQuerySnapshot = await consumptionCollection
+            .doc(prevMonthYear) // Year Folder
+            .collection(prevMonth) // Previous Month Collection
+            .get();
+
+        if (prevQuerySnapshot.docs.isNotEmpty) {
+          for (var doc in prevQuerySnapshot.docs) {
+            var data = doc.data() as Map<String, dynamic>;
+            previousMonthElectricReadings[data['address']] =
+                data['meter_reading'] ?? "N/A";
+          }
+        }
+
+        // Fetch **Current Month's Readings**
+        QuerySnapshot currentQuerySnapshot = await consumptionCollection
+            .doc(currentMonthYear) // Year Folder
+            .collection(currentMonth) // Current Month Collection
+            .get();
+
+        if (currentQuerySnapshot.docs.isNotEmpty) {
+          for (var doc in currentQuerySnapshot.docs) {
+            var data = doc.data() as Map<String, dynamic>;
+            currentMonthElectricReadings[data['address']] =
+                data['meter_reading'] ?? "N/A";
+          }
+        }
+      } else {
+        // ✅ District Municipality: Fetch readings for ALL municipalities under the district
+        CollectionReference municipalitiesCollection = FirebaseFirestore
+            .instance
+            .collection('districts')
+            .doc(widget.districtId)
+            .collection('municipalities');
+
+        QuerySnapshot municipalitiesSnapshot =
+            await municipalitiesCollection.get();
+
+        for (var municipalityDoc in municipalitiesSnapshot.docs) {
+          String municipalityId = municipalityDoc.id;
+
+          CollectionReference consumptionCollection = municipalitiesCollection
+              .doc(municipalityId)
+              .collection('consumption');
+
+          // Fetch **Previous Month's Readings**
+          QuerySnapshot prevQuerySnapshot = await consumptionCollection
+              .doc(prevMonthYear) // Year Folder
+              .collection(prevMonth) // Previous Month Collection
+              .get();
+
+          if (prevQuerySnapshot.docs.isNotEmpty) {
+            for (var doc in prevQuerySnapshot.docs) {
+              var data = doc.data() as Map<String, dynamic>;
+              previousMonthElectricReadings[data['address']] =
+                  data['meter_reading'] ?? "N/A";
+            }
+          }
+
+          // Fetch **Current Month's Readings**
+          QuerySnapshot currentQuerySnapshot = await consumptionCollection
+              .doc(currentMonthYear) // Year Folder
+              .collection(currentMonth) // Current Month Collection
+              .get();
+
+          if (currentQuerySnapshot.docs.isNotEmpty) {
+            for (var doc in currentQuerySnapshot.docs) {
+              var data = doc.data() as Map<String, dynamic>;
+              currentMonthElectricReadings[data['address']] =
+                  data['meter_reading'] ?? "N/A";
+            }
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {}); // Refresh UI
+      }
+
+      print(
+          "✅ Fetch complete: Previous Month ($prevMonthYear/$prevMonth), Current Month ($currentMonthYear/$currentMonth)");
+    } catch (e) {
+      print("❌ Error fetching previous and current month readings: $e");
+    }
+  }
 
   // Future<void> handleImageUpload(BuildContext context, String userNumber, String meterNumber) async {
   //   showDialog(
@@ -1185,10 +1388,12 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => ReportBuilderProps( municipalityUserEmail: userEmail,
+                                    builder: (context) => ReportBuilderProps(
+                                      municipalityUserEmail: userEmail,
                                       isLocalMunicipality: isLocalMunicipality,
                                       districtId: districtId,
-                                      isLocalUser: isLocalUser,),
+                                      isLocalUser: isLocalUser,
+                                    ),
                                   ),
                                 );
                               },
@@ -1222,7 +1427,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                 setState(() {
                                   selectedMunicipality = newValue;
                                   if (selectedMunicipality == null ||
-                                      selectedMunicipality == "Select Municipality") {
+                                      selectedMunicipality ==
+                                          "Select Municipality") {
                                     fetchPropertiesForAllMunicipalities();
                                   } else {
                                     fetchPropertiesByMunicipality(newValue!);
@@ -1257,7 +1463,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                         ),
                       ),
                     const SizedBox(height: 10),
-                     TabBar(
+                    TabBar(
                       controller: _tabController,
                       labelColor: Colors.white,
                       unselectedLabelColor: Colors.white70,
@@ -1346,16 +1552,12 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
     );
   }
 
-
   Widget propertyCard() {
     if (isLoading) {
       // Display a loading spinner while fetching data
       return const Center(child: CircularProgressIndicator());
     }
-
-
     print("Rendering ${_allPropResults.length} properties");
-
     return GestureDetector(
       onTap: () {
         // Refocus when tapping within the tab content
@@ -1365,7 +1567,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
         focusNode: _focusNodeTab1,
         onKeyEvent: (KeyEvent event) {
           if (event is KeyDownEvent) {
-            final double pageScrollAmount = _scrollControllerTab1.position.viewportDimension;
+            final double pageScrollAmount =
+                _scrollControllerTab1.position.viewportDimension;
 
             if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
               _scrollControllerTab1.animateTo(
@@ -1394,54 +1597,75 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
             }
           }
         },
-          child: Scrollbar(
+        child: Scrollbar(
+          controller: _scrollControllerTab1,
+          thickness: 12, // Customize the thickness of the scrollbar
+          radius: const Radius.circular(8), // Rounded edges for the scrollbar
+          thumbVisibility: true,
+          trackVisibility: true, // Makes the track visible as well
+          interactive: true,
+          child: ListView.builder(
             controller: _scrollControllerTab1,
-            thickness: 12, // Customize the thickness of the scrollbar
-            radius: const Radius.circular(8), // Rounded edges for the scrollbar
-            thumbVisibility: true,
-            trackVisibility: true, // Makes the track visible as well
-            interactive: true,
-            child: ListView.builder(
-              controller: _scrollControllerTab1,
-              shrinkWrap: true,
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: _allPropResults.length,
-              itemBuilder: (context, index) {
-                if (_allPropResults[index]['eBill'] != '' ||
-                    _allPropResults[index]['eBill'] != 'R0,000.00' ||
-                    _allPropResults[index]['eBill'] != 'R0.00' ||
-                    _allPropResults[index]['eBill'] != 'R0' ||
-                    _allPropResults[index]['eBill'] != '0') {
-                  billMessage =
-                      'Utilities bill outstanding: ${_allPropResults[index]['eBill']}';
-                } else {
-                  billMessage = 'No outstanding payments';
-                }
-                return Card(
-                    margin:
-                        const EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+            shrinkWrap: true,
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: _allPropResults.length,
+            itemBuilder: (context, index) {
+              final munId = _allPropResults[index]['municipalityId'];
+              final utilTypes = municipalityUtilityMap[munId] ?? [];
+
+              final bool showWater = utilTypes.contains('water');
+              final bool showElectricity = utilTypes.contains('electricity');
+
+              print(
+                  "🏙️ $munId | 💧 water: $showWater | ⚡ electricity: $showElectricity");
+
+              if (_allPropResults[index]['eBill'] != '' ||
+                  _allPropResults[index]['eBill'] != 'R0,000.00' ||
+                  _allPropResults[index]['eBill'] != 'R0.00' ||
+                  _allPropResults[index]['eBill'] != 'R0' ||
+                  _allPropResults[index]['eBill'] != '0') {
+                billMessage =
+                    'Utilities bill outstanding: ${_allPropResults[index]['eBill']}';
+              } else {
+                billMessage = 'No outstanding payments';
+              }
+              return Card(
+                  margin: const EdgeInsets.only(
+                      left: 10, right: 10, top: 0, bottom: 10),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Street Address: ${_allPropResults[index]['address']}',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 5),
+                        if (showWater) ...[
                           Text(
-                            'Street Address: ${_allPropResults[index]['address']}',
+                            'Water Account Number: ${_allPropResults[index]['accountNumber']}',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
-                          const SizedBox(height: 5),
+                        ],
+                        const SizedBox(height: 5),
+                        if (showElectricity) ...[
                           Text(
-                            'Account Number: ${_allPropResults[index]['accountNumber']}',
+                            'Electricity Account Number: ${_allPropResults[index]['electricityAccountNumber']}',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
-                          const SizedBox(height: 5),
-                          Text(
-                            'Area Code: ${_allPropResults[index]['areaCode']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
+                        ],
+                        const SizedBox(height: 5),
+                        Text(
+                          'Area Code: ${_allPropResults[index]['areaCode']}',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 5),
+                        if (showWater) ...[
                           const SizedBox(height: 5),
                           Text(
                             'Water Meter Number: ${_allPropResults[index]['water_meter_number']}',
@@ -1450,257 +1674,325 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                           ),
                           const SizedBox(height: 5),
                           Text(
-                            'Previous Month ($previousMonth) Reading: ${previousMonthReadings[_allPropResults[index]['address']] ?? "N/A"}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            'Water Meter Reading for $currentMonth: ${currentMonthReadings[_allPropResults[index]['address']] ?? "N/A"}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            'Phone Number: ${_allPropResults[index]['cellNumber']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(
-                            height: 5,
-                          ),
-                          Text(
-                            'First Name: ${_allPropResults[index]['firstName']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(
-                            height: 5,
-                          ),
-                          Text(
-                            'Surname: ${_allPropResults[index]['lastName']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(
-                            height: 5,
-                          ),
-                          Text(
-                            'ID Number: ${_allPropResults[index]['idNumber']}',
+                            'Previous Month ($previousMonth) Water Reading: ${previousMonthReadings[_allPropResults[index]['address']] ?? "N/A"}',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           const SizedBox(height: 5),
                           Text(
-                            billMessage,
+                            'Current Month Water Reading for $currentMonth: ${currentMonthReadings[_allPropResults[index]['address']] ?? "N/A"}',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
-                          const SizedBox(
-                            height: 20,
+                        ],
+                        if (showElectricity) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            'Electricity Meter Number: ${_allPropResults[index]['meter_number'] ?? "N/A"}',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w400),
                           ),
-                          const Center(
-                            child: Text(
-                              'Water Meter Photo',
-                              style:
-                                  TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                            ),
+                          const SizedBox(height: 5),
+                          Text(
+                            'Previous Month ($previousMonth) Electricity Reading: ${previousMonthElectricReadings[_allPropResults[index]['address']] ?? "N/A"}',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w400),
                           ),
-                          const SizedBox(
-                            height: 5,
+                          const SizedBox(height: 5),
+                          Text(
+                            'Current Month Electricity Reading for $currentMonth: ${currentMonthElectricReadings[_allPropResults[index]['address']] ?? "N/A"}',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w400),
                           ),
-                          Center(
-                            child: BasicIconButtonGrey(
-                              onPress: () async {
-                                try {
-                                  // If the user is not a local municipality user (i.e., district-level user)
-                                  if (!isLocalUser && !isLocalMunicipality) {
-                                    if (selectedMunicipality == null || selectedMunicipality == "Select Municipality") {
-                                      Fluttertoast.showToast(
-                                        msg: "Please select a municipality first!",
-                                        toastLength: Toast.LENGTH_SHORT,
-                                        gravity: ToastGravity.CENTER,
-                                      );
-                                      return; // Stop execution if no municipality is selected
-                                    }
-                                  }
-      
-                                  // Determine the appropriate municipality context
-                                  String municipalityContext = isLocalMunicipality || isLocalUser
-                                      ? municipalityId
-                                      : selectedMunicipality!;
-      
-                                  if (municipalityContext.isEmpty) {
-                                    Fluttertoast.showToast(
-                                      msg: "Invalid municipality selection or missing municipality.",
-                                      toastLength: Toast.LENGTH_SHORT,
-                                      gravity: ToastGravity.CENTER,
-                                    );
-                                    return;
-                                  }
-      
-                                  // Ensure necessary property details are not null
-                                  String? cellNumber =
-                                      _allPropResults[index]['cellNumber'];
-                                  String? address = _allPropResults[index]['address'];
-                                  String? meterNumber =
-                                      _allPropResults[index]['water_meter_number'];
-      
-                                  // Print statements for debugging
-                                  print(
-                                      "cellNumber: $cellNumber, address: $address, meterNumber: $meterNumber");
-      
-                                  if (cellNumber == null ||
-                                      address == null ||
-                                      meterNumber == null) {
+                        ],
+                        const SizedBox(height: 5),
+                        Text(
+                          'Phone Number: ${_allPropResults[index]['cellNumber']}',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(
+                          height: 5,
+                        ),
+                        Text(
+                          'First Name: ${_allPropResults[index]['firstName']}',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(
+                          height: 5,
+                        ),
+                        Text(
+                          'Surname: ${_allPropResults[index]['lastName']}',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(
+                          height: 5,
+                        ),
+                        Text(
+                          'ID Number: ${_allPropResults[index]['idNumber']}',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          billMessage,
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                        const SizedBox(
+                          height: 20,
+                        ),
+                        const Center(
+                          child: Text(
+                            'Meter Photo',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 5,
+                        ),
+                        Center(
+                          child: BasicIconButtonGrey(
+                            onPress: () async {
+                              try {
+                                // If the user is not a local municipality user (i.e., district-level user)
+                                if (!isLocalUser && !isLocalMunicipality) {
+                                  if (selectedMunicipality == null ||
+                                      selectedMunicipality ==
+                                          "Select Municipality") {
                                     Fluttertoast.showToast(
                                       msg:
-                                          "Incomplete property details. Cannot view the image.",
+                                          "Please select a municipality first!",
                                       toastLength: Toast.LENGTH_SHORT,
                                       gravity: ToastGravity.CENTER,
                                     );
-                                    return;
+                                    return; // Stop execution if no municipality is selected
                                   }
-      
-                                  // Prepare the image path
-                                  imageName =
-                                      'files/meters/$formattedDate/$cellNumber/$address/water/$meterNumber.jpg';
-                                  addressSnap = address;
-      
-                                  // Log the details for debugging
-                                  print("Navigating to ImageZoomPage with details:");
-                                  print("imageName: $imageName");
-                                  print("addressSnap: $addressSnap");
-                                  print("municipalityContext: $municipalityContext");
-                                  print("municipality email: $userEmail");
-                                  // Navigate to the ImageZoomPage
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ImageZoomPage(
-                                        imageName: imageName,
-                                        addressSnap: addressSnap,
-                                        municipalityUserEmail: userEmail,
-                                        isLocalMunicipality: isLocalMunicipality,
-                                        districtId: districtId,
-                                        municipalityId: municipalityContext,
-                                        isLocalUser: isLocalUser,
-                                      ),
-                                    ),
-                                  );
-                                } catch (e) {
-                                  print("Error in 'View Uploaded Image' button: $e");
+                                }
+
+                                // Determine the appropriate municipality context
+                                String municipalityContext =
+                                    isLocalMunicipality || isLocalUser
+                                        ? municipalityId
+                                        : selectedMunicipality!;
+
+                                if (municipalityContext.isEmpty) {
                                   Fluttertoast.showToast(
-                                    msg: "Error: Unable to view uploaded image.",
+                                    msg:
+                                        "Invalid municipality selection or missing municipality.",
                                     toastLength: Toast.LENGTH_SHORT,
                                     gravity: ToastGravity.CENTER,
                                   );
+                                  return;
                                 }
-                              },
-                              labelText: 'View Uploaded Image',
-                              fSize: 16,
-                              faIcon: const FaIcon(Icons.zoom_in),
-                              fgColor: Colors.blue,
-                              btSize: const Size(100, 38),
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          Center(
-                            child:BasicIconButtonGrey(
-                              onPress: () async {
-                                try {
-                                  // Skip municipality selection if user is from a local municipality or assigned to a single district municipality
-                                  if (!isLocalUser && !isLocalMunicipality) {
-                                    if (selectedMunicipality == null || selectedMunicipality == "Select Municipality") {
-                                      Fluttertoast.showToast(
-                                        msg: "Please select a municipality first!",
-                                        toastLength: Toast.LENGTH_SHORT,
-                                        gravity: ToastGravity.CENTER,
-                                      );
-                                      return; // Stop execution if no municipality is selected
-                                    }
-                                  }
-      
-                                  // Determine the appropriate municipality context
-                                  String municipalityContext = isLocalMunicipality || isLocalUser
-                                      ? municipalityId
-                                      : selectedMunicipality!;
-      
-                                  if (municipalityContext.isEmpty) {
-                                    Fluttertoast.showToast(
-                                      msg: "Invalid municipality selection or missing municipality.",
-                                      toastLength: Toast.LENGTH_SHORT,
-                                      gravity: ToastGravity.CENTER,
-                                    );
-                                    return;
-                                  }
-      
-                                  // Ensure property details are available
-                                  String? address = _allPropResults[index]['address'];
-                                  String? accountNumber = _allPropResults[index]['accountNumber'];
-                                  String? cellNumber = _allPropResults[index]['cellNumber'];
-      
-                                  if (address == null || accountNumber == null || cellNumber == null) {
-                                    Fluttertoast.showToast(
-                                      msg: "Error: Property information is missing.",
-                                      toastLength: Toast.LENGTH_SHORT,
-                                      gravity: ToastGravity.CENTER,
-                                    );
-                                    return;
-                                  }
-      
-                                  // Perform desired action based on button type
-                                  print("Navigating to PropertyTrend with details:");
-                                  print("Address: $address");
-                                  print("District ID: $districtId");
-                                  print("Municipality Context: $municipalityContext");
-      
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PropertyTrend(
-                                        addressTarget: address,
-                                        districtId: districtId,
-                                        municipalityId: municipalityContext,
-                                        isLocalMunicipality: isLocalMunicipality,
-                                        isLocalUser: isLocalUser,
-                                      ),
-                                    ),
-                                  );
-                                } catch (e) {
-                                  print("Error in 'History' button: $e");
+
+                                // Ensure necessary property details are not null
+                                String? cellNumber =
+                                    _allPropResults[index]['cellNumber'];
+                                String? address =
+                                    _allPropResults[index]['address'];
+                                String? meterNumber = _allPropResults[index]
+                                    ['water_meter_number'];
+                                String? eMeterNumber =
+                                    _allPropResults[index]['meter_number'];
+                                // Print statements for debugging
+                                print(
+                                    "cellNumber: $cellNumber, address: $address, meterNumber: $meterNumber");
+
+                                if (cellNumber == null ||
+                                    address == null ||
+                                    meterNumber == null) {
                                   Fluttertoast.showToast(
-                                    msg: "Error: Unable to open property history.",
+                                    msg:
+                                        "Incomplete property details. Cannot view the image.",
                                     toastLength: Toast.LENGTH_SHORT,
                                     gravity: ToastGravity.CENTER,
                                   );
+                                  return;
                                 }
-                              },
-                              labelText: 'History',
-                              fSize: 16,
-                              faIcon: const FaIcon(Icons.stacked_line_chart),
-                              fgColor: Colors.purple,
-                              btSize: const Size(100, 38),
-                            ),
-      
-      
+
+                                // Prepare the image path
+                                imageName =
+                                    'files/meters/$formattedDate/$cellNumber/$address/water/$meterNumber.jpg';
+                                addressSnap = address;
+                                imageElectricName =
+                                    'files/meters/$formattedDate/$cellNumber/$address/electricity/$eMeterNumber.jpg';
+                                // Log the details for debugging
+                                print(
+                                    "Navigating to ImageZoomPage with details:");
+                                print("imageName: $imageName");
+                                print("addressSnap: $addressSnap");
+                                print(
+                                    "municipalityContext: $municipalityContext");
+                                print("municipality email: $userEmail");
+                                // Navigate to the ImageZoomPage
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ImageZoomPage(
+                                      imageName: imageName,
+                                      imageElectricName: imageElectricName,
+                                      addressSnap: addressSnap,
+                                      municipalityUserEmail: userEmail,
+                                      isLocalMunicipality: isLocalMunicipality,
+                                      districtId: districtId,
+                                      municipalityId: municipalityContext,
+                                      isLocalUser: isLocalUser,
+                                    ),
+                                  ),
+                                );
+                              } catch (e) {
+                                print(
+                                    "Error in 'View Uploaded Image' button: $e");
+                                Fluttertoast.showToast(
+                                  msg: "Error: Unable to view uploaded image.",
+                                  toastLength: Toast.LENGTH_SHORT,
+                                  gravity: ToastGravity.CENTER,
+                                );
+                              }
+                            },
+                            labelText: 'View Uploaded Image',
+                            fSize: 16,
+                            faIcon: const FaIcon(Icons.zoom_in),
+                            fgColor: Colors.blue,
+                            btSize: const Size(100, 38),
                           ),
-                          const SizedBox(
-                            height: 10,
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Center(
+                          child: BasicIconButtonGrey(
+                            onPress: () async {
+                              try {
+                                // Skip municipality selection if user is from a local municipality or assigned to a single district municipality
+                                if (!isLocalUser && !isLocalMunicipality) {
+                                  if (selectedMunicipality == null ||
+                                      selectedMunicipality ==
+                                          "Select Municipality") {
+                                    Fluttertoast.showToast(
+                                      msg:
+                                          "Please select a municipality first!",
+                                      toastLength: Toast.LENGTH_SHORT,
+                                      gravity: ToastGravity.CENTER,
+                                    );
+                                    return; // Stop execution if no municipality is selected
+                                  }
+                                }
+
+                                // Determine the appropriate municipality context
+                                String municipalityContext =
+                                    isLocalMunicipality || isLocalUser
+                                        ? municipalityId
+                                        : selectedMunicipality!;
+
+                                if (municipalityContext.isEmpty) {
+                                  Fluttertoast.showToast(
+                                    msg:
+                                        "Invalid municipality selection or missing municipality.",
+                                    toastLength: Toast.LENGTH_SHORT,
+                                    gravity: ToastGravity.CENTER,
+                                  );
+                                  return;
+                                }
+
+                                // Ensure property details are available
+                                String? address =
+                                    _allPropResults[index]['address'];
+                                String? accountNumber =
+                                    _allPropResults[index]['accountNumber'];
+                                String? cellNumber =
+                                    _allPropResults[index]['cellNumber'];
+
+                                if (address == null ||
+                                    accountNumber == null ||
+                                    cellNumber == null) {
+                                  Fluttertoast.showToast(
+                                    msg:
+                                        "Error: Property information is missing.",
+                                    toastLength: Toast.LENGTH_SHORT,
+                                    gravity: ToastGravity.CENTER,
+                                  );
+                                  return;
+                                }
+                                String selectedMunicipalityId =
+                                    isLocalMunicipality || isLocalUser
+                                        ? municipalityId
+                                        : selectedMunicipality!;
+
+                                // 🔍 Fetch utility type for the selected municipality
+                                DocumentReference docRef = isLocalMunicipality
+                                    ? FirebaseFirestore.instance
+                                        .collection('localMunicipalities')
+                                        .doc(selectedMunicipalityId)
+                                    : FirebaseFirestore.instance
+                                        .collection('districts')
+                                        .doc(districtId)
+                                        .collection('municipalities')
+                                        .doc(selectedMunicipalityId);
+
+                                DocumentSnapshot snapshot = await docRef.get();
+                                List<String> utilityTypes = List<String>.from(
+                                    snapshot['utilityType'] ?? []);
+                                bool localHandlesWater =
+                                    utilityTypes.contains("water");
+                                bool localHandlesElectricity =
+                                    utilityTypes.contains("electricity");
+                                // Perform desired action based on button type
+                                print(
+                                    "Navigating to PropertyTrend with details:");
+                                print("Address: $address");
+                                print("District ID: $districtId");
+                                print(
+                                    "Municipality Context: $municipalityContext");
+                                print(
+                                    "💧 Water = $localHandlesWater | ⚡ Electricity = $localHandlesElectricity");
+
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PropertyTrend(
+                                      addressTarget: address,
+                                      districtId: districtId,
+                                      municipalityId: municipalityContext,
+                                      isLocalMunicipality: isLocalMunicipality,
+                                      isLocalUser: isLocalUser,
+                                      handlesWater: localHandlesWater,
+                                      handlesElectricity:
+                                          localHandlesElectricity,
+                                    ),
+                                  ),
+                                );
+                              } catch (e) {
+                                print("Error in 'History' button: $e");
+                                Fluttertoast.showToast(
+                                  msg:
+                                      "Error: Unable to open property history.",
+                                  toastLength: Toast.LENGTH_SHORT,
+                                  gravity: ToastGravity.CENTER,
+                                );
+                              }
+                            },
+                            labelText: 'History',
+                            fSize: 16,
+                            faIcon: const FaIcon(Icons.stacked_line_chart),
+                            fgColor: Colors.purple,
+                            btSize: const Size(100, 38),
                           ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Stack(
-                                children: [
-                                  /*BasicIconButtonGrey(
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Stack(
+                              children: [
+                                /*BasicIconButtonGrey(
                                     onPress: () async {
                                       try {
                                         // Ensure the municipality context is valid for non-local users
@@ -1714,12 +2006,12 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                             return; // Stop execution if no municipality is selected
                                           }
                                         }
-      
+
                                         // Determine the appropriate municipality context
                                         String municipalityContext = isLocalMunicipality || isLocalUser
                                             ? municipalityId
                                             : selectedMunicipality!;
-      
+
                                         if (municipalityContext.isEmpty) {
                                           Fluttertoast.showToast(
                                             msg: "Invalid municipality selection or missing municipality.",
@@ -1732,7 +2024,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                         String? address = _allPropResults[index]['address'];
                                         String? accountNumber = _allPropResults[index]['accountNumber'];
                                         String? cellNumber = _allPropResults[index]['cellNumber'];
-      
+
                                         if (address == null || accountNumber == null || cellNumber == null) {
                                           Fluttertoast.showToast(
                                             msg: "Error: Property information is missing.",
@@ -1741,18 +2033,18 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                           );
                                           return;
                                         }
-      
+
                                         // Prepare the path
                                         String month = DateFormat('MMMM').format(DateTime.now());
                                         String path = 'pdfs/$month/$cellNumber/$address/';
                                         print("Constructed path: $path");
-      
+
                                         final storageRef = FirebaseStorage.instance.ref().child(path);
                                         final listResult = await storageRef.listAll();
-      
+
                                         if (listResult.items.isNotEmpty) {
                                           Reference? matchingFile;
-      
+
                                           try {
                                             matchingFile = listResult.items.firstWhere(
                                                   (item) => item.name.contains(accountNumber),
@@ -1760,14 +2052,14 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                           } catch (e) {
                                             matchingFile = null;
                                           }
-      
+
                                           if (matchingFile != null) {
                                             final url = await matchingFile.getDownloadURL();
                                             print('Found file URL: $url');
-      
+
                                             final directory = await getApplicationDocumentsDirectory();
                                             final filePath = '${directory.path}/${matchingFile.name}';
-      
+
                                             try {
                                               // Download using Dio
                                               final response = await Dio().download(url, filePath);
@@ -1814,117 +2106,128 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                     fgColor: Colors.orangeAccent,
                                     btSize: const Size(100, 38),
                                   ),*/
-                                  const SizedBox(
-                                    width: 5,
-                                  ),
-                                  Visibility(
-                                      visible: _isLoading,
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          const SizedBox(
-                                            height: 15,
-                                            width: 130,
-                                          ),
-                                          Container(
-                                            width: 24,
-                                            height: 24,
-                                            padding: const EdgeInsets.all(2.0),
-                                            child: const CircularProgressIndicator(
-                                              color: Colors.purple,
-                                              strokeWidth: 3,
-                                            ),
-                                          ),
-                                        ],
-                                      )),
-                                ],
-                              ),
-                              BasicIconButtonGrey(
-                                onPress: () async {
-                                  try {
-                                    // Ensure the municipality context is valid for district users
-                                    if (!isLocalUser && !isLocalMunicipality) {
-                                      if (selectedMunicipality == null || selectedMunicipality == "Select Municipality") {
-                                        Fluttertoast.showToast(
-                                          msg: "Please select a municipality first!",
-                                          toastLength: Toast.LENGTH_SHORT,
-                                          gravity: ToastGravity.CENTER,
-                                        );
-                                        return; // Stop execution if no municipality is selected
-                                      }
-                                    }
-      
-                                    // Determine the appropriate municipality context
-                                    String municipalityContext = isLocalMunicipality || isLocalUser
-                                        ? municipalityId
-                                        : selectedMunicipality!;
-      
-                                    if (municipalityContext.isEmpty) {
-                                      Fluttertoast.showToast(
-                                        msg: "Invalid municipality selection or missing municipality.",
-                                        toastLength: Toast.LENGTH_SHORT,
-                                        gravity: ToastGravity.CENTER,
-                                      );
-                                      return;
-                                    }
-      
-                                    // Ensure property details are available
-                                    String? address = _allPropResults[index]['address'];
-                                    String? accountNumber = _allPropResults[index]['accountNumber'];
-      
-                                    if (address == null || accountNumber == null) {
-                                      Fluttertoast.showToast(
-                                        msg: "Error: Property information is missing.",
-                                        toastLength: Toast.LENGTH_SHORT,
-                                        gravity: ToastGravity.CENTER,
-                                      );
-                                      return;
-                                    }
-      
-                                    // Log details for debugging
-                                    print("Navigating to MapScreenProp with:");
-                                    print("Address: $address");
-                                    print("Account Number: $accountNumber");
-                                    print("Municipality Context: $municipalityContext");
-      
-                                    // Navigate to the MapScreenProp with property details
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => MapScreenProp(
-                                          propAddress: address,
-                                          propAccNumber: accountNumber,
+                                const SizedBox(
+                                  width: 5,
+                                ),
+                                Visibility(
+                                    visible: _isLoading,
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const SizedBox(
+                                          height: 15,
+                                          width: 130,
                                         ),
-                                      ),
-                                    );
-                                  } catch (e) {
-                                    print("Error in Map button logic: $e");
+                                        Container(
+                                          width: 24,
+                                          height: 24,
+                                          padding: const EdgeInsets.all(2.0),
+                                          child:
+                                              const CircularProgressIndicator(
+                                            color: Colors.purple,
+                                            strokeWidth: 3,
+                                          ),
+                                        ),
+                                      ],
+                                    )),
+                              ],
+                            ),
+                            BasicIconButtonGrey(
+                              onPress: () async {
+                                try {
+                                  // Ensure the municipality context is valid for district users
+                                  if (!isLocalUser && !isLocalMunicipality) {
+                                    if (selectedMunicipality == null ||
+                                        selectedMunicipality ==
+                                            "Select Municipality") {
+                                      Fluttertoast.showToast(
+                                        msg:
+                                            "Please select a municipality first!",
+                                        toastLength: Toast.LENGTH_SHORT,
+                                        gravity: ToastGravity.CENTER,
+                                      );
+                                      return; // Stop execution if no municipality is selected
+                                    }
+                                  }
+
+                                  // Determine the appropriate municipality context
+                                  String municipalityContext =
+                                      isLocalMunicipality || isLocalUser
+                                          ? municipalityId
+                                          : selectedMunicipality!;
+
+                                  if (municipalityContext.isEmpty) {
                                     Fluttertoast.showToast(
-                                      msg: "Error: Unable to open map.",
+                                      msg:
+                                          "Invalid municipality selection or missing municipality.",
                                       toastLength: Toast.LENGTH_SHORT,
                                       gravity: ToastGravity.CENTER,
                                     );
+                                    return;
                                   }
-                                },
-                                labelText: 'Map',
-                                fSize: 16,
-                                faIcon: const FaIcon(
-                                  Icons.map,
-                                ),
-                                fgColor: Colors.green,
-                                btSize: const Size(100, 38),
+                                  // Ensure property details are available
+                                  String? address =
+                                      _allPropResults[index]['address'];
+                                  String? accountNumber =
+                                      _allPropResults[index]['accountNumber'];
+
+                                  if (address == null ||
+                                      accountNumber == null) {
+                                    Fluttertoast.showToast(
+                                      msg:
+                                          "Error: Property information is missing.",
+                                      toastLength: Toast.LENGTH_SHORT,
+                                      gravity: ToastGravity.CENTER,
+                                    );
+                                    return;
+                                  }
+
+                                  // Log details for debugging
+                                  print("Navigating to MapScreenProp with:");
+                                  print("Address: $address");
+                                  print("Account Number: $accountNumber");
+                                  print(
+                                      "Municipality Context: $municipalityContext");
+
+                                  // Navigate to the MapScreenProp with property details
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MapScreenProp(
+                                        propAddress: address,
+                                        propAccNumber: accountNumber,
+                                      ),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  print("Error in Map button logic: $e");
+                                  Fluttertoast.showToast(
+                                    msg: "Error: Unable to open map.",
+                                    toastLength: Toast.LENGTH_SHORT,
+                                    gravity: ToastGravity.CENTER,
+                                  );
+                                }
+                              },
+                              labelText: 'Map',
+                              fSize: 16,
+                              faIcon: const FaIcon(
+                                Icons.map,
                               ),
-                              const SizedBox(
-                                width: 5,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ));
-              },
-            ),
+                              fgColor: Colors.green,
+                              btSize: const Size(100, 38),
+                            ),
+                            const SizedBox(
+                              width: 5,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ));
+            },
           ),
+        ),
       ),
     );
   }
@@ -2705,7 +3008,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
           focusNode: _focusNodeTab2,
           onKeyEvent: (KeyEvent event) {
             if (event is KeyDownEvent) {
-              final double pageScrollAmount = _scrollControllerTab2.position.viewportDimension;
+              final double pageScrollAmount =
+                  _scrollControllerTab2.position.viewportDimension;
 
               if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
                 _scrollControllerTab2.animateTo(
@@ -2734,327 +3038,392 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
               }
             }
           },
-            child: Scrollbar(
+          child: Scrollbar(
             controller: _scrollControllerTab2,
-              thickness: 12, // Customize the thickness of the scrollbar
-              radius: const Radius.circular(8), // Rounded edges for the scrollbar
-              thumbVisibility: true,
-              trackVisibility: true, // Makes the track visible as well
-              interactive: true,
-                child: ListView.builder(
-                controller: _scrollControllerTab2,
-                shrinkWrap: true,
-                physics: const AlwaysScrollableScrollPhysics(),
-                itemCount: _allPropResults.length,
-                ///this call is to display all details for all users but is only displaying for the current user account.
-                ///it can be changed to display all users for the staff to see if the role is set to all later on.
-                itemBuilder: (context, index) {
-                  // eMeterNumber = _allPropResults[index]['meter_number'];
-                  wMeterNumber = _allPropResults[index]['water_meter_number'];
-                  propPhoneNum = _allPropResults[index]['cellNumber'];
+            thickness: 12, // Customize the thickness of the scrollbar
+            radius: const Radius.circular(8), // Rounded edges for the scrollbar
+            thumbVisibility: true,
+            trackVisibility: true, // Makes the track visible as well
+            interactive: true,
+            child: ListView.builder(
+              controller: _scrollControllerTab2,
+              shrinkWrap: true,
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: _allPropResults.length,
 
-                  if (_allPropResults[index]['eBill'] != '' ||
-                      _allPropResults[index]['eBill'] != 'R0,000.00' ||
-                      _allPropResults[index]['eBill'] != 'R0.00' ||
-                      _allPropResults[index]['eBill'] != 'R0' ||
-                      _allPropResults[index]['eBill'] != '0') {
-                    billMessage =
-                        'Utilities bill outstanding: ${_allPropResults[index]['eBill']}';
-                  } else {
-                    billMessage = 'No outstanding payments';
-                  }
+              ///this call is to display all details for all users but is only displaying for the current user account.
+              ///it can be changed to display all users for the staff to see if the role is set to all later on.
+              itemBuilder: (context, index) {
+                final munId = _allPropResults[index]['municipalityId'];
+                final utilTypes = municipalityUtilityMap[munId] ?? [];
 
-                  if (_allPropResults[index]['imgStateE'] == false ||
-                      _allPropResults[index]['imgStateW'] == false) {
-                    return Card(
-                      margin: const EdgeInsets.only(
-                          left: 10, right: 10, top: 0, bottom: 10),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Center(
-                              child: Text(
-                                'Property Information',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w700),
-                              ),
+                final bool showWater = utilTypes.contains('water');
+                final bool showElectricity = utilTypes.contains('electricity');
+                eMeterNumber = _allPropResults[index]['meter_number'];
+                wMeterNumber = _allPropResults[index]['water_meter_number'];
+                propPhoneNum = _allPropResults[index]['cellNumber'];
+
+                if (_allPropResults[index]['eBill'] != '' ||
+                    _allPropResults[index]['eBill'] != 'R0,000.00' ||
+                    _allPropResults[index]['eBill'] != 'R0.00' ||
+                    _allPropResults[index]['eBill'] != 'R0' ||
+                    _allPropResults[index]['eBill'] != '0') {
+                  billMessage =
+                      'Utilities bill outstanding: ${_allPropResults[index]['eBill']}';
+                } else {
+                  billMessage = 'No outstanding payments';
+                }
+
+                if (_allPropResults[index]['imgStateE'] == false ||
+                    _allPropResults[index]['imgStateW'] == false) {
+                  return Card(
+                    margin: const EdgeInsets.only(
+                        left: 10, right: 10, top: 0, bottom: 10),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Center(
+                            child: Text(
+                              'Property Information',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w700),
                             ),
-                            const SizedBox(
-                              height: 10,
-                            ),
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          if(handlesWater)...[
+                          Text(
+                            'Water Account Number: ${_allPropResults[index]['accountNumber']}',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          ],
+                          const SizedBox(
+                            height: 5,
+                          ),
+                          if(handlesElectricity)...[
                             Text(
-                              'Account Number: ${_allPropResults[index]['accountNumber']}',
+                              'Electricity Account Number: ${_allPropResults[index]['electricityAccountNumber']}',
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w400),
                             ),
-                            const SizedBox(
-                              height: 5,
-                            ),
-                            Text(
-                              'Street Address: ${_allPropResults[index]['address']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(
-                              height: 5,
-                            ),
-                            Text(
-                              'Area Code: ${_allPropResults[index]['areaCode']}',
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(
-                              height: 5,
-                            ),
-                            // Text(
-                            //   'Meter Number: ${_allPropResults[index]['meter_number']}',
-                            //   style: const TextStyle(
-                            //       fontSize: 16, fontWeight: FontWeight.w400),
-                            // ),
-                            // const SizedBox(
-                            //   height: 5,
-                            // ),
-                            // Text(
-                            //   'Meter Reading: ${_allPropResults[index]['meter_reading']}',
-                            //   style: const TextStyle(
-                            //       fontSize: 16, fontWeight: FontWeight.w400),
-                            // ),
-                            // const SizedBox(
-                            //   height: 5,
-                            // ),
+                          ],
+                          const SizedBox(
+                            height: 5,
+                          ),
+                          Text(
+                            'Street Address: ${_allPropResults[index]['address']}',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(
+                            height: 5,
+                          ),
+                          Text(
+                            'Area Code: ${_allPropResults[index]['areaCode']}',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(
+                            height: 5,
+                          ),
+                          if (showWater) ...[
+                            const SizedBox(height: 5),
                             Text(
                               'Water Meter Number: ${_allPropResults[index]['water_meter_number']}',
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w400),
                             ),
-                            const SizedBox(
-                              height: 5,
-                            ),
+                            const SizedBox(height: 5),
                             Text(
-                              'Previous Month ($previousMonth) Reading: ${previousMonthReadings[_allPropResults[index]['address']] ?? "N/A"}',
+                              'Previous Month ($previousMonth) Water Reading: ${previousMonthReadings[_allPropResults[index]['address']] ?? "N/A"}',
                               style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400,
-                              ),
+                                  fontSize: 16, fontWeight: FontWeight.w400),
                             ),
                             const SizedBox(height: 5),
                             Text(
-                              'Water Meter Reading for $currentMonth: ${currentMonthReadings[_allPropResults[index]['address']] ?? "N/A"}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 5,
-                            ),
-                            Text(
-                              'Phone Number: ${_allPropResults[index]['cellNumber']}',
+                              'Current Month Water Reading for $currentMonth: ${currentMonthReadings[_allPropResults[index]['address']] ?? "N/A"}',
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w400),
                             ),
-                            const SizedBox(
-                              height: 5,
-                            ),
+                          ],
+                          if (showElectricity) ...[
+                            const SizedBox(height: 10),
                             Text(
-                              'First Name: ${_allPropResults[index]['firstName']}',
+                              'Electricity Meter Number: ${_allPropResults[index]['meter_number'] ?? "N/A"}',
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w400),
                             ),
-                            const SizedBox(
-                              height: 5,
-                            ),
+                            const SizedBox(height: 5),
                             Text(
-                              'Surname: ${_allPropResults[index]['lastName']}',
+                              'Previous Month ($previousMonth) Electricity Reading: ${previousMonthElectricReadings[_allPropResults[index]['address']] ?? "N/A"}',
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w400),
                             ),
-                            const SizedBox(
-                              height: 5,
-                            ),
+                            const SizedBox(height: 5),
                             Text(
-                              'ID Number: ${_allPropResults[index]['idNumber']}',
+                              'Current Month Electricity Reading for $currentMonth: ${currentMonthElectricReadings[_allPropResults[index]['address']] ?? "N/A"}',
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w400),
                             ),
-                            const SizedBox(
-                              height: 20,
+                          ],
+                          const SizedBox(
+                            height: 5,
+                          ),
+                          Text(
+                            'Phone Number: ${_allPropResults[index]['cellNumber']}',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(
+                            height: 5,
+                          ),
+                          Text(
+                            'First Name: ${_allPropResults[index]['firstName']}',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(
+                            height: 5,
+                          ),
+                          Text(
+                            'Surname: ${_allPropResults[index]['lastName']}',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(
+                            height: 5,
+                          ),
+                          Text(
+                            'ID Number: ${_allPropResults[index]['idNumber']}',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(
+                            height: 20,
+                          ),
+                          const Center(
+                            child: Text(
+                              'Water Meter Photo',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w700),
                             ),
-                            const Center(
-                              child: Text(
-                                'Water Meter Photo',
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.w700),
-                              ),
+                          ),
+                          const SizedBox(
+                            height: 5,
+                          ),
+                          Center(
+                            child: BasicIconButtonGrey(
+                              onPress: () async {
+                                try {
+                                  // If the user is not a local municipality user (i.e., district-level user)
+                                  if (!isLocalUser) {
+                                    // Ensure that the user selects a municipality first
+                                    if (selectedMunicipality == null ||
+                                        selectedMunicipality ==
+                                            "Select Municipality") {
+                                      Fluttertoast.showToast(
+                                        msg:
+                                            "Please select a municipality first!",
+                                        toastLength: Toast.LENGTH_SHORT,
+                                        gravity: ToastGravity.CENTER,
+                                      );
+                                      return; // Stop further execution if no municipality is selected
+                                    }
+                                  }
+
+                                  // Determine the municipality context based on the user type
+                                  String municipalityContext = isLocalUser
+                                      ? municipalityId
+                                      : selectedMunicipality!;
+                                  if (municipalityContext.isEmpty) {
+                                    Fluttertoast.showToast(
+                                      msg:
+                                          "Invalid municipality selection or missing municipality.",
+                                      toastLength: Toast.LENGTH_SHORT,
+                                      gravity: ToastGravity.CENTER,
+                                    );
+                                    return;
+                                  }
+
+                                  // Ensure necessary property details are not null
+                                  String? cellNumber =
+                                      _allPropResults[index]['cellNumber'];
+                                  String? address =
+                                      _allPropResults[index]['address'];
+                                  String? meterNumber = _allPropResults[index]
+                                      ['water_meter_number'];
+                                  String? eMeterNumber =
+                                      _allPropResults[index]['meter_number'];
+                                  // Print statements for debugging
+                                  print(
+                                      "cellNumber: $cellNumber, address: $address, meterNumber: $meterNumber");
+
+                                  if (cellNumber == null ||
+                                      address == null ||
+                                      meterNumber == null) {
+                                    Fluttertoast.showToast(
+                                      msg:
+                                          "Incomplete property details. Cannot view the image.",
+                                      toastLength: Toast.LENGTH_SHORT,
+                                      gravity: ToastGravity.CENTER,
+                                    );
+                                    return;
+                                  }
+
+                                  // Prepare the image path
+                                  imageName =
+                                      'files/meters/$formattedDate/$cellNumber/$address/water/$meterNumber.jpg';
+                                  addressSnap = address;
+                                  imageElectricName =
+                                      'files/meters/$formattedDate/$cellNumber/$address/electricity/$eMeterNumber.jpg';
+                                  // Log the details for debugging
+                                  print(
+                                      "Navigating to ImageZoomPage with details:");
+                                  print("imageName: $imageName");
+                                  print("addressSnap: $addressSnap");
+                                  print(
+                                      "municipalityContext: $municipalityContext");
+                                  print("municipality email: $userEmail");
+                                  // Navigate to the ImageZoomPage
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ImageZoomPage(
+                                        imageName: imageName,
+                                        addressSnap: addressSnap,
+                                        municipalityUserEmail: userEmail,
+                                        isLocalMunicipality:
+                                            isLocalMunicipality,
+                                        districtId: districtId,
+                                        municipalityId: municipalityContext,
+                                        isLocalUser: isLocalUser,
+                                        imageElectricName: imageElectricName,
+                                      ),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  print(
+                                      "Error in 'View Uploaded Image' button: $e");
+                                  Fluttertoast.showToast(
+                                    msg:
+                                        "Error: Unable to view uploaded image.",
+                                    toastLength: Toast.LENGTH_SHORT,
+                                    gravity: ToastGravity.CENTER,
+                                  );
+                                }
+                              },
+                              labelText: 'View Uploaded Image',
+                              fSize: 16,
+                              faIcon: const FaIcon(Icons.zoom_in),
+                              fgColor: Colors.blue,
+                              btSize: const Size(100, 38),
                             ),
-                            const SizedBox(
-                              height: 5,
-                            ),
-                            Center(
-                              child: BasicIconButtonGrey(
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          Text(
+                            billMessage,
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w400),
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          Column(
+                            children: [
+                              BasicIconButtonGrey(
                                 onPress: () async {
                                   try {
-                                    // If the user is not a local municipality user (i.e., district-level user)
-                                    if (!isLocalUser) {
-                                      // Ensure that the user selects a municipality first
-                                      if (selectedMunicipality == null ||
-                                          selectedMunicipality ==
-                                              "Select Municipality") {
-                                        Fluttertoast.showToast(
-                                          msg: "Please select a municipality first!",
-                                          toastLength: Toast.LENGTH_SHORT,
-                                          gravity: ToastGravity.CENTER,
-                                        );
-                                        return; // Stop further execution if no municipality is selected
-                                      }
-                                    }
+                                    // Select the property and store it using Provider.
+                                    Provider.of<PropertyProvider>(context,
+                                            listen: false)
+                                        .selectProperty(property!,
+                                            handlesWater: handlesWater,
+                                            handlesElectricity:
+                                                handlesElectricity);
 
-                                    // Determine the municipality context based on the user type
-                                    String municipalityContext = isLocalUser
-                                        ? municipalityId
-                                        : selectedMunicipality!;
-                                    if (municipalityContext.isEmpty) {
-                                      Fluttertoast.showToast(
-                                        msg:
-                                            "Invalid municipality selection or missing municipality.",
-                                        toastLength: Toast.LENGTH_SHORT,
-                                        gravity: ToastGravity.CENTER,
-                                      );
-                                      return;
-                                    }
+                                    addressForTrend =
+                                        _allPropResults[index]['address'];
+                                    String selectedMunicipalityId =
+                                        isLocalMunicipality || isLocalUser
+                                            ? municipalityId
+                                            : selectedMunicipality!;
 
-                                    // Ensure necessary property details are not null
-                                    String? cellNumber =
-                                        _allPropResults[index]['cellNumber'];
-                                    String? address = _allPropResults[index]['address'];
-                                    String? meterNumber =
-                                        _allPropResults[index]['water_meter_number'];
+                                    // 🔍 Fetch utility type for the selected municipality
+                                    DocumentReference docRef =
+                                        isLocalMunicipality
+                                            ? FirebaseFirestore.instance
+                                                .collection(
+                                                    'localMunicipalities')
+                                                .doc(selectedMunicipalityId)
+                                            : FirebaseFirestore.instance
+                                                .collection('districts')
+                                                .doc(districtId)
+                                                .collection('municipalities')
+                                                .doc(selectedMunicipalityId);
 
-                                    // Print statements for debugging
+                                    DocumentSnapshot snapshot =
+                                        await docRef.get();
+                                    List<String> utilityTypes =
+                                        List<String>.from(
+                                            snapshot['utilityType'] ?? []);
+                                    bool localHandlesWater =
+                                        utilityTypes.contains("water");
+                                    bool localHandlesElectricity =
+                                        utilityTypes.contains("electricity");
+                                    print("Navigating to PropertyTrend:");
+                                    print("Address Target: $addressForTrend");
+                                    print("District ID: $districtId");
+                                    print("Municipality ID: $municipalityId");
                                     print(
-                                        "cellNumber: $cellNumber, address: $address, meterNumber: $meterNumber");
+                                        "Is Local Municipality: $isLocalMunicipality");
+                                    print(
+                                        "💧 Water = $localHandlesWater | ⚡ Electricity = $localHandlesElectricity");
 
-                                    if (cellNumber == null ||
-                                        address == null ||
-                                        meterNumber == null) {
-                                      Fluttertoast.showToast(
-                                        msg:
-                                            "Incomplete property details. Cannot view the image.",
-                                        toastLength: Toast.LENGTH_SHORT,
-                                        gravity: ToastGravity.CENTER,
-                                      );
-                                      return;
-                                    }
-
-                                    // Prepare the image path
-                                    imageName =
-                                        'files/meters/$formattedDate/$cellNumber/$address/water/$meterNumber.jpg';
-                                    addressSnap = address;
-
-                                    // Log the details for debugging
-                                    print("Navigating to ImageZoomPage with details:");
-                                    print("imageName: $imageName");
-                                    print("addressSnap: $addressSnap");
-                                    print("municipalityContext: $municipalityContext");
-                                    print("municipality email: $userEmail");
-                                    // Navigate to the ImageZoomPage
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => ImageZoomPage(
-                                          imageName: imageName,
-                                          addressSnap: addressSnap,
-                                          municipalityUserEmail: userEmail,
-                                          isLocalMunicipality: isLocalMunicipality,
+                                        builder: (context) => PropertyTrend(
+                                          addressTarget: addressForTrend,
                                           districtId: districtId,
-                                          municipalityId: municipalityContext,
-                                          isLocalUser: isLocalUser,
+                                          municipalityId: municipalityId,
+                                          isLocalMunicipality:
+                                              isLocalMunicipality,
+                                          handlesWater: localHandlesWater,
+                                          handlesElectricity:
+                                              localHandlesElectricity,
                                         ),
                                       ),
                                     );
                                   } catch (e) {
-                                    print("Error in 'View Uploaded Image' button: $e");
+                                    print("Error in History Button: $e");
                                     Fluttertoast.showToast(
-                                      msg: "Error: Unable to view uploaded image.",
+                                      msg:
+                                          "Error navigating to property history.",
                                       toastLength: Toast.LENGTH_SHORT,
                                       gravity: ToastGravity.CENTER,
                                     );
                                   }
                                 },
-                                labelText: 'View Uploaded Image',
+                                labelText: 'History',
                                 fSize: 16,
-                                faIcon: const FaIcon(Icons.zoom_in),
-                                fgColor: Colors.blue,
+                                faIcon: const FaIcon(Icons.stacked_line_chart),
+                                fgColor: Colors.purple,
                                 btSize: const Size(100, 38),
                               ),
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            Text(
-                              billMessage,
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w400),
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            Column(
-                              children: [
-                                BasicIconButtonGrey(
-                                  onPress: () async {
-                                    try {
-                                      // Select the property and store it using Provider.
-                                      Provider.of<PropertyProvider>(context,
-                                              listen: false)
-                                          .selectProperty(property!);
-
-                                      addressForTrend =
-                                          _allPropResults[index]['address'];
-
-                                      print("Navigating to PropertyTrend:");
-                                      print("Address Target: $addressForTrend");
-                                      print("District ID: $districtId");
-                                      print("Municipality ID: $municipalityId");
-                                      print(
-                                          "Is Local Municipality: $isLocalMunicipality");
-
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => PropertyTrend(
-                                            addressTarget: addressForTrend,
-                                            districtId: districtId,
-                                            municipalityId: municipalityId,
-                                            isLocalMunicipality: isLocalMunicipality,
-                                          ),
-                                        ),
-                                      );
-                                    } catch (e) {
-                                      print("Error in History Button: $e");
-                                      Fluttertoast.showToast(
-                                        msg: "Error navigating to property history.",
-                                        toastLength: Toast.LENGTH_SHORT,
-                                        gravity: ToastGravity.CENTER,
-                                      );
-                                    }
-                                  },
-                                  labelText: 'History',
-                                  fSize: 16,
-                                  faIcon: const FaIcon(Icons.stacked_line_chart),
-                                  fgColor: Colors.purple,
-                                  btSize: const Size(100, 38),
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Stack(
-                                      children: [
-                                     /*  BasicIconButtonGrey(
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Stack(
+                                    children: [
+                                      /*  BasicIconButtonGrey(
                                           onPress: () async {
                                             final Property? property =
                                                 Provider.of<PropertyProvider>(context, listen: false).selectedProperty;
@@ -3097,79 +3466,86 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                           fgColor: Colors.orangeAccent,
                                           btSize: const Size(100, 38),
                                         ),*/
-                                        const SizedBox(
-                                          width: 5,
-                                        ),
-                                        Visibility(
-                                            visible: _isLoading,
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                const SizedBox(
-                                                  height: 15,
-                                                  width: 130,
-                                                ),
-                                                Container(
-                                                  width: 24,
-                                                  height: 24,
-                                                  padding: const EdgeInsets.all(2.0),
-                                                  child:
-                                                      const CircularProgressIndicator(
-                                                    color: Colors.purple,
-                                                    strokeWidth: 3,
-                                                  ),
-                                                ),
-                                              ],
-                                            )),
-                                      ],
-                                    ),
-                                    BasicIconButtonGrey(
-                                      onPress: () async {
-                                        Provider.of<PropertyProvider>(context,
-                                                listen: false)
-                                            .selectProperty(property!);
-                                        accountNumberAll =
-                                            _allPropResults[index]['account number'];
-                                        locationGivenAll =
-                                            _allPropResults[index]['address'];
-
-                                        Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) => MapScreenProp(
-                                                      propAddress: locationGivenAll,
-                                                      propAccNumber: accountNumberAll,
-                                                    )));
-                                      },
-                                      labelText: 'Map',
-                                      fSize: 16,
-                                      faIcon: const FaIcon(
-                                        Icons.map,
+                                      const SizedBox(
+                                        width: 5,
                                       ),
-                                      fgColor: Colors.green,
-                                      btSize: const Size(100, 38),
+                                      Visibility(
+                                          visible: _isLoading,
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const SizedBox(
+                                                height: 15,
+                                                width: 130,
+                                              ),
+                                              Container(
+                                                width: 24,
+                                                height: 24,
+                                                padding:
+                                                    const EdgeInsets.all(2.0),
+                                                child:
+                                                    const CircularProgressIndicator(
+                                                  color: Colors.purple,
+                                                  strokeWidth: 3,
+                                                ),
+                                              ),
+                                            ],
+                                          )),
+                                    ],
+                                  ),
+                                  BasicIconButtonGrey(
+                                    onPress: () async {
+                                      Provider.of<PropertyProvider>(context,
+                                              listen: false)
+                                          .selectProperty(property!,
+                                              handlesWater: handlesWater,
+                                              handlesElectricity:
+                                                  handlesElectricity);
+                                      accountNumberAll = _allPropResults[index]
+                                          ['account number'];
+                                      locationGivenAll =
+                                          _allPropResults[index]['address'];
+
+                                      Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  MapScreenProp(
+                                                    propAddress:
+                                                        locationGivenAll,
+                                                    propAccNumber:
+                                                        accountNumberAll,
+                                                  )));
+                                    },
+                                    labelText: 'Map',
+                                    fSize: 16,
+                                    faIcon: const FaIcon(
+                                      Icons.map,
                                     ),
-                                    const SizedBox(
-                                      width: 5,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(
-                                  height: 5,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                                    fgColor: Colors.green,
+                                    btSize: const Size(100, 38),
+                                  ),
+                                  const SizedBox(
+                                    width: 5,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(
+                                height: 5,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    );
-                  } else {
-                    return const SizedBox();
-                  }
-                },
-              ),
+                    ),
+                  );
+                } else {
+                  return const SizedBox();
+                }
+              },
             ),
+          ),
         ),
       );
     }
@@ -3248,7 +3624,9 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                             onPressed: () async {
                               Provider.of<PropertyProvider>(context,
                                       listen: false)
-                                  .selectProperty(property!);
+                                  .selectProperty(property!,
+                                      handlesWater: handlesWater,
+                                      handlesElectricity: handlesElectricity);
                               DateTime now = DateTime.now();
                               String formattedDate =
                                   DateFormat('yyyy-MM-dd – kk:mm').format(now);
@@ -3372,7 +3750,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                 final DocumentSnapshot documentSnapshot =
                     streamSnapshot.data!.docs[index];
 
-                // eMeterNumber = documentSnapshot['meter_number'];
+                eMeterNumber = documentSnapshot['meter_number'];
                 wMeterNumber = documentSnapshot['water_meter number'];
                 propPhoneNum = documentSnapshot['cellNumber'];
 
@@ -3409,11 +3787,23 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                           const SizedBox(
                             height: 10,
                           ),
-                          Text(
-                            'Account Number: ${documentSnapshot['accountNumber']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
+                          if (handlesWater) ...[
+                            Text(
+                              'Water Account Number: ${documentSnapshot['accountNumber']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                          ],
+                          const SizedBox(
+                            height: 5,
                           ),
+                          if (handlesElectricity) ...[
+                            Text(
+                              'Electricity Account Number: ${documentSnapshot['electricityAccountNumber']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                          ],
                           const SizedBox(
                             height: 5,
                           ),
@@ -3449,19 +3839,63 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                           // const SizedBox(
                           //   height: 5,
                           // ),
-                          Text(
-                            'Water Meter Number: ${documentSnapshot['water_meter_number']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
-                          const SizedBox(
-                            height: 5,
-                          ),
-                          Text(
-                            'Water Meter Reading: ${documentSnapshot['water_meter_reading']}',
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w400),
-                          ),
+                          if (handlesWater) ...[
+                            Text(
+                              'Water Meter Number: ${documentSnapshot['water_meter_number']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            Text(
+                              'Previous Month Water ($previousMonth) Reading: $previousWaterReading',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            Text(
+                              'Water Meter Reading for $currentMonth: $currentWaterReading',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                          ],
+                          if (handlesElectricity) ...[
+                            Text(
+                              'Electricity Meter Number: ${documentSnapshot['meter_number']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            Text(
+                              'Previous Month Electricity ($previousMonth) Reading: $previousElectricityReading ',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            Text(
+                              'Electricity Meter Reading for $currentMonth: $currentElectricityReading',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
                           const SizedBox(
                             height: 5,
                           ),
@@ -3830,7 +4264,10 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                     onPress: () async {
                                       Provider.of<PropertyProvider>(context,
                                               listen: false)
-                                          .selectProperty(property!);
+                                          .selectProperty(property!,
+                                              handlesWater: handlesWater,
+                                              handlesElectricity:
+                                                  handlesElectricity);
                                       wMeterNumber = documentSnapshot[
                                           'water_meter_number'];
                                       propPhoneNum =
@@ -3865,7 +4302,11 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                                             context,
                                                             listen: false)
                                                         .selectProperty(
-                                                            property!);
+                                                            property!,
+                                                            handlesWater:
+                                                                handlesWater,
+                                                            handlesElectricity:
+                                                                handlesElectricity);
                                                     Fluttertoast.showToast(
                                                         msg:
                                                             "Uploading a new image\nwill replace current image!");
@@ -3909,7 +4350,10 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                     onPress: () async {
                                       Provider.of<PropertyProvider>(context,
                                               listen: false)
-                                          .selectProperty(property!);
+                                          .selectProperty(property!,
+                                              handlesWater: handlesWater,
+                                              handlesElectricity:
+                                                  handlesElectricity);
                                       _updateW(documentSnapshot);
                                     },
                                     labelText: 'Capture',
@@ -4138,7 +4582,7 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                 /* BasicIconButtonGrey(
+                                  /* BasicIconButtonGrey(
                                     onPress: () async {
                                       try {
                                         // Ensure the district-level user selects a municipality
@@ -4215,14 +4659,26 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                                   ),*/
                                   BasicIconButtonGrey(
                                     onPress: () async {
+                                      final propData = _allPropResults[index].data() as Map<String, dynamic>;
+
+                                      // Select appropriate account number
+                                      final selectedAccountNumber = handlesElectricity && !handlesWater
+                                          ? (propData['electricityAccountNumber'] ?? '')
+                                          : (propData['accountNumber'] ?? '');
+
+                                      final selectedAddress = propData['address'] ?? '';
                                       Provider.of<PropertyProvider>(context,
                                               listen: false)
-                                          .selectProperty(property!);
-                                      accountNumberAll =
-                                          documentSnapshot['accountNumber'];
-                                      locationGivenAll =
-                                          documentSnapshot['address'];
-
+                                          .selectProperty(property!,
+                                              handlesWater: handlesWater,
+                                              handlesElectricity:
+                                                  handlesElectricity);
+                                      // accountNumberAll =
+                                      //     documentSnapshot['accountNumber'];
+                                      // locationGivenAll =
+                                      //     documentSnapshot['address'];
+                                      accountNumberAll = selectedAccountNumber;
+                                      locationGivenAll = selectedAddress;
                                       Navigator.push(
                                           context,
                                           MaterialPageRoute(
@@ -4297,8 +4753,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
     _addressController.text = '';
     _areaCodeController.text = '';
     _wardController.text = '';
-    // _meterNumberController.text = '';
-    // _meterReadingController.text = '';
+    _meterNumberController.text = '';
+    _meterReadingController.text = '';
     _waterMeterController.text = '';
     _waterMeterReadingController.text = '';
     _cellNumberController.text = '';
@@ -4321,14 +4777,26 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if(handlesWater)...[
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
                       controller: _accountNumberController,
                       decoration:
-                          const InputDecoration(labelText: 'Account Number'),
+                          const InputDecoration(labelText: 'Water Account Number'),
                     ),
                   ),
+                  ],
+                  if(handlesElectricity)...[
+                    Visibility(
+                      visible: visibilityState1,
+                      child: TextField(
+                        controller: _electricityAccountController,
+                        decoration:
+                        const InputDecoration(labelText: 'Electricity Account Number'),
+                      ),
+                    ),
+                  ],
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
@@ -4357,22 +4825,22 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                       ),
                     ),
                   ),
-                  // Visibility(
-                  //   visible: visibilityState1,
-                  //   child: TextField(
-                  //     controller: _meterNumberController,
-                  //     decoration:
-                  //         const InputDecoration(labelText: 'Meter Number'),
-                  //   ),
-                  // ),
-                  // Visibility(
-                  //   visible: visibilityState1,
-                  //   child: TextField(
-                  //     controller: _meterReadingController,
-                  //     decoration:
-                  //         const InputDecoration(labelText: 'Meter Reading'),
-                  //   ),
-                  // ),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
+                      controller: _meterNumberController,
+                      decoration:
+                          const InputDecoration(labelText: 'Meter Number'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
+                      controller: _meterReadingController,
+                      decoration:
+                          const InputDecoration(labelText: 'Meter Reading'),
+                    ),
+                  ),
                   Visibility(
                     visible: visibilityState1,
                     child: TextField(
@@ -4427,11 +4895,12 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                     onPressed: () async {
                       final String accountNumber =
                           _accountNumberController.text;
+                      final String electricityAccountNumber=_electricityAccountController.text;
                       final String address = _addressController.text;
                       final String areaCode = _areaCodeController.text;
                       final String ward = _wardController.text;
-                      // final String meterNumber = _meterNumberController.text;
-                      // final String meterReading = _meterReadingController.text;
+                      final String meterNumber = _meterNumberController.text;
+                      final String meterReading = _meterReadingController.text;
                       final String waterMeterNumber =
                           _waterMeterController.text;
                       final String waterMeterReading =
@@ -4447,9 +4916,12 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                         "accountNumber": accountNumber,
                         "address": address,
                         "areaCode": areaCode,
+                        "electricityAccountNumber":electricityAccountNumber,
                         "ward": ward,
                         "water_meter_number": waterMeterNumber,
                         "water_meter_reading": waterMeterReading,
+                        "meter_number": meterNumber,
+                        "meter_reading": meterReading,
                         "cellNumber": cellNumber,
                         "firstName": firstName,
                         "lastName": lastName,
@@ -4473,8 +4945,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                       _accountNumberController.text = '';
                       _addressController.text = '';
                       _areaCodeController.text = '';
-                      // _meterNumberController.text = '';
-                      // _meterReadingController.text = '';
+                      _meterNumberController.text = '';
+                      _meterReadingController.text = '';
                       _waterMeterController.text = '';
                       _waterMeterReadingController.text = '';
                       _cellNumberController.text = '';
@@ -4573,22 +5045,22 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                       ),
                     ),
                   ),
-                  // Visibility(
-                  //   visible: visibilityState2,
-                  //   child: TextField(
-                  //     controller: _meterNumberController,
-                  //     decoration: const InputDecoration(
-                  //         labelText: 'Electricity Meter Number'),
-                  //   ),
-                  // ),
-                  // Visibility(
-                  //   visible: visibilityState1,
-                  //   child: TextField(
-                  //     controller: _meterReadingController,
-                  //     decoration: const InputDecoration(
-                  //         labelText: 'Electricity Meter Reading'),
-                  //   ),
-                  // ),
+                  Visibility(
+                    visible: visibilityState2,
+                    child: TextField(
+                      controller: _meterNumberController,
+                      decoration: const InputDecoration(
+                          labelText: 'Electricity Meter Number'),
+                    ),
+                  ),
+                  Visibility(
+                    visible: visibilityState1,
+                    child: TextField(
+                      controller: _meterReadingController,
+                      decoration: const InputDecoration(
+                          labelText: 'Electricity Meter Reading'),
+                    ),
+                  ),
                   Visibility(
                     visible: visibilityState2,
                     child: TextField(
@@ -4645,8 +5117,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                           _accountNumberController.text;
                       final String address = _addressController.text;
                       final int areaCode = int.parse(_areaCodeController.text);
-                      // final String meterNumber = _meterNumberController.text;
-                      // final String meterReading = _meterReadingController.text;
+                      final String meterNumber = _meterNumberController.text;
+                      final String meterReading = _meterReadingController.text;
                       final String waterMeterNumber =
                           _waterMeterController.text;
                       final String waterMeterReading =
@@ -4663,6 +5135,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                         "areaCode": areaCode,
                         "water_meter_number": waterMeterNumber,
                         "water_meter_reading": waterMeterReading,
+                        "meter_number": meterNumber,
+                        "meter_reading": meterReading,
                         "cellNumber": cellNumber,
                         "firstName": firstName,
                         "lastName": lastName,
@@ -4687,8 +5161,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                       _accountNumberController.text = '';
                       _addressController.text = '';
                       _areaCodeController.text = '';
-                      // _meterNumberController.text = '';
-                      // _meterReadingController.text = '';
+                      _meterNumberController.text = '';
+                      _meterReadingController.text = '';
                       _waterMeterController.text = '';
                       _waterMeterReadingController.text = '';
                       _cellNumberController.text = '';
@@ -5103,13 +5577,15 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                     child: const Text('Update'),
                     onPressed: () async {
                       Provider.of<PropertyProvider>(context, listen: false)
-                          .selectProperty(property!);
+                          .selectProperty(property!,
+                              handlesWater: handlesWater,
+                              handlesElectricity: handlesElectricity);
                       final String accountNumber =
                           _accountNumberController.text;
                       final String address = _addressController.text;
                       final int areaCode = int.parse(_areaCodeController.text);
-                      // final String meterNumber = _meterNumberController.text;
-                      // final String meterReading = _meterReadingController.text;
+                      final String meterNumber = _meterNumberController.text;
+                      final String meterReading = _meterReadingController.text;
                       final String waterMeterNumber =
                           _waterMeterController.text;
                       final String waterMeterReading =
@@ -5137,8 +5613,8 @@ class _UsersPropsAllState extends State<UsersPropsAll> with SingleTickerProvider
                         "accountNumber": accountNumber,
                         "address": address,
                         "areaCode": areaCode,
-                        // "meter_number": meterNumber,
-                        // "meter_reading": meterReading,
+                        "meter_number": meterNumber,
+                        "meter_reading": meterReading,
                         "water meter number": waterMeterNumber,
                         "water_meter_reading": waterMeterReading,
                         "cellNumber": cellNumber,

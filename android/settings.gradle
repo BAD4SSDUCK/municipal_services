@@ -1,11 +1,37 @@
-include ':app'
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
 
-def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
-def properties = new Properties()
+    // Make Flutter tools available to Gradle
+    def props = new Properties()
+    def lp = new File(rootDir, "local.properties")
+    if (lp.canRead()) lp.withReader("UTF-8") { props.load(it) }
+    def flutterSdkPath = props.getProperty("flutter.sdk")
+    assert flutterSdkPath != null : "flutter.sdk not set in local.properties"
+    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
+}
 
-assert localPropertiesFile.exists()
-localPropertiesFile.withReader("UTF-8") { reader -> properties.load(reader) }
+plugins {
+    id "dev.flutter.flutter-plugin-loader" version "1.0.0"
+    id "com.android.application" version "8.7.2" apply false
+    id "com.android.library"    version "8.7.2" apply false
+    id "org.jetbrains.kotlin.android" version "2.0.21" apply false
+    id "com.google.gms.google-services" version "4.4.2" apply false
+}
 
-def flutterSdkPath = properties.getProperty("flutter.sdk")
-assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
-apply from: "$flutterSdkPath/packages/flutter_tools/gradle/app_plugin_loader.gradle"
+dependencyResolutionManagement {
+    // PREFER_SETTINGS means repos here take precedence. Make sure the Flutter repos are here:
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+        // Flutter’s hosted artifacts (already present in your file)
+        maven { url "https://storage.googleapis.com/download.flutter.io" }
+    }
+}
+
+rootProject.name = "android"
+include(":app")

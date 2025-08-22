@@ -48,8 +48,10 @@ class WaterSanitationReportMenu extends StatefulWidget {
   });
 
   @override
-  State<WaterSanitationReportMenu> createState() => _WaterSanitationReportMenuState();
+  State<WaterSanitationReportMenu> createState() =>
+      _WaterSanitationReportMenuState();
 }
+
 class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
   final _faultDescriptionController = TextEditingController();
   final _addressController = TextEditingController();
@@ -131,7 +133,7 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
             .get();
 
         if (propertySnapshot.docs.isNotEmpty) {
-          if(mounted) {
+          if (mounted) {
             setState(() {
               propertyDocument = propertySnapshot.docs.first;
               isLoading = false;
@@ -185,13 +187,14 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
       }
     } catch (e) {
       print('Error fetching user details: $e');
-      if(mounted) {
+      if (mounted) {
         setState(() {
           isLoading = false; // Handle the error state appropriately
         });
       }
     }
   }
+
   /// Form text field decoration style
   InputDecoration formItemDecoration(String hintTextString, Icon iconItem) {
     return InputDecoration(
@@ -273,31 +276,41 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                             const Center(
                               child: Text(
                                 'Report Public Fault',
-                                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
+                                style: TextStyle(
+                                    fontSize: 19, fontWeight: FontWeight.w700),
                               ),
                             ),
                             const SizedBox(height: 20),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
                               child: DropdownButtonFormField<String>(
                                 value: faultDescriptionValue,
                                 isExpanded: true,
-                                items: waterSanitationIssues.map<DropdownMenuItem<String>>((String issue) {
+                                items: waterSanitationIssues
+                                    .map<DropdownMenuItem<String>>(
+                                        (String issue) {
                                   return DropdownMenuItem<String>(
                                     value: issue,
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                                      child: Text(issue, style: const TextStyle(fontSize: 16)),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 20),
+                                      child: Text(issue,
+                                          style: const TextStyle(fontSize: 16)),
                                     ),
                                   );
                                 }).toList(),
                                 onChanged: (String? newValue) {
-                                  if(mounted) {
+                                  if (mounted) {
                                     setState(() {
                                       faultDescriptionValue = newValue!;
-                                      showOtherTextField = faultDescriptionValue == 'Other';
+                                      showOtherTextField =
+                                          faultDescriptionValue == 'Other';
                                       _faultDescriptionController.text =
-                                          _faultDescriptionController.text = showOtherTextField ? '' : faultDescriptionValue;
+                                          _faultDescriptionController.text =
+                                              showOtherTextField
+                                                  ? ''
+                                                  : faultDescriptionValue;
                                     });
                                   }
                                 },
@@ -309,54 +322,69 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                             ),
                             if (showOtherTextField)
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10.0),
                                 child: TextFormField(
                                   controller: _faultDescriptionController,
                                   decoration: InputDecoration(
-                                    prefixIcon: const Icon(Icons.edit, color: Colors.black87),
+                                    prefixIcon: const Icon(Icons.edit,
+                                        color: Colors.black87),
                                     hintText: "Enter fault description...",
                                     border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(30), // Match others
-                                      borderSide: const BorderSide(color: Colors.grey),
+                                      borderRadius: BorderRadius.circular(
+                                          30), // Match others
+                                      borderSide:
+                                          const BorderSide(color: Colors.grey),
                                     ),
                                     enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(30), // Match others
-                                      borderSide: const BorderSide(color: Colors.grey),
+                                      borderRadius: BorderRadius.circular(
+                                          30), // Match others
+                                      borderSide:
+                                          const BorderSide(color: Colors.grey),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(30),
-                                      borderSide: const BorderSide(color: Colors.grey),
+                                      borderSide:
+                                          const BorderSide(color: Colors.grey),
                                     ),
                                     contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 14, vertical: 14), // Adjust padding to match others
+                                        horizontal: 14,
+                                        vertical:
+                                            14), // Adjust padding to match others
                                     fillColor: Colors.white,
                                     filled: true,
                                   ),
                                 ),
                               ),
-
-
                             const SizedBox(height: 20),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10.0),
                               child: TextFormField(
                                 controller: _addressController,
-                                validator: (val) => val == "" ? "Please enter an Address" : null,
+                                validator: (val) => val == ""
+                                    ? "Please enter an Address"
+                                    : null,
                                 decoration: formItemDecoration(
                                   "Address...",
-                                  const Icon(Icons.location_on_sharp, color: Colors.black87),
+                                  const Icon(Icons.location_on_sharp,
+                                      color: Colors.black87),
                                 ),
                               ),
                             ),
                             const SizedBox(height: 20),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10.0),
                               child: TextFormField(
                                 controller: _reporterPhoneController,
-                                validator: (val) => val == "" ? "Enter reporter's contact number" : null,
+                                validator: (val) => val == ""
+                                    ? "Enter reporter's contact number"
+                                    : null,
                                 decoration: formItemDecoration(
                                   "Reporter Phone Number...",
-                                  const Icon(Icons.phone_in_talk, color: Colors.black87),
+                                  const Icon(Icons.phone_in_talk,
+                                      color: Colors.black87),
                                 ),
                               ),
                             ),
@@ -364,14 +392,16 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                             Row(
                               children: [
                                 const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 50.0),
+                                  padding:
+                                      EdgeInsets.symmetric(horizontal: 50.0),
                                   child: Text(
                                     'Add Photo?',
                                     style: TextStyle(fontSize: 16),
                                   ),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20.0),
                                   child: GestureDetector(
                                     onTap: () {
                                       showImagePicker(context);
@@ -379,139 +409,183 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                                     child: CircleAvatar(
                                       radius: 50,
                                       backgroundColor: Colors.grey[400],
-                                      child: _photo != null || _webImageBytes != null
+                                      child: _photo != null ||
+                                              _webImageBytes != null
                                           ? ClipRRect(
-                                        borderRadius: BorderRadius.circular(50), // Keep it circular
-                                        child: kIsWeb
-                                            ? Image.memory(
-                                          _webImageBytes!,
-                                          width: 100,
-                                          height: 100,
-                                          fit: BoxFit.cover,
-                                        )
-                                            : Image.file(
-                                          _photo!,
-                                          width: 100,
-                                          height: 100,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      )
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                      50), // Keep it circular
+                                              child: kIsWeb
+                                                  ? Image.memory(
+                                                      _webImageBytes!,
+                                                      width: 100,
+                                                      height: 100,
+                                                      fit: BoxFit.cover,
+                                                    )
+                                                  : Image.file(
+                                                      _photo!,
+                                                      width: 100,
+                                                      height: 100,
+                                                      fit: BoxFit.cover,
+                                                    ),
+                                            )
                                           : Container(
-                                        decoration: BoxDecoration(
-                                            color: Colors.grey[200],
-                                            borderRadius: BorderRadius.circular(10)),
-                                        width: 60,
-                                        height: 60,
-                                        child:  Icon(
-                                          Icons.camera_alt,
-                                          color: Colors.grey[800],
-                                        ),
-                                      ),
+                                              decoration: BoxDecoration(
+                                                  color: Colors.grey[200],
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          10)),
+                                              width: 60,
+                                              height: 60,
+                                              child: Icon(
+                                                Icons.camera_alt,
+                                                color: Colors.grey[800],
+                                              ),
+                                            ),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-
                             const SizedBox(height: 20),
                             Center(
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 30.0),
                                 child: BasicIconButtonGreen(
-                                  onPress: buttonEnabled && (_addressController.text.isNotEmpty || !isAddressLoading)
+                                  onPress: buttonEnabled &&
+                                          (_addressController.text.isNotEmpty ||
+                                              !isAddressLoading)
                                       ? () async {
-                                    // Validate form fields
-                                    if (_addressController.text.isEmpty) {
-                                      Fluttertoast.showToast(
-                                        msg: "Please enter an address.",
-                                        gravity: ToastGravity.CENTER,
-                                      );
-                                      return;
-                                    }
-                                    if (_faultDescriptionController.text.isEmpty) {
-                                      Fluttertoast.showToast(
-                                        msg: "Please provide a fault description.",
-                                        gravity: ToastGravity.CENTER,
-                                      );
-                                      return;
-                                    }
-                                    if (_reporterPhoneController.text.isEmpty ||
-                                        !_reporterPhoneController.text.startsWith("+27")) {
-                                      Fluttertoast.showToast(
-                                        msg: "Please enter a valid phone number with +27 country code.",
-                                        gravity: ToastGravity.CENTER,
-                                      );
-                                      return;
-                                    }
+                                          // Validate form fields
+                                          if (_addressController.text.isEmpty) {
+                                            Fluttertoast.showToast(
+                                              msg: "Please enter an address.",
+                                              gravity: ToastGravity.CENTER,
+                                            );
+                                            return;
+                                          }
+                                          if (_faultDescriptionController
+                                              .text.isEmpty) {
+                                            Fluttertoast.showToast(
+                                              msg:
+                                                  "Please provide a fault description.",
+                                              gravity: ToastGravity.CENTER,
+                                            );
+                                            return;
+                                          }
+                                          if (_reporterPhoneController
+                                                  .text.isEmpty ||
+                                              !_reporterPhoneController.text
+                                                  .startsWith("+27")) {
+                                            Fluttertoast.showToast(
+                                              msg:
+                                                  "Please enter a valid phone number with +27 country code.",
+                                              gravity: ToastGravity.CENTER,
+                                            );
+                                            return;
+                                          }
 
-                                    // Check if photo is attached
-                                    if (_photo != null || _webImageBytes != null) {
-                                      await verifyAddress();
-                                      if (addressExists) {
-                                        await uploadFaultFile();
-                                        Fluttertoast.showToast(
-                                          msg: "Fault has been reported successfully with an image!",
-                                          gravity: ToastGravity.CENTER,
-                                        );
-                                        Navigator.pop(context);
-                                      } else {
-                                        Fluttertoast.showToast(
-                                          msg: "Please input a valid address.",
-                                          gravity: ToastGravity.CENTER,
-                                        );
-                                      }
-                                    } else {
-                                      // If no photo is attached, confirm reporting without an image
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return AlertDialog(
-                                            shape: const RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.all(Radius.circular(16))),
-                                            title: const Text("Report Fault Without Image"),
-                                            content: const Text(
-                                                "Reporting a fault without a photo is possible. You can add a photo later."),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                child: const Text("Cancel", style: TextStyle(color: Colors.red)),
-                                              ),
-                                              ElevatedButton(
-                                                style: ElevatedButton.styleFrom(
-                                                    backgroundColor: Colors.green),
-                                                onPressed: () async {
-                                                  await verifyAddress();
-                                                  if (addressExists) {
-                                                    await uploadFault();
-                                                    Fluttertoast.showToast(
-                                                      msg: "Fault has been reported successfully!",
-                                                      gravity: ToastGravity.CENTER,
-                                                    );
-                                                    Navigator.of(context).pop(); // Close confirmation
-                                                    Navigator.pop(context); // Close fault dialog
-                                                  } else {
-                                                    Fluttertoast.showToast(
-                                                      msg: "Please input a valid address.",
-                                                      gravity: ToastGravity.CENTER,
-                                                    );
-                                                  }
-                                                },
-                                                child: const Text("Submit",style: TextStyle(color: Colors.white),),
-                                              ),
-                                            ],
+                                          // Check if photo is attached
+                                          if (_photo != null ||
+                                              _webImageBytes != null) {
+                                            await verifyAddress();
+                                            if (addressExists) {
+                                              await uploadFaultFile();
+                                              Fluttertoast.showToast(
+                                                msg:
+                                                    "Fault has been reported successfully with an image!",
+                                                gravity: ToastGravity.CENTER,
+                                              );
+                                              Navigator.pop(context);
+                                            } else {
+                                              Fluttertoast.showToast(
+                                                msg:
+                                                    "Please input a valid address.",
+                                                gravity: ToastGravity.CENTER,
+                                              );
+                                            }
+                                          } else {
+                                            // If no photo is attached, confirm reporting without an image
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) {
+                                                return AlertDialog(
+                                                  shape:
+                                                      const RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius.all(
+                                                                  Radius
+                                                                      .circular(
+                                                                          16))),
+                                                  title: const Text(
+                                                      "Report Fault Without Image"),
+                                                  content: const Text(
+                                                      "Reporting a fault without a photo is possible. You can add a photo later."),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.of(context)
+                                                            .pop();
+                                                      },
+                                                      child: const Text(
+                                                          "Cancel",
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.red)),
+                                                    ),
+                                                    ElevatedButton(
+                                                      style: ElevatedButton
+                                                          .styleFrom(
+                                                              backgroundColor:
+                                                                  Colors.green),
+                                                      onPressed: () async {
+                                                        await verifyAddress();
+                                                        if (addressExists) {
+                                                          await uploadFault();
+                                                          Fluttertoast
+                                                              .showToast(
+                                                            msg:
+                                                                "Fault has been reported successfully!",
+                                                            gravity:
+                                                                ToastGravity
+                                                                    .CENTER,
+                                                          );
+                                                          Navigator.of(context)
+                                                              .pop(); // Close confirmation
+                                                          Navigator.pop(
+                                                              context); // Close fault dialog
+                                                        } else {
+                                                          Fluttertoast
+                                                              .showToast(
+                                                            msg:
+                                                                "Please input a valid address.",
+                                                            gravity:
+                                                                ToastGravity
+                                                                    .CENTER,
+                                                          );
+                                                        }
+                                                      },
+                                                      child: const Text(
+                                                        "Submit",
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.white),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            );
+                                          }
+                                        }
+                                      : () {
+                                          Fluttertoast.showToast(
+                                            msg:
+                                                "Please wait until the address is loaded.",
+                                            gravity: ToastGravity.CENTER,
                                           );
                                         },
-                                      );
-                                    }
-                                  }
-                                      : () {
-                                    Fluttertoast.showToast(
-                                      msg: "Please wait until the address is loaded.",
-                                      gravity: ToastGravity.CENTER,
-                                    );
-                                  },
                                   labelText: 'Report Fault',
                                   fSize: 20,
                                   faIcon: const FaIcon(Icons.report),
@@ -529,402 +603,103 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
               ),
               propertyDocument != null
                   ? Card(
-                margin: const EdgeInsets.only(
-                    left: 10, right: 10, top: 10, bottom: 0),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Center(
-                        child: Text(
-                          'Property Information',
-                          style: TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.w700),
+                      margin: const EdgeInsets.only(
+                          left: 10, right: 10, top: 10, bottom: 0),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Center(
+                              child: Text(
+                                'Property Information',
+                                style: TextStyle(
+                                    fontSize: 19, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              'Account Number: ${propertyDocument!['accountNumber']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              'Street Address: ${propertyDocument!['address']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              'Area Code: ${propertyDocument!['areaCode'].toString()}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              'Property Bill: ${propertyDocument!['eBill']}',
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400),
+                            ),
+                            const SizedBox(height: 10),
+                            Center(
+                              child: BasicIconButtonGreen(
+                                onPress: () {
+                                  _addNewFaultReport(); // Your fault reporting logic
+                                },
+                                labelText: 'Report Property Fault',
+                                fSize: 16,
+                                faIcon: const FaIcon(Icons.report),
+                                fgColor: Colors.orangeAccent,
+                                btSize: const Size(150, 40),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Account Number: ${propertyDocument!['accountNumber']}',
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        'Street Address: ${propertyDocument!['address']}',
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        'Area Code: ${propertyDocument!['areaCode'].toString()}',
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        'Property Bill: ${propertyDocument!['eBill']}',
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w400),
-                      ),
-                      const SizedBox(height: 10),
-                      Center(
-                        child: BasicIconButtonGreen(
-                          onPress: () {
-                            _addNewFaultReport(); // Your fault reporting logic
-                          },
-                          labelText: 'Report Property Fault',
-                          fSize: 16,
-                          faIcon: const FaIcon(Icons.report),
-                          fgColor: Colors.orangeAccent,
-                          btSize: const Size(150, 40),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              )
+                    )
                   : const Center(child: CircularProgressIndicator()),
               Column(
                 children: [
                   Flexible(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
-                      child: _faultData != null
-                          ? StreamBuilder<QuerySnapshot>(
-                        stream: _faultData
-                            .orderBy('dateReported', descending: true)
+                      child: StreamBuilder<QuerySnapshot>(
+                        stream:  _faultData
+                            .where('reporterContact', isEqualTo: userPhone)
+                            .where('address',
+                                isEqualTo: widget.currentProperty.address)
                             .snapshots(),
                         builder: (context,
-                            AsyncSnapshot<QuerySnapshot>
-                            streamSnapshot) {
-                          if (streamSnapshot.hasData) {
-                            return ListView.builder(
-                              itemCount:
-                              streamSnapshot.data!.docs.length,
-                              itemBuilder: (context, index) {
-                                final DocumentSnapshot
-                                documentSnapshot =
-                                streamSnapshot.data!.docs[index];
-                                String status;
-                                if (documentSnapshot['faultResolved'] ==
-                                    false) {
-                                  status = "Pending";
-                                } else {
-                                  status = "Completed";
-                                }
-                                if (streamSnapshot.data!.docs[index]
-                                ['faultResolved'] ==
-                                    false &&
-                                    streamSnapshot.data!.docs[index]
-                                    ['reporterContact'] ==
-                                        userPhone) {
-                                  return Card(
-                                    margin: const EdgeInsets.only(
-                                        left: 10,
-                                        right: 10,
-                                        top: 10,
-                                        bottom: 5),
-                                    child: Padding(
-                                      padding:
-                                      const EdgeInsets.all(20.0),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                        children: [
-                                          const Center(
-                                            child: Text(
-                                              'Fault Information',
-                                              style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight:
-                                                  FontWeight.w700),
-                                            ),
-                                          ),
-                                          const SizedBox(
-                                            height: 10,
-                                          ),
-                                          Text(
-                                            'Reference Number: ${documentSnapshot['ref']}',
-                                            style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight:
-                                                FontWeight.w400),
-                                          ),
-                                          const SizedBox(
-                                            height: 5,
-                                          ),
-                                          Column(
-                                            children: [
-                                              if (documentSnapshot[
-                                              'accountNumber'] !=
-                                                  "") ...[
-                                                Text(
-                                                  'Reporter Account Number: ${documentSnapshot['accountNumber']}',
-                                                  style: const TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                      FontWeight
-                                                          .w400),
-                                                ),
-                                                const SizedBox(
-                                                  height: 5,
-                                                ),
-                                              ] else
-                                                ...[],
-                                            ],
-                                          ),
-                                          Text(
-                                            'Street Address of Fault: ${documentSnapshot['address']}',
-                                            style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight:
-                                                FontWeight.w400),
-                                          ),
-                                          const SizedBox(
-                                            height: 5,
-                                          ),
-                                          Text(
-                                            'Date of Fault Report: ${documentSnapshot['dateReported']}',
-                                            style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight:
-                                                FontWeight.w400),
-                                          ),
-                                          const SizedBox(
-                                            height: 5,
-                                          ),
-                                          Column(
-                                            children: [
-                                              if (documentSnapshot[
-                                              'faultStage'] ==
-                                                  1) ...[
-                                                Text(
-                                                  'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
-                                                  style: const TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                      FontWeight
-                                                          .w500,
-                                                      color: Colors
-                                                          .deepOrange),
-                                                ),
-                                                const SizedBox(
-                                                  height: 5,
-                                                ),
-                                              ] else if (documentSnapshot[
-                                              'faultStage'] ==
-                                                  2) ...[
-                                                Text(
-                                                  'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
-                                                  style:
-                                                  const TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                      FontWeight
-                                                          .w500,
-                                                      color: Colors
-                                                          .orange),
-                                                ),
-                                                const SizedBox(
-                                                  height: 5,
-                                                ),
-                                              ] else if (documentSnapshot[
-                                              'faultStage'] ==
-                                                  3) ...[
-                                                Text(
-                                                  'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
-                                                  style: const TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                      FontWeight
-                                                          .w500,
-                                                      color: Colors
-                                                          .orangeAccent),
-                                                ),
-                                                const SizedBox(
-                                                  height: 5,
-                                                ),
-                                              ] else if (documentSnapshot[
-                                              'faultStage'] ==
-                                                  4) ...[
-                                                Text(
-                                                  'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
-                                                  style: const TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                      FontWeight
-                                                          .w500,
-                                                      color: Colors
-                                                          .lightGreen),
-                                                ),
-                                                const SizedBox(
-                                                  height: 5,
-                                                ),
-                                              ] else if (documentSnapshot[
-                                              'faultStage'] ==
-                                                  5) ...[
-                                                Text(
-                                                  'Fault Stage: ${documentSnapshot['faultStage'].toString()}',
-                                                  style: const TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                      FontWeight
-                                                          .w500,
-                                                      color: Colors
-                                                          .lightGreen),
-                                                ),
-                                                const SizedBox(
-                                                  height: 5,
-                                                ),
-                                              ] else
-                                                ...[],
-                                            ],
-                                          ),
-                                          Text(
-                                            'Fault Type: ${documentSnapshot['faultType']}',
-                                            style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight:
-                                                FontWeight.w400),
-                                          ),
-                                          const SizedBox(
-                                            height: 5,
-                                          ),
-                                          Column(
-                                            children: [
-                                              if (documentSnapshot[
-                                              'faultDescription'] !=
-                                                  "") ...[
-                                                Text(
-                                                  'Fault Description: ${documentSnapshot['faultDescription']}',
-                                                  style: const TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                      FontWeight
-                                                          .w400),
-                                                ),
-                                                const SizedBox(
-                                                  height: 5,
-                                                ),
-                                              ] else
-                                                ...[],
-                                            ],
-                                          ),
-                                          Text(
-                                            'Resolve State: $status',
-                                            style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight:
-                                                FontWeight.w400),
-                                          ),
-                                          const SizedBox(
-                                            height: 10,
-                                          ),
-                                          Center(
-                                            child: Row(
-                                              mainAxisAlignment:
-                                              MainAxisAlignment
-                                                  .center,
-                                              children: [
-                                                BasicIconButtonGreen(
-                                                  onPress: () {
-                                                    accountNumberRep =
-                                                    documentSnapshot[
-                                                    'accountNumber'];
-                                                    locationGivenRep =
-                                                    documentSnapshot[
-                                                    'address'];
+                            AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+                          print(
+                              '📡 Stream connection state: ${streamSnapshot.connectionState}');
+                          print('📱 userPhone: $userPhone');
+                          print(
+                              '🏠 address: ${widget.currentProperty.address}');
 
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder:
-                                                            (context) =>
-                                                            MapScreenProp(
-                                                              propAddress:
-                                                              locationGivenRep,
-                                                              propAccNumber:
-                                                              accountNumberRep,
-                                                            ),
-                                                      ),
-                                                    );
-                                                  },
-                                                  labelText: 'Location',
-                                                  fSize: 14,
-                                                  faIcon: const FaIcon(
-                                                      Icons.map),
-                                                  fgColor:
-                                                  Colors.purple,
-                                                  btSize: const Size(
-                                                      40, 40),
-                                                ),
-                                                Expanded(
-                                                  child: BasicIconButtonGreen(
-                                                    onPress: () {
-                                                      locationGivenRep =
-                                                      documentSnapshot[
-                                                      'address'];
-                                                      reporterDateGiven =
-                                                      documentSnapshot[
-                                                      'dateReported'];
-                                                      String? districtId =
-                                                          widget
-                                                              .currentProperty
-                                                              .districtId;
-                                                      String
-                                                      municipalityId =
-                                                          widget
-                                                              .currentProperty
-                                                              .municipalityId;
-                                                      Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder:
-                                                              (context) =>
-                                                              FaultImageUpload(
-                                                                propertyAddress:
-                                                                locationGivenRep,
-                                                                reportedDate:
-                                                                reporterDateGiven,
-                                                              ),
-                                                        ),
-                                                      );
-                                                    },
-                                                    labelText: 'Image +',
-                                                    fSize: 14,
-                                                    faIcon: const FaIcon(
-                                                        Icons
-                                                            .photo_camera),
-                                                    fgColor:
-                                                    Colors.blueGrey,
-                                                    btSize: const Size(
-                                                        40, 40),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  return const SizedBox();
-                                }
-                              },
-                            );
+                          if (streamSnapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            print('⏳ Waiting for faultReporting data...');
+                            return const Center(
+                                child: CircularProgressIndicator());
                           }
-                          return const Padding(
-                            padding: EdgeInsets.all(10.0),
-                            child: Center(
-                              child: Card(
-                                margin: EdgeInsets.all(10),
-                                child: Center(
+
+                          if (streamSnapshot.hasError) {
+                            print('❌ Stream error: ${streamSnapshot.error}');
+                            return const Center(
+                                child: Text('Something went wrong.'));
+                          }
+
+                          if (!streamSnapshot.hasData ||
+                              streamSnapshot.data!.docs.isEmpty) {
+                            print('📭 No faults found matching criteria.');
+                            return const Padding(
+                              padding: EdgeInsets.all(10.0),
+                              child: Center(
+                                child: Card(
+                                  margin: EdgeInsets.all(10),
                                   child: Padding(
                                     padding: EdgeInsets.all(8.0),
                                     child: Text(
@@ -937,11 +712,157 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                                   ),
                                 ),
                               ),
-                            ),
+                            );
+                          }
+
+                          print(
+                              '✅ Faults found: ${streamSnapshot.data!.docs.length}');
+
+                          return ListView.builder(
+                            itemCount: streamSnapshot.data!.docs.length,
+                            itemBuilder: (context, index) {
+                              final documentSnapshot =
+                                  streamSnapshot.data!.docs[index];
+                              final bool faultResolved =
+                                  documentSnapshot['faultResolved'];
+                              final String status =
+                                  faultResolved ? "Completed" : "Pending";
+
+                              print(
+                                  '📄 Processing fault #$index: ${documentSnapshot.id}');
+                              print(
+                                  '   - Contact: ${documentSnapshot['reporterContact']}');
+                              print(
+                                  '   - Address: ${documentSnapshot['address']}');
+                              print('   - Status: $status');
+                           if (documentSnapshot['address'] == widget.currentProperty.address) {
+                              return Card(
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 5),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Center(
+                                        child: Text(
+                                          'Fault Information',
+                                          style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                          'Reference Number: ${documentSnapshot['ref']}'),
+                                      if (documentSnapshot['accountNumber'] !=
+                                          "") ...[
+                                        const SizedBox(height: 5),
+                                        Text(
+                                            'Reporter Account Number: ${documentSnapshot['accountNumber']}'),
+                                      ],
+                                      const SizedBox(height: 5),
+                                      Text(
+                                          'Street Address of Fault: ${documentSnapshot['address']}'),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                          'Date of Fault Report: ${documentSnapshot['dateReported']}'),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        'Fault Stage: ${documentSnapshot['faultStage']}',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          color: {
+                                                1: Colors.deepOrange,
+                                                2: Colors.orange,
+                                                3: Colors.orangeAccent,
+                                                4: Colors.lightGreen,
+                                                5: Colors.green
+                                              }[documentSnapshot[
+                                                  'faultStage']] ??
+                                              Colors.grey,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                          'Fault Type: ${documentSnapshot['faultType']}'),
+                                      if (documentSnapshot[
+                                              'faultDescription'] !=
+                                          "") ...[
+                                        const SizedBox(height: 5),
+                                        Text(
+                                            'Fault Description: ${documentSnapshot['faultDescription']}'),
+                                      ],
+                                      const SizedBox(height: 5),
+                                      Text('Resolve State: $status'),
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          BasicIconButtonGreen(
+                                            onPress: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      MapScreenProp(
+                                                    propAddress:
+                                                        documentSnapshot[
+                                                            'address'],
+                                                    propAccNumber:
+                                                        documentSnapshot[
+                                                            'accountNumber'],
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            labelText: 'Location',
+                                            fSize: 14,
+                                            faIcon: const FaIcon(Icons.map),
+                                            fgColor: Colors.purple,
+                                            btSize: const Size(40, 40),
+                                          ),
+                                          Expanded(
+                                            child: BasicIconButtonGreen(
+                                              onPress: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        FaultImageUpload(
+                                                      propertyAddress:
+                                                          documentSnapshot[
+                                                              'address'],
+                                                      reportedDate:
+                                                          documentSnapshot[
+                                                              'dateReported'],
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              labelText: 'Image +',
+                                              fSize: 14,
+                                              faIcon: const FaIcon(
+                                                  Icons.photo_camera),
+                                              fgColor: Colors.blueGrey,
+                                              btSize: const Size(40, 40),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                           } else {
+                             return const SizedBox(); // Skip unrelated faults
+                           }
+                            },
                           );
                         },
-                      )
-                          : const Center(child: CircularProgressIndicator()),
+                      ),
                     ),
                   ),
                 ],
@@ -1027,11 +948,11 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
 
   Future<void> GetAddressFromLatLong(Position position) async {
     List<Placemark> placemarks =
-    await placemarkFromCoordinates(position.latitude, position.longitude);
+        await placemarkFromCoordinates(position.latitude, position.longitude);
     print(placemarks);
     Placemark place = placemarks[0];
     address =
-    '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+        '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
   }
 
   //Used to set the _photo file as image from gallery
@@ -1074,7 +995,7 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
     );
 
     if (result != null && result.files.single.bytes != null) {
-      if(mounted) {
+      if (mounted) {
         setState(() {
           _webImageBytes = result.files.single.bytes;
           _webImageName = result.files.single.name;
@@ -1091,7 +1012,7 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
     );
 
     if (pickedFile != null) {
-      if(mounted) {
+      if (mounted) {
         setState(() {
           _photo = File(pickedFile.path);
         });
@@ -1107,7 +1028,7 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
     );
 
     if (pickedFile != null) {
-      if(mounted) {
+      if (mounted) {
         setState(() {
           _photo = File(pickedFile.path);
         });
@@ -1119,10 +1040,11 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
   Future<void> showImagePicker(BuildContext context) async {
     if (kIsWeb) {
       print("📂 Attempting to pick an image (Web)");
-      FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.image);
+      FilePickerResult? result =
+          await FilePicker.platform.pickFiles(type: FileType.image);
 
       if (result != null && result.files.single.bytes != null) {
-        if(mounted) {
+        if (mounted) {
           setState(() {
             _webImageBytes = result.files.single.bytes;
             _webImageName = result.files.single.name;
@@ -1132,7 +1054,7 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
       } else {
         print("❌ No image selected (Web)");
       }
-  } else {
+    } else {
       // For mobile devices (Gallery or Camera)
       showModalBottomSheet(
         context: context,
@@ -1163,7 +1085,6 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
       );
     }
   }
-
 
   showImage(String image) {
     return Image.memory(base64Decode(image));
@@ -1293,8 +1214,10 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
     String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
 
     // Ensure address formatting is correct
-    String addressFault = _addressController.text.isEmpty ? address : _addressController.text;
-    addressFault = addressFault.replaceAll(RegExp(r'[\/:*?"<>|]'), ''); // Remove invalid characters
+    String addressFault =
+        _addressController.text.isEmpty ? address : _addressController.text;
+    addressFault = addressFault.replaceAll(
+        RegExp(r'[\/:*?"<>|]'), ''); // Remove invalid characters
 
     // Ensure correct file extension for mobile
     String fileExtension = kIsWeb ? '.png' : pathing.extension(_photo!.path);
@@ -1341,13 +1264,15 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
         // Upload file from web as bytes
         await ref.putData(
           _webImageBytes!,
-          firebase_storage.SettableMetadata(contentType: 'image/png'), // Ensure it's a PNG for web
+          firebase_storage.SettableMetadata(
+              contentType: 'image/png'), // Ensure it's a PNG for web
         );
       } else if (_photo != null) {
         // Upload file from mobile (File object)
         await ref.putFile(
           _photo!,
-          firebase_storage.SettableMetadata(contentType: 'image/jpeg'), // Ensure it's a JPEG for mobile
+          firebase_storage.SettableMetadata(
+              contentType: 'image/jpeg'), // Ensure it's a JPEG for mobile
         );
       }
 
@@ -1412,7 +1337,7 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
     _addressController.text = '';
     _faultDescriptionController.text = '';
     addressExists = false;
-    if(mounted) {
+    if (mounted) {
       setState(() {
         dropdownValue = 'Select Fault Type';
       });
@@ -1482,23 +1407,27 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
     // Set default values from the current property
     String addressField = widget.currentProperty.address;
     String accountNumber = widget.currentProperty.accountNo;
-         if(mounted) {
-           setState(() {
-             faultDescriptionValue = 'Select Fault Description';
-             _faultDescriptionController.text = '';
-           });
-         }
+    if (mounted) {
+      setState(() {
+        faultDescriptionValue = 'Select Fault Description';
+        _faultDescriptionController.text = '';
+      });
+    }
     // Use showGeneralDialog for a full-screen dialog
     await showGeneralDialog(
       context: context,
       barrierDismissible: false,
       barrierLabel: 'FullScreenDialog',
-      pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
+      pageBuilder: (BuildContext context, Animation<double> animation,
+          Animation<double> secondaryAnimation) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Scaffold(
               appBar: AppBar(
-                title: const Text('Report Property Fault',style: TextStyle(color: Colors.white),),
+                title: const Text(
+                  'Report Property Fault',
+                  style: TextStyle(color: Colors.white),
+                ),
                 backgroundColor: Colors.green,
                 leading: IconButton(
                   icon: const Icon(Icons.close, color: Colors.white),
@@ -1519,23 +1448,30 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                       DropdownButtonFormField<String>(
                         value: faultDescriptionValue,
                         isExpanded: true,
-                        menuMaxHeight: 400, // Expands dropdown for better visibility
-                        items: waterSanitationIssues.map<DropdownMenuItem<String>>((String issue) {
+                        menuMaxHeight:
+                            400, // Expands dropdown for better visibility
+                        items: waterSanitationIssues
+                            .map<DropdownMenuItem<String>>((String issue) {
                           return DropdownMenuItem<String>(
                             value: issue,
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              child: Text(issue, style: const TextStyle(fontSize: 18)),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20),
+                              child: Text(issue,
+                                  style: const TextStyle(fontSize: 18)),
                             ),
                           );
                         }).toList(),
                         onChanged: (String? newValue) {
                           setModalState(() {
                             faultDescriptionValue = newValue!;
-                            showOtherTextField = faultDescriptionValue == 'Other';
+                            showOtherTextField =
+                                faultDescriptionValue == 'Other';
                             _faultDescriptionController.text =
                                 _faultDescriptionController.text =
-                            showOtherTextField ? '' : faultDescriptionValue;
+                                    showOtherTextField
+                                        ? ''
+                                        : faultDescriptionValue;
                           });
                         },
                         decoration: InputDecoration(
@@ -1544,7 +1480,8 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 20, horizontal: 15),
                         ),
                       ),
                       if (showOtherTextField)
@@ -1553,28 +1490,35 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                           child: TextFormField(
                             controller: _faultDescriptionController,
                             decoration: InputDecoration(
-                              prefixIcon: const Icon(Icons.edit, color: Colors.black87),
+                              prefixIcon:
+                                  const Icon(Icons.edit, color: Colors.black87),
                               hintText: "Enter fault description...",
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30), // Match others
-                                borderSide: const BorderSide(color: Colors.grey),
+                                borderRadius:
+                                    BorderRadius.circular(30), // Match others
+                                borderSide:
+                                    const BorderSide(color: Colors.grey),
                               ),
                               enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30), // Match others
-                                borderSide: const BorderSide(color: Colors.grey),
+                                borderRadius:
+                                    BorderRadius.circular(30), // Match others
+                                borderSide:
+                                    const BorderSide(color: Colors.grey),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(30),
-                                borderSide: const BorderSide(color: Colors.grey),
+                                borderSide:
+                                    const BorderSide(color: Colors.grey),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 14), // Adjust padding to match others
+                                  horizontal: 14,
+                                  vertical:
+                                      14), // Adjust padding to match others
                               fillColor: Colors.white,
                               filled: true,
                             ),
                           ),
                         ),
-
 
                       const SizedBox(height: 20),
 
@@ -1589,8 +1533,10 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
-                          prefixIcon: const Icon(Icons.location_on_sharp, color: Colors.black87),
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 20, horizontal: 15),
+                          prefixIcon: const Icon(Icons.location_on_sharp,
+                              color: Colors.black87),
                         ),
                       ),
 
@@ -1606,8 +1552,10 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
-                          prefixIcon: const Icon(Icons.account_circle, color: Colors.black87),
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 20, horizontal: 15),
+                          prefixIcon: const Icon(Icons.account_circle,
+                              color: Colors.black87),
                         ),
                       ),
 
@@ -1643,10 +1591,15 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                                     TextButton(
                                       onPressed: () async {
                                         DateTime now = DateTime.now();
-                                        String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-                                        const String faultType = 'Water & Sanitation';
-                                        final String refNum = UniqueKey().toString();
-                                        final String faultDescription = _faultDescriptionController.text;
+                                        String formattedDate =
+                                            DateFormat('yyyy-MM-dd – kk:mm')
+                                                .format(now);
+                                        const String faultType =
+                                            'Water & Sanitation';
+                                        final String refNum =
+                                            UniqueKey().toString();
+                                        final String faultDescription =
+                                            _faultDescriptionController.text;
 
                                         if (faultDescription.isNotEmpty) {
                                           await _faultData.add({
@@ -1669,7 +1622,8 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
                                             "managerCom3": '',
                                             "managerReturnCom": '',
                                             "attendeeReturnCom": '',
-                                            "faultDescription": faultDescription,
+                                            "faultDescription":
+                                                faultDescription,
                                             "depAllocated": '',
                                             "faultResolved": false,
                                             "dateReported": formattedDate,
@@ -1678,28 +1632,33 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
 
                                           // Reset fields
                                           _faultDescriptionController.text = '';
-                                          faultDescriptionValue = 'Select Fault Description';
+                                          faultDescriptionValue =
+                                              'Select Fault Description';
 
                                           Fluttertoast.showToast(
-                                            msg: "Fault has been reported successfully!",
+                                            msg:
+                                                "Fault has been reported successfully!",
                                             gravity: ToastGravity.CENTER,
                                           );
 
-                                          Navigator.of(context).pop(); // Close confirmation dialog
-                                          Navigator.of(context).pop(); // Close full-screen dialog
+                                          Navigator.of(context)
+                                              .pop(); // Close confirmation dialog
+                                          Navigator.of(context)
+                                              .pop(); // Close full-screen dialog
                                         } else {
                                           Fluttertoast.showToast(
-                                            msg: "Please fill in all required fields.",
+                                            msg:
+                                                "Please fill in all required fields.",
                                             gravity: ToastGravity.CENTER,
                                           );
                                         }
                                       },
                                       child: const Text(
                                         "Okay",
-                                        style: TextStyle(color: Colors.blue, fontSize: 18),
+                                        style: TextStyle(
+                                            color: Colors.blue, fontSize: 18),
                                       ),
                                     ),
-
                                   ],
                                 );
                               },
@@ -1721,5 +1680,4 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
       },
     );
   }
-
 }

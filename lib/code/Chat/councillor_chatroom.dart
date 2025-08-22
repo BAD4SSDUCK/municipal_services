@@ -177,7 +177,11 @@ class _CouncillorChatListScreenState extends State<CouncillorChatListScreen> {
         var propertyDoc = localProperties.docs.first;
         municipalityId = propertyDoc['municipalityId'];
         isLocalMunicipality = true;
-        regularUserAccountNumber = propertyDoc['accountNumber'];
+        regularUserAccountNumber =
+        propertyDoc.data().toString().contains('electricityAccountNumber')
+            ? propertyDoc['electricityAccountNumber']
+            : propertyDoc['accountNumber'];
+
         print(
             "Local municipality property found. Municipality ID: $municipalityId, Account Number: $regularUserAccountNumber");
       } else {
@@ -193,7 +197,11 @@ class _CouncillorChatListScreenState extends State<CouncillorChatListScreen> {
           municipalityId = propertyDoc['municipalityId'];
           districtId = propertyDoc['districtId'];
           isLocalMunicipality = false;
-          regularUserAccountNumber = propertyDoc['accountNumber'];
+          regularUserAccountNumber =
+          propertyDoc.data().toString().contains('electricityAccountNumber')
+              ? propertyDoc['electricityAccountNumber']
+              : propertyDoc['accountNumber'];
+
           print(
               "District municipality property found. Municipality ID: $municipalityId, District ID: $districtId, Account Number: $regularUserAccountNumber");
         } else {
@@ -227,8 +235,7 @@ class _CouncillorChatListScreenState extends State<CouncillorChatListScreen> {
   Future<bool> checkIfCouncillor() async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? selectedPropertyAccountNumber =
-      prefs.getString('selectedPropertyAccountNo');
+      String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
 
       if (selectedPropertyAccountNumber == null) {
         print('Error: selectedPropertyAccountNumber is null.');
@@ -240,16 +247,21 @@ class _CouncillorChatListScreenState extends State<CouncillorChatListScreen> {
           .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
           .get();
 
+      if (propertySnapshot.docs.isEmpty) {
+        propertySnapshot = await FirebaseFirestore.instance
+            .collectionGroup('properties')
+            .where('electricityAccountNumber', isEqualTo: selectedPropertyAccountNumber)
+            .get();
+      }
+
       if (propertySnapshot.docs.isNotEmpty) {
         DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
         bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
         String municipalityId = propertyDoc.get('municipalityId');
-        String? districtId =
-        propertyDoc.data().toString().contains('districtId')
+        String? districtId = propertyDoc.data().toString().contains('districtId')
             ? propertyDoc.get('districtId')
             : null;
 
-        // Check the councillor collection
         QuerySnapshot councillorSnapshot = isLocalMunicipality
             ? await FirebaseFirestore.instance
             .collection('localMunicipalities')
@@ -283,6 +295,7 @@ class _CouncillorChatListScreenState extends State<CouncillorChatListScreen> {
   }
 
 
+
   Future<void> checkForUnreadCouncilMessages() async {
     String? userPhone = FirebaseAuth.instance.currentUser?.phoneNumber;
 
@@ -304,7 +317,14 @@ class _CouncillorChatListScreenState extends State<CouncillorChatListScreen> {
             .collectionGroup('properties')
             .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
             .get()
-            .then((propertySnapshot) {
+            .then((propertySnapshot) async {
+          if (propertySnapshot.docs.isEmpty) {
+            propertySnapshot = await FirebaseFirestore.instance
+                .collectionGroup('properties')
+                .where('electricityAccountNumber', isEqualTo: selectedPropertyAccountNumber)
+                .get();
+          }
+
           if (propertySnapshot.docs.isNotEmpty) {
             DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
             bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
@@ -403,13 +423,13 @@ class _CouncillorChatListScreenState extends State<CouncillorChatListScreen> {
   void initializeChatRoomsStream() {
     if (municipalityId.isEmpty || widget.councillorPhone.isEmpty) {
       print("Error: Municipality ID or Councillor Phone is empty.");
-      userChats = Stream.empty(); // Use an empty stream as a fallback
+      userChats = const Stream.empty(); // Use an empty stream as a fallback
       return;
     }
 
     if (!isLocalMunicipality && districtId.isEmpty) {
       print("Error: District ID is empty for a district municipality.");
-      userChats = Stream.empty(); // Use an empty stream as a fallback
+      userChats = const Stream.empty(); // Use an empty stream as a fallback
       return;
     }
 
@@ -442,7 +462,7 @@ class _CouncillorChatListScreenState extends State<CouncillorChatListScreen> {
               .municipalityId}/chatRoomCouncillor/${widget.councillorPhone}'}");
     } catch (e) {
       print("Error initializing chatRooms stream: $e");
-      userChats = Stream.empty(); // Use an empty stream as a fallback
+      userChats = const Stream.empty(); // Use an empty stream as a fallback
     }
   }
 

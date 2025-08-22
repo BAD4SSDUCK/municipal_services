@@ -81,11 +81,11 @@ class _MainMenuState extends State<MainMenu> {
   final user = FirebaseAuth.instance.currentUser!;
   late String userPhoneNumber;
   final CollectionReference _propList =
-  FirebaseFirestore.instance.collection('properties');
+      FirebaseFirestore.instance.collection('properties');
   final CollectionReference _tokenList =
-  FirebaseFirestore.instance.collection('UserToken');
+      FirebaseFirestore.instance.collection('UserToken');
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-  FlutterLocalNotificationsPlugin();
+      FlutterLocalNotificationsPlugin();
   Timer? timer;
   String? mtoken = " ";
   late Property currentProperty;
@@ -105,6 +105,9 @@ class _MainMenuState extends State<MainMenu> {
   bool hasUnreadCouncillorMessages = false;
   bool isCouncillor = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  List<String> utilityTypes = [];
+  bool handlesWater = false;
+  bool handlesElectricity = false;
 
   @override
   void initState() {
@@ -121,7 +124,7 @@ class _MainMenuState extends State<MainMenu> {
       if (mounted) {
         setState(() {
           isLoading =
-          false; // Data is loaded, user can now interact with the menu
+              false; // Data is loaded, user can now interact with the menu
         });
       }
       print("🚀 Initializing Version Fetch...");
@@ -163,6 +166,7 @@ class _MainMenuState extends State<MainMenu> {
     setState(() {
       isLoading = true;
     });
+    await fetchUtilityTypes();
     await loadSelectedPropertyAccountNumber();
     await _initializeCollectionReferences();
     if (mounted) {
@@ -172,11 +176,60 @@ class _MainMenuState extends State<MainMenu> {
     }
   }
 
+  Future<void> fetchUtilityTypes() async {
+    DocumentReference docRef;
+
+    if (widget.isLocalMunicipality) {
+      docRef = FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(widget.property.municipalityId);
+    } else {
+      docRef = FirebaseFirestore.instance
+          .collection('districts')
+          .doc(widget.property.districtId)
+          .collection('municipalities')
+          .doc(widget.property.municipalityId);
+    }
+
+    final snapshot = await docRef.get();
+    if (snapshot.exists) {
+      final data = snapshot.data() as Map<String, dynamic>;
+      final types = List<String>.from(data['utilityType'] ?? []);
+      if (mounted) {
+        setState(() {
+          utilityTypes = types;
+          handlesWater = utilityTypes.contains("water");
+          handlesElectricity = utilityTypes.contains("electricity");
+        });
+      }
+      print("💧 handlesWater = $handlesWater");
+      print("⚡ handlesElectricity = $handlesElectricity");
+    } else {
+      print("⚠️ Municipality document not found.");
+    }
+  }
+
   Future<void> storeSelectedPropertyDetails(Property property) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLocalMunicipality', property.isLocalMunicipality);
     await prefs.setString('municipalityId', property.municipalityId);
-    await prefs.setString('selectedPropertyAccountNo', property.accountNo);
+
+    // Store correct account number based on utility type
+    String accountToStore = handlesWater && !handlesElectricity
+        ? property.accountNo
+        : (!handlesWater && handlesElectricity
+            ? property.electricityAccountNo ?? property.accountNo
+            : property.accountNo);
+
+    await prefs.setString('selectedPropertyAccountNo', accountToStore);
+  }
+
+  Future<Map<String, String?>> getSelectedAccountFieldAndNumber() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return {
+      'accountNumber': prefs.getString('selectedPropertyAccountNo'),
+      'accountField': prefs.getString('selectedPropertyAccountField') ?? 'accountNumber',
+    };
   }
 
   Future<void> fetchUserProperties() async {
@@ -186,7 +239,7 @@ class _MainMenuState extends State<MainMenu> {
       });
     }
     userProperties =
-    await propertyService.fetchPropertiesForUser(widget.property.cellNum);
+        await propertyService.fetchPropertiesForUser(widget.property.cellNum);
 
     if (userProperties == null || userProperties!.isEmpty) {
       print("No properties found for this user.");
@@ -200,7 +253,17 @@ class _MainMenuState extends State<MainMenu> {
 
     if (selectedPropertyAccountNumber != null) {
       currentProperty = userProperties!.firstWhere(
-            (property) => property.accountNo == selectedPropertyAccountNumber,
+        (property) =>
+            (handlesWater &&
+                !handlesElectricity &&
+                property.accountNo == selectedPropertyAccountNumber) ||
+            (!handlesWater &&
+                handlesElectricity &&
+                property.electricityAccountNo ==
+                    selectedPropertyAccountNumber) ||
+            (handlesWater &&
+                handlesElectricity &&
+                property.accountNo == selectedPropertyAccountNumber),
         orElse: () => userProperties!.first,
       );
     } else {
@@ -274,35 +337,32 @@ class _MainMenuState extends State<MainMenu> {
   Future<void> loadSelectedPropertyAccountNumber() async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      selectedPropertyAccountNumber =
-          prefs.getString('selectedPropertyAccountNo');
+
+      selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+      String accountField = prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
       bool? isLocalMunicipality = prefs.getBool('isLocalMunicipality');
 
-      print(
-          "Loaded selected property account number: $selectedPropertyAccountNumber");
-      print("Loaded municipality type: $isLocalMunicipality");
+      print("✅ Loaded selected property account number: $selectedPropertyAccountNumber");
+      print("📌 Matched account field: $accountField");
+      print("🌍 isLocalMunicipality: $isLocalMunicipality");
 
-      if (selectedPropertyAccountNumber != null &&
-          isLocalMunicipality != null) {
-        // Now you can use these values to set up the initial data
-        if (isLocalMunicipality) {
-          // Handle local municipality case
-          currentProperty = (await propertyService.fetchPropertyByAccountNo(
-              selectedPropertyAccountNumber!, isLocalMunicipality))!;
-        } else {
-          // Handle district case
-          currentProperty = (await propertyService.fetchPropertyByAccountNo(
-              selectedPropertyAccountNumber!, isLocalMunicipality))!;
-        }
+      if (selectedPropertyAccountNumber != null && isLocalMunicipality != null) {
+        currentProperty = await propertyService.fetchPropertyByDynamicField(
+          accountField: accountField,
+          accountNumber: selectedPropertyAccountNumber!,
+          isLocalMunicipality: isLocalMunicipality,
+        ) ?? widget.property;
       }
     } catch (e) {
-      print("Error loading selected property account number: $e");
+      print("❌ Error loading selected property account number: $e");
     }
   }
 
+
+
   void getToken() async {
     await FirebaseMessaging.instance.getToken().then(
-          (token) {
+      (token) {
         setState(() {
           mtoken = token;
           print("My token is $mtoken");
@@ -335,15 +395,15 @@ class _MainMenuState extends State<MainMenu> {
     // Update token for all properties associated with this user
     final propListRef = widget.property.isLocalMunicipality
         ? FirebaseFirestore.instance
-        .collection('localMunicipalities')
-        .doc(widget.property.municipalityId)
-        .collection('properties')
+            .collection('localMunicipalities')
+            .doc(widget.property.municipalityId)
+            .collection('properties')
         : FirebaseFirestore.instance
-        .collection('districts')
-        .doc(widget.property.districtId)
-        .collection('municipalities')
-        .doc(widget.property.municipalityId)
-        .collection('properties');
+            .collection('districts')
+            .doc(widget.property.districtId)
+            .collection('municipalities')
+            .doc(widget.property.municipalityId)
+            .collection('properties');
 
     propListRef.get().then((querySnapshot) async {
       for (var result in querySnapshot.docs) {
@@ -358,8 +418,9 @@ class _MainMenuState extends State<MainMenu> {
     if (!mounted) return;
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? selectedPropertyAccountNumber =
-    prefs.getString('selectedPropertyAccountNo');
-
+        prefs.getString('selectedPropertyAccountNo');
+    final accountField =
+        prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
     if (selectedPropertyAccountNumber == null) {
       print('Error: selectedPropertyAccountNumber is null.');
       return;
@@ -368,7 +429,7 @@ class _MainMenuState extends State<MainMenu> {
     try {
       QuerySnapshot localMunicipalitySnapshot = await FirebaseFirestore.instance
           .collectionGroup('properties')
-          .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+          .where(accountField, isEqualTo: selectedPropertyAccountNumber)
           .get();
 
       if (localMunicipalitySnapshot.docs.isNotEmpty) {
@@ -376,9 +437,9 @@ class _MainMenuState extends State<MainMenu> {
         bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
         String municipalityId = propertyDoc.get('municipalityId');
         String? districtId =
-        propertyDoc.data().toString().contains('districtId')
-            ? propertyDoc.get('districtId')
-            : null;
+            propertyDoc.data().toString().contains('districtId')
+                ? propertyDoc.get('districtId')
+                : null;
         String phoneNumber = propertyDoc.get('cellNumber');
 
         CollectionReference chatsCollection;
@@ -408,7 +469,7 @@ class _MainMenuState extends State<MainMenu> {
 
         unreadRegularMessagesSubscription = chatsCollection
             .where('sendBy',
-            isNotEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
+                isNotEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
             .snapshots()
             .listen((snapshot) {
           bool hasUnread = false;
@@ -435,45 +496,55 @@ class _MainMenuState extends State<MainMenu> {
 
   void checkForUnreadFinanceMessages() async {
     if (!mounted) return;
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? selectedPropertyAccountNumber =
-    prefs.getString('selectedPropertyAccountNo');
-
-    if (selectedPropertyAccountNumber == null) {
-      print('Error: selectedPropertyAccountNumber is null.');
-      return;
-    }
 
     try {
-      QuerySnapshot localMunicipalitySnapshot = await FirebaseFirestore.instance
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      final selectedPropertyAccountNumber =
+          prefs.getString('selectedPropertyAccountNo');
+      final accountField =
+          prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
+
+      if (selectedPropertyAccountNumber == null) {
+        print('❌ Error: selectedPropertyAccountNumber is null.');
+        return;
+      }
+
+      // 🔍 Use dynamic field to fetch property
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collectionGroup('properties')
-          .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+          .where(accountField, isEqualTo: selectedPropertyAccountNumber)
+          .limit(1)
           .get();
 
-      if (localMunicipalitySnapshot.docs.isNotEmpty) {
-        DocumentSnapshot propertyDoc = localMunicipalitySnapshot.docs.first;
-        bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
-        String municipalityId = propertyDoc.get('municipalityId');
-        String? districtId =
-        propertyDoc.data().toString().contains('districtId')
-            ? propertyDoc.get('districtId')
-            : null;
-        String phoneNumber = propertyDoc.get('cellNumber');
+      if (querySnapshot.docs.isEmpty) {
+        print(
+            '❌ No property found for $accountField: $selectedPropertyAccountNumber');
+        return;
+      }
 
-        CollectionReference financeChatsCollection;
-        if (isLocalMunicipality) {
-          financeChatsCollection = FirebaseFirestore.instance
+      final propertyDoc = querySnapshot.docs.first;
+      final data = propertyDoc.data() as Map<String, dynamic>;
+
+      final isLocalMunicipality = data['isLocalMunicipality'] == true;
+      final municipalityId = data['municipalityId'];
+      final districtId =
+          data.containsKey('districtId') ? data['districtId'] : null;
+      final phoneNumber = data['cellNumber'];
+
+      // 📁 Build path to chatRoomFinance
+      final financeChatsCollection = isLocalMunicipality
+          ? FirebaseFirestore.instance
               .collection('localMunicipalities')
               .doc(municipalityId)
               .collection('chatRoomFinance')
               .doc(phoneNumber)
               .collection('accounts')
               .doc(selectedPropertyAccountNumber)
-              .collection('chats');
-        } else {
-          financeChatsCollection = FirebaseFirestore.instance
+              .collection('chats')
+          : FirebaseFirestore.instance
               .collection('districts')
-              .doc(districtId!)
+              .doc(districtId)
               .collection('municipalities')
               .doc(municipalityId)
               .collection('chatRoomFinance')
@@ -481,42 +552,43 @@ class _MainMenuState extends State<MainMenu> {
               .collection('accounts')
               .doc(selectedPropertyAccountNumber)
               .collection('chats');
+
+      // 🔄 Cancel previous subscription if any
+      unreadFinanceMessagesSubscription?.cancel();
+
+      unreadFinanceMessagesSubscription = financeChatsCollection
+          .where('sendBy',
+              isNotEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
+          .snapshots()
+          .listen((snapshot) {
+        bool hasUnread = false;
+        for (var doc in snapshot.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          if (data['isReadByRegularUser'] == false) {
+            hasUnread = true;
+            print("📨 Unread Finance Message: $data");
+          }
         }
 
-        unreadFinanceMessagesSubscription?.cancel();
-
-        unreadFinanceMessagesSubscription = financeChatsCollection
-            .where('sendBy',
-            isNotEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
-            .snapshots()
-            .listen((snapshot) {
-          bool hasUnread = false;
-          for (var doc in snapshot.docs) {
-            var data = doc.data() as Map<String, dynamic>;
-            if (data['isReadByRegularUser'] == false) {
-              hasUnread = true;
-              print(
-                  "Unread Finance Message Data (sendBy and isReadByRegularUser check): $data");
-            }
-          }
-          if (mounted) {
-            setState(() {
-              hasUnreadFinanceMessages = hasUnread;
-            });
-            print(
-                "Updated hasUnreadFinanceMessages to: $hasUnreadFinanceMessages");
-          }
-        });
-      }
+        if (mounted) {
+          setState(() {
+            hasUnreadFinanceMessages = hasUnread;
+          });
+          print(
+              "🔔 hasUnreadFinanceMessages updated to: $hasUnreadFinanceMessages");
+        }
+      });
     } catch (e) {
-      print('Error checking for unread finance messages: $e');
+      print('❌ Error checking for unread finance messages: $e');
     }
   }
 
   Future<void> setupNotificationListener() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     final selectedPropertyAccountNumber =
-    prefs.getString('selectedPropertyAccountNo');
+        prefs.getString('selectedPropertyAccountNo');
+    final accountField =
+        prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
 
     print("Selected Property Account Number: $selectedPropertyAccountNumber");
 
@@ -525,7 +597,7 @@ class _MainMenuState extends State<MainMenu> {
         // Fetch the property details based on the account number
         QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
             .collectionGroup('properties')
-            .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+            .where(accountField, isEqualTo: selectedPropertyAccountNumber)
             .get();
 
         if (propertySnapshot.docs.isNotEmpty) {
@@ -588,8 +660,9 @@ class _MainMenuState extends State<MainMenu> {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? selectedPropertyAccountNumber =
-      prefs.getString('selectedPropertyAccountNo');
-
+          prefs.getString('selectedPropertyAccountNo');
+      final accountField =
+          prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
       if (selectedPropertyAccountNumber == null) {
         print('Error: selectedPropertyAccountNumber is null.');
         return false;
@@ -597,7 +670,7 @@ class _MainMenuState extends State<MainMenu> {
 
       QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
           .collectionGroup('properties')
-          .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+          .where(accountField, isEqualTo: selectedPropertyAccountNumber)
           .get();
 
       if (propertySnapshot.docs.isNotEmpty) {
@@ -605,28 +678,28 @@ class _MainMenuState extends State<MainMenu> {
         bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
         String municipalityId = propertyDoc.get('municipalityId');
         String? districtId =
-        propertyDoc.data().toString().contains('districtId')
-            ? propertyDoc.get('districtId')
-            : null;
+            propertyDoc.data().toString().contains('districtId')
+                ? propertyDoc.get('districtId')
+                : null;
 
         // Check the councillor collection
         QuerySnapshot councillorSnapshot = isLocalMunicipality
             ? await FirebaseFirestore.instance
-            .collection('localMunicipalities')
-            .doc(municipalityId)
-            .collection('councillors')
-            .where('councillorPhone',
-            isEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
-            .get()
+                .collection('localMunicipalities')
+                .doc(municipalityId)
+                .collection('councillors')
+                .where('councillorPhone',
+                    isEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
+                .get()
             : await FirebaseFirestore.instance
-            .collection('districts')
-            .doc(districtId!)
-            .collection('municipalities')
-            .doc(municipalityId)
-            .collection('councillors')
-            .where('councillorPhone',
-            isEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
-            .get();
+                .collection('districts')
+                .doc(districtId!)
+                .collection('municipalities')
+                .doc(municipalityId)
+                .collection('councillors')
+                .where('councillorPhone',
+                    isEqualTo: FirebaseAuth.instance.currentUser?.phoneNumber)
+                .get();
 
         if (councillorSnapshot.docs.isNotEmpty) {
           print("User is a councillor.");
@@ -642,7 +715,6 @@ class _MainMenuState extends State<MainMenu> {
     }
   }
 
-
   Future<void> checkForUnreadCouncilMessages() async {
     String? userPhone = FirebaseAuth.instance.currentUser?.phoneNumber;
 
@@ -654,118 +726,124 @@ class _MainMenuState extends State<MainMenu> {
     // Determine if the user is a councillor
     checkIfCouncillor().then((isCouncillor) {
       SharedPreferences.getInstance().then((prefs) {
-        String? selectedPropertyAccountNumber = prefs.getString(
-            'selectedPropertyAccountNo');
+        String? selectedPropertyAccountNumber =
+            prefs.getString('selectedPropertyAccountNo');
         if (selectedPropertyAccountNumber == null) {
           print('Error: selectedPropertyAccountNumber is null.');
           return;
         }
-
+        final accountField =
+            prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
         FirebaseFirestore.instance
             .collectionGroup('properties')
-            .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+            .where(accountField, isEqualTo: selectedPropertyAccountNumber)
             .get()
             .then((propertySnapshot) {
           if (propertySnapshot.docs.isNotEmpty) {
             DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
             bool isLocalMunicipality = propertyDoc.get('isLocalMunicipality');
             String municipalityId = propertyDoc.get('municipalityId');
-            String? districtId = propertyDoc.data().toString().contains(
-                'districtId')
-                ? propertyDoc.get('districtId')
-                : null;
+            String? districtId =
+                propertyDoc.data().toString().contains('districtId')
+                    ? propertyDoc.get('districtId')
+                    : null;
 
             CollectionReference councillorChatsCollection = isLocalMunicipality
                 ? FirebaseFirestore.instance
-                .collection('localMunicipalities')
-                .doc(municipalityId)
-                .collection('chatRoomCouncillor')
+                    .collection('localMunicipalities')
+                    .doc(municipalityId)
+                    .collection('chatRoomCouncillor')
                 : FirebaseFirestore.instance
-                .collection('districts')
-                .doc(districtId!)
-                .collection('municipalities')
-                .doc(municipalityId)
-                .collection('chatRoomCouncillor');
+                    .collection('districts')
+                    .doc(districtId!)
+                    .collection('municipalities')
+                    .doc(municipalityId)
+                    .collection('chatRoomCouncillor');
 
             unreadCouncillorMessagesSubscription?.cancel();
             unreadCouncillorMessagesSubscription =
                 councillorChatsCollection.snapshots().listen(
-                      (councillorSnapshot) async {
-                    bool hasUnread = false;
+              (councillorSnapshot) async {
+                bool hasUnread = false;
 
-                    if (isCouncillor) {
-                      String councillorPhoneNumber = FirebaseAuth.instance
-                          .currentUser?.phoneNumber ?? '';
-                      councillorChatsCollection
-                          .doc(councillorPhoneNumber)
-                          .collection('userChats')
+                if (isCouncillor) {
+                  String councillorPhoneNumber =
+                      FirebaseAuth.instance.currentUser?.phoneNumber ?? '';
+                  councillorChatsCollection
+                      .doc(councillorPhoneNumber)
+                      .collection('userChats')
+                      .snapshots()
+                      .listen((userChatSnapshot) {
+                    for (var userChatDoc in userChatSnapshot.docs) {
+                      userChatDoc.reference
+                          .collection('messages')
                           .snapshots()
-                          .listen((userChatSnapshot) {
-                        for (var userChatDoc in userChatSnapshot.docs) {
-                          userChatDoc.reference.collection('messages')
-                              .snapshots()
-                              .listen((messagesSnapshot) {
-                            bool localUnread = false; // Temporary variable for this chat
-                            for (var messageDoc in messagesSnapshot.docs) {
-                              if (messageDoc['isReadByCouncillor'] == false) {
-                                localUnread = true;
-                                hasUnread = true;
-                                break;
-                              }
-                            }
+                          .listen((messagesSnapshot) {
+                        bool localUnread =
+                            false; // Temporary variable for this chat
+                        for (var messageDoc in messagesSnapshot.docs) {
+                          if (messageDoc['isReadByCouncillor'] == false) {
+                            localUnread = true;
+                            hasUnread = true;
+                            break;
+                          }
+                        }
 
-                            // Update the global unread state only if necessary
-                            if (!localUnread) {
-                              hasUnread = false;
-                            }
+                        // Update the global unread state only if necessary
+                        if (!localUnread) {
+                          hasUnread = false;
+                        }
 
-                            if (mounted) {
-                              setState(() {
-                                hasUnreadCouncillorMessages = hasUnread;
-                              });
-                              print(
-                                  "Real-time badge updated: $hasUnreadCouncillorMessages");
-                            }
+                        if (mounted) {
+                          setState(() {
+                            hasUnreadCouncillorMessages = hasUnread;
                           });
+                          print(
+                              "Real-time badge updated: $hasUnreadCouncillorMessages");
                         }
                       });
-                    } else {
-                      for (var councillorDoc in councillorSnapshot.docs) {
-                        councillorDoc.reference.collection('userChats')
+                    }
+                  });
+                } else {
+                  for (var councillorDoc in councillorSnapshot.docs) {
+                    councillorDoc.reference
+                        .collection('userChats')
+                        .snapshots()
+                        .listen((userChatSnapshot) {
+                      for (var userChatDoc in userChatSnapshot.docs) {
+                        userChatDoc.reference
+                            .collection('messages')
                             .snapshots()
-                            .listen((userChatSnapshot) {
-                          for (var userChatDoc in userChatSnapshot.docs) {
-                            userChatDoc.reference.collection('messages')
-                                .snapshots()
-                                .listen((messagesSnapshot) {
-                              bool localUnread = false; // Temporary variable for this chat
-                              for (var messageDoc in messagesSnapshot.docs) {
-                                if (messageDoc['isReadByUser'] == false) {
-                                  localUnread = true;
-                                  hasUnread = true;
-                                  break;
-                                }
-                              }
+                            .listen((messagesSnapshot) {
+                          bool localUnread =
+                              false; // Temporary variable for this chat
+                          for (var messageDoc in messagesSnapshot.docs) {
+                            if (messageDoc['isReadByUser'] == false) {
+                              localUnread = true;
+                              hasUnread = true;
+                              break;
+                            }
+                          }
 
-                              // Update the global unread state only if necessary
-                              if (!localUnread) {
-                                hasUnread = false;
-                              }
+                          // Update the global unread state only if necessary
+                          if (!localUnread) {
+                            hasUnread = false;
+                          }
 
-                              if (mounted) {
-                                setState(() {
-                                  hasUnreadCouncillorMessages = hasUnread;
-                                });
-                                print(
-                                    "Real-time badge updated: $hasUnreadCouncillorMessages");
-                              }
+                          if (mounted) {
+                            setState(() {
+                              hasUnreadCouncillorMessages = hasUnread;
                             });
+                            print(
+                                "Real-time badge updated: $hasUnreadCouncillorMessages");
                           }
                         });
                       }
-                    }
-                  },
-                );
+                    });
+                  }
+                }
+              },
+            );
           }
         });
       });
@@ -833,9 +911,6 @@ class _MainMenuState extends State<MainMenu> {
   //   }
   // }
 
-
-
-
   // void saveToken(String token) async {
   //   await FirebaseFirestore.instance.collection("UserToken").doc(user.phoneNumber).set({
   //     'token': token,
@@ -873,30 +948,28 @@ class _MainMenuState extends State<MainMenu> {
 
   void initInfo() {
     var androidInitialize =
-    const AndroidInitializationSettings('@mipmap/ic_launcher');
+        const AndroidInitializationSettings('@mipmap/ic_launcher');
     var initializationSettings =
-    InitializationSettings(android: androidInitialize);
+        InitializationSettings(android: androidInitialize);
     flutterLocalNotificationsPlugin.initialize(initializationSettings,
         onDidReceiveNotificationResponse:
             (NotificationResponse notificationResponse) {
-          switch (notificationResponse.notificationResponseType) {
-            case NotificationResponseType.selectedNotification:
-              selectNotificationStream.add(notificationResponse.payload);
-              break;
-            case NotificationResponseType.selectedNotificationAction:
-              if (notificationResponse.actionId == navigationActionId) {
-                selectNotificationStream.add(notificationResponse.payload);
-              }
-              break;
+      switch (notificationResponse.notificationResponseType) {
+        case NotificationResponseType.selectedNotification:
+          selectNotificationStream.add(notificationResponse.payload);
+          break;
+        case NotificationResponseType.selectedNotificationAction:
+          if (notificationResponse.actionId == navigationActionId) {
+            selectNotificationStream.add(notificationResponse.payload);
           }
-        },
-        onDidReceiveBackgroundNotificationResponse: notificationTapBackground);
+          break;
+      }
+    }, onDidReceiveBackgroundNotificationResponse: notificationTapBackground);
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       print("..........onMessage..........");
       print(
-          "onMessage: ${message.notification?.title}/${message.notification
-              ?.body}}");
+          "onMessage: ${message.notification?.title}/${message.notification?.body}}");
 
       BigTextStyleInformation bigTextStyleInformation = BigTextStyleInformation(
         message.notification!.body.toString(),
@@ -905,7 +978,7 @@ class _MainMenuState extends State<MainMenu> {
         htmlFormatContentTitle: true,
       );
       AndroidNotificationDetails androidPlatformChannelSpecifics =
-      AndroidNotificationDetails(
+          AndroidNotificationDetails(
         'User',
         'User',
         importance: Importance.high,
@@ -914,7 +987,7 @@ class _MainMenuState extends State<MainMenu> {
         playSound: true,
       );
       NotificationDetails platformChannelSpecifics =
-      NotificationDetails(android: androidPlatformChannelSpecifics);
+          NotificationDetails(android: androidPlatformChannelSpecifics);
       await flutterLocalNotificationsPlugin.show(0, message.notification?.title,
           message.notification?.body, platformChannelSpecifics,
           payload: message.data['body']);
@@ -930,7 +1003,7 @@ class _MainMenuState extends State<MainMenu> {
   List _allVersionResults = [];
 
   final CollectionReference _chatRoom =
-  FirebaseFirestore.instance.collection('chatRoom');
+      FirebaseFirestore.instance.collection('chatRoom');
 
   // void addChatCustomId() async {
   //   String? addChatID = user.phoneNumber;
@@ -1015,7 +1088,8 @@ class _MainMenuState extends State<MainMenu> {
     print("🌍 districtId: $districtId");
 
     // Ensure IDs are not empty
-    if (municipalityId.isEmpty || (!isLocalMunicipality && districtId.isEmpty)) {
+    if (municipalityId.isEmpty ||
+        (!isLocalMunicipality && districtId.isEmpty)) {
       print("❌ Error: Either municipalityId or districtId is empty!");
       return;
     }
@@ -1042,8 +1116,6 @@ class _MainMenuState extends State<MainMenu> {
     }
   }
 
-
-
   void getVersionDetails() async {
     print("🔍 Checking version details...");
 
@@ -1052,7 +1124,8 @@ class _MainMenuState extends State<MainMenu> {
       return;
     }
 
-    String activeVersion = _allVersionResults[0]['version'].toString(); // Ensure correct index
+    String activeVersion =
+        _allVersionResults[0]['version'].toString(); // Ensure correct index
     print("📌 Active Version from Firestore: $activeVersion");
 
     // Fetch version document
@@ -1067,7 +1140,6 @@ class _MainMenuState extends State<MainMenu> {
           .collection('current-version')
           .doc('current')
           .get(const GetOptions(source: Source.server)); // Forces fresh fetch
-
 
       if (!versionDoc.exists) {
         print("❌ No 'current' document found in Firestore.");
@@ -1101,9 +1173,6 @@ class _MainMenuState extends State<MainMenu> {
       print("🚨 Error fetching version details: $e");
     }
   }
-
-
-
 
 //   @override
 //   Widget build(BuildContext context) {
@@ -1778,8 +1847,10 @@ class _MainMenuState extends State<MainMenu> {
   Future<void> _navigateToChat(BuildContext context) async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? selectedPropertyAccountNumber = prefs.getString(
-          'selectedPropertyAccountNo');
+      String? selectedPropertyAccountNumber =
+      prefs.getString('selectedPropertyAccountNo');
+      String accountField =
+          prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
 
       if (selectedPropertyAccountNumber == null) {
         print('Error: selectedPropertyAccountNumber is null.');
@@ -1789,7 +1860,7 @@ class _MainMenuState extends State<MainMenu> {
 
       QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
           .collectionGroup('properties')
-          .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+          .where(accountField, isEqualTo: selectedPropertyAccountNumber)
           .get();
 
       if (propertySnapshot.docs.isEmpty) {
@@ -1827,21 +1898,26 @@ class _MainMenuState extends State<MainMenu> {
         return;
       }
 
-      // Navigate to chat screen
+      Map<String, String> chatRoomAccountsMap = {
+        'accountNumber': propertyDoc['accountNumber'] ?? '',
+        'electricityAccountNumber':  propertyDoc['electricityAccountNumber'] ?? '',
+      };
+
+
+      // ✅ Navigate to Chat screen
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              Chat(
-                chatRoomId: phoneNumber,
-                userName: selectedPropertyAccountNumber,
-                chatCollectionRef: chatCollectionRef,
-                refreshChatList: checkForUnreadMessages,
-                // Callback to refresh badge
-                isLocalMunicipality: isLocalMunicipality,
-                districtId: districtId ?? '',
-                municipalityId: municipalityId,
-              ),
+          builder: (context) => Chat(
+            chatRoomId: phoneNumber,
+            userName: selectedPropertyAccountNumber,
+            chatCollectionRef: chatCollectionRef,
+            refreshChatList: checkForUnreadMessages,
+            isLocalMunicipality: isLocalMunicipality,
+            districtId: districtId ?? '',
+            municipalityId: municipalityId,
+            chatRoomAccountsMap: chatRoomAccountsMap,
+          ),
         ),
       );
     } catch (e) {
@@ -1849,6 +1925,7 @@ class _MainMenuState extends State<MainMenu> {
       Fluttertoast.showToast(msg: "Failed to load chat.");
     }
   }
+
 
   Future<void> _navigateToViewDetails(BuildContext context) async {
     if (currentProperty == null) {
@@ -1861,18 +1938,21 @@ class _MainMenuState extends State<MainMenu> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            UsersTableViewPage(
-              property: currentProperty,
-              userNumber: currentProperty.cellNum,
-              accountNumber: currentProperty.accountNo,
-              propertyAddress: currentProperty.address,
-              districtId: currentProperty.isLocalMunicipality
-                  ? ''
-                  : currentProperty.districtId,
-              municipalityId: currentProperty.municipalityId,
-              isLocalMunicipality: currentProperty.isLocalMunicipality,
-            ),
+        builder: (context) => UsersTableViewPage(
+          property: currentProperty,
+          userNumber: currentProperty.cellNum,
+          accountNumber: currentProperty.electricityAccountNo.isNotEmpty
+              ? currentProperty.electricityAccountNo
+              : currentProperty.accountNo,
+          propertyAddress: currentProperty.address,
+          districtId: currentProperty.isLocalMunicipality
+              ? ''
+              : currentProperty.districtId,
+          municipalityId: currentProperty.municipalityId,
+          isLocalMunicipality: currentProperty.isLocalMunicipality,
+          handlesWater: handlesWater,
+          handlesElectricity: handlesElectricity,
+        ),
       ),
     );
   }
@@ -1880,9 +1960,10 @@ class _MainMenuState extends State<MainMenu> {
   Future<void> _navigateToNotices(BuildContext context) async {
     // Fetch the selected property account number from SharedPreferences
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? selectedPropertyAccountNumber = prefs.getString(
-        'selectedPropertyAccountNo');
-
+    String? selectedPropertyAccountNumber =
+        prefs.getString('selectedPropertyAccountNo');
+    String accountField =
+        prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
     // Check if the account number exists
     if (selectedPropertyAccountNumber == null) {
       print('Error: selectedPropertyAccountNumber is null.');
@@ -1894,32 +1975,31 @@ class _MainMenuState extends State<MainMenu> {
       // Search for the property in both localMunicipalities and district properties
       QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
           .collectionGroup('properties')
-          .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+          .where(accountField, isEqualTo: selectedPropertyAccountNumber)
           .get();
 
       if (propertySnapshot.docs.isNotEmpty) {
         DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
 
         // Retrieve the property details
-        bool isLocalMunicipality = propertyDoc.get(
-            'isLocalMunicipality') as bool;
+        bool isLocalMunicipality =
+            propertyDoc.get('isLocalMunicipality') as bool;
         String municipalityId = propertyDoc.get('municipalityId') as String;
-        String? districtId = propertyDoc.data().toString().contains(
-            'districtId')
-            ? propertyDoc.get('districtId') as String
-            : null;
+        String? districtId =
+            propertyDoc.data().toString().contains('districtId')
+                ? propertyDoc.get('districtId') as String
+                : null;
 
         // Navigate to the Notices screen
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                NoticeScreen(
-                  selectedPropertyAccountNumber: selectedPropertyAccountNumber,
-                  isLocalMunicipality: isLocalMunicipality,
-                  municipalityId: municipalityId,
-                  districtId: districtId, // Can be null for local municipalities
-                ),
+            builder: (context) => NoticeScreen(
+              selectedPropertyAccountNumber: selectedPropertyAccountNumber,
+              isLocalMunicipality: isLocalMunicipality,
+              municipalityId: municipalityId,
+              districtId: districtId, // Can be null for local municipalities
+            ),
           ),
         );
       } else {
@@ -1937,9 +2017,10 @@ class _MainMenuState extends State<MainMenu> {
     try {
       // Fetch the selected property account number from SharedPreferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? selectedPropertyAccountNumber = prefs.getString(
-          'selectedPropertyAccountNo');
-
+      String? selectedPropertyAccountNumber =
+          prefs.getString('selectedPropertyAccountNo');
+      String accountField =
+          prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
       if (selectedPropertyAccountNumber == null) {
         print('Error: selectedPropertyAccountNumber is null.');
         Fluttertoast.showToast(msg: "No property selected.");
@@ -1949,34 +2030,35 @@ class _MainMenuState extends State<MainMenu> {
       // Search for the property in both localMunicipalities and district properties
       QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
           .collectionGroup('properties')
-          .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+          .where(accountField, isEqualTo: selectedPropertyAccountNumber)
           .get();
 
       if (propertySnapshot.docs.isNotEmpty) {
         DocumentSnapshot propertyDoc = propertySnapshot.docs.first;
 
         // Retrieve the required property details
-        bool isLocalMunicipality = propertyDoc.get(
-            'isLocalMunicipality') as bool;
+        bool isLocalMunicipality =
+            propertyDoc.get('isLocalMunicipality') as bool;
         String municipalityId = propertyDoc.get('municipalityId') as String;
-        String? districtId = propertyDoc.data().toString().contains(
-            'districtId')
-            ? propertyDoc.get('districtId') as String
-            : null;
+        String? districtId =
+            propertyDoc.data().toString().contains('districtId')
+                ? propertyDoc.get('districtId') as String
+                : null;
 
         // Navigate to the UsersPdfListViewPage
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                UsersPdfListViewPage(
-                  userNumber: propertyDoc.get('cellNumber'),
-                  propertyAddress: propertyDoc.get('address'),
-                  accountNumber: propertyDoc.get('accountNumber'),
-                  isLocalMunicipality: isLocalMunicipality,
-                  municipalityId: municipalityId,
-                  districtId: districtId, // Can be null for local municipalities
-                ),
+            builder: (context) => UsersPdfListViewPage(
+              userNumber: propertyDoc.get('cellNumber'),
+              propertyAddress: propertyDoc.get('address'),
+              accountNumber: selectedPropertyAccountNumber,
+              isLocalMunicipality: isLocalMunicipality,
+              municipalityId: municipalityId,
+              districtId: districtId, // Can be null for local municipalities
+              handlesWater: handlesWater,
+              handlesElectricity: handlesElectricity,
+            ),
           ),
         );
       } else {
@@ -1995,15 +2077,14 @@ class _MainMenuState extends State<MainMenu> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              WaterSanitationReportMenu(
-                currentProperty: currentProperty,
-                isLocalMunicipality: currentProperty.isLocalMunicipality,
-                municipalityId: currentProperty.municipalityId,
-                districtId: currentProperty.isLocalMunicipality
-                    ? null
-                    : currentProperty.districtId, // null if local
-              ),
+          builder: (context) => WaterSanitationReportMenu(
+            currentProperty: currentProperty,
+            isLocalMunicipality: currentProperty.isLocalMunicipality,
+            municipalityId: currentProperty.municipalityId,
+            districtId: currentProperty.isLocalMunicipality
+                ? null
+                : currentProperty.districtId, // null if local
+          ),
         ),
       );
     } else {
@@ -2043,7 +2124,6 @@ class _MainMenuState extends State<MainMenu> {
       },
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -2128,20 +2208,23 @@ class _MainMenuState extends State<MainMenu> {
                             final selectedProperty = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    PropertySelectionScreen(
-                                      properties: userProperties!,
-                                      userPhoneNumber: userPhoneNumber,
-                                      isLocalMunicipality: widget
-                                          .isLocalMunicipality,
-                                    ),
+                                builder: (context) => PropertySelectionScreen(
+                                  properties: userProperties!,
+                                  userPhoneNumber: userPhoneNumber,
+                                  isLocalMunicipality:
+                                      widget.isLocalMunicipality,
+                                  handlesElectricity: handlesElectricity,
+                                  handlesWater: handlesWater,
+                                ),
                               ),
                             );
 
                             if (selectedProperty != null) {
-                              setState(() {
-                                currentProperty = selectedProperty;
-                              });
+                              if(mounted) {
+                                setState(() {
+                                  currentProperty = selectedProperty;
+                                });
+                              }
                             }
                           },
                           labelText: 'Select\nProperty',
@@ -2157,17 +2240,14 @@ class _MainMenuState extends State<MainMenu> {
                       GridView.count(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: MediaQuery
-                            .of(context)
-                            .size
-                            .width < 600 ? 2 : 3,
+                        crossAxisCount:
+                            MediaQuery.of(context).size.width < 600 ? 2 : 3,
                         // 2 columns on mobile, 3 on web
                         mainAxisSpacing: 20.h,
                         crossAxisSpacing: 20.w,
                         childAspectRatio: 1,
                         // Ensures square buttons
                         children: [
-
                           // Admin Chat
                           _buildButton(
                             label: 'Queries',
@@ -2178,7 +2258,8 @@ class _MainMenuState extends State<MainMenu> {
                               await _navigateToChat(context);
                             },
                             showBadge: hasUnreadMessages,
-                            lockFeature: visLocked || visFeatureMode ||
+                            lockFeature: visLocked ||
+                                visFeatureMode ||
                                 visPremium, // 🔒 Lock this menu
                           ),
 
@@ -2204,10 +2285,11 @@ class _MainMenuState extends State<MainMenu> {
                                 onTap: () async {
                                   await _navigateToNotices(context);
                                 },
-                                showBadge: notificationProvider
-                                    .hasUnreadNotices,
+                                showBadge:
+                                    notificationProvider.hasUnreadNotices,
                                 // ✅ Keeps the logic inside the Consumer
-                                lockFeature: visLocked || visFeatureMode ||
+                                lockFeature: visLocked ||
+                                    visFeatureMode ||
                                     visPremium, // 🔒 Lock this menu
                               );
                             },
@@ -2245,7 +2327,8 @@ class _MainMenuState extends State<MainMenu> {
                             onTap: () async {
                               await _navigateToReportFault(context);
                             },
-                            lockFeature: visLocked || visFeatureMode ||
+                            lockFeature: visLocked ||
+                                visFeatureMode ||
                                 visPremium, // 🔒 Lock this menu
                           ),
                         ],
@@ -2291,11 +2374,11 @@ class _MainMenuState extends State<MainMenu> {
         ElevatedIconButton(
           onPress: lockFeature
               ? () {
-            Fluttertoast.showToast(
-              msg: "Feature Locked!",
-              gravity: ToastGravity.CENTER,
-            );
-          }
+                  Fluttertoast.showToast(
+                    msg: "Feature Locked!",
+                    gravity: ToastGravity.CENTER,
+                  );
+                }
               : onTap,
           labelText: label,
           fSize: 17.sp,
@@ -2312,7 +2395,7 @@ class _MainMenuState extends State<MainMenu> {
         if (lockFeature) // 🔒 Add small lock icon inside the button
           Positioned(
             top: size.height * 0.70,
-            right: size.height*0.70,
+            right: size.height * 0.70,
             child: const Icon(
               Icons.lock,
               color: Colors.black,
@@ -2349,8 +2432,7 @@ class _MainMenuState extends State<MainMenu> {
   }
 }
 
-
-  void openPDF(BuildContext context, File file) => Navigator.of(context).push(
+void openPDF(BuildContext context, File file) => Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
     );
 

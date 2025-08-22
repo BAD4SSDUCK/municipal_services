@@ -350,6 +350,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Chat extends StatefulWidget {
   final String chatRoomId;
@@ -360,8 +361,9 @@ class Chat extends StatefulWidget {
       isLocalMunicipality; // Add this flag to distinguish between local municipalities and districts
   final String districtId; // Only needed for district-based municipalities
   final String municipalityId;
+  final Map<String, String>? chatRoomAccountsMap;
 
-  Chat({
+  const Chat({
     super.key,
     required this.chatRoomId,
     required this.userName,
@@ -370,6 +372,7 @@ class Chat extends StatefulWidget {
     required this.isLocalMunicipality,
     required this.districtId, // Pass the districtId for district-based properties
     required this.municipalityId,
+    required this.chatRoomAccountsMap,
   });
 
   @override
@@ -394,30 +397,51 @@ class _ChatState extends State<Chat> {
   TextEditingController messageEditingController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String? propertyAddress;
+  late String accountNumber;
+  late String matchedAccountField;
+
 
   @override
   void initState() {
     super.initState();
     print('Initializing chat with chatRoomId: ${widget.chatRoomId}');
-    fetchPropertyAddress();
-    // Initialize _chatsList with the passed chatCollectionRef from the widget
-    initializeChatCollectionReference();
-    createOrUpdateChatRoom();
-
     _isLoading = true;
+    matchedAccountField = 'accountNumber'; // default
+    accountNumber = widget.chatRoomAccountsMap?['accountNumber'] ?? '';
 
-    // Fetch chat data
-    fetchChats();
-    markMessagesAsRead(widget.chatRoomId, widget.userName);
-    // Delay to stop loading indicator after fetching chats
-    Future.delayed(const Duration(seconds: 3), () {
+// Dynamically determine correct account field
+    if ((widget.chatRoomAccountsMap?['electricityAccountNumber']?.isNotEmpty ?? false) &&
+        !(widget.chatRoomAccountsMap?['accountNumber']?.isNotEmpty ?? false)) {
+      matchedAccountField = 'electricityAccountNumber';
+      accountNumber = widget.chatRoomAccountsMap?['electricityAccountNumber'] ?? '';
+    }
+
+    print("✅ Loaded chat for $matchedAccountField = $accountNumber");
+
+
+    print("✅ Loaded chat for $matchedAccountField = $accountNumber");
+    () async {
+      initializeChatCollectionReference().then((success) {
+        if (success) {
+          fetchChats(); // Only proceed if chat path is valid
+        } else {
+          print("❌ Failed to initialize chat path. Chat will not load.");
+        }
+      });
+      fetchChats(); // ✅ safe to use _chatsList now
+
+      fetchPropertyAddress();
+      createOrUpdateChatRoom();
+      markMessagesAsRead(widget.chatRoomId, widget.userName);
+
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
-    });
+    }();
   }
+
 
   @override
   void dispose() {
@@ -425,18 +449,127 @@ class _ChatState extends State<Chat> {
     super.dispose();
   }
 
-  void initializeChatCollectionReference() {
-    if (widget.isLocalMunicipality) {
-      _chatsList = FirebaseFirestore.instance
+  Future<bool> initializeChatCollectionReference() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    // Fallback to prevent crashes
+    _chatsList = FirebaseFirestore.instance.collection('dummyPath/invalid/chats');
+
+    String accountNumberToUse = '';
+    String matchedField = 'accountNumber'; // default
+
+    if (currentUser?.email != null) {
+      // 🏛️ Municipality user
+      QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+          .collectionGroup('users')
+          .where('email', isEqualTo: currentUser!.email)
+          .limit(1)
+          .get();
+
+      if (userSnapshot.docs.isEmpty) {
+        print("⚠️ No matching municipal user found in Firestore.");
+        return false;
+      }
+
+      var userDoc = userSnapshot.docs.first;
+      final userPathSegments = userDoc.reference.path.split('/');
+
+      bool isLocalMunicipality = userPathSegments.first == 'localMunicipalities';
+      String municipalityId = isLocalMunicipality
+          ? userPathSegments[1]
+          : userPathSegments[3];
+      String districtId = isLocalMunicipality ? '' : userPathSegments[1];
+
+      // 🔌 Get utility type
+      final municipalityDoc = isLocalMunicipality
+          ? await FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId)
+          .get()
+          : await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .get();
+
+      final utilityType = List<String>.from(municipalityDoc.get('utilityType') ?? []);
+
+      // 🧠 Determine matched account field
+      if (utilityType.contains('electricity') && !utilityType.contains('water')) {
+        matchedField = 'electricityAccountNumber';
+      }
+
+      // ✅ Attempt to get account number from map
+      accountNumberToUse = widget.chatRoomAccountsMap?[matchedField] ?? '';
+
+      // Fallback to other field if empty
+      if (accountNumberToUse.isEmpty) {
+        matchedField = matchedField == 'electricityAccountNumber'
+            ? 'accountNumber'
+            : 'electricityAccountNumber';
+
+        accountNumberToUse = widget.chatRoomAccountsMap?[matchedField] ?? '';
+      }
+
+      if (accountNumberToUse.isEmpty) {
+        print("❌ Cannot initialize chat: account number for $matchedField is empty.");
+        return false;
+      }
+
+      // ✅ Store globally
+      this.matchedAccountField = matchedField;
+      this.accountNumber = accountNumberToUse;
+
+      // ✅ Build path
+      _chatsList = isLocalMunicipality
+          ? FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId)
+          .collection('chatRoom')
+          .doc(widget.chatRoomId)
+          .collection('accounts')
+          .doc(accountNumberToUse)
+          .collection('chats')
+          : FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .collection('chatRoom')
+          .doc(widget.chatRoomId)
+          .collection('accounts')
+          .doc(accountNumberToUse)
+          .collection('chats');
+
+      print("✅ Chat path initialized for municipal user with $matchedField = $accountNumberToUse");
+      return true;
+
+    } else if (currentUser?.phoneNumber != null) {
+      // 👤 Regular user
+      final prefs = await SharedPreferences.getInstance();
+      matchedField = prefs.getString('matchedAccountField') ?? 'accountNumber';
+      accountNumberToUse = prefs.getString('selectedPropertyAccountNo') ?? '';
+
+      if (accountNumberToUse.isEmpty) {
+        print("❌ Cannot initialize chat: selected account number is empty.");
+        return false;
+      }
+
+      // ✅ Store globally
+      this.matchedAccountField = matchedField;
+      this.accountNumber = accountNumberToUse;
+
+      _chatsList = widget.isLocalMunicipality
+          ? FirebaseFirestore.instance
           .collection('localMunicipalities')
           .doc(widget.municipalityId)
           .collection('chatRoom')
           .doc(widget.chatRoomId)
           .collection('accounts')
-          .doc(widget.userName)
-          .collection('chats');
-    } else {
-      _chatsList = FirebaseFirestore.instance
+          .doc(accountNumberToUse)
+          .collection('chats')
+          : FirebaseFirestore.instance
           .collection('districts')
           .doc(widget.districtId)
           .collection('municipalities')
@@ -444,19 +577,24 @@ class _ChatState extends State<Chat> {
           .collection('chatRoom')
           .doc(widget.chatRoomId)
           .collection('accounts')
-          .doc(widget.userName)
+          .doc(accountNumberToUse)
           .collection('chats');
+
+      print("✅ Chat path initialized for regular user with $matchedField = $accountNumberToUse");
+      return true;
     }
+
+    print("❌ No logged in user.");
+    return false;
   }
 
   void fetchChats() {
     chats = _chatsList.orderBy('time', descending: false).snapshots();
   }
 
-
   Future<void> fetchPropertyAddress() async {
     String? address = await getPropertyAddress(
-      widget.userName ?? '',
+      '', // unused now
       widget.districtId,
       widget.municipalityId,
       widget.isLocalMunicipality,
@@ -471,22 +609,66 @@ class _ChatState extends State<Chat> {
 
   Future<void> createOrUpdateChatRoom() async {
     try {
-      // Reference to the chat room document based on the user's phone number
+      final prefs = await SharedPreferences.getInstance();
+      final currentUser = FirebaseAuth.instance.currentUser;
+
+      String accountNumberToUse = '';
+      String matchedField = 'accountNumber';
+
+      if (currentUser?.email != null) {
+        // 🔹 Municipality user: Use account number from passed-in map
+        final utilityTypeDoc = widget.isLocalMunicipality
+            ? await FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(widget.municipalityId)
+            .get()
+            : await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(widget.districtId)
+            .collection('municipalities')
+            .doc(widget.municipalityId)
+            .get();
+
+        final utilityTypes = List<String>.from(utilityTypeDoc.get('utilityType') ?? []);
+
+        if (utilityTypes.contains('electricity') && !utilityTypes.contains('water')) {
+          matchedField = 'electricityAccountNumber';
+        }
+
+        accountNumberToUse = widget.chatRoomAccountsMap?[matchedField] ?? '';
+
+        // Fallback to the other field if empty
+        if (accountNumberToUse.isEmpty && matchedField == 'electricityAccountNumber') {
+          accountNumberToUse = widget.chatRoomAccountsMap?['accountNumber'] ?? '';
+          matchedField = 'accountNumber';
+        } else if (accountNumberToUse.isEmpty && matchedField == 'accountNumber') {
+          accountNumberToUse = widget.chatRoomAccountsMap?['electricityAccountNumber'] ?? '';
+          matchedField = 'electricityAccountNumber';
+        }
+
+      } else {
+        // 🔹 Regular user: use from SharedPreferences
+        matchedField = prefs.getString('matchedAccountField') ?? 'accountNumber';
+        accountNumberToUse = prefs.getString('selectedPropertyAccountNo') ?? '';
+      }
+
+      if (accountNumberToUse.isEmpty) {
+        print("❌ Cannot create/update chat room: no valid account number found.");
+        return;
+      }
+
+      // ✅ Proceed to write
       DocumentReference chatRoomRef;
       DocumentReference accountRef;
 
       if (widget.isLocalMunicipality) {
-        // Reference for the cell number document
         chatRoomRef = FirebaseFirestore.instance
             .collection('localMunicipalities')
             .doc(widget.municipalityId)
             .collection('chatRoom')
-            .doc(widget.chatRoomId); // Document for the user's phone number
+            .doc(widget.chatRoomId);
 
-        // Reference for the account number document under the phone number
-        accountRef = chatRoomRef
-            .collection('accounts')
-            .doc(widget.userName); // Document for the property account number
+        accountRef = chatRoomRef.collection('accounts').doc(accountNumberToUse);
       } else {
         chatRoomRef = FirebaseFirestore.instance
             .collection('districts')
@@ -494,31 +676,24 @@ class _ChatState extends State<Chat> {
             .collection('municipalities')
             .doc(widget.municipalityId)
             .collection('chatRoom')
-            .doc(widget.chatRoomId); // Document for the user's phone number
+            .doc(widget.chatRoomId);
 
-        accountRef = chatRoomRef
-            .collection('accounts')
-            .doc(widget.userName); // Document for the property account number
+        accountRef = chatRoomRef.collection('accounts').doc(accountNumberToUse);
       }
 
-      // Set or update the cell number document with the 'chatRoom' field
       await chatRoomRef.set({
-        'chatRoom':
-            widget.chatRoomId, // The phone number is the 'chatRoom' value here
+        'chatRoom': widget.chatRoomId,
         'lastUpdated': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
-      // Set or update the account number document under the user's phone number
       await accountRef.set({
-        'chatRoom':
-            widget.userName, // Use accountNumber as the 'chatRoom' field here
+        'chatRoom': accountNumberToUse,
         'lastUpdated': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
-      print(
-          'Chat room created/updated for phoneNumber: ${widget.chatRoomId} and accountNumber: ${widget.userName}');
+      print('✅ Chat room created/updated for: $matchedField = $accountNumberToUse');
     } catch (e) {
-      print('Error creating or updating chat room: $e');
+      print('❌ Error creating/updating chat room: $e');
     }
   }
 
@@ -535,39 +710,70 @@ class _ChatState extends State<Chat> {
   }
 
   Future<String?> getPropertyAddress(
-      String accountNumber, String districtId, String municipalityId, bool isLocalMunicipality) async {
+      String unusedAccountNumber,
+      String districtId,
+      String municipalityId,
+      bool isLocalMunicipality,
+      ) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    bool isMunicipalUser = currentUser?.email != null;
+
+    // Extract both account fields
+    String accNo = widget.chatRoomAccountsMap?['accountNumber'] ?? '';
+    String elecAccNo = widget.chatRoomAccountsMap?['electricityAccountNumber'] ?? '';
+
+    // Decide matched field
+    String matchedAccountField = '';
+    String accountNumberToUse = '';
+
+    if (elecAccNo.isNotEmpty && (accNo.isEmpty || elecAccNo == widget.userName)) {
+      matchedAccountField = 'electricityAccountNumber';
+      accountNumberToUse = elecAccNo;
+    } else if (accNo.isNotEmpty) {
+      matchedAccountField = 'accountNumber';
+      accountNumberToUse = accNo;
+    }
+
+    print('🟡 getPropertyAddress: incoming userName = ${widget.userName}');
+    print('🟡 chatRoomAccountsMap: ${widget.chatRoomAccountsMap}');
+    print('🟡 Using matchedAccountField = $matchedAccountField');
+    print('🟡 Using accountNumber = $accountNumberToUse');
+
+    if (accountNumberToUse.isEmpty) {
+      print('❌ No valid account number stored. Aborting.');
+      return null;
+    }
+
     try {
       QuerySnapshot propertiesSnapshot;
 
       if (isLocalMunicipality) {
-        // 🔍 Search in the Local Municipality collection
         propertiesSnapshot = await FirebaseFirestore.instance
             .collection('localMunicipalities')
             .doc(municipalityId)
             .collection('properties')
-            .where('accountNumber', isEqualTo: accountNumber)
+            .where(matchedAccountField, isEqualTo: accountNumberToUse)
             .limit(1)
             .get();
       } else {
-        // 🔍 Search in the District Municipality collection
         propertiesSnapshot = await FirebaseFirestore.instance
             .collection('districts')
             .doc(districtId)
             .collection('municipalities')
             .doc(municipalityId)
             .collection('properties')
-            .where('accountNumber', isEqualTo: accountNumber)
+            .where(matchedAccountField, isEqualTo: accountNumberToUse)
             .limit(1)
             .get();
       }
 
       if (propertiesSnapshot.docs.isNotEmpty) {
-        var propertyData = propertiesSnapshot.docs.first.data() as Map<String, dynamic>;
-        String propertyAddress = propertyData['address'];
-        print('✅ Property Address Found: $propertyAddress');
-        return propertyAddress;
+        final propertyData = propertiesSnapshot.docs.first.data() as Map<String, dynamic>;
+        final fetchedAddress = propertyData['address'] ?? 'Unknown Property';
+        print('✅ Property Address Found: $fetchedAddress');
+        return fetchedAddress;
       } else {
-        print('❌ No property found for account number: $accountNumber');
+        print('❌ No property found for: $matchedAccountField = $accountNumberToUse');
         return null;
       }
     } catch (e) {
@@ -576,46 +782,65 @@ class _ChatState extends State<Chat> {
     }
   }
 
+  void markMessagesAsRead(String phoneNumber, String? _) async {
+    try {
+      // ✅ Use resolved values
+      final String resolvedAccountNumber = accountNumber;
+      final String resolvedField = matchedAccountField;
 
-  void markMessagesAsRead(String phoneNumber, String? accountNumber) async {
-    CollectionReference chatsCollection;
-
-    // Determine the correct path for the chat collection
-    if (widget.isLocalMunicipality) {
-      chatsCollection = FirebaseFirestore.instance
-          .collection('localMunicipalities')
-          .doc(widget.municipalityId)
-          .collection('chatRoom')
-          .doc(phoneNumber)
-          .collection('accounts')
-          .doc(accountNumber)
-          .collection('chats');
-    } else {
-      chatsCollection = FirebaseFirestore.instance
-          .collection('districts')
-          .doc(widget.districtId)
-          .collection('municipalities')
-          .doc(widget.municipalityId)
-          .collection('chatRoom')
-          .doc(phoneNumber)
-          .collection('accounts')
-          .doc(accountNumber)
-          .collection('chats');
-    }
-
-    // Get current user's identifier (phone number or email) to differentiate
-    final currentUser = FirebaseAuth.instance.currentUser;
-    String currentUserIdentifier =
-        currentUser?.phoneNumber ?? currentUser?.email ?? '';
-
-    // Only mark messages as read if they were sent by the other party
-    QuerySnapshot unreadMessagesSnapshot =
-        await chatsCollection.where('isRead', isEqualTo: false).get();
-
-    for (var doc in unreadMessagesSnapshot.docs) {
-      if (doc['sendBy'] != currentUserIdentifier) {
-        await doc.reference.update({'isRead': true});
+      if (resolvedAccountNumber.isEmpty) {
+        print("❌ No valid account number found when marking messages as read.");
+        return;
       }
+
+      CollectionReference chatsCollection;
+
+      if (widget.isLocalMunicipality) {
+        chatsCollection = FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(widget.municipalityId)
+            .collection('chatRoom')
+            .doc(phoneNumber)
+            .collection('accounts')
+            .doc(resolvedAccountNumber)
+            .collection('chats');
+      } else {
+        chatsCollection = FirebaseFirestore.instance
+            .collection('districts')
+            .doc(widget.districtId)
+            .collection('municipalities')
+            .doc(widget.municipalityId)
+            .collection('chatRoom')
+            .doc(phoneNumber)
+            .collection('accounts')
+            .doc(resolvedAccountNumber)
+            .collection('chats');
+      }
+
+      final currentUser = FirebaseAuth.instance.currentUser;
+      final currentUserIdentifier =
+          currentUser?.phoneNumber ?? currentUser?.email ?? '';
+
+      QuerySnapshot unreadMessagesSnapshot = await chatsCollection.get();
+
+      for (var doc in unreadMessagesSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+
+        if (data['sendBy'] != currentUserIdentifier) {
+          final fieldToUpdate = currentUserIdentifier.contains('@')
+              ? 'isReadByMunicipalUser'
+              : 'isReadByRegularUser';
+
+          if (data[fieldToUpdate] == false) {
+            await doc.reference.update({fieldToUpdate: true});
+          }
+        }
+      }
+
+      print("✅ Marked messages as read for $resolvedField = $resolvedAccountNumber");
+
+    } catch (e) {
+      print("❌ Error marking messages as read: $e");
     }
   }
 
@@ -725,7 +950,7 @@ class _ChatState extends State<Chat> {
       print("No file selected");
       // Show a snackbar for no file selected
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('No file selected')));
+          .showSnackBar(const SnackBar(content: Text('No file selected')));
     }
   }
 
@@ -907,8 +1132,6 @@ class _ChatState extends State<Chat> {
       },
     );
   }
-
-
   // void sendMessage({
   //   String? text,
   //   String? fileUrl,
@@ -997,38 +1220,69 @@ class _ChatState extends State<Chat> {
     String? text,
     String? fileUrl,
     required String chatRoomId,
-  }) {
+  }) async {
     if (messageEditingController.text.trim().isEmpty && fileUrl == null) {
-      return; // Do not send if both text and file are empty
+      return;
     }
 
-    // Determine the current user identifier (phone number or email)
-    String currentUserIdentifier;
-    if (FirebaseAuth.instance.currentUser!.phoneNumber != null) {
-      // Regular user
-      currentUserIdentifier = FirebaseAuth.instance.currentUser!.phoneNumber!;
-    } else {
-      // Municipal user
-      currentUserIdentifier = FirebaseAuth.instance.currentUser!.email!;
-    }
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final currentUserIdentifier =
+        currentUser?.phoneNumber ?? currentUser?.email ?? '';
 
-    // Set isRead fields based on who is sending the message
-    bool isReadByRegularUser = currentUserIdentifier == FirebaseAuth.instance.currentUser!.phoneNumber;
-    bool isReadByMunicipalUser = currentUserIdentifier != FirebaseAuth.instance.currentUser!.phoneNumber;
+    bool isReadByRegularUser = currentUserIdentifier == currentUser?.phoneNumber;
+    bool isReadByMunicipalUser = !isReadByRegularUser;
 
     Map<String, dynamic> messageData = {
       "sendBy": currentUserIdentifier,
       "message": text ?? '',
       "time": DateTime.now().millisecondsSinceEpoch,
-      "isReadByRegularUser": isReadByRegularUser,    // Set based on sender type
-      "isReadByMunicipalUser": isReadByMunicipalUser, // Set based on sender type
+      "isReadByRegularUser": isReadByRegularUser,
+      "isReadByMunicipalUser": isReadByMunicipalUser,
       if (fileUrl != null) "fileUrl": fileUrl,
     };
 
-    _chatsList.add(messageData);
-    messageEditingController.clear();
-  }
+    // ✅ Use resolved field and value
+    final String resolvedField = matchedAccountField;
+    final String resolvedAccountNumber = accountNumber;
 
+    if (resolvedAccountNumber.isEmpty) {
+      print("❌ Cannot send message: resolved account number is empty.");
+      return;
+    }
+
+    try {
+      CollectionReference chatsRef;
+
+      if (widget.isLocalMunicipality) {
+        chatsRef = FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(widget.municipalityId)
+            .collection('chatRoom')
+            .doc(chatRoomId)
+            .collection('accounts')
+            .doc(resolvedAccountNumber)
+            .collection('chats');
+      } else {
+        chatsRef = FirebaseFirestore.instance
+            .collection('districts')
+            .doc(widget.districtId)
+            .collection('municipalities')
+            .doc(widget.municipalityId)
+            .collection('chatRoom')
+            .doc(chatRoomId)
+            .collection('accounts')
+            .doc(resolvedAccountNumber)
+            .collection('chats');
+      }
+
+      await chatsRef.add(messageData);
+      messageEditingController.clear();
+      print("✅ Message sent to $resolvedField: $resolvedAccountNumber");
+
+    } catch (e) {
+      print("❌ Failed to send message: $e");
+    }
+  }
 
   // Widget chatMessages(BuildContext context) {
   //   return StreamBuilder<QuerySnapshot>(
@@ -1093,8 +1347,41 @@ class _ChatState extends State<Chat> {
   //   );
   // }
   Widget chatMessages(BuildContext context) {
+    // ✅ Use already-resolved values
+    final String resolvedAccountNumber = accountNumber;
+    final String resolvedField = matchedAccountField;
+
+    if (resolvedAccountNumber.isEmpty) {
+      print("❌ No valid account number found in chatMessages.");
+      return const Center(child: Text("Error loading chat."));
+    }
+
+    CollectionReference chatsRef;
+
+    if (widget.isLocalMunicipality) {
+      chatsRef = FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(widget.municipalityId)
+          .collection('chatRoom')
+          .doc(widget.chatRoomId)
+          .collection('accounts')
+          .doc(resolvedAccountNumber)
+          .collection('chats');
+    } else {
+      chatsRef = FirebaseFirestore.instance
+          .collection('districts')
+          .doc(widget.districtId)
+          .collection('municipalities')
+          .doc(widget.municipalityId)
+          .collection('chatRoom')
+          .doc(widget.chatRoomId)
+          .collection('accounts')
+          .doc(resolvedAccountNumber)
+          .collection('chats');
+    }
+
     return StreamBuilder<QuerySnapshot>(
-      stream: chats,
+      stream: chatsRef.orderBy('time', descending: false).snapshots(),
       builder: (context, snapshot) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_scrollController.hasClients) {
@@ -1102,78 +1389,82 @@ class _ChatState extends State<Chat> {
           }
         });
 
-        if (snapshot.hasData) {
-          var currentUserIdentifier = FirebaseAuth.instance.currentUser!.phoneNumber != null
-              ? FirebaseAuth.instance.currentUser!.phoneNumber!
-              : FirebaseAuth.instance.currentUser!.email!;
-
-          // ✅ Check unread messages and mark as read if necessary
-          snapshot.data?.docs.forEach((doc) {
-            var data = doc.data() as Map<String, dynamic>;
-            var sendBy = data["sendBy"];
-
-            if ((sendBy != currentUserIdentifier) &&
-                ((currentUserIdentifier.contains('@') && !data["isReadByMunicipalUser"]) ||
-                    (!currentUserIdentifier.contains('@') && !data["isReadByRegularUser"]))) {
-              doc.reference.update({
-                currentUserIdentifier.contains('@') ? "isReadByMunicipalUser" : "isReadByRegularUser": true,
-              });
-            }
-          });
-
-          // ✅ If there are NO messages, show a background message
-          if (snapshot.data!.docs.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  "Leave a message for any queries, and someone will get back to you.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade600, // Light grey text
-                  ),
-                ),
-              ),
-            );
-          }
-
-          // ✅ Display messages normally when they exist
-          return SingleChildScrollView(
-            reverse: true,
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              children: [
-                ListView.builder(
-                  controller: _scrollController,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: snapshot.data?.docs.length ?? 0,
-                  itemBuilder: (context, index) {
-                    var data = snapshot.data?.docs[index].data() as Map<String, dynamic>;
-                    bool sendByMe = data["sendBy"] == currentUserIdentifier;
-
-                    return MessageTile(
-                      message: data["message"],
-                      sendByMe: sendByMe,
-                      timestamp: data["time"],
-                      sendBy: data["sendBy"],
-                      isRead: data[currentUserIdentifier.contains('@') ? "isReadByMunicipalUser" : "isReadByRegularUser"],
-                      fileUrl: data["fileUrl"],
-                    );
-                  },
-                ),
-                SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-              ],
-            ),
-          );
-        } else {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                "Leave a message for any queries, and someone will get back to you.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+          );
+        }
+
+        final currentUserIdentifier = FirebaseAuth.instance.currentUser?.phoneNumber ??
+            FirebaseAuth.instance.currentUser?.email ??
+            '';
+
+        // 🔄 Mark unread messages as read
+        for (var doc in snapshot.data!.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          final sendBy = data["sendBy"];
+
+          if ((sendBy != currentUserIdentifier) &&
+              ((currentUserIdentifier.contains('@') && !data["isReadByMunicipalUser"]) ||
+                  (!currentUserIdentifier.contains('@') && !data["isReadByRegularUser"]))) {
+            doc.reference.update({
+              currentUserIdentifier.contains('@')
+                  ? "isReadByMunicipalUser"
+                  : "isReadByRegularUser": true,
+            });
+          }
+        }
+
+        return SingleChildScrollView(
+          reverse: true,
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              ListView.builder(
+                controller: _scrollController,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: snapshot.data!.docs.length,
+                itemBuilder: (context, index) {
+                  final data = snapshot.data!.docs[index].data() as Map<String, dynamic>;
+                  final sendByMe = data["sendBy"] == currentUserIdentifier;
+
+                  return MessageTile(
+                    message: data["message"],
+                    sendByMe: sendByMe,
+                    timestamp: data["time"],
+                    sendBy: data["sendBy"],
+                    isRead: data[currentUserIdentifier.contains('@')
+                        ? "isReadByMunicipalUser"
+                        : "isReadByRegularUser"],
+                    fileUrl: data["fileUrl"],
+                  );
+                },
+              ),
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+            ],
+          ),
+        );
       },
     );
   }
+
+
 
 
   @override

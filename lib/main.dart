@@ -20,7 +20,6 @@ import 'package:municipal_services/code/login/citizen_otp_page.dart';
 import 'package:municipal_services/code/login/login_page.dart';
 import 'code/Models/notify_provider.dart';
 import 'code/main_page.dart';
-import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -166,11 +165,11 @@ void main() async {
   MobileAds.instance.initialize();
   HttpOverrides.global = MyHttpOverrides();
 
-  if (!foundation.kIsWeb && (io.Platform.isAndroid || io.Platform.isIOS)) {
-    await FlutterDownloader.initialize(
-      debug: true, // set false to disable printing logs to console
-    );
-  }
+  // if (!foundation.kIsWeb && (io.Platform.isAndroid || io.Platform.isIOS)) {
+  //   await FlutterDownloader.initialize(
+  //     debug: true, // set false to disable printing logs to console
+  //   );
+  // }
 
   MaterialApp(
     theme: ThemeData(primarySwatch: Colors.grey),

@@ -53,7 +53,7 @@ String phoneNum = ' ';
 
 String accountNumberAll = ' ';
 String locationGivenAll = ' ';
-// String eMeterNumber = ' ';
+String eMeterNumber = ' ';
 String accountNumberW = ' ';
 String locationGivenW = ' ';
 String wMeterNumber = ' ';
@@ -89,7 +89,10 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
   final FocusNode _focusNodeTab2 = FocusNode();
   final FocusNode _focusNodeTab3 = FocusNode();
   late TabController _tabController;
-
+  bool handlesWater = false;
+  bool handlesElectricity = false;
+  bool _utilityTypesLoaded = false;
+  Map<String, List<String>> municipalityUtilityMap = {};
 
   @override
   void initState() {
@@ -118,15 +121,15 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
     });
     _scrollControllerTab3.addListener(() {
     });
-    fetchUserDetails().then((_) {
+    fetchUserDetails().then((_) async {
+      await fetchMunicipalityUtilityTypes(); // Ensures state is set
       if (isLocalUser) {
-        // For local municipality users, fetch properties only for their municipality
-        fetchPropertiesForLocalMunicipality();
+        await fetchPropertiesForLocalMunicipality();
       } else {
-        // For district-level users, fetch properties for all municipalities
-        fetchMunicipalities(); // Fetch municipalities after user details are loaded
+        await fetchMunicipalities();
       }
     });
+
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -211,6 +214,55 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
     }
   }
 
+  Future<void> fetchMunicipalityUtilityTypes() async {
+    if (isLocalMunicipality) {
+      final docRef = FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId);
+
+      final snapshot = await docRef.get();
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        final utilityTypes = List<String>.from(data['utilityType'] ?? []);
+        handlesWater = utilityTypes.contains('water');
+        handlesElectricity = utilityTypes.contains('electricity');
+      }
+    } else {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .get();
+
+      bool foundWater = false;
+      bool foundElectricity = false;
+
+      municipalityUtilityMap = {}; // Reset it
+
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+        final munId = doc.id;
+
+        if (data.containsKey('utilityType')) {
+          final types = List<String>.from(data['utilityType']);
+          municipalityUtilityMap[munId] = types;
+        }
+      }
+
+      handlesWater = foundWater;
+      handlesElectricity = foundElectricity;
+    }
+
+    print('🗺️ municipalityUtilityMap: $municipalityUtilityMap');
+
+
+    _utilityTypesLoaded = true; // ✅ Mark as loaded
+
+    if (mounted) setState(() {});
+  }
+
+
+
 
   void checkAdmin() {
     getUsersStream();
@@ -289,8 +341,8 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
   String userNameProp = '';
   String userIDnum = '';
   String userPhoneNumber = '';
-  // String EMeterNum = '';
-  // String EMeterRead = '';
+  String EMeterNum = '';
+  String EMeterRead = '';
   String WMeterNum = '';
   String WMeterRead = '';
   String userBill = '';
@@ -420,10 +472,6 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
     }
   }
 
-
-
-
-
   Future<void> fetchPropertiesForLocalMunicipality() async {
     if (municipalityId.isEmpty) {
       print("Error: municipalityId is empty. Cannot fetch properties.");
@@ -486,7 +534,6 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
     }
   }
 
-
   getUsersTokenStream() async {
     try {
       QuerySnapshot propertiesSnapshot;
@@ -519,7 +566,6 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
       print('Error fetching properties: $e');
     }
   }
-
 
   _onSearchChanged() async {
     if (_searchController.text.isEmpty) {
@@ -991,191 +1037,10 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
     );
   }
 
-  Widget tokenItemField(
-      String accNumber,
-      String userAddress,
-      String userAreaCode,
-      String userWardProp,
-      String userNameProp,
-      String userIDnum,
-      String userPhoneNum,
-      String userValidity,
-      // String userEMeterNum,
-      // String userEMeterRead,
-      String userWMeterNum,
-      String userWMeterRead,
-      String userBill,) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8,),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Account Number: $accNumber',
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Property: $userAddress',
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Area Code: $userAreaCode',
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Ward: $userWardProp',
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Full Name: $userNameProp',
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'ID Number: $userIDnum',
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Phone: $userPhoneNum',
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Register status: $userValidity',
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          // Row(
-          //   children: [
-          //     Expanded(
-          //       child: Text(
-          //         'Meter Number: $userEMeterNum',
-          //         style: const TextStyle(
-          //           fontSize: 16,
-          //         ),
-          //       ),
-          //     ),
-          //   ],
-          // ),
-          // Row(
-          //   children: [
-          //     Expanded(
-          //       child: Text(
-          //         'Meter Reading: $userEMeterRead',
-          //         style: const TextStyle(
-          //           fontSize: 16,
-          //         ),
-          //       ),
-          //     ),
-          //   ],
-          // ),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Water Meter Number: $userWMeterNum',
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Water Meter Reading: $userWMeterRead',
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  userBill,
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget propertyCard() {
+    if (!_utilityTypesLoaded) {
+      return const Center(child: CircularProgressIndicator());
+    }
     if (_allPropResults.isNotEmpty){
       return  GestureDetector(
         onTap: () {
@@ -1226,7 +1091,13 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
                 controller: _scrollControllerTab1,
                 itemCount: _allPropResults.length,
                 itemBuilder: (context, index) {
+                  final munId = _allPropResults[index]['municipalityId'];
+                  final utilTypes = municipalityUtilityMap[munId] ?? [];
+
+                  final bool showWater = utilTypes.contains('water');
+                  final bool showElectricity = utilTypes.contains('electricity');
                   var property = _allPropResults[index];
+                  final data = property.data() as Map<String, dynamic>;
                   userAccNum = _allPropResults[index]['accountNumber'];
                   userAddress = _allPropResults[index]['address'];
                   userAreaCode = _allPropResults[index]['areaCode'].toString();
@@ -1234,8 +1105,8 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
                   userNameProp = '${_allPropResults[index]['firstName']} ${_allPropResults[index]['lastName']}';
                   userIDnum = _allPropResults[index]['idNumber'];
                   userPhoneNumber = _allPropResults[index]['cellNumber'];
-                  // EMeterNum = _allPropResults[index]['meter_number'];
-                  // EMeterRead = _allPropResults[index]['meter_reading'];
+                  final EMeterNum = data.containsKey('meter_number') ? data['meter_number'] : 'N/A';
+                  final EMeterRead = data.containsKey('meter_reading') ? data['meter_reading'] : 'N/A';
                   WMeterNum = _allPropResults[index]['water_meter_number'];
                   WMeterRead = _allPropResults[index]['water_meter_reading'];
                   userBill = _allPropResults[index]['eBill'];
@@ -1270,21 +1141,29 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
                             ),
                           ),
                           const SizedBox(height: 10,),
-                          tokenItemField(
-                            userAccNum,
-                            userAddress,
-                            userAreaCode,
-                            userWardProp,
-                            userNameProp,
-                            userIDnum,
-                            userPhoneNumber,
-                            userValid,
-                            // EMeterNum,
-                            // EMeterRead,
-                            WMeterNum,
-                            WMeterRead,
-                            userBill,
-                          ),
+                          Text('Account Number: $userAccNum',style: const TextStyle(fontSize: 16)),
+                          Text('Property: $userAddress',style: const TextStyle(fontSize: 16)),
+                          Text('Area Code: $userAreaCode',style: const TextStyle(fontSize: 16)),
+                          Text('Ward: $userWardProp',style: const TextStyle(fontSize: 16)),
+                          Text('Full Name: $userNameProp',style: const TextStyle(fontSize: 16)),
+                          Text('ID Number: $userIDnum',style: const TextStyle(fontSize: 16)),
+                          Text('Phone: $userPhoneNumber',style: const TextStyle(fontSize: 16)),
+                          Text('Register status: $userValid',style: const TextStyle(fontSize: 16)),
+
+                          if (showElectricity) ...[
+                            const SizedBox(height: 10),
+                            Text('Electricity Meter Number: $EMeterNum',style: const TextStyle(fontSize: 16)),
+                            Text('Electricity Meter Reading: $EMeterRead',style: const TextStyle(fontSize: 16)),
+                          ],
+
+                          if (showWater) ...[
+                            const SizedBox(height: 10),
+                            Text('Water Meter Number: $WMeterNum',style: const TextStyle(fontSize: 16)),
+                            Text('Water Meter Reading: $WMeterRead',style: const TextStyle(fontSize: 16)),
+                          ],
+
+                          const SizedBox(height: 10),
+                          Text(userBill),
                           Visibility(
                             visible: false,
                             child: Text('User Token: $userPhoneToken',
@@ -1312,6 +1191,9 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
   }
 
   Widget userValidCard() {
+    if (!_utilityTypesLoaded) {
+      return const Center(child: CircularProgressIndicator());
+    }
     if (_allPropResults.isNotEmpty){
       return GestureDetector(
         onTap: () {
@@ -1362,7 +1244,13 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
               controller: _scrollControllerTab2,
                 itemCount: _allPropResults.length,
                 itemBuilder: (context, index) {
+                  final munId = _allPropResults[index]['municipalityId'];
+                  final utilTypes = municipalityUtilityMap[munId] ?? [];
+
+                  final bool showWater = utilTypes.contains('water');
+                  final bool showElectricity = utilTypes.contains('electricity');
                   var property = _allPropResults[index];
+                  final data = property.data() as Map<String, dynamic>;
                   userAccNum = _allPropResults[index]['accountNumber'];
                   userAddress = _allPropResults[index]['address'];
                   userAreaCode = _allPropResults[index]['areaCode'].toString();
@@ -1370,8 +1258,8 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
                   userNameProp = '${_allPropResults[index]['firstName']} ${_allPropResults[index]['lastName']}';
                   userIDnum = _allPropResults[index]['idNumber'];
                   userPhoneNumber = _allPropResults[index]['cellNumber'];
-                  // EMeterNum = _allPropResults[index]['meter_number'];
-                  // EMeterRead = _allPropResults[index]['meter_reading'];
+                  final EMeterNum = data.containsKey('meter_number') ? data['meter_number'] : 'N/A';
+                  final EMeterRead = data.containsKey('meter_reading') ? data['meter_reading'] : 'N/A';
                   WMeterNum = _allPropResults[index]['water_meter_number'];
                   WMeterRead = _allPropResults[index]['water_meter_reading'];
                   userBill = _allPropResults[index]['eBill'];
@@ -1407,21 +1295,26 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
                                 ),
                               ),
                               const SizedBox(height: 10,),
-                              tokenItemField(
-                                userAccNum,
-                                userAddress,
-                                userAreaCode,
-                                userWardProp,
-                                userNameProp,
-                                userIDnum,
-                                userPhoneNumber,
-                                userValid,
-                                // EMeterNum,
-                                // EMeterRead,
-                                WMeterNum,
-                                WMeterRead,
-                                userBill,
-                              ),
+                              Text('Account Number: $userAccNum',style: const TextStyle(fontSize: 16)),
+                              Text('Property: $userAddress',style: const TextStyle(fontSize: 16)),
+                              Text('Area Code: $userAreaCode',style: const TextStyle(fontSize: 16)),
+                              Text('Ward: $userWardProp',style: const TextStyle(fontSize: 16)),
+                              Text('Full Name: $userNameProp',style: const TextStyle(fontSize: 16)),
+                              Text('ID Number: $userIDnum',style: const TextStyle(fontSize: 16)),
+                              Text('Phone: $userPhoneNumber',style: const TextStyle(fontSize: 16)),
+                              Text('Register status: $userValid',style: const TextStyle(fontSize: 16)),
+
+                              if (showElectricity) ...[
+                                const SizedBox(height: 10),
+                                Text('Electricity Meter Number: $EMeterNum',style: const TextStyle(fontSize: 16)),
+                                Text('Electricity Meter Reading: $EMeterRead',style: const TextStyle(fontSize: 16)),
+                              ],
+
+                              if (showWater) ...[
+                                const SizedBox(height: 10),
+                                Text('Water Meter Number: $WMeterNum',style: const TextStyle(fontSize: 16)),
+                                Text('Water Meter Reading: $WMeterRead',style: const TextStyle(fontSize: 16)),
+                              ],
                               Visibility(
                                 visible: false,
                                 child: Text('User Token: $userPhoneToken',
@@ -1452,6 +1345,9 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
   }
 
   Widget userInValidCard() {
+    if (!_utilityTypesLoaded) {
+      return const Center(child: CircularProgressIndicator());
+    }
     if (_allPropResults.isNotEmpty){
       return GestureDetector(
         onTap: () {
@@ -1502,7 +1398,13 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
                 controller: _scrollControllerTab3,
                 itemCount: _allPropResults.length,
                 itemBuilder: (context, index) {
+                  final munId = _allPropResults[index]['municipalityId'];
+                  final utilTypes = municipalityUtilityMap[munId] ?? [];
+
+                  final bool showWater = utilTypes.contains('water');
+                  final bool showElectricity = utilTypes.contains('electricity');
                   var property = _allPropResults[index];
+                  final data = property.data() as Map<String, dynamic>;
                   userAccNum = _allPropResults[index]['accountNumber'];
                   userAddress = _allPropResults[index]['address'];
                   userAreaCode = _allPropResults[index]['areaCode'].toString();
@@ -1510,10 +1412,10 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
                   userNameProp = '${_allPropResults[index]['firstName']} ${_allPropResults[index]['lastName']}';
                   userIDnum = _allPropResults[index]['idNumber'];
                   userPhoneNumber = _allPropResults[index]['cellNumber'];
-                  // EMeterNum = _allPropResults[index]['meter_number'];
-                  // EMeterRead = _allPropResults[index]['meter_reading'];
-                  WMeterNum = _allPropResults[index]['water_meter_number'];
-                  WMeterRead = _allPropResults[index]['water_meter_reading'];
+                  final EMeterNum = property.get('meter_number');
+                  final EMeterRead = property.get('meter_reading');
+                  final WMeterNum = data.containsKey('water_meter_number') ? data['water_meter_number'] : 'N/A';
+                  final WMeterRead = data.containsKey('water_meter_reading') ? data['water_meter_reading'] : 'N/A';
                   userBill = _allPropResults[index]['eBill'];
 
                   String userValid = 'User is not yet registered';
@@ -1547,21 +1449,26 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
                               ),
                             ),
                             const SizedBox(height: 10,),
-                            tokenItemField(
-                              userAccNum,
-                              userAddress,
-                              userAreaCode,
-                              userWardProp,
-                              userNameProp,
-                              userIDnum,
-                              userPhoneNumber,
-                              userValid,
-                              // EMeterNum,
-                              // EMeterRead,
-                              WMeterNum,
-                              WMeterRead,
-                              userBill,
-                            ),
+                            Text('Account Number: $userAccNum',style: const TextStyle(fontSize: 16)),
+                            Text('Property: $userAddress',style: const TextStyle(fontSize: 16)),
+                            Text('Area Code: $userAreaCode',style: const TextStyle(fontSize: 16)),
+                            Text('Ward: $userWardProp',style: const TextStyle(fontSize: 16)),
+                            Text('Full Name: $userNameProp',style: const TextStyle(fontSize: 16)),
+                            Text('ID Number: $userIDnum',style: const TextStyle(fontSize: 16)),
+                            Text('Phone: $userPhoneNumber',style: const TextStyle(fontSize: 16)),
+                            Text('Register status: $userValid',style: const TextStyle(fontSize: 16)),
+
+                            if (showElectricity) ...[
+                              const SizedBox(height: 10),
+                              Text('Electricity Meter Number: $EMeterNum',style: const TextStyle(fontSize: 16)),
+                              Text('Electricity Meter Reading: $EMeterRead',style: const TextStyle(fontSize: 16)),
+                            ],
+
+                            if (showWater) ...[
+                              const SizedBox(height: 10),
+                              Text('Water Meter Number: $WMeterNum',style: const TextStyle(fontSize: 16)),
+                              Text('Water Meter Reading: $WMeterRead',style: const TextStyle(fontSize: 16)),
+                            ],
                             Visibility(
                               visible: false,
                               child: Text('User Token: $userPhoneToken',
@@ -1592,6 +1499,12 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
 
 
   Future<void> reportGeneration() async {
+    print("Starting report generation...");
+
+    // Refresh utility flags to ensure they are populated
+    await fetchMunicipalityUtilityTypes();
+
+    print("handlesWater: $handlesWater, handlesElectricity: $handlesElectricity");
     final excel.Workbook workbook = excel.Workbook();
     final excel.Worksheet sheet = workbook.worksheets[0];
 
@@ -1627,44 +1540,67 @@ class _ReportBuilderPropsState extends State<ReportBuilderProps>with SingleTicke
     sheet.getRangeByName('B1').setText('Address');
     sheet.getRangeByName('C1').setText('Area Code');
     sheet.getRangeByName('D1').setText('Utilities Bill');
-    sheet.getRangeByName('H1').setText('Water Meter Number');
-    sheet.getRangeByName('I1').setText('Water Meter Reading');
-    sheet.getRangeByName('J1').setText('Water Image Submitted');
+    if (handlesElectricity) {
+      sheet.getRangeByName('E1').setText('Electricity Meter Number');
+      sheet.getRangeByName('F1').setText('Electricity Meter Reading');
+      sheet.getRangeByName('G1').setText('Electricity Image Submitted');
+    }
+    if (handlesWater) {
+      sheet.getRangeByName('H1').setText('Water Meter Number');
+      sheet.getRangeByName('I1').setText('Water Meter Reading');
+      sheet.getRangeByName('J1').setText('Water Image Submitted');
+    }
+
     sheet.getRangeByName('K1').setText('First Name');
     sheet.getRangeByName('L1').setText('Last Name');
     sheet.getRangeByName('M1').setText('ID Number');
     sheet.getRangeByName('N1').setText('Owner Phone Number');
 
-    for (var reportSnapshot in _allPropertyReport) {
-      while (excelRow <= _allPropertyReport.length + 1) {
-        String accountNum = _allPropertyReport[listRow]['accountNumber'].toString();
-        String address = _allPropertyReport[listRow]['address'].toString();
-        String eBill = _allPropertyReport[listRow]['eBill'].toString();
-        String areaCode = _allPropertyReport[listRow]['areaCode'].toString();
-        String waterMeterNum = _allPropertyReport[listRow]['water_meter_number'].toString();
-        String waterMeterReading = _allPropertyReport[listRow]['water_meter_reading'].toString();
-        String uploadedLatestW = _allPropertyReport[listRow]['imgStateW'].toString();
-        String firstName = _allPropertyReport[listRow]['firstName'].toString();
-        String lastName = _allPropertyReport[listRow]['lastName'].toString();
-        String idNumber = _allPropertyReport[listRow]['idNumber'].toString();
-        String phoneNumber = _allPropertyReport[listRow]['cellNumber'].toString();
+    for (int i = 0; i < _allPropertyReport.length; i++) {
+      var reportSnapshot = _allPropertyReport[i];
 
-        sheet.getRangeByName('A$excelRow').setText(accountNum);
-        sheet.getRangeByName('B$excelRow').setText(address);
-        sheet.getRangeByName('C$excelRow').setText(areaCode);
-        sheet.getRangeByName('D$excelRow').setText(eBill);
+      String accountNum = reportSnapshot['accountNumber']?.toString() ?? '';
+      String address = reportSnapshot['address']?.toString() ?? '';
+      String eBill = reportSnapshot['eBill']?.toString() ?? '';
+      String areaCode = reportSnapshot['areaCode']?.toString() ?? '';
+
+      if (handlesElectricity) {
+        String electricityMeterNum = reportSnapshot['meter_number']?.toString() ?? '';
+        String electricityMeterReading = reportSnapshot['meter_reading']?.toString() ?? '';
+        String uploadedLatestE = reportSnapshot['imgStateE']?.toString() ?? '';
+
+        sheet.getRangeByName('E$excelRow').setText(electricityMeterNum);
+        sheet.getRangeByName('F$excelRow').setText(electricityMeterReading);
+        sheet.getRangeByName('G$excelRow').setText(uploadedLatestE);
+      }
+
+      if (handlesWater) {
+        String waterMeterNum = reportSnapshot['water_meter_number']?.toString() ?? '';
+        String waterMeterReading = reportSnapshot['water_meter_reading']?.toString() ?? '';
+        String uploadedLatestW = reportSnapshot['imgStateW']?.toString() ?? '';
+
         sheet.getRangeByName('H$excelRow').setText(waterMeterNum);
         sheet.getRangeByName('I$excelRow').setText(waterMeterReading);
         sheet.getRangeByName('J$excelRow').setText(uploadedLatestW);
-        sheet.getRangeByName('K$excelRow').setText(firstName);
-        sheet.getRangeByName('L$excelRow').setText(lastName);
-        sheet.getRangeByName('M$excelRow').setText(idNumber);
-        sheet.getRangeByName('N$excelRow').setText(phoneNumber);
-
-        excelRow += 1;
-        listRow += 1;
       }
+
+      String firstName = reportSnapshot['firstName']?.toString() ?? '';
+      String lastName = reportSnapshot['lastName']?.toString() ?? '';
+      String idNumber = reportSnapshot['idNumber']?.toString() ?? '';
+      String phoneNumber = reportSnapshot['cellNumber']?.toString() ?? '';
+
+      sheet.getRangeByName('A$excelRow').setText(accountNum);
+      sheet.getRangeByName('B$excelRow').setText(address);
+      sheet.getRangeByName('C$excelRow').setText(areaCode);
+      sheet.getRangeByName('D$excelRow').setText(eBill);
+      sheet.getRangeByName('K$excelRow').setText(firstName);
+      sheet.getRangeByName('L$excelRow').setText(lastName);
+      sheet.getRangeByName('M$excelRow').setText(idNumber);
+      sheet.getRangeByName('N$excelRow').setText(phoneNumber);
+
+      excelRow += 1;
     }
+
 
     final List<int> bytes = workbook.saveAsStream();
 
