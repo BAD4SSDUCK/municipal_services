@@ -157,7 +157,7 @@ class _MapScreenState extends State<MapScreen> {
       print("⚠️ Address conversion failed: $e. Using default location.");
 
       currentLocation = SOURCE_LOCATION;
-      _cameraPosition = CameraPosition(target: SOURCE_LOCATION, zoom: 16);
+      _cameraPosition = const CameraPosition(target: SOURCE_LOCATION, zoom: 16);
       showPinOnMap();
 
       Fluttertoast.showToast(

@@ -39,6 +39,7 @@ import 'package:municipal_services/code/main_page.dart';
 import 'package:provider/provider.dart';
 import '../Models/notify_provider.dart';
 import '../Models/property.dart';
+import '../login/login_page.dart';
 import 'add_user.dart';
 //Menu for municipality users
 // class HomeManagerScreen extends StatefulWidget {
@@ -626,6 +627,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
   String userRole = '';
   String adminPath='';
 
+
   @override
   void initState() {
     super.initState();
@@ -639,13 +641,14 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
   }
 
   Future<void> initializeAndCheckUnreadMessages() async {
-    await fetchUserDetails(); // Ensures `districtId` and `municipalityId` are available
+    await fetchUserDetails(); // Ensures districtId and municipalityId are available
     if (mounted) {
       setState(() {
         loading = false;
       });
     }
   }
+
 
   Future<void> fetchUserDetails() async {
     try {
@@ -714,6 +717,8 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
     _focusNode.dispose();
     super.dispose();
   }
+
+
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent) {
@@ -903,30 +908,18 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
                                 ),
                               ),
                             if (visAdmin)
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  child: _buildGridButton(
-                                    label: 'Add\nUser',
-                                    icon: Icons.person_add,
-                                    color: Colors.indigo,
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => AddMunicipalityUserForm(
-                                            adminPath: adminPath,
-                                            municipalityUserEmail: userEmail!,
-                                            isLocalMunicipality: isLocalMunicipality,
-                                            districtId: districtId,
-                                            municipalityId: municipalityId!,
-                                            isLocalUser: isLocalUser,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
+                              _buildGridButton(
+                                label: 'Admin\nConfig',
+                                icon: Icons.people,
+                                color: Colors.black54,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const DevConfigPage(),
+                                    ),
+                                  );
+                                },
                               ),
                           ],
                         ),
@@ -976,7 +969,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
                                 onTap: () {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (context) => ChatList()),
+                                    MaterialPageRoute(builder: (context) => const ChatList()),
                                   );
                                 },
                               ),
@@ -1070,23 +1063,43 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
                               label: 'Logout',
                               icon: Icons.logout,
                               color: Colors.red,
-                              onTap: () => FirebaseAuth.instance.signOut(),
+                                onTap: () async {
+                                  try {
+                                    await FirebaseAuth.instance.signOut(); // also sign out providers if used
+                                    if (!context.mounted) return;
+
+                                    // pick the correct value for your app context:
+                                    const isLocal = false; // or true, or read from your app state
+
+                                    Navigator.of(context).pushAndRemoveUntil(
+                                      MaterialPageRoute(
+                                        builder: (_) => const LoginPage(isLocalMunicipality: isLocal),
+                                      ),
+                                          (route) => false, // clears the back stack
+                                    );
+                                  } catch (e, st) {
+                                    debugPrint('signOut failed: $e\n$st');
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(const SnackBar(content: Text('Sign out failed')));
+                                  }
+                                }
+
                             ),
 
-                            if (visDev)
-                              _buildGridButton(
-                                label: 'Dev\nConfig',
-                                icon: Icons.people,
-                                color: Colors.black54,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const DevConfigPage(),
-                                    ),
-                                  );
-                                },
-                              ),
+                            // if (visDev)
+                            //   _buildGridButton(
+                            //     label: 'Dev\nConfig',
+                            //     icon: Icons.people,
+                            //     color: Colors.black54,
+                            //     onTap: () {
+                            //       Navigator.push(
+                            //         context,
+                            //         MaterialPageRoute(
+                            //           builder: (context) => const DevConfigPage(),
+                            //         ),
+                            //       );
+                            //     },
+                            //   ),
                           ],
                         ),
                       ),
@@ -1463,7 +1476,7 @@ void openPDF(BuildContext context, File file) => Navigator.of(context).push(
     );
 
 class ResponsiveLogo extends StatelessWidget {
-  const ResponsiveLogo({Key? key}) : super(key: key);
+  const ResponsiveLogo({super.key});
 
   @override
   Widget build(BuildContext context) {

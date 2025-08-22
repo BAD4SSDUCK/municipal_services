@@ -18,7 +18,10 @@ class PropertySelectionScreen extends StatefulWidget {
   final List<Property> properties;
   final String userPhoneNumber;
   final bool isLocalMunicipality;
-  const PropertySelectionScreen({super.key, required this.userPhoneNumber, required this.properties, required this.isLocalMunicipality});
+  final bool handlesWater;
+  final bool handlesElectricity;
+  const PropertySelectionScreen({super.key, required this.userPhoneNumber, required this.properties, required this.isLocalMunicipality, required this.handlesWater,
+    required this.handlesElectricity,});
 
   @override
   _PropertySelectionScreenState createState() => _PropertySelectionScreenState();
@@ -31,6 +34,9 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
   bool _isLoading = true;
   String? districtId;
   String municipalityId = '';
+  bool get handlesWater => widget.handlesWater;
+  bool get handlesElectricity => widget.handlesElectricity;
+  
 
   @override
   void initState() {
@@ -100,6 +106,7 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
       print('Error fetching district and municipality ID: $e');
     }
   }
+
   Future<LatLng?> generateCoordinatesForAddress(String address) async {
     const apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
     final encodedAddress = Uri.encodeComponent(address);
@@ -124,6 +131,9 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
 
   // Method to check and save coordinates for the selected property
   Future<void> checkAndGenerateCoordinates(Property property) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+    String? accountField = prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
     // Define the Firestore query to locate the document by account number
     QuerySnapshot querySnapshot;
     if (property.isLocalMunicipality) {
@@ -131,7 +141,7 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
           .collection('localMunicipalities')
           .doc(property.municipalityId)
           .collection('properties')
-          .where('accountNumber', isEqualTo: property.accountNo)
+          .where(accountField, isEqualTo: selectedPropertyAccountNumber)
           .limit(1)
           .get();
     } else {
@@ -141,7 +151,7 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
           .collection('municipalities')
           .doc(property.municipalityId)
           .collection('properties')
-          .where('accountNumber', isEqualTo: property.accountNo)
+          .where(accountField, isEqualTo: selectedPropertyAccountNumber)
           .limit(1)
           .get();
     }
@@ -182,6 +192,10 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
 
 
   Future<void> storeTokenForAccount(String accountNumber, String token, Property property) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+    String? accountField = prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
+
     try {
       QuerySnapshot querySnapshot;
       if (property.isLocalMunicipality) {
@@ -190,7 +204,7 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
             .collection('localMunicipalities')
             .doc(property.municipalityId)
             .collection('properties')
-            .where('accountNumber', isEqualTo: accountNumber)
+            .where(accountField, isEqualTo: selectedPropertyAccountNumber)
             .limit(1)
             .get();
       } else {
@@ -201,7 +215,7 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
             .collection('municipalities')
             .doc(property.municipalityId)
             .collection('properties')
-            .where('accountNumber', isEqualTo: accountNumber)
+            .where(accountField, isEqualTo: selectedPropertyAccountNumber)
             .limit(1)
             .get();
       }
@@ -231,25 +245,44 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
     });
   }
 
-  Future<void> saveSelectedPropertyAccountNo(String accountNo, bool isLocalMunicipality) async {
+  Future<void> saveSelectedPropertyAccountNo(Property property, bool handlesWater, bool handlesElectricity) async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      final accountNo = handlesElectricity && !handlesWater
+          ? property.electricityAccountNo
+          : property.accountNo;
+
+      // Save which field was used for lookup
+      final accountField = handlesElectricity && !handlesWater
+          ? 'electricityAccountNumber'
+          : 'accountNumber';
+
       await prefs.setString('selectedPropertyAccountNo', accountNo);
-      await prefs.setBool('isLocalMunicipality', isLocalMunicipality);
-      if (isLocalMunicipality) {
-        await prefs.remove('districtId'); // Remove districtId if it's a local municipality
+      await prefs.setString('selectedPropertyAccountField', accountField);
+      await prefs.setBool('isLocalMunicipality', property.isLocalMunicipality);
+
+      if (property.isLocalMunicipality) {
+        await prefs.remove('districtId');
       } else {
-        await prefs.setString('districtId', districtId ?? ''); // Ensure districtId is saved properly
+        await prefs.setString('districtId', property.districtId);
       }
-      await prefs.setString('municipalityId', municipalityId);
-      print("Selected property account number and municipality type saved: $accountNo, $isLocalMunicipality");
+
+      await prefs.setString('municipalityId', property.municipalityId);
+
+      print("✅ Saved: $accountNo under $accountField (isLocal: ${property.isLocalMunicipality})");
     } catch (e) {
       print("Error saving selected property: $e");
     }
   }
 
 
+
   Future<bool> checkAddressConfirmation(Property property) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+    String? accountField = prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
+
     try {
       QuerySnapshot querySnapshot;
       if (property.isLocalMunicipality) {
@@ -257,7 +290,7 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
             .collection('localMunicipalities')
             .doc(property.municipalityId)
             .collection('properties')
-            .where('accountNumber', isEqualTo: property.accountNo)
+            .where(accountField, isEqualTo: selectedPropertyAccountNumber)
             .limit(1)
             .get();
       } else {
@@ -267,7 +300,7 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
             .collection('municipalities')
             .doc(property.municipalityId)
             .collection('properties')
-            .where('accountNumber', isEqualTo: property.accountNo)
+            .where(accountField, isEqualTo: selectedPropertyAccountNumber)
             .limit(1)
             .get();
       }
@@ -402,9 +435,11 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
                                 ),
                               ),
                               onPressed: () {
-                                setState(() {
-                                  isEditing = true;
-                                });
+                                if(mounted) {
+                                  setState(() {
+                                    isEditing = true;
+                                  });
+                                }
                               },
                               child: const Text(
                                 "Edit Address",
@@ -424,10 +459,10 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
     );
   }
 
-
-
-
   Future<void> saveEditedAddress(Property property, String newAddress) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+    String? accountField = prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
     try {
       QuerySnapshot querySnapshot;
       if (property.isLocalMunicipality) {
@@ -435,7 +470,7 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
             .collection('localMunicipalities')
             .doc(property.municipalityId)
             .collection('properties')
-            .where('accountNumber', isEqualTo: property.accountNo)
+            .where(accountField, isEqualTo: selectedPropertyAccountNumber)
             .limit(1)
             .get();
       } else {
@@ -445,7 +480,7 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
             .collection('municipalities')
             .doc(property.municipalityId)
             .collection('properties')
-            .where('accountNumber', isEqualTo: property.accountNo)
+            .where(accountField, isEqualTo: selectedPropertyAccountNumber)
             .limit(1)
             .get();
       }
@@ -466,6 +501,9 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
   }
 
   Future<void> confirmAddress(Property property) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+    String? accountField = prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
     try {
       QuerySnapshot querySnapshot;
       if (property.isLocalMunicipality) {
@@ -473,7 +511,7 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
             .collection('localMunicipalities')
             .doc(property.municipalityId)
             .collection('properties')
-            .where('accountNumber', isEqualTo: property.accountNo)
+            .where(accountField, isEqualTo: selectedPropertyAccountNumber)
             .limit(1)
             .get();
       } else {
@@ -483,7 +521,7 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
             .collection('municipalities')
             .doc(property.municipalityId)
             .collection('properties')
-            .where('accountNumber', isEqualTo: property.accountNo)
+            .where(accountField, isEqualTo: selectedPropertyAccountNumber)
             .limit(1)
             .get();
       }
@@ -503,13 +541,16 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
   }
 
   Future<DocumentSnapshot?> getPropertyDocument(Property property) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
+    String? accountField = prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
     try {
       if (property.isLocalMunicipality) {
         return await FirebaseFirestore.instance
             .collection('localMunicipalities')
             .doc(property.municipalityId)
             .collection('properties')
-            .where('accountNumber', isEqualTo: property.accountNo)
+            .where(accountField, isEqualTo: selectedPropertyAccountNumber)
             .limit(1)
             .get()
             .then((snapshot) => snapshot.docs.isNotEmpty ? snapshot.docs.first : null);
@@ -520,7 +561,7 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
             .collection('municipalities')
             .doc(property.municipalityId)
             .collection('properties')
-            .where('accountNumber', isEqualTo: property.accountNo)
+            .where(accountField, isEqualTo: selectedPropertyAccountNumber)
             .limit(1)
             .get()
             .then((snapshot) => snapshot.docs.isNotEmpty ? snapshot.docs.first : null);
@@ -628,12 +669,13 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
                               print("Address already confirmed.");
                             }
 
-                            await saveSelectedPropertyAccountNo(property.accountNo, property.isLocalMunicipality);
+
+                            await saveSelectedPropertyAccountNo(property, widget.handlesWater, widget.handlesElectricity);
                             await checkAndGenerateCoordinates(property);
 
                             // ✅ Use Provider safely with proper context
                             if (mounted) {
-                              propertyProvider.selectProperty(property);
+                              propertyProvider.selectProperty(property, handlesWater: handlesWater, handlesElectricity: handlesElectricity);
                             }
 
                             // Retrieve the user's token
@@ -669,5 +711,4 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
       },
     );
   }
-
 }

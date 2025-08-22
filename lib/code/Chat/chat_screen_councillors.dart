@@ -49,22 +49,30 @@ class _ChatCouncillorState extends State<ChatCouncillor> {
   bool isCouncillor = false;
   bool hasUnreadCouncillorMessages = false;
   StreamSubscription<QuerySnapshot>? unreadCouncillorMessagesSubscription;
+  late String matchedAccountField;
 
   @override
   void initState() {
     super.initState();
-    initializeChatCollectionReference();
     print("ChatCouncillor initState called.");
-    checkIfCouncillor().then((result) {
-      if(mounted) {
-        setState(() {
-          isCouncillor = result;
-        });
-      }
-      checkForUnreadCouncilMessages(); // Start checking for unread messages
+
+    SharedPreferences.getInstance().then((prefs) {
+      matchedAccountField = prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
+      print("🧭 matchedAccountField: $matchedAccountField");
+
+      initializeChatCollectionReference();
+      checkIfCouncillor().then((result) {
+        if (mounted) {
+          setState(() {
+            isCouncillor = result;
+          });
+        }
+        checkForUnreadCouncilMessages(); // Start checking for unread messages
+      });
+      initializeChat();
     });
-    initializeChat();
   }
+
 
   @override
   void dispose() {
@@ -99,7 +107,7 @@ class _ChatCouncillorState extends State<ChatCouncillor> {
 
       QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
           .collectionGroup('properties')
-          .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+          .where(matchedAccountField, isEqualTo: selectedPropertyAccountNumber)
           .get();
 
       if (propertySnapshot.docs.isNotEmpty) {
@@ -163,7 +171,7 @@ class _ChatCouncillorState extends State<ChatCouncillor> {
 
         FirebaseFirestore.instance
             .collectionGroup('properties')
-            .where('accountNumber', isEqualTo: selectedPropertyAccountNumber)
+            .where(matchedAccountField, isEqualTo: selectedPropertyAccountNumber)
             .get()
             .then((propertySnapshot) {
           if (propertySnapshot.docs.isNotEmpty) {

@@ -16,7 +16,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_database/ui/firebase_animated_list.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:municipal_services/code/Chat/chat_screen_finance.dart';
 import 'package:municipal_services/code/NoticePages/notice_user_arc_screen.dart';
 import 'package:municipal_services/code/faultPages/fault_task_screen_archive.dart';
@@ -56,13 +56,21 @@ class _NoticeScreenState extends State<NoticeScreen> {
   bool isLoading = false;
   bool _isDisposed = false;
   List _allNoticesResults = [];
+  String selectedAccountNumber = '';
+  String matchedAccountField = 'accountNumber';
 
   @override
   void initState() {
     super.initState();
-    print("Selected property account number: ${widget
-        .selectedPropertyAccountNumber}");
-    fetchNotifications();
+    SharedPreferences.getInstance().then((prefs) {
+      setState(() {
+        selectedAccountNumber = prefs.getString('selectedPropertyAccountNo') ?? '';
+        matchedAccountField = prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
+      });
+      print("Selected account number: $selectedAccountNumber ($matchedAccountField)");
+      fetchNotifications();
+    });
+
   }
 
 
@@ -178,7 +186,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
       if (_listNotifications != null) {
         // Fetch notifications associated with the selected property account number
         QuerySnapshot snapshot = await _listNotifications!
-            .where('user', isEqualTo: widget.selectedPropertyAccountNumber)
+            .where('user', isEqualTo: selectedAccountNumber)
             .orderBy('date', descending: true)
             .get();
 
@@ -296,7 +304,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
         itemCount: _allNoticesResults.length,
         itemBuilder: (context, index) {
           var notification = _allNoticesResults[index];
-          var selectedAccountNumber = widget.selectedPropertyAccountNumber ?? '';
+         // var selectedAccountNumber = widget.selectedPropertyAccountNumber ?? '';
           var notificationUser = notification['user']?.toString() ?? '';
           var isRead = notification['read'] ?? true;
           var level = notification['level'] ?? 'general';
@@ -558,140 +566,140 @@ class _NoticeScreenState extends State<NoticeScreen> {
     );
   }
 
-  Widget firebaseUserWarningCard(
-      CollectionReference<Object?> noticeDataStream) {
-    return Expanded(
-      child: StreamBuilder<QuerySnapshot>(
-        stream: noticeDataStream.orderBy('date', descending: true).snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-          if (streamSnapshot.hasData) {
-            return ListView.builder(
-              itemCount: streamSnapshot.data!.docs.length,
-              itemBuilder: (context, index) {
-                final DocumentSnapshot documentSnapshot =
-                streamSnapshot.data!.docs[index];
-
-                if (documentSnapshot['user'] == user.phoneNumber.toString()) {
-                  if (documentSnapshot['read'] != true &&
-                      documentSnapshot['level'] == 'severe') {
-                    return Card(
-                      margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Center(
-                              child: Text(
-                                'Unread Notification',
-                                style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                            const SizedBox(height: 10,),
-                            const Text(
-                              'Notice Header:',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w500),
-                            ),
-                            noticeItemWarningField(documentSnapshot['title'],),
-                            const Text(
-                              'Notice Details:',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w500),
-                            ),
-                            noticeItemField(documentSnapshot['body']),
-                            const Text(
-                              'Notice Received Date:',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w500),
-                            ),
-                            noticeItemField(documentSnapshot['date']),
-                            const SizedBox(height: 5,),
-                            Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    BasicIconButtonGrey(
-                                      onPress: () async {
-                                        CollectionReference chatFinCollectionRef = FirebaseFirestore
-                                            .instance
-                                            .collection('districts')
-                                            .doc(districtId)
-                                            .collection('municipalities')
-                                            .doc(municipalityId)
-                                            .collection('chatRoomFinance');
-                                        String financeID = 'finance@msunduzi.gov.za';
-
-                                        String passedID = user.phoneNumber!;
-                                        String? userName = FirebaseAuth.instance
-                                            .currentUser!.phoneNumber;
-                                        print(
-                                            'The user name of the logged in person is $userName}');
-                                        String id = passedID;
-
-                                        Navigator.push(context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    ChatFinance(chatRoomId: id,
-                                                      userName: null,
-                                                      chatFinCollectionRef: chatFinCollectionRef,
-                                                      refreshChatList: () {},
-                                                      isLocalMunicipality: widget.isLocalMunicipality, // Pass this
-                                                      municipalityId: widget.municipalityId, // Pass this
-                                                      districtId: widget.districtId?? '',
-                                                    )));
-                                        // final Uri _tel = Uri.parse('tel:+27${0333923000}');
-                                        // launchUrl(_tel);
-
-                                      },
-                                      labelText: 'Appeal',
-                                      fSize: 14,
-                                      faIcon: const FaIcon(Icons.add_call,),
-                                      fgColor: Colors.orangeAccent,
-                                      btSize: const Size(50, 38),
-                                    ),
-                                    BasicIconButtonGrey(
-                                      onPress: () async {
-                                        notifyToken = documentSnapshot['token'];
-                                        if ((documentSnapshot['user']
-                                            .toString()).contains('+27')) {
-                                          _notifyUpdate(documentSnapshot);
-                                        }
-                                      },
-                                      labelText: 'Mark Read',
-                                      fSize: 14,
-                                      faIcon: const FaIcon(Icons.check_circle,),
-                                      fgColor: Colors.green,
-                                      btSize: const Size(50, 38),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  } else {
-                    return const Card();
-                  }
-                }
-              },
-            );
-          }
-          return const Padding(
-            padding: EdgeInsets.all(10.0),
-            child: Center(
-                child: CircularProgressIndicator()),
-          );
-        },
-      ),
-    );
-  }
+  // Widget firebaseUserWarningCard(
+  //     CollectionReference<Object?> noticeDataStream) {
+  //   return Expanded(
+  //     child: StreamBuilder<QuerySnapshot>(
+  //       stream: noticeDataStream.orderBy('date', descending: true).snapshots(),
+  //       builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+  //         if (streamSnapshot.hasData) {
+  //           return ListView.builder(
+  //             itemCount: streamSnapshot.data!.docs.length,
+  //             itemBuilder: (context, index) {
+  //               final DocumentSnapshot documentSnapshot =
+  //               streamSnapshot.data!.docs[index];
+  //
+  //               if (documentSnapshot['user'] == user.phoneNumber.toString()) {
+  //                 if (documentSnapshot['read'] != true &&
+  //                     documentSnapshot['level'] == 'severe') {
+  //                   return Card(
+  //                     margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
+  //                     child: Padding(
+  //                       padding: const EdgeInsets.all(20.0),
+  //                       child: Column(
+  //                         mainAxisAlignment: MainAxisAlignment.center,
+  //                         crossAxisAlignment: CrossAxisAlignment.start,
+  //                         children: [
+  //                           const Center(
+  //                             child: Text(
+  //                               'Unread Notification',
+  //                               style: TextStyle(
+  //                                   fontSize: 18, fontWeight: FontWeight.w700),
+  //                             ),
+  //                           ),
+  //                           const SizedBox(height: 10,),
+  //                           const Text(
+  //                             'Notice Header:',
+  //                             style: TextStyle(
+  //                                 fontSize: 16, fontWeight: FontWeight.w500),
+  //                           ),
+  //                           noticeItemWarningField(documentSnapshot['title'],),
+  //                           const Text(
+  //                             'Notice Details:',
+  //                             style: TextStyle(
+  //                                 fontSize: 16, fontWeight: FontWeight.w500),
+  //                           ),
+  //                           noticeItemField(documentSnapshot['body']),
+  //                           const Text(
+  //                             'Notice Received Date:',
+  //                             style: TextStyle(
+  //                                 fontSize: 16, fontWeight: FontWeight.w500),
+  //                           ),
+  //                           noticeItemField(documentSnapshot['date']),
+  //                           const SizedBox(height: 5,),
+  //                           Column(
+  //                             children: [
+  //                               Row(
+  //                                 mainAxisAlignment: MainAxisAlignment.end,
+  //                                 crossAxisAlignment: CrossAxisAlignment.center,
+  //                                 children: [
+  //                                   BasicIconButtonGrey(
+  //                                     onPress: () async {
+  //                                       CollectionReference chatFinCollectionRef = FirebaseFirestore
+  //                                           .instance
+  //                                           .collection('districts')
+  //                                           .doc(districtId)
+  //                                           .collection('municipalities')
+  //                                           .doc(municipalityId)
+  //                                           .collection('chatRoomFinance');
+  //                                       String financeID = 'finance@msunduzi.gov.za';
+  //
+  //                                       String passedID = user.phoneNumber!;
+  //                                       String? userName = FirebaseAuth.instance
+  //                                           .currentUser!.phoneNumber;
+  //                                       print(
+  //                                           'The user name of the logged in person is $userName}');
+  //                                       String id = passedID;
+  //
+  //                                       Navigator.push(context,
+  //                                           MaterialPageRoute(
+  //                                               builder: (context) =>
+  //                                                   ChatFinance(chatRoomId: id,
+  //                                                     userName: null,
+  //                                                     chatFinCollectionRef: chatFinCollectionRef,
+  //                                                     refreshChatList: () {},
+  //                                                     isLocalMunicipality: widget.isLocalMunicipality, // Pass this
+  //                                                     municipalityId: widget.municipalityId, // Pass this
+  //                                                     districtId: widget.districtId?? '',
+  //                                                   )));
+  //                                       // final Uri _tel = Uri.parse('tel:+27${0333923000}');
+  //                                       // launchUrl(_tel);
+  //
+  //                                     },
+  //                                     labelText: 'Appeal',
+  //                                     fSize: 14,
+  //                                     faIcon: const FaIcon(Icons.add_call,),
+  //                                     fgColor: Colors.orangeAccent,
+  //                                     btSize: const Size(50, 38),
+  //                                   ),
+  //                                   BasicIconButtonGrey(
+  //                                     onPress: () async {
+  //                                       notifyToken = documentSnapshot['token'];
+  //                                       if ((documentSnapshot['user']
+  //                                           .toString()).contains('+27')) {
+  //                                         _notifyUpdate(documentSnapshot);
+  //                                       }
+  //                                     },
+  //                                     labelText: 'Mark Read',
+  //                                     fSize: 14,
+  //                                     faIcon: const FaIcon(Icons.check_circle,),
+  //                                     fgColor: Colors.green,
+  //                                     btSize: const Size(50, 38),
+  //                                   ),
+  //                                 ],
+  //                               ),
+  //                             ],
+  //                           ),
+  //                         ],
+  //                       ),
+  //                     ),
+  //                   );
+  //                 } else {
+  //                   return const Card();
+  //                 }
+  //               }
+  //             },
+  //           );
+  //         }
+  //         return const Padding(
+  //           padding: EdgeInsets.all(10.0),
+  //           child: Center(
+  //               child: CircularProgressIndicator()),
+  //         );
+  //       },
+  //     ),
+  //   );
+  // }
 
   //This class is for updating the notification
   // Future<void> _notifyUpdate([DocumentSnapshot? documentSnapshot]) async {

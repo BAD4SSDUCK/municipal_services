@@ -5,31 +5,106 @@ class PropertyService {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   // Fetch a specific property by account number
-  Future<Property?> fetchPropertyByAccountNo(String accountNo, bool isLocalMunicipality) async {
+  Future<Map<String, dynamic>?> fetchPropertyByAccountNo(
+      String accountNo, bool isLocalMunicipality) async {
     try {
-      QuerySnapshot snapshot = await firestore
-          .collectionGroup('properties')
-          .where('accountNumber', isEqualTo: accountNo)
-          .limit(1)
-          .get();
+      if (!isLocalMunicipality) {
+        final districtSnapshot =
+        await FirebaseFirestore.instance.collection('districts').get();
 
-      if (snapshot.docs.isNotEmpty) {
-        Property property = Property.fromSnapshot(snapshot.docs.first);
+        for (var districtDoc in districtSnapshot.docs) {
+          final municipalitySnapshot =
+          await districtDoc.reference.collection('municipalities').get();
 
-        // Handle property differently if it is a local municipality
-        if (property.isLocalMunicipality) {
-          print("Property belongs to a local municipality.");
-        } else {
-          print("Property belongs to a district municipality.");
+          for (var municipalityDoc in municipalitySnapshot.docs) {
+            final data = municipalityDoc.data();
+            final utilityTypes = List<String>.from(data['utilityType'] ?? []);
+            final propertyCollection =
+            municipalityDoc.reference.collection('properties');
+
+            // Determine which field to search based on utility type
+            if (utilityTypes.contains('electricity') &&
+                !utilityTypes.contains('water')) {
+              // Electricity only
+              var query = await propertyCollection
+                  .where('electricityAccountNumber', isEqualTo: accountNo)
+                  .limit(1)
+                  .get();
+
+              if (query.docs.isNotEmpty) {
+                print('Matched electricity account number.');
+                return {
+                  'property': Property.fromSnapshot(query.docs.first),
+                  'matchedField': 'electricityAccountNumber',
+                };
+              }
+            } else {
+              // Water only or both
+              var query = await propertyCollection
+                  .where('accountNumber', isEqualTo: accountNo)
+                  .limit(1)
+                  .get();
+
+              if (query.docs.isNotEmpty) {
+                print('Matched water account number.');
+                return {
+                  'property': Property.fromSnapshot(query.docs.first),
+                  'matchedField': 'accountNumber',
+                };
+              }
+            }
+          }
         }
+      } else {
+        final localSnapshot =
+        await FirebaseFirestore.instance.collection('localMunicipalities').get();
 
-        return property;
+        for (var localMunicipalityDoc in localSnapshot.docs) {
+          final data = localMunicipalityDoc.data();
+          final utilityTypes = List<String>.from(data['utilityType'] ?? []);
+          final propertyCollection =
+          localMunicipalityDoc.reference.collection('properties');
+
+          if (utilityTypes.contains('electricity') &&
+              !utilityTypes.contains('water')) {
+            var query = await propertyCollection
+                .where('electricityAccountNumber', isEqualTo: accountNo)
+                .limit(1)
+                .get();
+
+            if (query.docs.isNotEmpty) {
+              print('Matched electricity account number.');
+              return {
+                'property': Property.fromSnapshot(query.docs.first),
+                'matchedField': 'electricityAccountNumber',
+              };
+            }
+          } else {
+            var query = await propertyCollection
+                .where('accountNumber', isEqualTo: accountNo)
+                .limit(1)
+                .get();
+
+            if (query.docs.isNotEmpty) {
+              print('Matched water account number.');
+              return {
+                'property': Property.fromSnapshot(query.docs.first),
+                'matchedField': 'accountNumber',
+              };
+            }
+          }
+        }
       }
+
+      print('❌ No property found via accountNo: $accountNo');
+      return null;
     } catch (e) {
-      print("Error fetching property by account number: $e");
+      print('Error in fetchPropertyByAccountNo: $e');
+      return null;
     }
-    return null;
   }
+
+
 
   // Fetch all properties for a user across all municipalities (local and district)
   Future<List<Property>> fetchPropertiesForUser(String cellNumber) async {
@@ -72,5 +147,30 @@ class PropertyService {
       print("Error counting properties for user: $e");
       return 0;
     }
+  }
+
+  Future<Property?> fetchPropertyByDynamicField({
+    required String accountField,
+    required String accountNumber,
+    required bool isLocalMunicipality,
+  }) async {
+    try {
+      QuerySnapshot snapshot = await firestore
+          .collectionGroup('properties')
+          .where(accountField, isEqualTo: accountNumber)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        Property property = Property.fromSnapshot(snapshot.docs.first);
+        print("✅ Property found via $accountField: ${property.address}");
+        return property;
+      } else {
+        print("⚠️ No property found via $accountField: $accountNumber");
+      }
+    } catch (e) {
+      print("Error fetching property by $accountField: $e");
+    }
+    return null;
   }
 }

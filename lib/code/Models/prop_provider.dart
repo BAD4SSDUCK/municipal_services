@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'package:municipal_services/code/Models/property.dart';
+import 'package:municipal_services/code/Models/property_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
   // Import your Property model
@@ -21,10 +22,9 @@ class PropertyProvider with ChangeNotifier {
     loadSelectedPropertyAccountNo();
   }
 
-  void selectProperty(Property property) {
+  Future<void> selectProperty(Property property, {required bool handlesWater, required bool handlesElectricity}) async {
     _selectedProperty = property;
 
-    // If the property belongs to a local municipality, skip the districtId
     if (property.isLocalMunicipality) {
       _districtId = null;
       _municipalityId = property.municipalityId;
@@ -34,8 +34,14 @@ class PropertyProvider with ChangeNotifier {
     }
 
     notifyListeners();
-    saveSelectedPropertyAccountNo(property.accountNo,property.isLocalMunicipality); // Save the selected property
+
+    await saveSelectedPropertyAccountNo(
+      property: property,
+      handlesWater: handlesWater,
+      handlesElectricity: handlesElectricity,
+    );
   }
+
 
   void manageProperty(Property property) {
     _managedProperty = property;
@@ -52,12 +58,24 @@ class PropertyProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> saveSelectedPropertyAccountNo(String accountNo, bool isLocalMunicipality) async {
+  Future<void> saveSelectedPropertyAccountNo({
+    required Property property,
+    required bool handlesWater,
+    required bool handlesElectricity,
+  }) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selectedPropertyAccountNo', accountNo);
-    await prefs.setBool('isLocalMunicipality', isLocalMunicipality); // Save municipality type
-    print("Selected property account number and municipality type saved: $accountNo, $isLocalMunicipality");
+
+    // Determine which account number to save
+    final accountToSave = (handlesElectricity && !handlesWater)
+        ? property.electricityAccountNo
+        : property.accountNo;
+
+    await prefs.setString('selectedPropertyAccountNo', accountToSave);
+    await prefs.setBool('isLocalMunicipality', property.isLocalMunicipality);
+
+    print("✅ Saved selected accountNo: $accountToSave under ${(handlesElectricity && !handlesWater) ? 'electricityAccountNumber' : 'accountNumber'}");
   }
+
 
 
   Future<void> loadSelectedPropertyAccountNo() async {
@@ -78,30 +96,12 @@ class PropertyProvider with ChangeNotifier {
   }
 
 
-
   Future<void> fetchPropertyByAccountNo(String accountNo, bool isLocalMunicipality) async {
-    QuerySnapshot snapshot;
+    final PropertyService propertyService = PropertyService();
+    final result = await propertyService.fetchPropertyByAccountNo(accountNo, isLocalMunicipality);
 
-    if (isLocalMunicipality) {
-      snapshot = await FirebaseFirestore.instance
-          .collectionGroup('properties')
-          .where('accountNumber', isEqualTo: accountNo)
-          .where('isLocalMunicipality', isEqualTo: true)
-          .limit(1)
-          .get();
-    } else {
-      snapshot = await FirebaseFirestore.instance
-          .collectionGroup('properties')
-          .where('accountNumber', isEqualTo: accountNo)
-          .where('isLocalMunicipality', isEqualTo: false)
-          .limit(1)
-          .get();
-    }
-
-    print("Firestore query result: ${snapshot.docs.length} documents found.");
-
-    if (snapshot.docs.isNotEmpty) {
-      _selectedProperty = Property.fromSnapshot(snapshot.docs.first);
+    if (result != null) {
+      _selectedProperty = result['property'] as Property;
 
       if (_selectedProperty!.isLocalMunicipality) {
         _districtId = null;
@@ -116,7 +116,4 @@ class PropertyProvider with ChangeNotifier {
       print("No property found with the provided account number.");
     }
   }
-
-
-
 }

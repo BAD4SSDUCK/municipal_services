@@ -42,6 +42,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Color blue = const Color(0xff8cccff);
   bool _isLoadingProperties = false;
+  bool handlesWater = false;
+  bool handlesElectricity = false;
+
   @override
   initState(){
     super.initState();
@@ -211,6 +214,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             print('Property: ${property.address}, Account No: ${property.accountNo}, Is Local Municipality: ${property.isLocalMunicipality}');
           }
           bool isLocalMunicipality = properties.isNotEmpty && properties.first.isLocalMunicipality;
+          if (properties.isNotEmpty) {
+            final firstProp = properties.first;
+            await fetchMunicipalityUtilityTypes(
+              firstProp.municipalityId,
+              firstProp.districtId,
+              firstProp.isLocalMunicipality,
+            );
+          }
 
           // Navigate to the PropertySelectionScreen using GetX
           print('Navigating to PropertySelectionScreen...');
@@ -219,6 +230,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 properties: properties,
                 userPhoneNumber: userPhone,
                 isLocalMunicipality: isLocalMunicipality,
+                handlesWater: handlesWater,
+                handlesElectricity: handlesElectricity,
               ));
         } else {
           print('Error: User phone number is null.');
@@ -234,9 +247,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     });
   }
-
-
-
 
 // Fetch user's properties from Firestore
   Future<List<Property>> fetchUserProperties(String userPhone) async {
@@ -304,6 +314,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } else {
       return false; // Default to false if the field is not found
     }
+  }
+
+  Future<void> fetchMunicipalityUtilityTypes(String municipalityId, String? districtId, bool isLocalMunicipality) async {
+    if (isLocalMunicipality) {
+      final docRef = FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId);
+
+      final snapshot = await docRef.get();
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        final utilityTypes = List<String>.from(data['utilityType'] ?? []);
+        handlesWater = utilityTypes.contains('water');
+        handlesElectricity = utilityTypes.contains('electricity');
+      }
+    } else if (districtId != null) {
+      final docRef = FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId);
+
+      final snapshot = await docRef.get();
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        final utilityTypes = List<String>.from(data['utilityType'] ?? []);
+        handlesWater = utilityTypes.contains('water');
+        handlesElectricity = utilityTypes.contains('electricity');
+      }
+    }
+
+    print("💧 handlesWater = $handlesWater");
+    print("⚡ handlesElectricity = $handlesElectricity");
   }
 
 

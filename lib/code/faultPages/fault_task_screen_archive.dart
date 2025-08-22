@@ -140,10 +140,12 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
       }
     } catch (e) {
       print('Error fetching user details: $e');
-      setState(() {
-        _isDataLoaded = true;
-        isLoading = false;
-      });
+      if(mounted) {
+        setState(() {
+          _isDataLoaded = true;
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -265,11 +267,13 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
       for (var snapshot in faultSnapshots) {
         allFaults.addAll(snapshot.docs);
       }
-
-      setState(() {
-        _allFaultResults = allFaults;
-        print("Fetched ${_allFaultResults.length} faults for all municipalities in district $districtId.");
-      });
+         if(mounted) {
+           setState(() {
+             _allFaultResults = allFaults;
+             print("Fetched ${_allFaultResults
+                 .length} faults for all municipalities in district $districtId.");
+           });
+         }
     } catch (e) {
       print("Error fetching faults for all municipalities: $e");
     }
@@ -518,14 +522,16 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
               hint: const Text('All Municipalities'),
               isExpanded: true,
               onChanged: (String? newValue) {
-                setState(() {
-                  selectedMunicipality = newValue!;
-                  if (selectedMunicipality == "All Municipalities") {
-                    fetchFaultsForAllMunicipalities();
-                  } else {
-                    fetchFaultsByMunicipality(selectedMunicipality);
-                  }
-                });
+                if(mounted) {
+                  setState(() {
+                    selectedMunicipality = newValue!;
+                    if (selectedMunicipality == "All Municipalities") {
+                      fetchFaultsForAllMunicipalities();
+                    } else {
+                      fetchFaultsByMunicipality(selectedMunicipality);
+                    }
+                  });
+                }
               },
               items: municipalityOptions.map((String municipality) {
                 return DropdownMenuItem<String>(
@@ -545,10 +551,12 @@ class _FaultTaskScreenArchiveState extends State<FaultTaskScreenArchive> {
               leading: const Icon(Icons.search),
               hintText: "Search",
               onChanged: (value) async{
-                setState(() {
-                  searchText = value;
-                  print('this is the input text ::: $searchText');
-                });
+                if(mounted) {
+                  setState(() {
+                    searchText = value;
+                    print('this is the input text ::: $searchText');
+                  });
+                }
               },
             ),
           ),

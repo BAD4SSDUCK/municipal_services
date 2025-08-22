@@ -38,6 +38,8 @@ class _RegisterPasswordScreenState extends State<RegisterPasswordScreen> {
   Color blue = const Color(0xff8cccff);
   bool _isLoadingProperties = false;
 
+  bool handlesWater = false;
+  bool handlesElectricity = false;
   @override
   void dispose() {
     print('dispose called on this widget.');
@@ -176,7 +178,14 @@ class _RegisterPasswordScreenState extends State<RegisterPasswordScreen> {
             print('Property: ${property.address}, Account No: ${property.accountNo}, Is Local Municipality: ${property.isLocalMunicipality}');
           }
           bool isLocalMunicipality = properties.isNotEmpty && properties.first.isLocalMunicipality;
-
+          if (properties.isNotEmpty) {
+            final firstProp = properties.first;
+            await fetchMunicipalityUtilityTypes(
+              firstProp.municipalityId,
+              firstProp.districtId,
+              firstProp.isLocalMunicipality,
+            );
+          }
           // Navigate to the PropertySelectionScreen using GetX
           print('Navigating to PropertySelectionScreen...');
           Get.off(() =>
@@ -184,6 +193,8 @@ class _RegisterPasswordScreenState extends State<RegisterPasswordScreen> {
                 properties: properties,
                 userPhoneNumber: userPhone,
                 isLocalMunicipality: isLocalMunicipality,
+                handlesWater: handlesWater,
+                handlesElectricity: handlesElectricity,
               ));
         } else {
           print('Error: User phone number is null.');
@@ -248,6 +259,39 @@ class _RegisterPasswordScreenState extends State<RegisterPasswordScreen> {
     }
 
     return properties;
+  }
+
+  Future<void> fetchMunicipalityUtilityTypes(String municipalityId, String? districtId, bool isLocalMunicipality) async {
+    if (isLocalMunicipality) {
+      final docRef = FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId);
+
+      final snapshot = await docRef.get();
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        final utilityTypes = List<String>.from(data['utilityType'] ?? []);
+        handlesWater = utilityTypes.contains('water');
+        handlesElectricity = utilityTypes.contains('electricity');
+      }
+    } else if (districtId != null) {
+      final docRef = FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId);
+
+      final snapshot = await docRef.get();
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        final utilityTypes = List<String>.from(data['utilityType'] ?? []);
+        handlesWater = utilityTypes.contains('water');
+        handlesElectricity = utilityTypes.contains('electricity');
+      }
+    }
+
+    print("💧 handlesWater = $handlesWater");
+    print("⚡ handlesElectricity = $handlesElectricity");
   }
 
   @override

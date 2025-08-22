@@ -24,6 +24,49 @@ import '../Models/property.dart';
 //           }
 //         });
 //   }
+Future<Map<String, bool>> fetchMunicipalityUtilityTypes(
+    String municipalityId, String? districtId, bool isLocalMunicipality) async {
+  bool handlesWater = false;
+  bool handlesElectricity = false;
+
+  try {
+    if (isLocalMunicipality) {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(municipalityId)
+          .get();
+
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        final utilityTypes = List<String>.from(data['utilityType'] ?? []);
+        handlesWater = utilityTypes.contains('water');
+        handlesElectricity = utilityTypes.contains('electricity');
+      }
+    } else if (districtId != null) {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('districts')
+          .doc(districtId)
+          .collection('municipalities')
+          .doc(municipalityId)
+          .get();
+
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        final utilityTypes = List<String>.from(data['utilityType'] ?? []);
+        handlesWater = utilityTypes.contains('water');
+        handlesElectricity = utilityTypes.contains('electricity');
+      }
+    }
+  } catch (e) {
+    print('Error fetching utility types: $e');
+  }
+
+  return {
+    'handlesWater': handlesWater,
+    'handlesElectricity': handlesElectricity,
+  };
+}
+
 handleAuthState() {
   return StreamBuilder(
     stream: FirebaseAuth.instance.authStateChanges(),
@@ -34,18 +77,49 @@ handleAuthState() {
           future: fetchUserProperties(FirebaseAuth.instance.currentUser?.phoneNumber),
           builder: (BuildContext context, AsyncSnapshot<List<Property>> propertiesSnapshot) {
             if (propertiesSnapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             } else if (propertiesSnapshot.hasError) {
               return Center(child: Text('Error fetching properties: ${propertiesSnapshot.error}'));
             } else if (propertiesSnapshot.hasData) {
               List<Property> properties = propertiesSnapshot.data!;
-              bool isLocalMunicipality = properties.any((property) => property.isLocalMunicipality);
-              return PropertySelectionScreen(properties: propertiesSnapshot.data!,userPhoneNumber:  FirebaseAuth.instance.currentUser!.phoneNumber!, isLocalMunicipality: isLocalMunicipality,);
+              if (properties.isEmpty) {
+                return const Center(child: Text('No properties found for the user.'));
+              }
+
+              Property firstProp = properties.first;
+              bool isLocalMunicipality = firstProp.isLocalMunicipality;
+
+              return FutureBuilder(
+                future: fetchMunicipalityUtilityTypes(
+                  firstProp.municipalityId,
+                  firstProp.districtId,
+                  firstProp.isLocalMunicipality,
+                ),
+                builder: (context, AsyncSnapshot<Map<String, bool>> utilitySnapshot) {
+                  if (utilitySnapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (utilitySnapshot.hasError || !utilitySnapshot.hasData) {
+                    return const Center(child: Text('Error loading utility types.'));
+                  }
+
+                  final handlesWater = utilitySnapshot.data!['handlesWater']!;
+                  final handlesElectricity = utilitySnapshot.data!['handlesElectricity']!;
+
+                  return PropertySelectionScreen(
+                    properties: properties,
+                    userPhoneNumber: FirebaseAuth.instance.currentUser!.phoneNumber!,
+                    isLocalMunicipality: isLocalMunicipality,
+                    handlesWater: handlesWater,
+                    handlesElectricity: handlesElectricity,
+                  );
+                },
+              );
             } else {
-              return Center(child: Text('No properties found for the user.'));
+              return const Center(child: Text('No properties found for the user.'));
             }
           },
         );
+
       } else {
         // If the user is not authenticated, navigate to the login page
         return LoginPageG();

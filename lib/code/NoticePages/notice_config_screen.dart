@@ -83,6 +83,9 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
   final ScrollController _notifyStreetScroller = ScrollController();
   final ScrollController _notifySelectScroller = ScrollController();
   late TabController _tabController;
+  List<String> utilityTypes = [];
+  bool handlesWater = false;
+  bool handlesElectricity = false;
 
   @override
   void initState() {
@@ -95,9 +98,11 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         // Handle focus based on the current tab
-        setState(() {
-          _handleFocusChange(_tabController.index);
-        });
+        if (mounted) {
+          setState(() {
+            _handleFocusChange(_tabController.index);
+          });
+        }
       }
     });
 
@@ -301,6 +306,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
             await fetchPropertiesForLocalMunicipality();
 
             // Set UserToken and Notification paths for local municipalities
+            if(mounted){
             setState(() {
               _listUserTokens = FirebaseFirestore.instance
                   .collection('localMunicipalities')
@@ -311,7 +317,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
                   .collection('localMunicipalities')
                   .doc(municipalityId)
                   .collection('Notifications');
-            });
+            });}
           } else {
             print(
                 "District user detected, waiting for municipality selection.");
@@ -319,6 +325,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
             await fetchMunicipalities();
 
             // Set UserToken and Notification paths for district-based municipalities
+            if(mounted){
             setState(() {
               _listUserTokens = FirebaseFirestore.instance
                   .collection('districts')
@@ -333,7 +340,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
                   .collection('municipalities')
                   .doc(municipalityId)
                   .collection('Notifications');
-            });
+            });}
           }
         } else {
           print("Waiting for district user to select a municipality.");
@@ -622,6 +629,50 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
     }
   }
 
+  Future<void> fetchCurrentMunicipalityUtilityTypes() async {
+    try {
+      DocumentSnapshot<Map<String, dynamic>> snap;
+
+      if (isLocalMunicipality) {
+        // /localMunicipalities/{municipalityId}
+        snap = await FirebaseFirestore.instance
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .get();
+      } else {
+        // /districts/{districtId}/municipalities/{municipalityId}
+        snap = await FirebaseFirestore.instance
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .get();
+      }
+
+      if (snap.exists) {
+        final data = snap.data() ?? {};
+        final utilityTypes = List<String>.from(data['utilityType'] ?? []);
+        handlesWater = utilityTypes.contains('water');
+        handlesElectricity = utilityTypes.contains('electricity');
+      } else {
+        // default safely (adjust if you prefer both false)
+        handlesWater = false;
+        handlesElectricity = false;
+      }
+
+      if (mounted) setState(() {});
+      print("💧 handlesWater = $handlesWater");
+      print("⚡ handlesElectricity = $handlesElectricity");
+    } catch (e) {
+      print('Error loading current municipality utility types: $e');
+    }
+  }
+
+  bool get isElectricityOnly => handlesElectricity && !handlesWater;
+  String get matchedUtilityLabel =>
+      isElectricityOnly ? 'electricity' : (handlesWater ? 'water' : 'unknown');
+
+
   Future<String?> getTokenByAccountNumber(String accountNumber) async {
     try {
       QuerySnapshot tokenSnapshot = await FirebaseFirestore.instance
@@ -890,9 +941,11 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
     }
 
     var data = await usersCollection.get();
-    setState(() {
-      _allUserResults = data.docs;
-    });
+    if(mounted) {
+      setState(() {
+        _allUserResults = data.docs;
+      });
+    }
     getUserDetails();
   }
 
@@ -1040,11 +1093,13 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
 
       // Remove duplicates and set initial dropdown value
       dropdownStreets = dropdownStreets.toSet().toList();
-      setState(() {
-        dropdownStreetValue = dropdownStreets.isNotEmpty
-            ? dropdownStreets.first
-            : 'Select Street';
-      });
+      if(mounted) {
+        setState(() {
+          dropdownStreetValue = dropdownStreets.isNotEmpty
+              ? dropdownStreets.first
+              : 'Select Street';
+        });
+      }
     } catch (e) {
       print('Error fetching street names: $e');
     }
@@ -1065,9 +1120,11 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
         ),
         onChanged: (String? newValue) {
           if (newValue != null) {
-            setState(() {
-              dropdownSuburbValue = newValue;
-            });
+            if(mounted) {
+              setState(() {
+                dropdownSuburbValue = newValue;
+              });
+            }
           }
         },
         items: dropdownSuburbs.map<DropdownMenuItem<String>>((String value) {
@@ -1242,7 +1299,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
   Widget buildMunicipalityDropdown() {
     if (isLocalMunicipality) {
       // Local municipality users don't need to select a municipality
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     } else {
       return Padding(
         padding: const EdgeInsets.all(8.0),
@@ -1252,21 +1309,24 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
             value: selectedMunicipality!.isEmpty ? null : selectedMunicipality,
             hint: const Text('Select Municipality'),
             isExpanded: true,
-            onChanged: (String? newValue) {
-              if (mounted) {
-                setState(() {
-                  selectedMunicipality = newValue;
-                  municipalityId =
-                      selectedMunicipality!; // Update municipalityId based on the selected municipality
-                  getPropSuburbStream();
-                  if (selectedMunicipality == null ||
-                      selectedMunicipality == "Select Municipality") {
-                    fetchPropertiesForAllMunicipalities();
-                  } else {
-                    fetchPropertiesByMunicipality(newValue!);
-                    getStreetNames();
-                  }
-                });
+            onChanged: (String? newValue) async{
+              if (!mounted) return;
+              setState(() {
+                selectedMunicipality = newValue;
+                municipalityId = newValue ?? ''; // 🔹 USE THE SELECTED DOC ID
+              });
+
+              // Refresh utility flags for this exact municipality
+              await fetchCurrentMunicipalityUtilityTypes();
+
+              // Then refresh your data sources
+              getPropSuburbStream();
+
+              if (selectedMunicipality == null || selectedMunicipality == "Select Municipality") {
+                fetchPropertiesForAllMunicipalities();
+              } else {
+                fetchPropertiesByMunicipality(newValue!);
+                getStreetNames();
               }
             },
             items: [
@@ -1308,9 +1368,11 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
         ),
         onChanged: (String? newValue) {
           if (newValue != null) {
-            setState(() {
-              dropdownStreetValue = newValue;
-            });
+            if(mounted) {
+              setState(() {
+                dropdownStreetValue = newValue;
+              });
+            }
           }
         },
         items: dropdownStreets.map<DropdownMenuItem<String>>((String value) {
@@ -1346,7 +1408,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => NoticeConfigArcScreen(),
+                      builder: (context) => const NoticeConfigArcScreen(),
                     ),
                   );
                 },
@@ -1472,14 +1534,17 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
                         }).toList(),
                         onChanged: (String? newValue) {
                           if (newValue != null) {
-                            setState(() {
-                              dropdownValue = newValue;
-                              _searchWardController.text = dropdownValue;
+                            if(mounted) {
+                              setState(() {
+                                dropdownValue = newValue;
+                                _searchWardController.text = dropdownValue;
 
-                              // Logic to filter properties by ward
-                              getUsersTokenStream(selectedWard: dropdownValue);
-                              getUsersPropStream();
-                            });
+                                // Logic to filter properties by ward
+                                getUsersTokenStream(
+                                    selectedWard: dropdownValue);
+                                getUsersPropStream();
+                              });
+                            }
                           }
                         },
                       ),
@@ -1540,16 +1605,18 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
                         }).toList(),
                         onChanged: (String? newValue) {
                           if (newValue != null) {
-                            setState(() {
-                              dropdownSuburbValue = newValue;
-                              _searchSuburbController.text =
-                                  dropdownSuburbValue;
+                            if(mounted) {
+                              setState(() {
+                                dropdownSuburbValue = newValue;
+                                _searchSuburbController.text =
+                                    dropdownSuburbValue;
 
-                              // Logic to filter properties by suburb
-                              getUsersTokenStream(
-                                  selectedSuburb: dropdownSuburbValue);
-                              getUsersPropStream();
-                            });
+                                // Logic to filter properties by suburb
+                                getUsersTokenStream(
+                                    selectedSuburb: dropdownSuburbValue);
+                                getUsersPropStream();
+                              });
+                            }
                           }
                         },
                       ),
@@ -1610,16 +1677,18 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
                         }).toList(),
                         onChanged: (String? newValue) {
                           if (newValue != null) {
-                            setState(() {
-                              dropdownStreetValue = newValue;
-                              _searchStreetController.text =
-                                  dropdownStreetValue;
+                            if(mounted) {
+                              setState(() {
+                                dropdownStreetValue = newValue;
+                                _searchStreetController.text =
+                                    dropdownStreetValue;
 
-                              // Logic to filter properties by street
-                              getUsersTokenStream(
-                                  selectedStreet: dropdownStreetValue);
-                              getUsersPropStream();
-                            });
+                                // Logic to filter properties by street
+                                getUsersTokenStream(
+                                    selectedStreet: dropdownStreetValue);
+                                getUsersPropStream();
+                              });
+                            }
                           }
                         },
                       ),
@@ -1649,8 +1718,7 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
     );
   }
 
-  List<Map<String, dynamic>> selectedProperties =
-      []; // 🔹 Tracks selected properties
+  List<Map<String, dynamic>> selectedProperties = []; // 🔹 Tracks selected properties
 
   Widget _buildSelectedPropertiesTab() {
     return Column(
@@ -3395,8 +3463,9 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
                         // Clear input fields after sending
                         title.clear();
                         body.clear();
-                        if (ctx.mounted)
+                        if (ctx.mounted) {
                           Navigator.of(ctx).pop(); // Close the dialog
+                        }
                       },
                     ),
                   if (!_isLoading)
@@ -3541,10 +3610,11 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
                       ),
                       child: const Text('Send Notification'),
                       onPressed: () async {
-                        setState(() {
-                          _isLoading = true;
-                        });
-
+                        if(mounted) {
+                          setState(() {
+                            _isLoading = true;
+                          });
+                        }
                         DateTime now = DateTime.now();
                         String formattedDate =
                             DateFormat('yyyy-MM-dd – kk:mm').format(now);
@@ -3616,16 +3686,17 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
                             );
                           }
                         }
-
-                        setState(() {
-                          _isLoading = false;
-                        });
-
+                          if(mounted) {
+                            setState(() {
+                              _isLoading = false;
+                            });
+                          }
                         // Clear input fields after sending
                         title.clear();
                         body.clear();
-                        if (ctx.mounted)
+                        if (ctx.mounted) {
                           Navigator.of(ctx).pop(); // Close the dialog
+                        }
                       },
                     ),
                   if (!_isLoading)
@@ -4417,6 +4488,12 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
     return const Center(child: CircularProgressIndicator());
   }
 
+  String get matchedAccountField =>
+      (handlesElectricity && !handlesWater) ? 'electricityAccountNumber' : 'accountNumber';
+
+  String get accountLabel =>
+      (handlesElectricity && !handlesWater) ? 'Electricity Account Number' : 'Account Number';
+
   Widget userSelectedPropertiesCard() {
     if (_allUserPropResults.isNotEmpty) {
       return KeyboardListener(
@@ -4453,17 +4530,45 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
             itemCount: _allUserPropResults.length,
             itemBuilder: (context, index) {
               var property = _allUserPropResults[index];
-              String address = property['address'] ?? 'No Address';
-              String accountNumber = property['accountNumber'];
-              String ownerName =
-                  '${property['firstName']} ${property['lastName']}';
-              String userToken = property['token'] ?? '';
+              final String address   = (property['address'] ?? 'No Address').toString();
+              final String firstName = (property['firstName'] ?? '').toString();
+              final String lastName  = (property['lastName']  ?? '').toString();
+              final String ownerName = '$firstName $lastName'.trim();
 
-              // Filter properties by search input
-              String searchText = _searchController.text.toLowerCase();
-              bool matches = address.toLowerCase().contains(searchText) ||
-                  ownerName.toLowerCase().contains(searchText);
+              // Read raw account fields WITHOUT cross-fallbacks
+              final String waterAcc = (property['accountNumber'] ?? '').toString().trim();
+              final String elecAcc  = (property['electricityAccountNumber'] ?? '').toString().trim();
 
+              // Which field should be used for selection & sending?
+              final bool isElectricityOnly = handlesElectricity && !handlesWater;
+              final String matchedField    = isElectricityOnly ? 'electricityAccountNumber' : 'accountNumber';
+              final String matchedValue    = isElectricityOnly ? elecAcc : waterAcc;
+
+              // Hide rows with no relevant account at all
+              if (matchedValue.isEmpty && waterAcc.isEmpty && elecAcc.isEmpty) {
+                return const SizedBox.shrink();
+              }
+
+              // Search: match address/owner + whichever account(s) you want searchable
+              final String q = _searchController.text.toLowerCase();
+              final bool matches = q.isEmpty
+                  ? true
+                  : address.toLowerCase().contains(q)
+                  || ownerName.toLowerCase().contains(q)
+                  || waterAcc.toLowerCase().contains(q)
+                  || elecAcc.toLowerCase().contains(q);
+
+              if (!matches) return const SizedBox.shrink();
+
+              // Is this card selected? (compare using the matched field/value)
+              final bool isSelected = selectedProperties.any((p) {
+                final v = (p[matchedField]
+                    ?? p['accountNumber']
+                    ?? p['electricityAccountNumber']
+                    ?? '')
+                    .toString();
+                return v == matchedValue && v.isNotEmpty;
+              });
               if (_searchController.text.isEmpty || matches) {
                 return Card(
                   margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 5.0),
@@ -4476,24 +4581,26 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
                       children: [
                         // Checkbox for selecting the property
                         Checkbox(
-                          value: selectedProperties.any((p) =>
-                              p['accountNumber'] == property['accountNumber']),
+                          value: isSelected,
                           checkColor: Colors.green,
-                          activeColor:
-                              Colors.transparent, // ✅ Check by accountNumber
+                          activeColor: Colors.transparent,
                           onChanged: (bool? value) {
-                            if (mounted) {
-                              setState(() {
-                                if (value == true) {
-                                  selectedProperties.add(property.data() as Map<
-                                      String, dynamic>); // ✅ Convert to Map
-                                } else {
-                                  selectedProperties.removeWhere((p) =>
-                                      p['accountNumber'] ==
-                                      property['accountNumber']);
-                                }
-                              });
-                            }
+                            if (!mounted) return;
+                            setState(() {
+                              if (value == true) {
+                                // Keep full doc data
+                                selectedProperties.add(property.data() as Map<String, dynamic>);
+                              } else {
+                                selectedProperties.removeWhere((p) {
+                                  final v = (p[matchedField]
+                                      ?? p['accountNumber']
+                                      ?? p['electricityAccountNumber']
+                                      ?? '')
+                                      .toString();
+                                  return v == matchedValue && v.isNotEmpty;
+                                });
+                              }
+                            });
                           },
                         ),
 
@@ -4505,8 +4612,18 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
                                   style: const TextStyle(fontSize: 16)),
                               Text("Address: $address",
                                   style: const TextStyle(fontSize: 16)),
-                              Text("Account Number: $accountNumber",
-                                  style: const TextStyle(fontSize: 16)),
+                              if (handlesWater)
+                                Text(
+                                  "Water Account Number: ${waterAcc.isEmpty ? '' : waterAcc}",
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+
+                              // 🔹 Display ELECTRICITY account only from 'electricityAccountNumber'
+                              if (handlesElectricity)
+                                Text(
+                                  "Electricity Account Number: ${elecAcc.isEmpty ? '' : elecAcc}",
+                                  style: const TextStyle(fontSize: 16),
+                                ),
                             ],
                           ),
                         ),
@@ -4541,53 +4658,58 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
       onConfirm: () async {
         DateTime now = DateTime.now();
         String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-
+        final field = matchedAccountField;
+        final utility = accountLabel;
         print(
             "✅ Starting notification process for ${selectedProperties.length} properties.");
+        print("🔧 Using account field: $field (utility: $utility)");
+        for (final property in selectedProperties) {
+          // selectedProperties holds Maps (we add property.data() in the list view)
+          final map = Map<String, dynamic>.from(property);
 
-        for (var property in selectedProperties) {
-          String tokenSelected = property['token'] ?? '';
-          String userNumber = property['accountNumber'] ?? '';
-
-          print("🔹 Sending to account: $userNumber | Token: $tokenSelected");
-
-          if (tokenSelected.isNotEmpty) {
-            // Determine the correct Firestore path based on municipality type
-            CollectionReference notificationsRef;
-            if (isLocalMunicipality) {
-              notificationsRef = FirebaseFirestore.instance
-                  .collection('localMunicipalities')
-                  .doc(municipalityId)
-                  .collection('Notifications');
-            } else {
-              notificationsRef = FirebaseFirestore.instance
-                  .collection('districts')
-                  .doc(districtId)
-                  .collection('municipalities')
-                  .doc(municipalityId)
-                  .collection('Notifications');
-            }
-
-            await notificationsRef.add({
-              "token": tokenSelected,
-              "user": userNumber,
-              "title": title.text,
-              "body": body.text,
-              "read": false,
-              "date": formattedDate,
-              "level": 'general',
-            });
-
-            print(
-                "✅ Notification saved in Firestore for $userNumber at path: ${notificationsRef.path}");
-
-            sendPushMessage(tokenSelected, title.text, body.text);
-            print("📨 Push notification sent to $tokenSelected");
-          } else {
-            print("⚠️ Skipping $userNumber - No token found.");
+          final token = (map['token'] ?? '').toString();
+          // Prefer the matched field; fall back to either if missing
+          String acc = (map[field] ?? '').toString().trim();
+          if (acc.isEmpty) {
+            acc = (map['accountNumber'] ?? map['electricityAccountNumber'] ?? '').toString().trim();
           }
-        }
 
+          print("🔹 Sending to account: $acc | Token: $token");
+
+          if (token.isEmpty || acc.isEmpty) {
+            print("⚠️ Skipping (token or account missing). token='$token' account='$acc'");
+            continue;
+          }
+
+          // Choose correct Firestore path
+          final CollectionReference notificationsRef = isLocalMunicipality
+              ? FirebaseFirestore.instance
+              .collection('localMunicipalities')
+              .doc(municipalityId)
+              .collection('Notifications')
+              : FirebaseFirestore.instance
+              .collection('districts')
+              .doc(districtId)
+              .collection('municipalities')
+              .doc(municipalityId)
+              .collection('Notifications');
+
+          await notificationsRef.add({
+            "token": token,
+            "user": acc,                     // 🟢 matched account number
+            "accountField": field,           // 🟢 store which field was used
+            "utility": utility,              // 🟢 water | electricity (helps client route)
+            "title": title.text,
+            "body": body.text,
+            "read": false,
+            "date": formattedDate,
+            "level": 'general',
+          });
+
+          print("✅ Notification saved for $acc at: ${notificationsRef.path}");
+          sendPushMessage(token, title.text, body.text);
+          print("📨 Push sent to $token");
+        }
         Fluttertoast.showToast(msg: 'Notification sent to selected users!');
         title.clear();
         body.clear();
@@ -4615,53 +4737,55 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
       onConfirm: () async {
         DateTime now = DateTime.now();
         String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
-
+        final field = matchedAccountField;
+        final utility = accountLabel;
         print(
             "✅ Starting disconnection notice process for ${selectedProperties.length} properties.");
+        print("🔧 Using account field: $field (utility: $utility)");
+        for (final property in selectedProperties) {
+          final map = Map<String, dynamic>.from(property);
 
-        for (var property in selectedProperties) {
-          String tokenSelected = property['token'] ?? '';
-          String userNumber = property['accountNumber'] ?? '';
-
-          print("🔹 Sending to account: $userNumber | Token: $tokenSelected");
-
-          if (tokenSelected.isNotEmpty) {
-            // Determine the correct Firestore path based on municipality type
-            CollectionReference notificationsRef;
-            if (isLocalMunicipality) {
-              notificationsRef = FirebaseFirestore.instance
-                  .collection('localMunicipalities')
-                  .doc(municipalityId)
-                  .collection('Notifications');
-            } else {
-              notificationsRef = FirebaseFirestore.instance
-                  .collection('districts')
-                  .doc(districtId)
-                  .collection('municipalities')
-                  .doc(municipalityId)
-                  .collection('Notifications');
-            }
-
-            await notificationsRef.add({
-              "token": tokenSelected,
-              "user": userNumber,
-              "title": title.text,
-              "body": body.text,
-              "read": false,
-              "date": formattedDate,
-              "level": 'severe',
-            });
-
-            print(
-                "✅ Disconnection notice saved in Firestore for $userNumber at path: ${notificationsRef.path}");
-
-            sendPushMessage(tokenSelected, title.text, body.text);
-            print("📨 Push notification sent to $tokenSelected");
-          } else {
-            print("⚠️ Skipping $userNumber - No token found.");
+          final token = (map['token'] ?? '').toString();
+          String acc = (map[field] ?? '').toString().trim();
+          if (acc.isEmpty) {
+            acc = (map['accountNumber'] ?? map['electricityAccountNumber'] ?? '').toString().trim();
           }
-        }
 
+          print("🔹 Sending to account: $acc | Token: $token");
+
+          if (token.isEmpty || acc.isEmpty) {
+            print("⚠️ Skipping (token or account missing). token='$token' account='$acc'");
+            continue;
+          }
+
+          final CollectionReference notificationsRef = isLocalMunicipality
+              ? FirebaseFirestore.instance
+              .collection('localMunicipalities')
+              .doc(municipalityId)
+              .collection('Notifications')
+              : FirebaseFirestore.instance
+              .collection('districts')
+              .doc(districtId)
+              .collection('municipalities')
+              .doc(municipalityId)
+              .collection('Notifications');
+
+          await notificationsRef.add({
+            "token": token,
+            "user": acc,                     // 🟢 matched account number
+            "accountField": field,           // 🟢 which field used
+            "utility": utility,              // 🟢 water | electricity
+            "title": title.text,
+            "body": body.text,
+            "read": false,
+            "date": formattedDate,
+            "level": 'severe',
+          });
+
+          print("✅ Disconnection notice saved for $acc at: ${notificationsRef.path}");
+          sendPushMessage(token, title.text, body.text);
+          print("📨 Push sent to $token");
+        }
         Fluttertoast.showToast(
             msg: 'Disconnection notice sent to selected users!');
         title.clear();
@@ -5062,10 +5186,11 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
                       ),
                       child: const Text('Send Notification'),
                       onPressed: () async {
-                        setState(() {
-                          _isLoading = true;
-                        });
-
+                        if(mounted) {
+                          setState(() {
+                            _isLoading = true;
+                          });
+                        }
                         DateTime now = DateTime.now();
                         String formattedDate =
                             DateFormat('yyyy-MM-dd – kk:mm').format(now);
@@ -5137,16 +5262,17 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
                             );
                           }
                         }
-
-                        setState(() {
-                          _isLoading = false;
-                        });
-
+                         if(mounted) {
+                           setState(() {
+                             _isLoading = false;
+                           });
+                         }
                         // Clear input fields after sending
                         title.clear();
                         body.clear();
-                        if (ctx.mounted)
+                        if (ctx.mounted) {
                           Navigator.of(ctx).pop(); // Close the dialog
+                        }
                       },
                     ),
                   if (!_isLoading)
@@ -5289,10 +5415,11 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
                       ),
                       child: const Text('Send Notification'),
                       onPressed: () async {
-                        setState(() {
-                          _isLoading = true;
-                        });
-
+                        if(mounted) {
+                          setState(() {
+                            _isLoading = true;
+                          });
+                        }
                         DateTime now = DateTime.now();
                         String formattedDate =
                             DateFormat('yyyy-MM-dd – kk:mm').format(now);
@@ -5364,16 +5491,17 @@ class _NoticeConfigScreenState extends State<NoticeConfigScreen>
                             );
                           }
                         }
-
-                        setState(() {
-                          _isLoading = false;
-                        });
-
+                          if(mounted) {
+                            setState(() {
+                              _isLoading = false;
+                            });
+                          }
                         // Clear input fields after sending
                         title.clear();
                         body.clear();
-                        if (ctx.mounted)
+                        if (ctx.mounted) {
                           Navigator.of(ctx).pop(); // Close the dialog
+                        }
                       },
                     ),
                   if (!_isLoading)

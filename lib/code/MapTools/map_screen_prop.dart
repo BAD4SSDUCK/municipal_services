@@ -73,7 +73,7 @@ class _MapScreenPropState extends State<MapScreenProp> {
   late GoogleMapController _mapController;
 
   late BitmapDescriptor sourceIcon;
-  Set<Marker> _markers = Set<Marker>();
+  final Set<Marker> _markers = <Marker>{};
 
   ///This checks current users location
   Future<void> locationAllow() async {
@@ -175,7 +175,7 @@ class _MapScreenPropState extends State<MapScreenProp> {
 
         _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
       } catch (e) {
-        addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
+        addressLocation = const LatLng(-29.601505328570788, 30.379442518631805);
 
         _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
         if(mounted) {
@@ -193,7 +193,7 @@ class _MapScreenPropState extends State<MapScreenProp> {
       }
     }else{
       ///for web version
-      final apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
+      const apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
       final encodedAddress = Uri.encodeComponent(address);
       final url = 'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey&libraries=maps,drawing,visualization,places,routes&callback=initMap';
 
@@ -213,7 +213,7 @@ class _MapScreenPropState extends State<MapScreenProp> {
         }
         _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
       }else{
-        addressLocation = LatLng(-29.601505328570788, 30.379442518631805);
+        addressLocation = const LatLng(-29.601505328570788, 30.379442518631805);
 
         _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
 

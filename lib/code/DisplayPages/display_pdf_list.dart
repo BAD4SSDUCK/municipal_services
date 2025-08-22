@@ -25,7 +25,7 @@ import 'display_property_trend.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:universal_html/html.dart' as html;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 //View Invoice
 class UsersPdfListViewPage extends StatefulWidget {
   final String userNumber;
@@ -34,14 +34,16 @@ class UsersPdfListViewPage extends StatefulWidget {
   final bool isLocalMunicipality;
   final String municipalityId;
   final String? districtId;
-
+  final bool handlesWater;
+  final bool handlesElectricity;
   const UsersPdfListViewPage(
       {super.key,
       required this.userNumber,
       required this.propertyAddress,
       required this.accountNumber,required this.isLocalMunicipality,
         required this.municipalityId,
-        this.districtId,});
+        this.districtId,required this.handlesWater,
+        required this.handlesElectricity,});
 
   @override
   _UsersPdfListViewPageState createState() => _UsersPdfListViewPageState();
@@ -106,6 +108,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
   RewardedAd? _rewardedAd;
   bool _isAdLoaded = false;
   bool _isLoadingAd = true;
+  late String matchedAccountField;
 
   void _onSubmit() {
     setState(() => _isLoading = true);
@@ -117,6 +120,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
 
   @override
   void initState() {
+    loadMatchedAccountField();
     if (!kIsWeb) _loadRewardedAd();
     dropdownValue = formattedDate;
     setMonthLimits();
@@ -130,6 +134,11 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
 {
   super.dispose();
 }
+
+  Future<void> loadMatchedAccountField() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    matchedAccountField = prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
+  }
 
   void _initializeFirestoreReference() {
     if (widget.isLocalMunicipality) {
@@ -266,49 +275,67 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
     );
   }
 
-  Future<void> _showRewardedAd() async {
+  void _showRewardedAd(String type) {
     if (kIsWeb) {
-      print("🌐 Web detected, skipping ad and downloading statement directly.");
-      _downloadInvoice();
-      return;
-    }
-    if (_isLoadingAd) {
-      Fluttertoast.showToast(msg: "🔄 Ad is still loading... Please wait.");
+      print("🌐 Web detected. Opening $type statement directly.");
+      _fetchAndOpenStatementByType(type);
       return;
     }
 
-    if (_rewardedAd == null || !_isAdLoaded) {
-      print("⚠️ Ad not loaded, downloading statement directly.");
-      _downloadInvoice();
-      _loadRewardedAd(); // Reload the ad even if it failed
+    if (_isLoadingAd || _rewardedAd == null || !_isAdLoaded) {
+      print("⚠️ Ad not ready. Opening $type statement directly.");
+      _fetchAndOpenStatementByType(type);
+      _loadRewardedAd(); // Reload the ad
       return;
     }
 
     _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (RewardedAd ad) {
-        print("✅ Ad Dismissed. Downloading statement.");
         ad.dispose();
-        _downloadInvoice(); // Download invoice AFTER ad is closed
-        _loadRewardedAd(); // Load new ad for the next attempt
+        print("✅ Ad dismissed. Opening $type statement.");
+        _fetchAndOpenStatementByType(type);
+        _loadRewardedAd(); // Load next ad
       },
       onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
-        print("❌ Failed to Show Ad: $error. Downloading statement.");
         ad.dispose();
-        _downloadInvoice(); // Download invoice even if ad fails
+        print("❌ Ad failed to show. Opening $type statement.");
+        _fetchAndOpenStatementByType(type);
         _loadRewardedAd();
       },
     );
 
-    _rewardedAd!.show(onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-      print("🎉 User watched ad, unlocking statement download.");
-    });
-      if(mounted) {
-        setState(() {
-          _rewardedAd = null;
-          _isAdLoaded = false;
-        });
-      }
+    _rewardedAd!.show(
+      onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+        print("🎉 User unlocked $type statement.");
+      },
+    );
+
+    if (mounted) {
+      setState(() {
+        _rewardedAd = null;
+        _isAdLoaded = false;
+      });
+    }
   }
+
+  Future<void> _fetchAndOpenStatementByType(String type) async {
+    String monthToUse = dropdownValue == 'Select Month' ? formattedDate : dropdownValue;
+
+    // Load the matched account field: either 'accountNumber' or 'electricityAccountNumber'
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String selectedAccountNumber = prefs.getString('selectedPropertyAccountNo') ?? '';
+
+    if (selectedAccountNumber.isEmpty) {
+      Fluttertoast.showToast(msg: "No account number found.");
+      print("❌ selectedPropertyAccountNo is empty.");
+      return;
+    }
+
+    // No more prefixing needed — electricity account numbers are stored cleanly now
+    getPDFByAccMon(selectedAccountNumber, monthToUse);
+  }
+
+
 
   void _downloadInvoice() {
     Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait...");
@@ -353,16 +380,29 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
 
   Widget firebasePDFCard(CollectionReference<Object?> pdfDataStream) {
     return Expanded(
-      child: StreamBuilder<QuerySnapshot>(
-        stream: pdfDataStream.snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
-          if (streamSnapshot.hasData) {
-            // Filter to get only the property that matches the selected account number and address.
-            List<QueryDocumentSnapshot<Object?>> filteredProperties = streamSnapshot.data!.docs.where(
-                  (documentSnapshot) =>
-              documentSnapshot['accountNumber'] == widget.accountNumber &&
-                  documentSnapshot['address'] == widget.propertyAddress,
-            ).toList();
+        child: FutureBuilder<SharedPreferences>(
+            future: SharedPreferences.getInstance(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final prefs = snapshot.data!;
+              final matchedAccountField = prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
+              final selectedAccountNo = prefs.getString('selectedPropertyAccountNo') ?? '';
+
+              return StreamBuilder<QuerySnapshot>(
+                stream: pdfDataStream.snapshots(),
+                builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
+                  if (streamSnapshot.hasData) {
+                    List<QueryDocumentSnapshot<Object?>> filteredProperties = streamSnapshot.data!.docs.where(
+                          (doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        return data.containsKey(matchedAccountField) &&
+                            data[matchedAccountField] == selectedAccountNo &&
+                            data['address'] == widget.propertyAddress;
+                      },
+                    ).toList();
 
             if (filteredProperties.isNotEmpty) {
               var filteredProperty = filteredProperties.first;
@@ -383,8 +423,8 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          'Account Number: ${filteredProperty['accountNumber']}',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                            'Account Number: ${filteredProperty[matchedAccountField]}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                         ),
                         const SizedBox(height: 5),
                         Text(
@@ -407,15 +447,14 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                   // Step 1: Fetch the user's property details based on accountNumber
                                   QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
                                       .collectionGroup('properties')
-                                      .where('accountNumber', isEqualTo: widget.accountNumber)
+                                      .where(matchedAccountField, isEqualTo: widget.accountNumber)
                                       .limit(1)
                                       .get();
 
                                   if (propertySnapshot.docs.isNotEmpty) {
                                     var propertyDoc = propertySnapshot.docs.first;
                                     String userPhoneNumber = propertyDoc.get('cellNumber'); // Get user's phone number
-                                    String accountNumber = propertyDoc.get('accountNumber'); // Get account number
-
+                                    String accountNumber = propertyDoc.get(matchedAccountField); // Get account number
                                     print('Phone number: $userPhoneNumber');
                                     print('Account number: $accountNumber');
 
@@ -438,7 +477,10 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                       print('Error: districtId is null.');
                                       return;
                                     }
-
+                                    Map<String, String> chatRoomAccountsMap = {
+                                      'accountNumber': propertyDoc['accountNumber'] ?? '',
+                                      'electricityAccountNumber':  propertyDoc['electricityAccountNumber'] ?? '',
+                                    };
                                     // Step 3: Navigate to the ChatFinance screen
                                     Navigator.push(
                                       context,
@@ -451,6 +493,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                           isLocalMunicipality: widget.isLocalMunicipality,
                                           municipalityId: widget.municipalityId,
                                           districtId: widget.districtId ?? '',
+                                          chatRoomAccountsMap: chatRoomAccountsMap,
                                         ),
                                       ),
                                     );
@@ -472,13 +515,70 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                             BasicIconButtonGrey(
                               onPress: () async {
                                 _onSubmit();
+                                SharedPreferences prefs = await SharedPreferences.getInstance();
+                                String matchedField = prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
+
                                 // String accountNumberPDF = filteredProperty['accountNumber'];
                                 // String monthToUse = dropdownValue == 'Select Month' ? formattedDate : dropdownValue;
                                 // getPDFByAccMon(accountNumberPDF, monthToUse);
                                 String accountNumberPDF = widget.accountNumber;
                                 String monthToUse = dropdownValue == 'Select Month' ? formattedDate : dropdownValue;
                                // getPDFByAccMon(accountNumberPDF, monthToUse);
-                                _showRewardedAd();
+                                if (widget.handlesWater && widget.handlesElectricity) {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Column(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.receipt_long, color: Colors.deepPurple),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            "Select Statement Type",
+                                            style: TextStyle(fontWeight: FontWeight.bold),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                      content: const Text("Please choose which statement you want to view."),
+                                      actionsPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                      actionsAlignment: MainAxisAlignment.spaceEvenly,
+                                      actions: [
+                                        ElevatedButton.icon(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                            _showRewardedAd("water");
+                                          },
+                                          icon: const Icon(Icons.water_drop, color: Colors.white),
+                                          label: const Text("Water"),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.blue,
+                                            foregroundColor: Colors.white,
+                                          ),
+                                        ),
+                                        ElevatedButton.icon(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                            _showRewardedAd("electricity");
+                                          },
+                                          icon: const Icon(Icons.bolt, color: Colors.white),
+                                          label: const Text("Electricity"),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.orange,
+                                            foregroundColor: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                } else if (widget.handlesWater) {
+                                  _showRewardedAd("water");
+                                } else if (widget.handlesElectricity) {
+                                  _showRewardedAd("electricity");
+                                } else {
+                                  Fluttertoast.showToast(msg: "⚠️ No statements available for this property.");
+                                }
                               },
                               labelText: 'Invoice',
                               fSize: 16,
@@ -498,8 +598,10 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
             }
           }
           return const Center(child: CircularProgressIndicator());
-        },
-      ),
+                },
+              );
+            },
+        ),
     );
   }
 
@@ -797,7 +899,8 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
 
     print('📂 Attempting to list files in path: pdfs/$month/${widget.userNumber}/$formattedAddress/');
 
-    final storageRef = FirebaseStorage.instance.ref()
+    final storageRef = FirebaseStorage.instance
+        .ref()
         .child("pdfs/$month/${widget.userNumber}/$formattedAddress");
 
     try {
@@ -812,6 +915,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
       for (var item in listResult.items) {
         print('📄 Found File: ${item.name}');
 
+        // Match exactly to the selected account number (no prefix logic anymore)
         if (item.name.contains(accNum)) {
           print('✅ Matching statement found: ${item.name}');
 
@@ -838,6 +942,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
       Fluttertoast.showToast(msg: "Error downloading statement.");
     }
   }
+
 
 
 
