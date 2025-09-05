@@ -1,16 +1,65 @@
 buildscript {
-    ext.kotlin_version = '1.9.0'
+    ext.kotlin_version = '1.9.24'
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.1.3' //4.2.2//7.1.2
+        classpath 'com.android.tools.build:gradle:8.5.2' // works with Gradle 8.7
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'com.google.gms:google-services:4.3.14'
+        classpath 'com.google.gms:google-services:4.4.2'
     }
 }
+// Auto-assign namespace for old plugins that don't define it (AGP 8+).
+subprojects { subproject ->
+    plugins.withId("com.android.library") {
+        def androidExt = subproject.extensions.findByName("android")
+        if (androidExt) {
+            // If the plugin hasn't declared a namespace yet, try to derive it.
+            def hasNs = false
+            try {
+                hasNs = androidExt.hasProperty("namespace") && androidExt.namespace != null
+            } catch (ignored) { hasNs = false }
+
+            if (!hasNs) {
+                // Try to read from the manifest
+                def manifestFile = file("${subproject.projectDir}/src/main/AndroidManifest.xml")
+                String ns = null
+                if (manifestFile.exists()) {
+                    def text = manifestFile.getText('UTF-8')
+                    def m = (text =~ /package="([^"]+)"/)
+                    if (m.find()) {
+                        ns = m.group(1)
+                    }
+                }
+                // Fallback if no manifest or no package found
+                if (ns == null || ns.trim().isEmpty()) {
+                    def safeName = subproject.name.replaceAll(/[^A-Za-z0-9_]/, "_")
+                    def grp = (subproject.group ?: "auto.generated")
+                            .toString()
+                            .replaceAll(/[^A-Za-z0-9_.]/, "_")
+                    ns = "${grp}.${safeName}"
+                }
+                androidExt.namespace = ns
+                println("Set namespace for ${subproject.name} -> ${ns}")
+            }
+
+            // (Optional) ensure compileSdk is at least 35 for ancient libs
+            try {
+                if (androidExt.hasProperty("compileSdkVersion")) {
+                    def v = androidExt.compileSdkVersion
+                    if (v instanceof Integer) {
+                        if (v < 35) androidExt.compileSdkVersion = 35
+                    } else {
+                        androidExt.compileSdkVersion = 35
+                    }
+                }
+            } catch (ignored) {}
+        }
+    }
+}
+
 
 allprojects {
     repositories {
@@ -29,4 +78,30 @@ subprojects {
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
+}
+// Unify Java/Kotlin targets across ALL modules (apps + libraries)
+// Normalize Java/Kotlin targets for all modules without touching toolchains.
+subprojects { subproject ->
+    // Android app & library modules: force Java 1.8 bytecode
+    plugins.withId("com.android.application") {
+        subproject.extensions.findByName("android")?.compileOptions {
+            sourceCompatibility JavaVersion.VERSION_1_8
+            targetCompatibility JavaVersion.VERSION_1_8
+        }
+    }
+    plugins.withId("com.android.library") {
+        subproject.extensions.findByName("android")?.compileOptions {
+            sourceCompatibility JavaVersion.VERSION_1_8
+            targetCompatibility JavaVersion.VERSION_1_8
+        }
+    }
+
+    // Kotlin Android modules: target 1.8 bytecode
+    plugins.withId("org.jetbrains.kotlin.android") {
+        tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach { t ->
+            if (t.kotlinOptions.jvmTarget != "1.8") {
+                t.kotlinOptions.jvmTarget = "1.8"
+            }
+        }
+    }
 }

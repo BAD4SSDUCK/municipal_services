@@ -893,3 +893,189 @@ exports.backfillUsersByUid = onRequest(
       }
     },
 );
+
+/**
+ * POST with header:
+ *   x-superadmin-secret: <your secret>
+ * Body (JSON): one of { uid | email | phone } and optional { enable }
+ * Examples:
+ *   { "email": "admin@example.com", "enable": true }
+ *   { "phone": "+27XXXXXXXXX", "enable": false }
+ */
+const SUPERADMIN_SECRET = defineSecret("SUPERADMIN_SECRET");
+
+exports.setSuperadmin = onRequest(
+    {region: "europe-west1", secrets: [SUPERADMIN_SECRET], timeoutSeconds: 60},
+    async (req, res) => {
+      if (req.method !== "POST") {
+        res.status(405).send("Use POST");
+        return;
+      }
+
+      const provided = req.get("x-superadmin-secret") || "";
+      if (provided !== SUPERADMIN_SECRET.value()) {
+        res.status(403).send("Forbidden");
+        return;
+      }
+
+      try {
+        const body = typeof req.body === "object" ? req.body : {};
+        const {uid, email, phone, enable = true} = body;
+
+        const admin = require("firebase-admin");
+        if (!admin.apps.length) admin.initializeApp();
+
+        let targetUid = uid;
+        if (!targetUid) {
+          const auth = admin.auth();
+          if (email) {
+            targetUid = (await auth.getUserByEmail(email)).uid;
+          } else if (phone) {
+            targetUid = (await auth.getUserByPhoneNumber(phone)).uid;
+          }
+        }
+        if (!targetUid) {
+          res.status(400).send("Missing uid/email/phone");
+          return;
+        }
+
+        await admin
+            .auth()
+            .setCustomUserClaims(
+                targetUid,
+            enable ? {superadmin: true} : null,
+            );
+      } catch (e) {
+        console.error(e);
+        res.status(500).send("error");
+      }
+    },
+);
+
+const {HttpsError} = functions.https;
+/**
+ * Recursively deletes a document and all of its subcollections.
+ * Used when the Admin SDK doesn't provide `firestore().recursiveDelete`.
+ *
+ * @param {FirebaseFirestore.DocumentReference} docRef
+ *     Firestore document to delete (including all nested subcollections).
+ * @return {Promise<void>} Resolves when deletion completes.
+ */
+async function deleteDocAndSubs(docRef) {
+  // Delete all subcollections first
+  const subcols = await docRef.listCollections();
+  for (const col of subcols) {
+    // Page through the collection in batches
+    let snap = await col.limit(500).get();
+    while (!snap.empty) {
+      // Recurse into each doc
+      await Promise.all(
+          snap.docs.map((d) => deleteDocAndSubs(d.ref)),
+      );
+      // Next page (after deletions)
+      snap = await col.limit(500).get();
+    }
+  }
+  // Now delete the document itself
+  await docRef.delete();
+}
+
+exports.deleteMunicipalityRecursive = functions
+    .region("europe-west1")
+    .runWith({timeoutSeconds: 540, memory: "1GB"})
+    .https.onCall(async (data, context) => {
+    // ---- Auth check (superadmin only) ----
+      const isSuperadmin =
+      context.auth &&
+      context.auth.token &&
+      context.auth.token.superadmin === true;
+
+      if (!isSuperadmin) {
+        throw new HttpsError(
+            "permission-denied",
+            "Superadmin only.",
+        );
+      }
+
+      // ---- Validate args ----
+      const basePath =
+        (data && typeof data.basePath === "string") ?
+        data.basePath.trim() :
+        "";
+
+
+      if (!basePath) {
+        throw new HttpsError(
+            "invalid-argument",
+            "basePath is required.",
+        );
+      }
+
+      // ---- Recursive delete ----
+      const docRef = admin.firestore().doc(basePath);
+
+      try {
+        const fs = admin.firestore();
+        const hasRecursive =
+          typeof fs.recursiveDelete === "function";
+
+        if (hasRecursive) {
+          await fs.recursiveDelete(docRef);
+        } else {
+          await deleteDocAndSubs(docRef);
+        }
+        return {ok: true};
+      } catch (err) {
+        console.error(
+            "Recursive delete failed for",
+            basePath,
+            err,
+        );
+        const msg =
+          (err && err.message) ? err.message : "internal";
+        throw new HttpsError("internal", msg);
+      }
+    });
+
+exports.listActionLogAddresses = functions
+    .region("europe-west1")
+    .https.onCall(async (data, context) => {
+      const {HttpsError} = functions.https;
+
+      // Optional: require superadmin
+      if (!context.auth || context.auth.token.superadmin !== true) {
+        throw new HttpsError("permission-denied", "Superadmin only.");
+      }
+
+      const toStr = (v) => (typeof v === "string" ? v.trim() : "");
+      const stripSlashes = (s) => s.replace(/^\/+|\/+$/g, "");
+
+      const basePath = stripSlashes(toStr(data?.basePath));
+      const uploader = stripSlashes(toStr(data?.uploader));
+
+      if (!basePath || !uploader) {
+        throw new HttpsError(
+            "invalid-argument",
+            "basePath and uploader are required.",
+        );
+      }
+
+      // IMPORTANT: do not call this variable "path"
+      const docPath = `${basePath}/actionLogs/${uploader}`;
+
+      try {
+        const docRef = admin.firestore().doc(docPath);
+        const cols = await docRef.listCollections();
+        const addresses = cols
+            .map((c) => c.id)
+            .sort((a, b) => a.localeCompare(b));
+
+        return {addresses};
+      } catch (err) {
+        console.error(
+            "listActionLogAddresses failed",
+            {docPath, err: err.message},
+        );
+        throw new HttpsError("internal", err.message || "internal");
+      }
+    });

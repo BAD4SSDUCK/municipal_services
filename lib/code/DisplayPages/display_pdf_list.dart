@@ -121,7 +121,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
   @override
   void initState() {
     loadMatchedAccountField();
-    if (!kIsWeb) _loadRewardedAd();
+   // if (!kIsWeb) _loadRewardedAd();
     dropdownValue = formattedDate;
     setMonthLimits();
     _initializeFirestoreReference();
@@ -239,84 +239,84 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
   //   }
   // }
 
-  void _loadRewardedAd() {
-    if (kIsWeb) return;
-    print("🔄 Loading a new rewarded ad...");
-    if(mounted) {
-      setState(() {
-        _isLoadingAd = true;
-      });
-    }
-    RewardedAd.load(
-      adUnitId: 'ca-app-pub-3940256099942544/5224354917', // Test Ad Unit
-      request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: (RewardedAd ad) {
-          if(mounted) {
-            setState(() {
-              _rewardedAd = ad;
-              _isAdLoaded = true;
-              _isLoadingAd = false;
-              print("✅ Rewarded Ad Loaded");
-            });
-          }
-        },
-        onAdFailedToLoad: (LoadAdError error) {
-          print("❌ Failed to Load Rewarded Ad: $error");
-          if(mounted) {
-            setState(() {
-              _isAdLoaded = false;
-              _isLoadingAd = false;
-              _rewardedAd = null;
-            });
-          }
-        },
-      ),
-    );
-  }
-
-  void _showRewardedAd(String type) {
-    if (kIsWeb) {
-      print("🌐 Web detected. Opening $type statement directly.");
-      _fetchAndOpenStatementByType(type);
-      return;
-    }
-
-    if (_isLoadingAd || _rewardedAd == null || !_isAdLoaded) {
-      print("⚠️ Ad not ready. Opening $type statement directly.");
-      _fetchAndOpenStatementByType(type);
-      _loadRewardedAd(); // Reload the ad
-      return;
-    }
-
-    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
-      onAdDismissedFullScreenContent: (RewardedAd ad) {
-        ad.dispose();
-        print("✅ Ad dismissed. Opening $type statement.");
-        _fetchAndOpenStatementByType(type);
-        _loadRewardedAd(); // Load next ad
-      },
-      onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
-        ad.dispose();
-        print("❌ Ad failed to show. Opening $type statement.");
-        _fetchAndOpenStatementByType(type);
-        _loadRewardedAd();
-      },
-    );
-
-    _rewardedAd!.show(
-      onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-        print("🎉 User unlocked $type statement.");
-      },
-    );
-
-    if (mounted) {
-      setState(() {
-        _rewardedAd = null;
-        _isAdLoaded = false;
-      });
-    }
-  }
+  // void _loadRewardedAd() {
+  //   if (kIsWeb) return;
+  //   print("🔄 Loading a new rewarded ad...");
+  //   if(mounted) {
+  //     setState(() {
+  //       _isLoadingAd = true;
+  //     });
+  //   }
+  //   RewardedAd.load(
+  //     adUnitId: 'ca-app-pub-3940256099942544/5224354917', // Test Ad Unit
+  //     request: const AdRequest(),
+  //     rewardedAdLoadCallback: RewardedAdLoadCallback(
+  //       onAdLoaded: (RewardedAd ad) {
+  //         if(mounted) {
+  //           setState(() {
+  //             _rewardedAd = ad;
+  //             _isAdLoaded = true;
+  //             _isLoadingAd = false;
+  //             print("✅ Rewarded Ad Loaded");
+  //           });
+  //         }
+  //       },
+  //       onAdFailedToLoad: (LoadAdError error) {
+  //         print("❌ Failed to Load Rewarded Ad: $error");
+  //         if(mounted) {
+  //           setState(() {
+  //             _isAdLoaded = false;
+  //             _isLoadingAd = false;
+  //             _rewardedAd = null;
+  //           });
+  //         }
+  //       },
+  //     ),
+  //   );
+  // }
+  //
+  // void _showRewardedAd(String type) {
+  //   if (kIsWeb) {
+  //     print("🌐 Web detected. Opening $type statement directly.");
+  //     _fetchAndOpenStatementByType(type);
+  //     return;
+  //   }
+  //
+  //   if (_isLoadingAd || _rewardedAd == null || !_isAdLoaded) {
+  //     print("⚠️ Ad not ready. Opening $type statement directly.");
+  //     _fetchAndOpenStatementByType(type);
+  //     _loadRewardedAd(); // Reload the ad
+  //     return;
+  //   }
+  //
+  //   _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+  //     onAdDismissedFullScreenContent: (RewardedAd ad) {
+  //       ad.dispose();
+  //       print("✅ Ad dismissed. Opening $type statement.");
+  //       _fetchAndOpenStatementByType(type);
+  //       _loadRewardedAd(); // Load next ad
+  //     },
+  //     onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+  //       ad.dispose();
+  //       print("❌ Ad failed to show. Opening $type statement.");
+  //       _fetchAndOpenStatementByType(type);
+  //       _loadRewardedAd();
+  //     },
+  //   );
+  //
+  //   _rewardedAd!.show(
+  //     onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+  //       print("🎉 User unlocked $type statement.");
+  //     },
+  //   );
+  //
+  //   if (mounted) {
+  //     setState(() {
+  //       _rewardedAd = null;
+  //       _isAdLoaded = false;
+  //     });
+  //   }
+  // }
 
   Future<void> _fetchAndOpenStatementByType(String type) async {
     String monthToUse = dropdownValue == 'Select Month' ? formattedDate : dropdownValue;
@@ -518,11 +518,11 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                 SharedPreferences prefs = await SharedPreferences.getInstance();
                                 String matchedField = prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
 
-                                // String accountNumberPDF = filteredProperty['accountNumber'];
-                                // String monthToUse = dropdownValue == 'Select Month' ? formattedDate : dropdownValue;
-                                // getPDFByAccMon(accountNumberPDF, monthToUse);
-                                String accountNumberPDF = widget.accountNumber;
+                                String accountNumberPDF = filteredProperty['accountNumber'];
                                 String monthToUse = dropdownValue == 'Select Month' ? formattedDate : dropdownValue;
+                                getPDFByAccMon(accountNumberPDF, monthToUse);
+                                // String accountNumberPDF = widget.accountNumber;
+                                // String monthToUse = dropdownValue == 'Select Month' ? formattedDate : dropdownValue;
                                // getPDFByAccMon(accountNumberPDF, monthToUse);
                                 if (widget.handlesWater && widget.handlesElectricity) {
                                   showDialog(
@@ -548,7 +548,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                         ElevatedButton.icon(
                                           onPressed: () {
                                             Navigator.pop(context);
-                                            _showRewardedAd("water");
+                                            _fetchAndOpenStatementByType(("water"));
                                           },
                                           icon: const Icon(Icons.water_drop, color: Colors.white),
                                           label: const Text("Water"),
@@ -560,7 +560,7 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                         ElevatedButton.icon(
                                           onPressed: () {
                                             Navigator.pop(context);
-                                            _showRewardedAd("electricity");
+                                            _fetchAndOpenStatementByType(("electricity"));
                                           },
                                           icon: const Icon(Icons.bolt, color: Colors.white),
                                           label: const Text("Electricity"),
@@ -573,9 +573,9 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                     ),
                                   );
                                 } else if (widget.handlesWater) {
-                                  _showRewardedAd("water");
+                                  _fetchAndOpenStatementByType(("water"));
                                 } else if (widget.handlesElectricity) {
-                                  _showRewardedAd("electricity");
+                                  _fetchAndOpenStatementByType(("electricity"));
                                 } else {
                                   Fluttertoast.showToast(msg: "⚠️ No statements available for this property.");
                                 }

@@ -1,8 +1,17 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="www.cyberfox.co.za.Municipal_Services"
+    xmlns:tools="http://schemas.android.com/tools">
 <!--    package="www.cyberfox.co.za.Municipal_Services">-->
     <!-- The INTERNET permission is required for development. Specifically,
          the Flutter tool needs it to communicate with the running application
          to allow setting breakpoints, to provide hot reload, etc.
     -->
+    <application tools:node="merge">
+        <property
+            android:name="android.adservices.AD_SERVICES_CONFIG"
+            android:resource="@xml/gma_ad_services_config"
+            tools:replace="android:resource" />
+    </application>
     <uses-permission android:name="android.permission.INTERNET"/>
+
 </manifest>

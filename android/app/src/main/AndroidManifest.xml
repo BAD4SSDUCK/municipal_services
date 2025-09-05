@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="www.cyberfox.co.za.Municipal_Services">
+    package="www.cyberfox.co.za.Municipal_Services"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
@@ -81,6 +82,10 @@
        <meta-data
            android:name="com.google.android.gms.ads.APPLICATION_ID"
            android:value="ca-app-pub-3940256099942544~3347511713"/>
+       <property
+           android:name="android.adservices.AD_SERVICES_CONFIG"
+           android:resource="@xml/gma_ad_services_config"
+           tools:replace="android:resource" />
 
    </application>
 </manifest>

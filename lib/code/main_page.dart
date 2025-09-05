@@ -110,34 +110,51 @@ class MainPage extends StatelessWidget {
           bool isEmailUser = user?.email?.isNotEmpty ?? false;
 
           if (isEmailUser) {
-            // Here we fetch whether the user is from a local municipality
             return FutureBuilder<DocumentSnapshot>(
               future: FirebaseFirestore.instance
                   .collectionGroup('users')
-                  .where('email', isEqualTo: user?.email)
+                  .where('email', isEqualTo: user!.email)
                   .limit(1)
                   .get()
                   .then((value) => value.docs.first),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  if (snapshot.hasError) {
-                    return Text("Error loading user data: ${snapshot.error}");
-                  }
-
-                  if (snapshot.hasData && snapshot.data != null) {
-                    final bool isLocalMunicipality = snapshot.data?.get('isLocalMunicipality') ?? false;
-
-                    // Pass the isLocalMunicipality parameter to HomeManagerScreen
-                    return HomeManagerScreen(isLocalMunicipality: isLocalMunicipality);
-                  }
-
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Text("Error loading user data: ${snapshot.error}");
+                }
+                if (!snapshot.hasData || snapshot.data == null) {
                   return const Text("No user data found.");
                 }
 
-                return const CircularProgressIndicator();
+                final bool isLocalMunicipality =
+                    snapshot.data!.get('isLocalMunicipality') ?? false;
+
+                // 🔑 Now fetch claims to get `superadmin`
+                return FutureBuilder<IdTokenResult>(
+                  future: FirebaseAuth.instance.currentUser!.getIdTokenResult(true),
+                  builder: (context, tokenSnap) {
+                    if (tokenSnap.connectionState != ConnectionState.done) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (tokenSnap.hasError) {
+                      return Text("Error loading claims: ${tokenSnap.error}");
+                    }
+                    final isSuperadmin =
+                        tokenSnap.data?.claims?['superadmin'] == true;
+
+                    return HomeManagerScreen(
+                      isLocalMunicipality: isLocalMunicipality,
+                      isSuperadmin: isSuperadmin,
+                    );
+                  },
+                );
               },
             );
-          } else if (phoneNumber != null) {
+          }
+
+          else if (phoneNumber != null) {
             return FutureBuilder<Property?>(
               future: _loadSelectedProperty(),
               builder: (context, propertySnapshot) {
@@ -304,4 +321,36 @@ Future<int> fetchPropertyCount(String phoneNumber) async {
       .where('cellNumber', isEqualTo: phoneNumber)
       .get();
   return propertiesSnapshot.docs.length;
+}
+
+class _EmailLoginInfo {
+  final bool isLocalMunicipality;
+  final bool isSuperadmin;
+  _EmailLoginInfo({
+    required this.isLocalMunicipality,
+    required this.isSuperadmin,
+  });
+}
+
+Future<_EmailLoginInfo> _fetchEmailLoginInfo(User user) async {
+  // Refresh so the latest custom claims are available
+  final token = await user.getIdTokenResult(true);
+  final claims = token.claims ?? {};
+  final isSuperadmin = claims['superadmin'] == true;
+
+  // Discover whether this email user belongs to a local municipality
+  final q = await FirebaseFirestore.instance
+      .collectionGroup('users')
+      .where('email', isEqualTo: user.email)
+      .limit(1)
+      .get();
+
+  final bool isLocalMunicipality = q.docs.isNotEmpty
+      ? (q.docs.first.data()['isLocalMunicipality'] ?? false)
+      : false;
+
+  return _EmailLoginInfo(
+    isLocalMunicipality: isLocalMunicipality,
+    isSuperadmin: isSuperadmin,
+  );
 }

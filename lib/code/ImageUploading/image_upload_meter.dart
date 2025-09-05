@@ -540,59 +540,88 @@ class _ImageUploadState extends State<ImageUploadMeter> {
   // Updated method to call the meter reading service
   Future<String> _callMeterReadingServiceAfterUpload(String electricityMeterReading) async {
     try {
-      String currentYear = DateFormat('yyyy').format(DateTime.now());
-      String currentMonth = DateFormat.MMMM().format(DateTime.now());
+      final String currentYear = DateFormat('yyyy').format(DateTime.now());
+      final String currentMonth = DateFormat.MMMM().format(DateTime.now());
+      final String userPhone = FirebaseAuth.instance.currentUser?.phoneNumber ?? "";
 
-      // ✅ Define Firestore path based on municipality type
-      CollectionReference consumptionCollection;
-      if (widget.isLocalMunicipality) {
-        consumptionCollection = FirebaseFirestore.instance
-            .collection('localMunicipalities')
-            .doc(widget.municipalityId)
-            .collection('consumption')
-            .doc(currentYear)
-            .collection(currentMonth);
-      } else {
-        consumptionCollection = FirebaseFirestore.instance
-            .collection('districts')
-            .doc(widget.districtId)
-            .collection('municipalities')
-            .doc(widget.municipalityId)
-            .collection('consumption')
-            .doc(currentYear)
-            .collection(currentMonth);
+      // Build base collection for the month
+      CollectionReference<Map<String, dynamic>> monthCol = widget.isLocalMunicipality
+          ? FirebaseFirestore.instance
+          .collection('localMunicipalities')
+          .doc(widget.municipalityId)
+          .collection('consumption')
+          .doc(currentYear)
+          .collection(currentMonth)
+          .withConverter<Map<String, dynamic>>(
+        fromFirestore: (s, _) => s.data() ?? <String, dynamic>{},
+        toFirestore: (m, _) => m,
+      )
+          : FirebaseFirestore.instance
+          .collection('districts')
+          .doc(widget.districtId)
+          .collection('municipalities')
+          .doc(widget.municipalityId)
+          .collection('consumption')
+          .doc(currentYear)
+          .collection(currentMonth)
+          .withConverter<Map<String, dynamic>>(
+        fromFirestore: (s, _) => s.data() ?? <String, dynamic>{},
+        toFirestore: (m, _) => m,
+      );
+
+      // 1) Try direct doc.get() by address ID first (uses rules: get)
+      final String docId = widget.propertyAddress; // this is what you used when creating
+      final docRef = monthCol.doc(docId);
+      final byIdSnap = await docRef.get(const GetOptions(source: Source.server));
+
+      if (byIdSnap.exists) {
+        // update existing (merge) so userPhone is present for future rule checks
+        await docRef.set({
+          'meter_reading': electricityMeterReading,
+          'timestamp': Timestamp.now(),
+          'userPhone': userPhone,
+        }, SetOptions(merge: true));
+
+        print("✅ Meter reading updated via direct doc.get()");
+        return electricityMeterReading;
       }
 
-      // ✅ Query for the correct document
-      QuerySnapshot querySnapshot = await consumptionCollection
+      // 2) Fall back to a query (uses rules: list) if docId wasn’t found
+      final q = await monthCol
           .where('address', isEqualTo: widget.propertyAddress)
           .limit(1)
-          .get();
+          .get(const GetOptions(source: Source.server));
 
-      if (querySnapshot.docs.isNotEmpty) {
-        // ✅ Update existing document
-        DocumentSnapshot documentSnapshot = querySnapshot.docs.first;
-        await documentSnapshot.reference.update({
+      if (q.docs.isNotEmpty) {
+        final qDocRef = q.docs.first.reference;
+        await qDocRef.set({
           'meter_reading': electricityMeterReading,
           'timestamp': Timestamp.now(),
-        });
-      } else {
-        // ✅ If no document exists, create a new one
-        await consumptionCollection.doc(widget.propertyAddress).set({
-          'address': widget.propertyAddress,
-          'meter_number': widget.meterNumber,
-          'meter_reading': electricityMeterReading,
-          'timestamp': Timestamp.now(),
-        });
+          'userPhone': userPhone,
+        }, SetOptions(merge: true));
+
+        print("✅ Meter reading updated via query fallback");
+        return electricityMeterReading;
       }
 
-      print("✅ Meter reading updated successfully!");
+      // 3) Create new doc with docId = address (future reads hit get)
+      await docRef.set({
+        'address': widget.propertyAddress,
+        'meter_number': widget.meterNumber,
+        'meter_reading': electricityMeterReading,
+        'timestamp': Timestamp.now(),
+        'userPhone': userPhone,                   // <-- critical for rules
+      });
+
+      print("✅ Meter reading created successfully!");
       return electricityMeterReading;
     } catch (e) {
       print("❌ Error updating meter reading: $e");
-      throw e;
+      rethrow;
     }
   }
+
+
 
   Future<void> imgFromCamera(BuildContext parentContext) async {
     // Get location data

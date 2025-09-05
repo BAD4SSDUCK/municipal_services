@@ -41,6 +41,7 @@ import '../Models/notify_provider.dart';
 import '../Models/property.dart';
 import '../login/login_page.dart';
 import 'add_user.dart';
+import 'cyberDevPage.dart';
 //Menu for municipality users
 // class HomeManagerScreen extends StatefulWidget {
 //   const HomeManagerScreen({super.key});
@@ -599,8 +600,12 @@ import 'add_user.dart';
 //   );
 
 class HomeManagerScreen extends StatefulWidget {
-  const HomeManagerScreen({super.key, required bool isLocalMunicipality});
-
+  const HomeManagerScreen(
+      {super.key,
+      required this.isLocalMunicipality,
+      required this.isSuperadmin});
+  final bool isLocalMunicipality;
+  final bool isSuperadmin;
   @override
   State<StatefulWidget> createState() => _HomeManagerScreenState();
 }
@@ -625,8 +630,7 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
   String userRole = '';
-  String adminPath='';
-
+  String adminPath = '';
 
   @override
   void initState() {
@@ -648,7 +652,6 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
       });
     }
   }
-
 
   Future<void> fetchUserDetails() async {
     try {
@@ -718,8 +721,6 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
     super.dispose();
   }
 
-
-
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent) {
       double scrollAmount = 50.0; // Adjust scroll amount as needed
@@ -756,7 +757,6 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
     }
     return KeyEventResult.ignored;
   }
-
 
   Widget _buildGridButton({
     required String label,
@@ -807,13 +807,12 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     final notificationProvider = Provider.of<NotificationProvider>(context);
     bool hasUnreadMessages = notificationProvider.hasUnreadMessages ||
         notificationProvider.hasUnreadFinanceMessages;
-
+    final showDevPanel = widget.isSuperadmin;
     print(
         "HomeManagerScreen build: combined hasUnreadMessages = $hasUnreadMessages");
     if (isLoading) {
@@ -846,7 +845,12 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
           backgroundColor: Colors.black87,
           iconTheme: const IconThemeData(color: Colors.white),
         ),
-        drawer: MunicipalNavDrawer(municipalityId: municipalityId ??'', isLocalMunicipality: isLocalMunicipality, isLocalUser: isLocalUser, districtId: districtId ??'',),
+        drawer: MunicipalNavDrawer(
+          municipalityId: municipalityId ?? '',
+          isLocalMunicipality: isLocalMunicipality,
+          isLocalUser: isLocalUser,
+          districtId: districtId ?? '',
+        ),
         body: Focus(
           focusNode: _focusNode, // Attach the focus node
           onKeyEvent: _handleKeyEvent, // Listen for key events
@@ -856,7 +860,8 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
             radius: const Radius.circular(8), // Rounded edges for the scrollbar
             thumbVisibility: true,
             trackVisibility: true, // Makes the track visible as well
-            interactive: true, // Ensures the scrollbar remains interactive// Ensure the scrollbar is always visible
+            interactive:
+                true, // Ensures the scrollbar remains interactive// Ensure the scrollbar is always visible
             child: SingleChildScrollView(
               controller: _scrollController,
               child: Column(
@@ -879,35 +884,48 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
                       // 🔹 Custom top row with spacing
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: GridView.count(
+                          shrinkWrap: true,
+                          crossAxisCount:
+                              MediaQuery.of(context).size.width < 600 ? 2 : 3,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 6,
+                          physics: const NeverScrollableScrollPhysics(),
+                          childAspectRatio: 1,
                           children: [
-                            if (visAdmin || visManager || visDev)
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(right: 8.0),
-                                  child: _buildGridButton(
-                                    label: 'Reading\nDetails',
-                                    icon: Icons.holiday_village,
-                                    color: Colors.green,
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => UsersPropsAll(
-                                            municipalityUserEmail: userEmail!,
-                                            isLocalMunicipality: isLocalMunicipality,
-                                            districtId: districtId,
-                                            municipalityId: municipalityId!,
-                                            isLocalUser: isLocalUser,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
+                            if (showDevPanel)
+                              _buildGridButton(
+                                label: 'Cyberfox\nDev',
+                                icon: Icons.developer_mode,
+                                color: Colors.black87,
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => const CyberfoxDevPage()),
                                 ),
                               ),
-                            if (visAdmin)
+                            if (visAdmin || visManager || visDev)
+                              _buildGridButton(
+                                label: 'Reading\nDetails',
+                                icon: Icons.holiday_village,
+                                color: Colors.green,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => UsersPropsAll(
+                                        municipalityUserEmail: userEmail!,
+                                        isLocalMunicipality:
+                                            isLocalMunicipality,
+                                        districtId: districtId,
+                                        municipalityId: municipalityId!,
+                                        isLocalUser: isLocalUser,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            if (visAdmin || showDevPanel||visDev)
                               _buildGridButton(
                                 label: 'Admin\nConfig',
                                 icon: Icons.people,
@@ -916,7 +934,8 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const DevConfigPage(),
+                                      builder: (context) =>
+                                          const DevConfigPage(),
                                     ),
                                   );
                                 },
@@ -925,7 +944,6 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
                         ),
                       ),
 
-
                       const SizedBox(height: 100),
 
                       // 🔹 Grid buttons start here
@@ -933,13 +951,14 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         child: GridView.count(
                           shrinkWrap: true,
-                          crossAxisCount: MediaQuery.of(context).size.width < 600 ? 2 : 3,
+                          crossAxisCount:
+                              MediaQuery.of(context).size.width < 600 ? 2 : 3,
                           crossAxisSpacing: 20,
                           mainAxisSpacing: 6,
                           physics: const NeverScrollableScrollPhysics(),
                           childAspectRatio: 1,
                           children: [
-                            if (visEmployee || visCapture || visDev)
+                            if (visEmployee || visCapture || visDev|| visAdmin)
                               _buildGridButton(
                                 label: 'Capture\nReading',
                                 icon: Icons.camera_alt,
@@ -950,7 +969,8 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
                                     MaterialPageRoute(
                                       builder: (context) => AllPropCapture(
                                         municipalityUserEmail: userEmail!,
-                                        isLocalMunicipality: isLocalMunicipality,
+                                        isLocalMunicipality:
+                                            isLocalMunicipality,
                                         districtId: districtId,
                                         municipalityId: municipalityId!,
                                         isLocalUser: isLocalUser,
@@ -969,7 +989,8 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
                                 onTap: () {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (context) => const ChatList()),
+                                    MaterialPageRoute(
+                                        builder: (context) => const ChatList()),
                                   );
                                 },
                               ),
@@ -985,7 +1006,8 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
                                     MaterialPageRoute(
                                       builder: (context) => FaultTaskScreen(
                                         municipalityUserEmail: userEmail!,
-                                        isLocalMunicipality: isLocalMunicipality,
+                                        isLocalMunicipality:
+                                            isLocalMunicipality,
                                         districtId: districtId,
                                         municipalityId: municipalityId!,
                                         isLocalUser: isLocalUser,
@@ -1006,7 +1028,8 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
                                     MaterialPageRoute(
                                       builder: (context) => UsersConnectionsAll(
                                         municipalityUserEmail: userEmail!,
-                                        isLocalMunicipality: isLocalMunicipality,
+                                        isLocalMunicipality:
+                                            isLocalMunicipality,
                                         districtId: districtId,
                                         municipalityId: municipalityId!,
                                         isLocalUser: isLocalUser,
@@ -1027,7 +1050,8 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
                                     MaterialPageRoute(
                                       builder: (context) => PropertyMetersAll(
                                         municipalityUserEmail: userEmail!,
-                                        isLocalMunicipality: isLocalMunicipality,
+                                        isLocalMunicipality:
+                                            isLocalMunicipality,
                                         districtId: districtId,
                                         municipalityId: municipalityId!,
                                         isLocalUser: isLocalUser,
@@ -1049,7 +1073,8 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
                                       builder: (context) => NoticeConfigScreen(
                                         userNumber: '',
                                         municipalityUserEmail: userEmail!,
-                                        isLocalMunicipality: isLocalMunicipality,
+                                        isLocalMunicipality:
+                                            isLocalMunicipality,
                                         districtId: districtId,
                                         municipalityId: municipalityId!,
                                         isLocalUser: isLocalUser,
@@ -1060,31 +1085,33 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
                               ),
 
                             _buildGridButton(
-                              label: 'Logout',
-                              icon: Icons.logout,
-                              color: Colors.red,
+                                label: 'Logout',
+                                icon: Icons.logout,
+                                color: Colors.red,
                                 onTap: () async {
                                   try {
-                                    await FirebaseAuth.instance.signOut(); // also sign out providers if used
+                                    await FirebaseAuth.instance
+                                        .signOut(); // also sign out providers if used
                                     if (!context.mounted) return;
 
                                     // pick the correct value for your app context:
-                                    const isLocal = false; // or true, or read from your app state
+                                    const isLocal =
+                                        false; // or true, or read from your app state
 
                                     Navigator.of(context).pushAndRemoveUntil(
                                       MaterialPageRoute(
-                                        builder: (_) => const LoginPage(isLocalMunicipality: isLocal),
+                                        builder: (_) => const LoginPage(
+                                            isLocalMunicipality: isLocal),
                                       ),
-                                          (route) => false, // clears the back stack
+                                      (route) => false, // clears the back stack
                                     );
                                   } catch (e, st) {
                                     debugPrint('signOut failed: $e\n$st');
-                                    ScaffoldMessenger.of(context)
-                                        .showSnackBar(const SnackBar(content: Text('Sign out failed')));
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                            content: Text('Sign out failed')));
                                   }
-                                }
-
-                            ),
+                                }),
 
                             // if (visDev)
                             //   _buildGridButton(
@@ -1106,347 +1133,344 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
                     ],
                   ),
 
-
-
-
                   // First row of buttons
-              //     Row(
-              //       mainAxisAlignment: MainAxisAlignment.center,
-              //       children: [
-              //         Visibility(
-              //           visible: visAdmin || visManager || visDev, // Only Admins & Managers see this
-              //           child: ElevatedIconButton(
-              //             onPress: () async {
-              //               Navigator.push(
-              //                 context,
-              //                 MaterialPageRoute(
-              //                   builder: (context) => UsersPropsAll(
-              //                     municipalityUserEmail: userEmail!,
-              //                     isLocalMunicipality: isLocalMunicipality,
-              //                     districtId: districtId,
-              //                     municipalityId: municipalityId!,
-              //                     isLocalUser: isLocalUser,
-              //                   ),
-              //                 ),
-              //               );
-              //             },
-              //             labelText: 'Reading\nDetails',
-              //             fSize: 16,
-              //             faIcon: const FaIcon(Icons.holiday_village),
-              //             fgColor: Colors.green,
-              //             btSize: const Size(130, 120),
-              //           ),
-              //         ),
-              //         const SizedBox(width: 40),
-              //         Visibility(
-              //           visible: visAdmin, // Only Admins see this button
-              //           child: ElevatedIconButton(
-              //             onPress: () {
-              //               Navigator.push(
-              //                 context,
-              //                 MaterialPageRoute(
-              //                   builder: (context) => AddMunicipalityUserForm(
-              //                     adminPath: adminPath,
-              //                     municipalityUserEmail: userEmail!,
-              //                     isLocalMunicipality: isLocalMunicipality,
-              //                     districtId: districtId,
-              //                     municipalityId: municipalityId!,
-              //                     isLocalUser: isLocalUser,
-              //                   ),
-              //                 ),
-              //               );
-              //             },
-              //             labelText: 'Add\nUser',
-              //             fSize: 16,
-              //             faIcon: const FaIcon(Icons.person_add),
-              //             fgColor: Colors.indigo,
-              //             btSize: const Size(130, 120),
-              //           ),
-              //         ),
-              //         const SizedBox(width: 40),
-              //         Visibility(
-              //           visible: visEmployee || visCapture|| visDev, // Only Employees & Capturers see this
-              //           child: ElevatedIconButton(
-              //             onPress: () async {
-              //               Navigator.push(
-              //                 context,
-              //                 MaterialPageRoute(
-              //                   builder: (context) => AllPropCapture(
-              //                     municipalityUserEmail: userEmail!,
-              //                     isLocalMunicipality: isLocalMunicipality,
-              //                     districtId: districtId,
-              //                     municipalityId: municipalityId!,
-              //                     isLocalUser: isLocalUser,
-              //                   ),
-              //                 ),
-              //               );
-              //             },
-              //             labelText: 'Capture\nReading',
-              //             fSize: 14,
-              //             faIcon: const FaIcon(Icons.camera_alt),
-              //             fgColor: Colors.green,
-              //             btSize: const Size(130, 120),
-              //           ),
-              //         ),
-              //       ],
-              //     ),
-              //     const SizedBox(height: 20),
-              //
-              //     // Second row of buttons
-              //     Row(
-              //       mainAxisAlignment: MainAxisAlignment.center,
-              //       children: [
-              //         Stack(
-              //           children: [
-              //             Visibility(
-              //               visible: visAdmin || visManager|| visDev, // Admins & Managers see Chat List
-              //               child: ElevatedIconButton(
-              //                 onPress: () {
-              //                   Navigator.push(
-              //                       context,
-              //                       MaterialPageRoute(
-              //                         builder: (context) => ChatList(),
-              //                       ));
-              //                 },
-              //                 labelText: 'Chat \nList',
-              //                 fSize: 18,
-              //                 faIcon: const FaIcon(Icons.mark_chat_unread),
-              //                 fgColor: Colors.blue,
-              //                 btSize: const Size(130, 120),
-              //               ),
-              //             ),
-              //             Consumer<NotificationProvider>(
-              //               builder: (context, notificationProvider, child) {
-              //                 final hasUnreadMessages =
-              //                     notificationProvider.hasUnreadMessages ||
-              //                         notificationProvider.hasUnreadFinanceMessages;
-              //                 print("Consumer badge update: $hasUnreadMessages");
-              //                 return hasUnreadMessages
-              //                     ? Positioned(
-              //                         right: 0,
-              //                         top: 0,
-              //                         child: Container(
-              //                           padding: const EdgeInsets.all(3),
-              //                           decoration: BoxDecoration(
-              //                             color: Colors.red,
-              //                             borderRadius: BorderRadius.circular(8),
-              //                           ),
-              //                           constraints: const BoxConstraints(
-              //                             minWidth: 16,
-              //                             minHeight: 16,
-              //                           ),
-              //                           child: const Text(
-              //                             '!',
-              //                             style: TextStyle(
-              //                               color: Colors.white,
-              //                               fontSize: 12,
-              //                               fontWeight: FontWeight.bold,
-              //                             ),
-              //                             textAlign: TextAlign.center,
-              //                           ),
-              //                         ),
-              //                       )
-              //                     : Container();
-              //               },
-              //             ), // No badge if no unread messages
-              //           ],
-              //         ),
-              //         const SizedBox(width: 40),
-              //         Visibility(
-              //           visible: visAdmin || visManager || visEmployee || visDev, // Fault Report visible for all except Capturer
-              //           child: ElevatedIconButton(
-              //             onPress: () async {
-              //               Navigator.push(
-              //                 context,
-              //                 MaterialPageRoute(
-              //                   builder: (context) => FaultTaskScreen(
-              //                     municipalityUserEmail: userEmail!,
-              //                     isLocalMunicipality: isLocalMunicipality,
-              //                     districtId: districtId,
-              //                     municipalityId: municipalityId!,
-              //                     isLocalUser: isLocalUser,
-              //                   ),
-              //                 ),
-              //               );
-              //             },
-              //             labelText: 'Report\nList',
-              //             fSize: 18,
-              //             faIcon: const FaIcon(Icons.report_problem),
-              //             fgColor: Colors.orange,
-              //             btSize: const Size(130, 120),
-              //           ),
-              //         ),
-              //       ],
-              //     ),
-              //
-              //     const SizedBox(height: 20),
-              //
-              //     // Third row of buttons
-              //     Row(
-              //       mainAxisAlignment: MainAxisAlignment.center,
-              //       children: [
-              //         Visibility(
-              //           visible: visAdmin || visManager || visDev, // Only Admins & Managers see "Connect"
-              //           child: ElevatedIconButton(
-              //             onPress: () {
-              //               Navigator.push(
-              //                 context,
-              //                 MaterialPageRoute(
-              //                   builder: (context) => UsersConnectionsAll(
-              //                       municipalityUserEmail: userEmail!,
-              //                       isLocalMunicipality: isLocalMunicipality,
-              //                       districtId: districtId,
-              //                       municipalityId: municipalityId!,
-              //                       isLocalUser: isLocalUser),
-              //                 ),
-              //               );
-              //             },
-              //             labelText: 'Connect',
-              //             fSize: 14.5,
-              //             faIcon: const FaIcon(Icons.power_settings_new),
-              //             fgColor: Colors.orangeAccent,
-              //             btSize: const Size(130, 120),
-              //           ),
-              //         ),
-              //         const SizedBox(width: 40),
-              //         Visibility(
-              //           visible: visAdmin || visManager || visEmployee || visDev, // Employees can access Meter Update
-              //           child: ElevatedIconButton(
-              //             onPress: () {
-              //               Navigator.push(
-              //                 context,
-              //                 MaterialPageRoute(
-              //                   builder: (context) => PropertyMetersAll(
-              //                     municipalityUserEmail: userEmail!,
-              //                     isLocalMunicipality: isLocalMunicipality,
-              //                     districtId: districtId,
-              //                     municipalityId: municipalityId!,
-              //                     isLocalUser: isLocalUser,
-              //                   ),
-              //                 ),
-              //               );
-              //             },
-              //             labelText: 'Meter\nUpdate',
-              //             fSize: 17,
-              //             faIcon: const FaIcon(Icons.build),
-              //             fgColor: Colors.brown,
-              //             btSize: const Size(130, 120),
-              //           ),
-              //         ),
-              //       ],
-              //     ),
-              //     const SizedBox(height: 20),
-              //
-              //     // Fourth row of buttons
-              //     Row(
-              //       mainAxisAlignment: MainAxisAlignment.center,
-              //       children: [
-              //         ElevatedIconButton(
-              //           onPress: () {
-              //             showDialog(
-              //               barrierDismissible: false,
-              //               context: context,
-              //               builder: (context) {
-              //                 return AlertDialog(
-              //                   shape: const RoundedRectangleBorder(
-              //                     borderRadius: BorderRadius.all(
-              //                       Radius.circular(18),
-              //                     ),
-              //                   ),
-              //                   title: const Text("Logout"),
-              //                   content:
-              //                       const Text("Are you sure you want to logout?"),
-              //                   actions: [
-              //                     IconButton(
-              //                       onPressed: () {
-              //                         Navigator.pop(context);
-              //                       },
-              //                       icon:
-              //                           const Icon(Icons.cancel, color: Colors.red),
-              //                     ),
-              //                     IconButton(
-              //                       onPressed: () async {
-              //                         await FirebaseAuth.instance.signOut();
-              //                         Navigator.pop(context);
-              //                       },
-              //                       icon:
-              //                           const Icon(Icons.done, color: Colors.green),
-              //                     ),
-              //                   ],
-              //                 );
-              //               },
-              //             );
-              //           },
-              //           labelText: 'Logout',
-              //           fSize: 18,
-              //           faIcon: const FaIcon(Icons.logout),
-              //           fgColor: Colors.red,
-              //           btSize: const Size(130, 120),
-              //         ),
-              //         const SizedBox(width: 40),
-              //         Visibility(
-              //           visible: visAdmin || visManager || visDev, // Only Admins & Managers can Broadcast
-              //           child: ElevatedIconButton(
-              //             onPress: () async {
-              //               Navigator.push(
-              //                 context,
-              //                 MaterialPageRoute(
-              //                   builder: (context) => NoticeConfigScreen(
-              //                     userNumber: '',
-              //                     municipalityUserEmail: userEmail!,
-              //                     isLocalMunicipality: isLocalMunicipality,
-              //                     districtId: districtId,
-              //                     municipalityId: municipalityId!,
-              //                     isLocalUser: isLocalUser,
-              //                   ),
-              //                 ),
-              //               );
-              //             },
-              //             labelText: 'Broad\n-cast',
-              //             fSize: 18,
-              //             faIcon: const FaIcon(Icons.notifications_on),
-              //             fgColor: Colors.red,
-              //             btSize: const Size(130, 120),
-              //           ),
-              //         ),
-              //       ],
-              //     ),
-              //     const SizedBox(height: 40),
-              //
-              //     // Developer Config button
-              //     Visibility(
-              //       visible: visDev, // Only Developers can see this button
-              //       child: ElevatedIconButton(
-              //         onPress: () async {
-              //           Navigator.push(
-              //             context,
-              //             MaterialPageRoute(
-              //               builder: (context) => const DevConfigPage(),
-              //             ),
-              //           );
-              //         },
-              //         labelText: 'Dev\nConfig',
-              //         fSize: 18,
-              //         faIcon: const FaIcon(Icons.people),
-              //         fgColor: Colors.black54,
-              //         btSize: const Size(130, 120),
-              //       ),
-              //     ),
-              //     const SizedBox(height: 20),
-              //
-              //     Text(
-              //       'Copyright Cyberfox',
-              //       style: GoogleFonts.saira(
-              //         color: Colors.white,
-              //         backgroundColor: Colors.white10,
-              //         fontWeight: FontWeight.normal,
-              //         fontStyle: FontStyle.italic,
-              //         fontSize: 16,
-              //       ),
-              //     ),
-              //     const SizedBox(height: 20),
-              // ],
-              // ),
+                  //     Row(
+                  //       mainAxisAlignment: MainAxisAlignment.center,
+                  //       children: [
+                  //         Visibility(
+                  //           visible: visAdmin || visManager || visDev, // Only Admins & Managers see this
+                  //           child: ElevatedIconButton(
+                  //             onPress: () async {
+                  //               Navigator.push(
+                  //                 context,
+                  //                 MaterialPageRoute(
+                  //                   builder: (context) => UsersPropsAll(
+                  //                     municipalityUserEmail: userEmail!,
+                  //                     isLocalMunicipality: isLocalMunicipality,
+                  //                     districtId: districtId,
+                  //                     municipalityId: municipalityId!,
+                  //                     isLocalUser: isLocalUser,
+                  //                   ),
+                  //                 ),
+                  //               );
+                  //             },
+                  //             labelText: 'Reading\nDetails',
+                  //             fSize: 16,
+                  //             faIcon: const FaIcon(Icons.holiday_village),
+                  //             fgColor: Colors.green,
+                  //             btSize: const Size(130, 120),
+                  //           ),
+                  //         ),
+                  //         const SizedBox(width: 40),
+                  //         Visibility(
+                  //           visible: visAdmin, // Only Admins see this button
+                  //           child: ElevatedIconButton(
+                  //             onPress: () {
+                  //               Navigator.push(
+                  //                 context,
+                  //                 MaterialPageRoute(
+                  //                   builder: (context) => AddMunicipalityUserForm(
+                  //                     adminPath: adminPath,
+                  //                     municipalityUserEmail: userEmail!,
+                  //                     isLocalMunicipality: isLocalMunicipality,
+                  //                     districtId: districtId,
+                  //                     municipalityId: municipalityId!,
+                  //                     isLocalUser: isLocalUser,
+                  //                   ),
+                  //                 ),
+                  //               );
+                  //             },
+                  //             labelText: 'Add\nUser',
+                  //             fSize: 16,
+                  //             faIcon: const FaIcon(Icons.person_add),
+                  //             fgColor: Colors.indigo,
+                  //             btSize: const Size(130, 120),
+                  //           ),
+                  //         ),
+                  //         const SizedBox(width: 40),
+                  //         Visibility(
+                  //           visible: visEmployee || visCapture|| visDev, // Only Employees & Capturers see this
+                  //           child: ElevatedIconButton(
+                  //             onPress: () async {
+                  //               Navigator.push(
+                  //                 context,
+                  //                 MaterialPageRoute(
+                  //                   builder: (context) => AllPropCapture(
+                  //                     municipalityUserEmail: userEmail!,
+                  //                     isLocalMunicipality: isLocalMunicipality,
+                  //                     districtId: districtId,
+                  //                     municipalityId: municipalityId!,
+                  //                     isLocalUser: isLocalUser,
+                  //                   ),
+                  //                 ),
+                  //               );
+                  //             },
+                  //             labelText: 'Capture\nReading',
+                  //             fSize: 14,
+                  //             faIcon: const FaIcon(Icons.camera_alt),
+                  //             fgColor: Colors.green,
+                  //             btSize: const Size(130, 120),
+                  //           ),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //     const SizedBox(height: 20),
+                  //
+                  //     // Second row of buttons
+                  //     Row(
+                  //       mainAxisAlignment: MainAxisAlignment.center,
+                  //       children: [
+                  //         Stack(
+                  //           children: [
+                  //             Visibility(
+                  //               visible: visAdmin || visManager|| visDev, // Admins & Managers see Chat List
+                  //               child: ElevatedIconButton(
+                  //                 onPress: () {
+                  //                   Navigator.push(
+                  //                       context,
+                  //                       MaterialPageRoute(
+                  //                         builder: (context) => ChatList(),
+                  //                       ));
+                  //                 },
+                  //                 labelText: 'Chat \nList',
+                  //                 fSize: 18,
+                  //                 faIcon: const FaIcon(Icons.mark_chat_unread),
+                  //                 fgColor: Colors.blue,
+                  //                 btSize: const Size(130, 120),
+                  //               ),
+                  //             ),
+                  //             Consumer<NotificationProvider>(
+                  //               builder: (context, notificationProvider, child) {
+                  //                 final hasUnreadMessages =
+                  //                     notificationProvider.hasUnreadMessages ||
+                  //                         notificationProvider.hasUnreadFinanceMessages;
+                  //                 print("Consumer badge update: $hasUnreadMessages");
+                  //                 return hasUnreadMessages
+                  //                     ? Positioned(
+                  //                         right: 0,
+                  //                         top: 0,
+                  //                         child: Container(
+                  //                           padding: const EdgeInsets.all(3),
+                  //                           decoration: BoxDecoration(
+                  //                             color: Colors.red,
+                  //                             borderRadius: BorderRadius.circular(8),
+                  //                           ),
+                  //                           constraints: const BoxConstraints(
+                  //                             minWidth: 16,
+                  //                             minHeight: 16,
+                  //                           ),
+                  //                           child: const Text(
+                  //                             '!',
+                  //                             style: TextStyle(
+                  //                               color: Colors.white,
+                  //                               fontSize: 12,
+                  //                               fontWeight: FontWeight.bold,
+                  //                             ),
+                  //                             textAlign: TextAlign.center,
+                  //                           ),
+                  //                         ),
+                  //                       )
+                  //                     : Container();
+                  //               },
+                  //             ), // No badge if no unread messages
+                  //           ],
+                  //         ),
+                  //         const SizedBox(width: 40),
+                  //         Visibility(
+                  //           visible: visAdmin || visManager || visEmployee || visDev, // Fault Report visible for all except Capturer
+                  //           child: ElevatedIconButton(
+                  //             onPress: () async {
+                  //               Navigator.push(
+                  //                 context,
+                  //                 MaterialPageRoute(
+                  //                   builder: (context) => FaultTaskScreen(
+                  //                     municipalityUserEmail: userEmail!,
+                  //                     isLocalMunicipality: isLocalMunicipality,
+                  //                     districtId: districtId,
+                  //                     municipalityId: municipalityId!,
+                  //                     isLocalUser: isLocalUser,
+                  //                   ),
+                  //                 ),
+                  //               );
+                  //             },
+                  //             labelText: 'Report\nList',
+                  //             fSize: 18,
+                  //             faIcon: const FaIcon(Icons.report_problem),
+                  //             fgColor: Colors.orange,
+                  //             btSize: const Size(130, 120),
+                  //           ),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //
+                  //     const SizedBox(height: 20),
+                  //
+                  //     // Third row of buttons
+                  //     Row(
+                  //       mainAxisAlignment: MainAxisAlignment.center,
+                  //       children: [
+                  //         Visibility(
+                  //           visible: visAdmin || visManager || visDev, // Only Admins & Managers see "Connect"
+                  //           child: ElevatedIconButton(
+                  //             onPress: () {
+                  //               Navigator.push(
+                  //                 context,
+                  //                 MaterialPageRoute(
+                  //                   builder: (context) => UsersConnectionsAll(
+                  //                       municipalityUserEmail: userEmail!,
+                  //                       isLocalMunicipality: isLocalMunicipality,
+                  //                       districtId: districtId,
+                  //                       municipalityId: municipalityId!,
+                  //                       isLocalUser: isLocalUser),
+                  //                 ),
+                  //               );
+                  //             },
+                  //             labelText: 'Connect',
+                  //             fSize: 14.5,
+                  //             faIcon: const FaIcon(Icons.power_settings_new),
+                  //             fgColor: Colors.orangeAccent,
+                  //             btSize: const Size(130, 120),
+                  //           ),
+                  //         ),
+                  //         const SizedBox(width: 40),
+                  //         Visibility(
+                  //           visible: visAdmin || visManager || visEmployee || visDev, // Employees can access Meter Update
+                  //           child: ElevatedIconButton(
+                  //             onPress: () {
+                  //               Navigator.push(
+                  //                 context,
+                  //                 MaterialPageRoute(
+                  //                   builder: (context) => PropertyMetersAll(
+                  //                     municipalityUserEmail: userEmail!,
+                  //                     isLocalMunicipality: isLocalMunicipality,
+                  //                     districtId: districtId,
+                  //                     municipalityId: municipalityId!,
+                  //                     isLocalUser: isLocalUser,
+                  //                   ),
+                  //                 ),
+                  //               );
+                  //             },
+                  //             labelText: 'Meter\nUpdate',
+                  //             fSize: 17,
+                  //             faIcon: const FaIcon(Icons.build),
+                  //             fgColor: Colors.brown,
+                  //             btSize: const Size(130, 120),
+                  //           ),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //     const SizedBox(height: 20),
+                  //
+                  //     // Fourth row of buttons
+                  //     Row(
+                  //       mainAxisAlignment: MainAxisAlignment.center,
+                  //       children: [
+                  //         ElevatedIconButton(
+                  //           onPress: () {
+                  //             showDialog(
+                  //               barrierDismissible: false,
+                  //               context: context,
+                  //               builder: (context) {
+                  //                 return AlertDialog(
+                  //                   shape: const RoundedRectangleBorder(
+                  //                     borderRadius: BorderRadius.all(
+                  //                       Radius.circular(18),
+                  //                     ),
+                  //                   ),
+                  //                   title: const Text("Logout"),
+                  //                   content:
+                  //                       const Text("Are you sure you want to logout?"),
+                  //                   actions: [
+                  //                     IconButton(
+                  //                       onPressed: () {
+                  //                         Navigator.pop(context);
+                  //                       },
+                  //                       icon:
+                  //                           const Icon(Icons.cancel, color: Colors.red),
+                  //                     ),
+                  //                     IconButton(
+                  //                       onPressed: () async {
+                  //                         await FirebaseAuth.instance.signOut();
+                  //                         Navigator.pop(context);
+                  //                       },
+                  //                       icon:
+                  //                           const Icon(Icons.done, color: Colors.green),
+                  //                     ),
+                  //                   ],
+                  //                 );
+                  //               },
+                  //             );
+                  //           },
+                  //           labelText: 'Logout',
+                  //           fSize: 18,
+                  //           faIcon: const FaIcon(Icons.logout),
+                  //           fgColor: Colors.red,
+                  //           btSize: const Size(130, 120),
+                  //         ),
+                  //         const SizedBox(width: 40),
+                  //         Visibility(
+                  //           visible: visAdmin || visManager || visDev, // Only Admins & Managers can Broadcast
+                  //           child: ElevatedIconButton(
+                  //             onPress: () async {
+                  //               Navigator.push(
+                  //                 context,
+                  //                 MaterialPageRoute(
+                  //                   builder: (context) => NoticeConfigScreen(
+                  //                     userNumber: '',
+                  //                     municipalityUserEmail: userEmail!,
+                  //                     isLocalMunicipality: isLocalMunicipality,
+                  //                     districtId: districtId,
+                  //                     municipalityId: municipalityId!,
+                  //                     isLocalUser: isLocalUser,
+                  //                   ),
+                  //                 ),
+                  //               );
+                  //             },
+                  //             labelText: 'Broad\n-cast',
+                  //             fSize: 18,
+                  //             faIcon: const FaIcon(Icons.notifications_on),
+                  //             fgColor: Colors.red,
+                  //             btSize: const Size(130, 120),
+                  //           ),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //     const SizedBox(height: 40),
+                  //
+                  //     // Developer Config button
+                  //     Visibility(
+                  //       visible: visDev, // Only Developers can see this button
+                  //       child: ElevatedIconButton(
+                  //         onPress: () async {
+                  //           Navigator.push(
+                  //             context,
+                  //             MaterialPageRoute(
+                  //               builder: (context) => const DevConfigPage(),
+                  //             ),
+                  //           );
+                  //         },
+                  //         labelText: 'Dev\nConfig',
+                  //         fSize: 18,
+                  //         faIcon: const FaIcon(Icons.people),
+                  //         fgColor: Colors.black54,
+                  //         btSize: const Size(130, 120),
+                  //       ),
+                  //     ),
+                  //     const SizedBox(height: 20),
+                  //
+                  //     Text(
+                  //       'Copyright Cyberfox',
+                  //       style: GoogleFonts.saira(
+                  //         color: Colors.white,
+                  //         backgroundColor: Colors.white10,
+                  //         fontWeight: FontWeight.normal,
+                  //         fontStyle: FontStyle.italic,
+                  //         fontSize: 16,
+                  //       ),
+                  //     ),
+                  //     const SizedBox(height: 20),
+                  // ],
+                  // ),
                   const SizedBox(height: 30),
                   Text(
                     'Copyright Cyberfox',
@@ -1469,7 +1493,6 @@ class _HomeManagerScreenState extends State<HomeManagerScreen> {
   }
 }
 
-
 ///pdf view loader getting file name onPress/onTap that passes filename to this class
 void openPDF(BuildContext context, File file) => Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
@@ -1486,14 +1509,15 @@ class ResponsiveLogo extends StatelessWidget {
 
     // Set a base logo size that scales based on the screen dimensions
     double logoWidth = screenWidth * 0.3; // Set to 30% of screen width
-    double logoHeight = logoWidth * (687 / 550); // Maintain new aspect ratio (550x687)
+    double logoHeight =
+        logoWidth * (687 / 550); // Maintain new aspect ratio (550x687)
 
     return Center(
-      child: Container(
+      child: SizedBox(
         width: logoWidth,
         height: logoHeight,
         child: FittedBox(
-          fit: BoxFit.contain,  // Ensures the image scales within the container
+          fit: BoxFit.contain, // Ensures the image scales within the container
           child: Image.asset('assets/images/umdm.png'),
         ),
       ),

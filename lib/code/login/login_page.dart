@@ -349,7 +349,7 @@ class _LoginPageState extends State<LoginPage>{
       await user.getIdToken(true);
       final token = await user.getIdTokenResult();
       final claims = token.claims ?? {};
-      final bool isDeveloper = claims['developer'] == true;
+      final isSuperadmin = claims['superadmin'] == true;
 
       // 2) Resolve municipal profile (supports legacy discovery temporarily)
       final profile = await _loadMunicipalProfile(user);
@@ -384,7 +384,7 @@ class _LoginPageState extends State<LoginPage>{
         // You can add optional named params in HomeManagerScreen to accept these:
         // districtId: profile.districtId,
         // municipalityId: profile.municipalityId,
-        // isDeveloper: isDeveloper,
+        isSuperadmin: isSuperadmin,
       ));
 
     } on FirebaseAuthException catch (e) {
@@ -653,7 +653,7 @@ class ResponsiveLogo extends StatelessWidget {
         height: logoHeight,
         child: FittedBox(
           fit: BoxFit.contain,  // Ensures the image scales within the container
-          child: Image.asset('assets/images/umdm.png'),
+          child: Image.asset('assets/images/Municipal_Services_App_Logo.png'),
         ),
       ),
     );
@@ -694,7 +694,7 @@ Future<MunicipalProfile?> _loadMunicipalProfile(User user) async {
     final data = d.data();
     final usersColl = d.reference.parent;    // .../users
     final muniDoc = usersColl.parent!;       // .../municipalities/{municipalityId} OR /localMunicipalities/{municipalityId}
-    final parentColl = muniDoc.parent!;      // 'municipalities' or 'localMunicipalities'
+    final parentColl = muniDoc.parent;      // 'municipalities' or 'localMunicipalities'
     final muniId = muniDoc.id;
 
     if (parentColl.id == 'municipalities') {

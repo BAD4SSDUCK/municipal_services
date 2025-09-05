@@ -42,6 +42,8 @@ import '../Models/property_service.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../faultPages/fault_report_water.dart';
+import '../login/citizen_otp_page.dart';
+import '../login/login_page.dart';
 
 //Main Menu for users
 final StreamController<String?> selectNotificationStream =
@@ -228,7 +230,8 @@ class _MainMenuState extends State<MainMenu> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return {
       'accountNumber': prefs.getString('selectedPropertyAccountNo'),
-      'accountField': prefs.getString('selectedPropertyAccountField') ?? 'accountNumber',
+      'accountField':
+          prefs.getString('selectedPropertyAccountField') ?? 'accountNumber',
     };
   }
 
@@ -338,27 +341,30 @@ class _MainMenuState extends State<MainMenu> {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
 
-      selectedPropertyAccountNumber = prefs.getString('selectedPropertyAccountNo');
-      String accountField = prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
+      selectedPropertyAccountNumber =
+          prefs.getString('selectedPropertyAccountNo');
+      String accountField =
+          prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
       bool? isLocalMunicipality = prefs.getBool('isLocalMunicipality');
 
-      print("✅ Loaded selected property account number: $selectedPropertyAccountNumber");
+      print(
+          "✅ Loaded selected property account number: $selectedPropertyAccountNumber");
       print("📌 Matched account field: $accountField");
       print("🌍 isLocalMunicipality: $isLocalMunicipality");
 
-      if (selectedPropertyAccountNumber != null && isLocalMunicipality != null) {
+      if (selectedPropertyAccountNumber != null &&
+          isLocalMunicipality != null) {
         currentProperty = await propertyService.fetchPropertyByDynamicField(
-          accountField: accountField,
-          accountNumber: selectedPropertyAccountNumber!,
-          isLocalMunicipality: isLocalMunicipality,
-        ) ?? widget.property;
+              accountField: accountField,
+              accountNumber: selectedPropertyAccountNumber!,
+              isLocalMunicipality: isLocalMunicipality,
+            ) ??
+            widget.property;
       }
     } catch (e) {
       print("❌ Error loading selected property account number: $e");
     }
   }
-
-
 
   void getToken() async {
     await FirebaseMessaging.instance.getToken().then(
@@ -1848,7 +1854,7 @@ class _MainMenuState extends State<MainMenu> {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? selectedPropertyAccountNumber =
-      prefs.getString('selectedPropertyAccountNo');
+          prefs.getString('selectedPropertyAccountNo');
       String accountField =
           prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
 
@@ -1900,9 +1906,9 @@ class _MainMenuState extends State<MainMenu> {
 
       Map<String, String> chatRoomAccountsMap = {
         'accountNumber': propertyDoc['accountNumber'] ?? '',
-        'electricityAccountNumber':  propertyDoc['electricityAccountNumber'] ?? '',
+        'electricityAccountNumber':
+            propertyDoc['electricityAccountNumber'] ?? '',
       };
-
 
       // ✅ Navigate to Chat screen
       Navigator.push(
@@ -1925,7 +1931,6 @@ class _MainMenuState extends State<MainMenu> {
       Fluttertoast.showToast(msg: "Failed to load chat.");
     }
   }
-
 
   Future<void> _navigateToViewDetails(BuildContext context) async {
     if (currentProperty == null) {
@@ -2113,9 +2118,23 @@ class _MainMenuState extends State<MainMenu> {
             ),
             IconButton(
               onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-                Navigator.pop(context); // Close dialog
-                // Optionally navigate to login screen if needed
+                try {
+                  await FirebaseAuth.instance
+                      .signOut(); // also sign out providers if used
+                  if (!context.mounted) return;
+
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const RegisterScreen (),
+                    ),
+                    (route) => false, // clears the back stack
+                  );
+                } catch (e, st) {
+                  debugPrint('signOut failed: $e\n$st');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Sign out failed')));
+                }
               },
               icon: const Icon(Icons.done, color: Colors.green),
             ),
@@ -2220,7 +2239,7 @@ class _MainMenuState extends State<MainMenu> {
                             );
 
                             if (selectedProperty != null) {
-                              if(mounted) {
+                              if (mounted) {
                                 setState(() {
                                   currentProperty = selectedProperty;
                                 });
@@ -2437,7 +2456,7 @@ void openPDF(BuildContext context, File file) => Navigator.of(context).push(
     );
 
 class ResponsiveLogo extends StatelessWidget {
-  const ResponsiveLogo({Key? key}) : super(key: key);
+  const ResponsiveLogo({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -2451,7 +2470,7 @@ class ResponsiveLogo extends StatelessWidget {
         logoWidth * (687 / 550); // Maintain new aspect ratio (550x687)
 
     return Center(
-      child: Container(
+      child: SizedBox(
         width: logoWidth,
         height: logoHeight,
         child: FittedBox(
