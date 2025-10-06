@@ -29,6 +29,10 @@ import 'package:universal_html/html.dart' as html;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:typed_data';
+import 'package:firebase_storage/firebase_storage.dart' as fs;
+import 'package:municipal_services/code/widgets/meter_image.dart';
+
 //View Details user side
 class UsersTableViewPage extends StatefulWidget {
   final Property property;
@@ -116,8 +120,8 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   bool _isLoadingProp = true;
   String currentMonth =
       DateFormat.MMMM().format(DateTime.now()); // Example: February
-  String previousMonth = DateFormat.MMMM()
-      .format(DateTime.now().subtract(const Duration(days: 30))); // Example: January
+  String previousMonth = DateFormat.MMMM().format(
+      DateTime.now().subtract(const Duration(days: 30))); // Example: January
   String? previousWaterReading;
   String? currentWaterReading;
   RewardedAd? _rewardedAd;
@@ -137,7 +141,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   @override
   void initState() {
     super.initState();
-   // if (!kIsWeb) _loadRewardedAd();
+    // if (!kIsWeb) _loadRewardedAd();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final propertyProvider =
           Provider.of<PropertyProvider>(context, listen: false);
@@ -210,7 +214,6 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
         formattedMonth: formattedMonth,
       );
 
-
       fetchElectricityReadings().then((readings) {
         if (mounted) {
           setState(() {
@@ -228,7 +231,8 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   }
 
   void initializeFirestoreReferences(BuildContext context) async {
-    final propertyProvider = Provider.of<PropertyProvider>(context, listen: false);
+    final propertyProvider =
+        Provider.of<PropertyProvider>(context, listen: false);
     Property? selectedProperty = propertyProvider.selectedProperty;
 
     if (selectedProperty == null) {
@@ -238,7 +242,8 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
 
     // 🔍 Load the correct account field from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
-    final matchedAccountField = prefs.getString('matchedAccountField') ?? 'accountNumber';
+    final matchedAccountField =
+        prefs.getString('matchedAccountField') ?? 'accountNumber';
 
     // 🔧 Determine which Firestore collection to use
     if (selectedProperty.isLocalMunicipality) {
@@ -256,9 +261,10 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
     }
 
     // 🧠 Choose the correct account number value
-    final selectedAccountValue = matchedAccountField == 'electricityAccountNumber'
-        ? selectedProperty.electricityAccountNo
-        : selectedProperty.accountNo;
+    final selectedAccountValue =
+        matchedAccountField == 'electricityAccountNumber'
+            ? selectedProperty.electricityAccountNo
+            : selectedProperty.accountNo;
 
     // 🔁 Create the Firestore stream using the dynamic account field
     _propertyStream = _propList!
@@ -271,9 +277,9 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
       });
     }
 
-    print("📡 Firestore stream initialized using $matchedAccountField = $selectedAccountValue");
+    print(
+        "📡 Firestore stream initialized using $matchedAccountField = $selectedAccountValue");
   }
-
 
   Future<void> fetchPropertyDetails() async {
     try {
@@ -341,7 +347,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
 
     try {
       final imageUrl =
-      await FirebaseStorage.instance.ref(imagePath).getDownloadURL();
+          await FirebaseStorage.instance.ref(imagePath).getDownloadURL();
       imageCacheMap[cacheKey] = imageUrl;
       return imageUrl;
     } catch (e) {
@@ -363,7 +369,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
 
     try {
       final imageUrl =
-      await FirebaseStorage.instance.ref(imagePath).getDownloadURL();
+          await FirebaseStorage.instance.ref(imagePath).getDownloadURL();
       imageCacheMap[cacheKey] = imageUrl;
       return imageUrl;
     } catch (e) {
@@ -371,6 +377,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
       throw Exception('Failed to load image');
     }
   }
+
   Future<void> updateImgCheckW(bool imgCheck,
       [DocumentSnapshot? documentSnapshot]) async {
     if (documentSnapshot != null) {
@@ -386,6 +393,53 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
       await _propList?.doc(documentSnapshot.id).update({
         "imgStateE": imgCheckE,
       });
+    }
+  }
+
+  Future<Uint8List?> loadBytesFromStoragePath(String fullPath,
+      {int maxBytes = 15 * 1024 * 1024}) async {
+    try {
+      final ref = fs.FirebaseStorage.instance.ref(fullPath);
+      final data = await ref.getData(maxBytes);
+      return data;
+    } on fs.FirebaseException catch (e) {
+      // Useful to see why bytes failed (e.g. 'unauthorized', 'object-not-found')
+      // ignore: avoid_print
+      print('getData($fullPath) failed: ${e.code} - ${e.message}');
+      return null;
+    } catch (e) {
+      // ignore: avoid_print
+      print('getData($fullPath) unknown error: $e');
+      return null;
+    }
+  }
+
+  /// Get a FRESH download URL from a Storage path (handles tokens).
+  Future<String?> getUrlFromStoragePath(String fullPath) async {
+    try {
+      final ref = fs.FirebaseStorage.instance.ref(fullPath);
+      final url = await ref.getDownloadURL();
+      return url;
+    } on fs.FirebaseException catch (e) {
+      // ignore: avoid_print
+      print('getDownloadURL($fullPath) failed: ${e.code} - ${e.message}');
+      return null;
+    } catch (e) {
+      // ignore: avoid_print
+      print('getDownloadURL($fullPath) unknown error: $e');
+      return null;
+    }
+  }
+
+
+
+  Future<String?> _downloadUrlFromPath(String fullPath) async {
+    try {
+      return await fs.FirebaseStorage.instance.ref(fullPath).getDownloadURL();
+    } on fs.FirebaseException catch (e) {
+      // e.code e.g. 'object-not-found', 'unauthorized'
+      // print('getDownloadURL failed: ${e.code} ${e.message}');
+      return null;
     }
   }
 
@@ -527,18 +581,19 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
       print("User is not authenticated or phone number is not available.");
     }
   }
+
   Future<Timestamp?> getLatestWaterUploadTimestamp(
-      String? districtId,
-      String municipalityId,
-      String userPhoneNumber,
-      String propertyAddress,
-      ) async {
+    String? districtId,
+    String municipalityId,
+    String userPhoneNumber,
+    String propertyAddress,
+  ) async {
     try {
       final baseRef = (districtId != null && districtId.isNotEmpty)
           ? FirebaseFirestore.instance
-          .collection('districts')
-          .doc(districtId)
-          .collection('municipalities')
+              .collection('districts')
+              .doc(districtId)
+              .collection('municipalities')
           : FirebaseFirestore.instance.collection('localMunicipalities');
 
       final querySnapshot = await baseRef
@@ -570,17 +625,17 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   }
 
   Future<Timestamp?> getLatestElectricityUploadTimestamp(
-      String? districtId,
-      String municipalityId,
-      String userPhoneNumber,
-      String propertyAddress,
-      ) async {
+    String? districtId,
+    String municipalityId,
+    String userPhoneNumber,
+    String propertyAddress,
+  ) async {
     try {
       final baseRef = (districtId != null && districtId.isNotEmpty)
           ? FirebaseFirestore.instance
-          .collection('districts')
-          .doc(districtId)
-          .collection('municipalities')
+              .collection('districts')
+              .doc(districtId)
+              .collection('municipalities')
           : FirebaseFirestore.instance.collection('localMunicipalities');
 
       final logPath = baseRef
@@ -592,7 +647,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
       print("📄 Querying electricity actionLogs at: ${logPath.path}");
 
       final querySnapshot =
-      await logPath.orderBy('timestamp', descending: true).limit(5).get();
+          await logPath.orderBy('timestamp', descending: true).limit(5).get();
 
       if (querySnapshot.docs.isEmpty) {
         print("❌ No documents found at that path.");
@@ -621,27 +676,27 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   }
 
   Future<String> fetchWaterPropertyAddress(
-      String userNumber,
-      String waterMeterNumber,
-      String districtId,
-      String municipalityId,
-      bool isLocalMunicipality,
-      ) async {
+    String userNumber,
+    String waterMeterNumber,
+    String districtId,
+    String municipalityId,
+    bool isLocalMunicipality,
+  ) async {
     print("Fetching WATER property address with:");
     print("User Number: $userNumber");
     print("Water Meter Number: $waterMeterNumber");
 
     CollectionReference propertiesRef = isLocalMunicipality
         ? FirebaseFirestore.instance
-        .collection('localMunicipalities')
-        .doc(municipalityId)
-        .collection('properties')
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .collection('properties')
         : FirebaseFirestore.instance
-        .collection('districts')
-        .doc(districtId)
-        .collection('municipalities')
-        .doc(municipalityId)
-        .collection('properties');
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('properties');
 
     try {
       QuerySnapshot querySnapshot = await propertiesRef
@@ -667,27 +722,27 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   }
 
   Future<String> fetchElectricityPropertyAddress(
-      String userNumber,
-      String electricityMeterNumber,
-      String districtId,
-      String municipalityId,
-      bool isLocalMunicipality,
-      ) async {
+    String userNumber,
+    String electricityMeterNumber,
+    String districtId,
+    String municipalityId,
+    bool isLocalMunicipality,
+  ) async {
     print("Fetching ELECTRICITY property address with:");
     print("User Number: $userNumber");
     print("Electricity Meter Number: $electricityMeterNumber");
 
     CollectionReference propertiesRef = isLocalMunicipality
         ? FirebaseFirestore.instance
-        .collection('localMunicipalities')
-        .doc(municipalityId)
-        .collection('properties')
+            .collection('localMunicipalities')
+            .doc(municipalityId)
+            .collection('properties')
         : FirebaseFirestore.instance
-        .collection('districts')
-        .doc(districtId)
-        .collection('municipalities')
-        .doc(municipalityId)
-        .collection('properties');
+            .collection('districts')
+            .doc(districtId)
+            .collection('municipalities')
+            .doc(municipalityId)
+            .collection('properties');
 
     try {
       QuerySnapshot querySnapshot = await propertiesRef
@@ -738,12 +793,12 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
 
     latestWaterUploadTimestamp = timestamp?.toDate();
 
-    final path = 'files/meters/$formattedMonth/$userNumber/$address/water/$waterMeterNumber.jpg';
+    final path =
+        'files/meters/$formattedMonth/$userNumber/$address/water/$waterMeterNumber.jpg';
     waterImageUrl = await _getImageW(context, path, address);
 
     if (mounted) setState(() {});
   }
-
 
   Future<void> fetchElectricityImageAndTimestamp({
     required String userNumber,
@@ -769,12 +824,14 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
           _electricityUploadTimestamp = timestamp;
           _hasFetchedElectricityTimestamp = true;
         });
-        print("✅ Electricity upload timestamp found: $_electricityUploadTimestamp");
+        print(
+            "✅ Electricity upload timestamp found: $_electricityUploadTimestamp");
 
         final imagePath =
             'files/meters/$formattedMonth/$userNumber/$propertyAddress/electricity/$electricityMeterNumber.jpg';
 
-        _electricityImageUrl = await _getImageE(context, imagePath, propertyAddress);
+        _electricityImageUrl =
+            await _getImageE(context, imagePath, propertyAddress);
         print("✅ Electricity image URL fetched.");
       } else {
         setState(() {
@@ -858,7 +915,6 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   //     print("📅 Latest $utilityType upload timestamp: $timestamp");
   //   }
   // }
-
 
   Future<Map<String, String>> fetchMeterReadings() async {
     try {
@@ -1139,130 +1195,127 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   //   }
   // }
 
-  void _fetchAndOpenStatement() async {
-    Fluttertoast.showToast(
-        msg: "Now opening your statement!\nPlease wait a few seconds!");
+  // void _fetchAndOpenStatement() async {
+  //   Fluttertoast.showToast(
+  //       msg: "Now opening your statement!\nPlease wait a few seconds!");
+  //
+  //   // Handle any necessary updates
+  //   String previousMonth =
+  //       DateFormat('MMMM').format(DateTime.now().subtract(Duration(days: 30)));
+  //   String formattedAddress = widget.propertyAddress.trim();
+  //
+  //   print(
+  //       'Attempting to list files in path: pdfs/$previousMonth/${widget.userNumber}/$formattedAddress/');
+  //
+  //   final storageRef = FirebaseStorage.instance
+  //       .ref()
+  //       .child("pdfs/$previousMonth/${widget.userNumber}/$formattedAddress");
+  //
+  //   try {
+  //     final listResult = await storageRef.listAll();
+  //
+  //     print('Files found in directory: ${listResult.items.length}');
+  //
+  //     if (listResult.items.isEmpty) {
+  //       Fluttertoast.showToast(msg: "No files found in the directory.");
+  //       return;
+  //     }
+  //
+  //     bool found = false;
+  //     String? webPdfUrl;
+  //     File? mobilePdfFile;
+  //
+  //     for (var item in listResult.items) {
+  //       if (item.name.contains(widget.accountNumber)) {
+  //         print('Found matching file: ${item.name}');
+  //         webPdfUrl = await item.getDownloadURL();
+  //         print('Download URL: $webPdfUrl');
+  //
+  //         if (!kIsWeb) {
+  //           final directory = await getApplicationDocumentsDirectory();
+  //           final filePath = '${directory.path}/${item.name}';
+  //           final response = await Dio().download(webPdfUrl, filePath);
+  //
+  //           if (response.statusCode == 200) {
+  //             mobilePdfFile = File(filePath);
+  //             Fluttertoast.showToast(msg: "Successful!");
+  //           } else {
+  //             Fluttertoast.showToast(msg: "Failed to download PDF.");
+  //           }
+  //         }
+  //         found = true;
+  //         break;
+  //       }
+  //     }
+  //
+  //     if (!found) {
+  //       Fluttertoast.showToast(msg: "No matching invoice found.");
+  //       return;
+  //     }
+  //
+  //     openPDF(context, mobilePdfFile, webPdfUrl);
+  //   } catch (e) {
+  //     print('Error opening PDF: $e');
+  //     Fluttertoast.showToast(msg: "Unable to open statement.");
+  //   }
+  // }
 
-    // Handle any necessary updates
-    String previousMonth = DateFormat('MMMM').format(DateTime.now().subtract(Duration(days: 30)));
-    String formattedAddress = widget.propertyAddress.trim();
 
-    print('Attempting to list files in path: pdfs/$previousMonth/${widget.userNumber}/$formattedAddress/');
-
-    final storageRef = FirebaseStorage.instance
-        .ref()
-        .child("pdfs/$previousMonth/${widget.userNumber}/$formattedAddress");
-
-    try {
-      final listResult = await storageRef.listAll();
-
-      print('Files found in directory: ${listResult.items.length}');
-
-      if (listResult.items.isEmpty) {
-        Fluttertoast.showToast(msg: "No files found in the directory.");
-        return;
-      }
-
-      bool found = false;
-      String? webPdfUrl;
-      File? mobilePdfFile;
-
-      for (var item in listResult.items) {
-        if (item.name.contains(widget.accountNumber)) {
-          print('Found matching file: ${item.name}');
-          webPdfUrl = await item.getDownloadURL();
-          print('Download URL: $webPdfUrl');
-
-          if (!kIsWeb) {
-            final directory = await getApplicationDocumentsDirectory();
-            final filePath = '${directory.path}/${item.name}';
-            final response = await Dio().download(webPdfUrl, filePath);
-
-            if (response.statusCode == 200) {
-              mobilePdfFile = File(filePath);
-              Fluttertoast.showToast(msg: "Successful!");
-            } else {
-              Fluttertoast.showToast(msg: "Failed to download PDF.");
-            }
-          }
-          found = true;
-          break;
-        }
-      }
-
-      if (!found) {
-        Fluttertoast.showToast(msg: "No matching invoice found.");
-        return;
-      }
-
-      openPDF(context, mobilePdfFile, webPdfUrl);
-    } catch (e) {
-      print('Error opening PDF: $e');
-      Fluttertoast.showToast(msg: "Unable to open statement.");
-    }
-  }
-  Future<void> _fetchAndOpenStatementByType(String type) async {
+  Future<void> _fetchAndOpenStatementByType(
+      String type, {
+        required String waterAcc,
+        required String elecAcc,
+      }) async {
     Fluttertoast.showToast(
       msg: "Now opening your $type statement!\nPlease wait a few seconds!",
     );
 
-    String previousMonth = DateFormat('MMMM')
-        .format(DateTime.now().subtract(const Duration(days: 30)));
-    String formattedAddress = widget.propertyAddress.trim();
+    final now = DateTime.now();
+    final month = DateFormat('MMMM').format(now.subtract(const Duration(days: 30)));
+    final address = widget.propertyAddress.trim();
+    final isElec = type.toLowerCase() == 'electricity';
 
-    final storageRef = FirebaseStorage.instance
+    final token = (isElec ? elecAcc : waterAcc).trim();
+
+    // Debug
+    // ignore: avoid_print
+    print('[STATEMENT] type=$type  user=${widget.userNumber}  month=$month');
+    // ignore: avoid_print
+    print('[STATEMENT] waterAcc="$waterAcc"  elecAcc="$elecAcc"  chosenToken="$token"');
+
+    if (token.isEmpty) {
+      Fluttertoast.showToast(msg: "No $type account number set.");
+      return;
+    }
+
+    final folderRef = fs.FirebaseStorage.instance
         .ref()
-        .child("pdfs/$previousMonth/${widget.userNumber}/$formattedAddress");
+        .child('pdfs/$month/${widget.userNumber}/$address');
+    final fileRef = folderRef.child('$token.pdf');
 
     try {
-      final listResult = await storageRef.listAll();
-      print('Files found in directory: ${listResult.items.length}');
-
-      if (listResult.items.isEmpty) {
-        Fluttertoast.showToast(msg: "No $type statement found.");
-        return;
-      }
-
-      // ✅ Updated search logic
-      String searchPattern = type == 'electricity'
-          ? widget.property.electricityAccountNo
-          : widget.accountNumber;
-
-      bool found = false;
-      String? webPdfUrl;
-      File? mobilePdfFile;
-
-      for (var item in listResult.items) {
-        if (item.name.contains(searchPattern)) {
-          print('Found $type statement: ${item.name}');
-          webPdfUrl = await item.getDownloadURL();
-
-          if (!kIsWeb) {
-            final directory = await getApplicationDocumentsDirectory();
-            final filePath = '${directory.path}/${item.name}';
-            final response = await Dio().download(webPdfUrl, filePath);
-
-            if (response.statusCode == 200) {
-              mobilePdfFile = File(filePath);
-              Fluttertoast.showToast(msg: "Successful!");
-            } else {
-              Fluttertoast.showToast(msg: "Failed to download PDF.");
-            }
-          }
-
-          found = true;
-          break;
+      final url = await fileRef.getDownloadURL();
+      File? localFile;
+      if (!kIsWeb) {
+        try {
+          final dir = await getApplicationDocumentsDirectory();
+          final path = '${dir.path}/$token.pdf';
+          final resp = await Dio().download(url, path, options: Options(followRedirects: true));
+          if (resp.statusCode == 200) localFile = File(path);
+        } catch (e) {
+          print('Download error: $e'); // ignore: avoid_print
         }
       }
-
-      if (!found) {
-        Fluttertoast.showToast(msg: "No $type invoice found.");
-        return;
+      await openPDF(context, localFile, url);
+    } on fs.FirebaseException catch (e) {
+      if (e.code == 'object-not-found') {
+        Fluttertoast.showToast(msg: "No $type statement ($token.pdf) found.");
+      } else {
+        print('Firebase error: ${e.code} ${e.message}'); // ignore: avoid_print
+        Fluttertoast.showToast(msg: "Unable to open $type statement.");
       }
-
-      openPDF(context, mobilePdfFile, webPdfUrl);
     } catch (e) {
-      print('Error opening $type statement: $e');
+      print('Error opening $type: $e'); // ignore: avoid_print
       Fluttertoast.showToast(msg: "Unable to open $type statement.");
     }
   }
@@ -2389,7 +2442,10 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                         } else {
                           billMessage = 'No outstanding payments';
                         }
-
+                        final fullPath =
+                            'files/meters/$formattedMonth/${documentSnapshot['cellNumber']}/${documentSnapshot['address']}/water/${documentSnapshot['water_meter_number']}.jpg';
+                        final fullPathE =
+                            'files/meters/$formattedMonth/${documentSnapshot['cellNumber']}/${documentSnapshot['address']}/electricity/${documentSnapshot['meter_number']}.jpg';
                         ///Check for only user information, this displays only for the users details and not all users in the database.
                         if (snapshot.data!.docs[index]['cellNumber'] ==
                             phoneNum) {
@@ -2413,15 +2469,15 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                   const SizedBox(
                                     height: 10,
                                   ),
-                                  if(widget.handlesWater)...[
-                                  Text(
-                                    'Water Account Number: ${documentSnapshot['accountNumber']}',
-                                    style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w400),
-                                  ),
+                                  if (widget.handlesWater) ...[
+                                    Text(
+                                      'Water Account Number: ${documentSnapshot['accountNumber']}',
+                                      style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w400),
+                                    ),
                                   ],
-                                  if(widget.handlesElectricity)...[
+                                  if (widget.handlesElectricity) ...[
                                     Text(
                                       'Electricity Account Number: ${documentSnapshot['electricityAccountNumber']}',
                                       style: const TextStyle(
@@ -2450,7 +2506,6 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                   const SizedBox(
                                     height: 5,
                                   ),
-
                                   if (widget.handlesWater) ...[
                                     Text(
                                       'Water Meter Number: ${documentSnapshot['water_meter_number']}',
@@ -2546,7 +2601,6 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                   const SizedBox(
                                     height: 20,
                                   ),
-
                                   if (widget.handlesElectricity) ...[
                                     const SizedBox(height: 10),
                                     const Center(
@@ -2632,23 +2686,36 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                                                   ),
                                                                 );
 
-                                                                if (uploadCompleted == true) {
+                                                                if (uploadCompleted ==
+                                                                    true) {
                                                                   await fetchElectricityImageAndTimestamp(
-                                                                    userNumber: propPhoneNum,
-                                                                    districtId: widget.districtId ?? '',
-                                                                    municipalityId: widget.municipalityId,
-                                                                    propertyAddress: widget.propertyAddress,
-                                                                    electricityMeterNumber: eMeterNumber,
-                                                                    context: context,
-                                                                    formattedMonth: formattedMonth,
+                                                                    userNumber:
+                                                                        propPhoneNum,
+                                                                    districtId:
+                                                                        widget.districtId ??
+                                                                            '',
+                                                                    municipalityId:
+                                                                        widget
+                                                                            .municipalityId,
+                                                                    propertyAddress:
+                                                                        widget
+                                                                            .propertyAddress,
+                                                                    electricityMeterNumber:
+                                                                        eMeterNumber,
+                                                                    context:
+                                                                        context,
+                                                                    formattedMonth:
+                                                                        formattedMonth,
                                                                   );
 
                                                                   await _fetchLatestElectricityMeterReading();
 
-                                                                  if (mounted) setState(() {});
+                                                                  if (mounted) {
+                                                                    setState(
+                                                                        () {});
+                                                                  }
                                                                 }
-
-                                                                  },
+                                                              },
                                                               icon: const Icon(
                                                                   Icons.done,
                                                                   color: Colors
@@ -2732,54 +2799,93 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                             ),
                                             elevation: 0,
                                             margin: const EdgeInsets.all(10.0),
-                                            child: FutureBuilder<String?>(
-                                              future: _getImageE(
-                                                context,
-                                                'files/meters/$formattedMonth/${documentSnapshot['cellNumber']}/${documentSnapshot['address']}/electricity/${documentSnapshot['meter_number']}.jpg',
-                                                documentSnapshot['address'], // ✅ cacheKey needed for _getImageE
-                                              ),
-                                              builder: (context, snapshot) {
-                                                if (snapshot.hasError) {
-                                                  imgUploadCheck = false;
-                                                  updateImgCheckE(imgUploadCheck, documentSnapshot);
+                                            child: FutureBuilder<Uint8List?>(
+                                              future: loadBytesFromStoragePath(
+                                                  fullPathE),
+                                              builder: (context, bytesSnap) {
+                                                if (bytesSnap.connectionState ==
+                                                    ConnectionState.waiting) {
                                                   return const Padding(
-                                                    padding: EdgeInsets.all(20.0),
-                                                    child: Column(
-                                                      mainAxisSize: MainAxisSize.min,
-                                                      children: [
-                                                        Text('Image not yet uploaded.'),
-                                                        SizedBox(height: 10),
-                                                        FaIcon(Icons.camera_alt),
-                                                      ],
-                                                    ),
+                                                    padding:
+                                                        EdgeInsets.all(5.0),
+                                                    child:
+                                                        CircularProgressIndicator(),
                                                   );
                                                 }
 
-                                                if (snapshot.connectionState == ConnectionState.done) {
+                                                // Case 1: BYTES loaded => render directly
+                                                final bytes = bytesSnap.data;
+                                                if (bytes != null &&
+                                                    bytes.isNotEmpty) {
                                                   imgUploadCheck = true;
-                                                  updateImgCheckE(imgUploadCheck, documentSnapshot);
-
-                                                  if (snapshot.data != null) {
-                                                    return Image.network(
-                                                      snapshot.data!,
+                                                  updateImgCheckE(
+                                                      imgUploadCheck,
+                                                      documentSnapshot);
+                                                  return Image.memory(bytes,
                                                       fit: BoxFit.cover,
+                                                      gaplessPlayback: true);
+                                                }
+
+                                                // Case 2: Bytes failed (often due to rules) => fallback to URL via <img> tag
+                                                return FutureBuilder<String?>(
+                                                  future: _downloadUrlFromPath(
+                                                      fullPathE),
+                                                  builder: (context, urlSnap) {
+                                                    if (urlSnap
+                                                            .connectionState ==
+                                                        ConnectionState
+                                                            .waiting) {
+                                                      return const Padding(
+                                                        padding:
+                                                            EdgeInsets.all(5.0),
+                                                        child:
+                                                            CircularProgressIndicator(),
+                                                      );
+                                                    }
+
+                                                    final url =
+                                                        (urlSnap.data ?? '')
+                                                            .trim();
+                                                    if (url.isEmpty) {
+                                                      imgUploadCheck = false;
+                                                      updateImgCheckE(
+                                                          imgUploadCheck,
+                                                          documentSnapshot);
+                                                      return const Padding(
+                                                        padding: EdgeInsets.all(
+                                                            20.0),
+                                                        child: Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: [
+                                                            Text(
+                                                                'Could not display image.'),
+                                                            SizedBox(
+                                                                height: 10),
+                                                            Icon(Icons
+                                                                .broken_image_outlined),
+                                                          ],
+                                                        ),
+                                                      );
+                                                    }
+
+                                                    imgUploadCheck = true;
+                                                    updateImgCheckE(
+                                                        imgUploadCheck,
+                                                        documentSnapshot);
+
+                                                    return meterImage(
+                                                      url: url,
+                                                      // match the look you liked:
+                                                      width: 180,            // or double.infinity if you prefer full width
+                                                      height: 180,           // keeps the card’s 180px box
+                                                      borderRadius: 10,
+                                                      fit: BoxFit.contain,   // or BoxFit.cover if you want crop
                                                     );
-                                                  } else {
-                                                    return const Text('No image available.');
-                                                  }
-                                                }
-
-                                                if (snapshot.connectionState == ConnectionState.waiting) {
-                                                  return const Padding(
-                                                    padding: EdgeInsets.all(5.0),
-                                                    child: CircularProgressIndicator(),
-                                                  );
-                                                }
-
-                                                return Container();
+                                                  },
+                                                );
                                               },
                                             ),
-
                                           ),
                                         ),
                                       ),
@@ -2787,18 +2893,29 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                     const SizedBox(height: 10),
                                     if (_hasFetchedElectricityTimestamp) ...[
                                       Padding(
-                                        padding: const EdgeInsets.only(top: 8.0),
+                                        padding:
+                                            const EdgeInsets.only(top: 8.0),
                                         child: Center(
-                                          child: Text(
-                                            _electricityUploadTimestamp != null
-                                                ? "⚡ Electricity image uploaded on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(_electricityUploadTimestamp!.toDate())}"
-                                                : "⚡ No electricity upload history available.",
-                                            style: const TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w400,
-                                              color: Colors.blueGrey,
-                                            ),
+                                          child: RichText(
                                             textAlign: TextAlign.center,
+                                            text: TextSpan(
+                                              style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w400,
+                                                color: Colors.blueGrey,
+                                              ),
+                                              children: [
+                                                WidgetSpan(
+                                                  alignment: PlaceholderAlignment.middle,
+                                                  child: Icon(Icons.electric_bolt, color: Colors.yellow, size: 16),
+                                                ),
+                                                TextSpan(
+                                                  text:   _electricityUploadTimestamp != null
+                                                      ? "  Electricity image uploaded on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(_electricityUploadTimestamp!.toDate())}"
+                                                      : "  No electricity upload history available.",
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -2911,17 +3028,27 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                                                       if (uploadCompleted ==
                                                                           true) {
                                                                         await fetchWaterImageAndTimestamp(
-                                                                          userNumber: propPhoneNum,
-                                                                          waterMeterNumber: wMeterNumber,
-                                                                          districtId: widget.districtId ?? '',
-                                                                          municipalityId: widget.municipalityId,
-                                                                          isLocalMunicipality: widget.isLocalMunicipality,
-                                                                          context: context,
-                                                                          formattedMonth: formattedMonth,
+                                                                          userNumber:
+                                                                              propPhoneNum,
+                                                                          waterMeterNumber:
+                                                                              wMeterNumber,
+                                                                          districtId:
+                                                                              widget.districtId ?? '',
+                                                                          municipalityId:
+                                                                              widget.municipalityId,
+                                                                          isLocalMunicipality:
+                                                                              widget.isLocalMunicipality,
+                                                                          context:
+                                                                              context,
+                                                                          formattedMonth:
+                                                                              formattedMonth,
                                                                         );
                                                                         await _fetchLatestWaterMeterReading();
 
-                                                                        if (mounted) setState(() {});
+                                                                        if (mounted) {
+                                                                          setState(
+                                                                              () {});
+                                                                        }
                                                                       }
                                                                     },
                                                                     icon:
@@ -3040,51 +3167,106 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                                 elevation: 0,
                                                 margin:
                                                     const EdgeInsets.all(10.0),
-                                                child: FutureBuilder<String?>(
-                                                  future: _getImageW(
-                                                    context,
-                                                    'files/meters/$formattedMonth/${documentSnapshot['cellNumber']}/${documentSnapshot['address']}/water/${documentSnapshot['water_meter_number']}.jpg',
-                                                    documentSnapshot['address'], // ✅ cacheKey needed for _getImageW
-                                                  ),
-                                                  builder: (context, snapshot) {
-                                                    if (snapshot.hasError) {
-                                                      imgUploadCheck = false;
-                                                      updateImgCheckW(imgUploadCheck, documentSnapshot);
+                                                child:
+                                                    FutureBuilder<Uint8List?>(
+                                                  future:
+                                                      loadBytesFromStoragePath(
+                                                          fullPath),
+                                                  builder:
+                                                      (context, bytesSnap) {
+                                                    if (bytesSnap
+                                                            .connectionState ==
+                                                        ConnectionState
+                                                            .waiting) {
                                                       return const Padding(
-                                                        padding: EdgeInsets.all(20.0),
-                                                        child: Column(
-                                                          mainAxisSize: MainAxisSize.min,
-                                                          children: [
-                                                            Text('Image not yet uploaded.'),
-                                                            SizedBox(height: 10),
-                                                            FaIcon(Icons.camera_alt),
-                                                          ],
-                                                        ),
+                                                        padding:
+                                                            EdgeInsets.all(5.0),
+                                                        child:
+                                                            CircularProgressIndicator(),
                                                       );
                                                     }
 
-                                                    if (snapshot.connectionState == ConnectionState.done) {
+                                                    // Case 1: BYTES loaded => render directly
+                                                    final bytes =
+                                                        bytesSnap.data;
+                                                    if (bytes != null &&
+                                                        bytes.isNotEmpty) {
                                                       imgUploadCheck = true;
-                                                      updateImgCheckW(imgUploadCheck, documentSnapshot);
-
-                                                      if (snapshot.data != null) {
-                                                        return Image.network(
-                                                          snapshot.data!,
+                                                      updateImgCheckW(
+                                                          imgUploadCheck,
+                                                          documentSnapshot);
+                                                      return Image.memory(bytes,
                                                           fit: BoxFit.cover,
+                                                          gaplessPlayback:
+                                                              true);
+                                                    }
+
+                                                    // Case 2: Bytes failed (often due to rules) => fallback to URL via <img> tag
+                                                    return FutureBuilder<
+                                                        String?>(
+                                                      future:
+                                                          _downloadUrlFromPath(
+                                                              fullPath),
+                                                      builder:
+                                                          (context, urlSnap) {
+                                                        if (urlSnap
+                                                                .connectionState ==
+                                                            ConnectionState
+                                                                .waiting) {
+                                                          return const Padding(
+                                                            padding:
+                                                                EdgeInsets.all(
+                                                                    5.0),
+                                                            child:
+                                                                CircularProgressIndicator(),
+                                                          );
+                                                        }
+
+                                                        final url =
+                                                            (urlSnap.data ?? '')
+                                                                .trim();
+                                                        if (url.isEmpty) {
+                                                          imgUploadCheck =
+                                                              false;
+                                                          updateImgCheckW(
+                                                              imgUploadCheck,
+                                                              documentSnapshot);
+                                                          return const Padding(
+                                                            padding:
+                                                                EdgeInsets.all(
+                                                                    20.0),
+                                                            child: Column(
+                                                              mainAxisSize:
+                                                                  MainAxisSize
+                                                                      .min,
+                                                              children: [
+                                                                Text(
+                                                                    'Could not display image.'),
+                                                                SizedBox(
+                                                                    height: 10),
+                                                                Icon(Icons
+                                                                    .broken_image_outlined),
+                                                              ],
+                                                            ),
+                                                          );
+                                                        }
+
+                                                        imgUploadCheck = true;
+                                                        updateImgCheckW(
+                                                            imgUploadCheck,
+                                                            documentSnapshot);
+
+
+                                                        return meterImage(
+                                                          url: url,
+                                                          // match the look you liked:
+                                                          width: 180,            // or double.infinity if you prefer full width
+                                                          height: 180,           // keeps the card’s 180px box
+                                                          borderRadius: 10,
+                                                          fit: BoxFit.contain,   // or BoxFit.cover if you want crop
                                                         );
-                                                      } else {
-                                                        return const Text('No image available.');
-                                                      }
-                                                    }
-
-                                                    if (snapshot.connectionState == ConnectionState.waiting) {
-                                                      return const Padding(
-                                                        padding: EdgeInsets.all(5.0),
-                                                        child: CircularProgressIndicator(),
-                                                      );
-                                                    }
-
-                                                    return Container();
+                                                      },
+                                                    );
                                                   },
                                                 ),
                                               ),
@@ -3093,18 +3275,28 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                         ),
                                         const SizedBox(height: 10),
                                         Center(
-                                          child: Text(
-                                            latestWaterUploadTimestamp != null
-                                                ? "💧 Water image uploaded on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(latestWaterUploadTimestamp!)}"
-                                                : "💧 No water upload history available.",
-                                            style: const TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w400,
-                                              color: Colors.blueGrey,
-                                            ),
+                                          child: RichText(
                                             textAlign: TextAlign.center,
+                                            text: TextSpan(
+                                              style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w400,
+                                                color: Colors.blueGrey,
+                                              ),
+                                              children: [
+                                                WidgetSpan(
+                                                  alignment: PlaceholderAlignment.middle,
+                                                  child: Icon(Icons.water_drop, color: Colors.blue, size: 16),
+                                                ),
+                                                TextSpan(
+                                                  text: latestWaterUploadTimestamp != null
+                                                      ? "  Water image uploaded on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(latestWaterUploadTimestamp!)}"
+                                                      : "  No water upload history available.",
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
+                                        )
                                       ],
                                     ),
                                     const SizedBox(
@@ -3139,7 +3331,11 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                                   municipalityId:
                                                       widget.municipalityId,
                                                   isLocalMunicipality: widget
-                                                      .isLocalMunicipality, handlesWater: widget.handlesWater, handlesElectricity: widget.handlesElectricity,
+                                                      .isLocalMunicipality,
+                                                  handlesWater:
+                                                      widget.handlesWater,
+                                                  handlesElectricity:
+                                                      widget.handlesElectricity,
                                                 ),
                                               ));
                                         },
@@ -3161,94 +3357,79 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                             children: [
                                               BasicIconButtonGrey(
                                                 onPress: () async {
-                                                  Fluttertoast.showToast(
-                                                      msg:
-                                                      "Now opening your statement!\nPlease wait a few seconds!");
-
-                                                  _onSubmit(); // Handle any necessary updates
-                                                  // Get the previous month instead of the current one
-                                                  final now = DateTime.now();
-                                                  final prevMonthDate = DateTime(now.year, now.month - 1, 1);
-                                                  final previousMonth = DateFormat('MMMM').format(prevMonthDate);
-
-                                                  // ✅ Normalize inputs
-                                                  final formattedAddress = widget.propertyAddress.trim();
-                                                  final userNumber = widget.userNumber.trim();
-                                                  final acctRaw = (widget.accountNumber ?? '').trim();
-                                                  final acct = acctRaw.toLowerCase();
-
-                                                  print('Attempting to list files in path: pdfs/$previousMonth/$userNumber/$formattedAddress/');
-
-                                                  final dirRef = FirebaseStorage.instance
-                                                      .ref()
-                                                      .child("pdfs/$previousMonth/$userNumber/$formattedAddress");
-
-                                                  try {
-                                                    final listResult = await dirRef.listAll();
-                                                    print('Files found in directory: ${listResult.items.length}');
-
-                                                    if (listResult.items.isEmpty) {
-                                                      Fluttertoast.showToast(msg: "No files found in the directory.");
-                                                      return;
-                                                    }
-
-                                                    // ✅ Log every filename we see
-                                                    for (final i in listResult.items) {
-                                                      print('Found file candidate: ${i.name}');
-                                                    }
-
-                                                    // ✅ Try to find a match by account number (case-insensitive)
-                                                    Reference? picked;
-                                                    if (acct.isNotEmpty) {
-                                                      for (final item in listResult.items) {
-                                                        final name = item.name.toLowerCase().trim();
-                                                        if (name.contains(acct)) {
-                                                          picked = item;
-                                                          print('Matched by account number: ${item.name}');
-                                                          break;
-                                                        }
-                                                      }
-                                                    }
-
-                                                    // ✅ If no explicit match but there is exactly one PDF, take it
-                                                    if (picked == null) {
-                                                      final pdfsOnly = listResult.items.where((i) => i.name.toLowerCase().endsWith('.pdf')).toList();
-                                                      if (pdfsOnly.length == 1) {
-                                                        picked = pdfsOnly.first;
-                                                        print('No account match; only one PDF present. Using: ${picked.name}');
-                                                      }
-                                                    }
-
-                                                    // ✅ If still no file, tell the dev EXACTLY what we tried to match
-                                                    if (picked == null) {
-                                                      final names = listResult.items.map((i) => i.name).join(', ');
-                                                      print('No matching invoice found. Account: "$acctRaw". Candidates: [$names]');
-                                                      Fluttertoast.showToast(msg: "No matching invoice found.");
-                                                      return;
-                                                    }
-
-                                                    // ✅ Open PDF: Mobile (download) | Web (URL)
-                                                    String? webPdfUrl = await picked.getDownloadURL();
-                                                    File? mobilePdfFile;
-
-                                                    if (!kIsWeb) {
-                                                      final directory = await getApplicationDocumentsDirectory();
-                                                      final filePath = '${directory.path}/${picked.name}';
-                                                      final response = await Dio().download(webPdfUrl, filePath);
-                                                      if (response.statusCode == 200) {
-                                                        mobilePdfFile = File(filePath);
-                                                        Fluttertoast.showToast(msg: "Successful!");
-                                                      } else {
-                                                        Fluttertoast.showToast(msg: "Failed to download PDF.");
-                                                        return;
-                                                      }
-                                                    }
-
-                                                    openPDF(context, mobilePdfFile, webPdfUrl);
-                                                  } catch (e) {
-                                                    print('Error opening PDF: $e');
-                                                    Fluttertoast.showToast(msg: "Unable to open statement.");
-                                                  }
+                                                  // Fluttertoast.showToast(
+                                                  //     msg:
+                                                  //     "Now opening your statement!\nPlease wait a few seconds!");
+                                                  //
+                                                  // _onSubmit(); // Handle any necessary updates
+                                                  // // Get the previous month instead of the current one
+                                                  // String previousMonth = DateFormat('MMMM').format(DateTime.now().subtract(Duration(days: 30)));
+                                                  //
+                                                  // // Ensure the address is trimmed and formatted consistently
+                                                  // String formattedAddress = widget.propertyAddress.trim(); // Trim any extra spaces
+                                                  //
+                                                  // // Print statements to debug the exact path being used
+                                                  // print('Attempting to list files in path: pdfs/$previousMonth/${widget.userNumber}/$formattedAddress/');
+                                                  //
+                                                  // // Reference the storage path based on the formatted address
+                                                  // final storageRef = FirebaseStorage.instance
+                                                  //     .ref()
+                                                  //     .child("pdfs/$previousMonth/${widget.userNumber}/$formattedAddress");
+                                                  //
+                                                  // try {
+                                                  //   final listResult = await storageRef.listAll();
+                                                  //
+                                                  //   // Log the number of files found
+                                                  //   print('Files found in directory: ${listResult.items.length}');
+                                                  //
+                                                  //   // If no files are found, inform the user
+                                                  //   if (listResult.items.isEmpty) {
+                                                  //     Fluttertoast.showToast(msg: "No files found in the directory.");
+                                                  //     return;
+                                                  //   }
+                                                  //
+                                                  //   bool found = false;
+                                                  //   String? webPdfUrl;
+                                                  //   File? mobilePdfFile;
+                                                  //
+                                                  //   for (var item in listResult.items) {
+                                                  //     if (item.name.contains(widget.accountNumber)) {
+                                                  //       print('Found matching file: ${item.name}');
+                                                  //
+                                                  //       // ✅ Get the download URL for web
+                                                  //       webPdfUrl = await item.getDownloadURL();
+                                                  //       print('Download URL: $webPdfUrl');
+                                                  //
+                                                  //       if (!kIsWeb) {
+                                                  //         // ✅ Mobile: Download the PDF locally
+                                                  //         final directory = await getApplicationDocumentsDirectory();
+                                                  //         final filePath = '${directory.path}/${item.name}';
+                                                  //         final response = await Dio().download(webPdfUrl, filePath);
+                                                  //
+                                                  //         if (response.statusCode == 200) {
+                                                  //           mobilePdfFile = File(filePath);
+                                                  //           Fluttertoast.showToast(msg: "Successful!");
+                                                  //         } else {
+                                                  //           Fluttertoast.showToast(msg: "Failed to download PDF.");
+                                                  //         }
+                                                  //       }
+                                                  //
+                                                  //       found = true;
+                                                  //       break;
+                                                  //     }
+                                                  //   }
+                                                  //
+                                                  //   if (!found) {
+                                                  //     Fluttertoast.showToast(msg: "No matching invoice found.");
+                                                  //     return;
+                                                  //   }
+                                                  //
+                                                  //   // ✅ Open PDF: Mobile (file) | Web (URL)
+                                                  //   openPDF(context, mobilePdfFile, webPdfUrl);
+                                                  // } catch (e) {
+                                                  //   print('Error opening PDF: $e');
+                                                  //   Fluttertoast.showToast(msg: "Unable to open statement.");
+                                                  // }
 
                                                   if (widget.handlesWater &&
                                                       widget
@@ -3257,29 +3438,30 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                                     showDialog(
                                                       context: context,
                                                       builder: (context) => AlertDialog(
-                                                        title: const Column(
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                                          mainAxisSize: MainAxisSize.min,
+                                                        title: const Row(
                                                           children: [
-                                                            Icon(Icons.receipt_long, color: Colors.orange),
-                                                            SizedBox(height: 8),
+                                                            Icon(Icons.receipt_long, color: Colors.deepPurple),
+                                                            SizedBox(width: 8),
                                                             Text(
-                                                              "Select Statement Type",
+                                                              "Select Invoice Type",
                                                               style: TextStyle(fontWeight: FontWeight.bold),
-                                                              textAlign: TextAlign.center,
                                                             ),
                                                           ],
                                                         ),
-                                                        content: const Text("Please choose which statement you want to view."),
+                                                        content: const Text("Please choose which invoice statement you want to view."),
                                                         actionsPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                                         actionsAlignment: MainAxisAlignment.spaceEvenly,
                                                         actions: [
                                                           ElevatedButton.icon(
                                                             onPressed: () {
                                                               Navigator.pop(context);
-                                                              _fetchAndOpenStatementByType("water");
+                                                              _fetchAndOpenStatementByType(
+                                                                "water",
+                                                                waterAcc: documentSnapshot['accountNumber'] ?? '',
+                                                                elecAcc:  documentSnapshot['electricityAccountNumber'] ?? '',
+                                                              );
                                                             },
-                                                            icon: const Icon(Icons.water_drop, color: Colors.blue),
+                                                            icon: const Icon(Icons.water_drop, color: Colors.white),
                                                             label: const Text("Water"),
                                                             style: ElevatedButton.styleFrom(
                                                               backgroundColor: Colors.blue,
@@ -3289,9 +3471,13 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                                           ElevatedButton.icon(
                                                             onPressed: () {
                                                               Navigator.pop(context);
-                                                              _fetchAndOpenStatementByType(("electricity"));
+                                                              _fetchAndOpenStatementByType(
+                                                                "electricity",
+                                                                waterAcc: documentSnapshot['accountNumber'] ?? '',
+                                                                elecAcc:  documentSnapshot['electricityAccountNumber'] ?? '',
+                                                              );
                                                             },
-                                                            icon: const Icon(Icons.bolt, color: Colors.yellow),
+                                                            icon: const Icon(Icons.bolt, color: Colors.white),
                                                             label: const Text("Electricity"),
                                                             style: ElevatedButton.styleFrom(
                                                               backgroundColor: Colors.orange,
@@ -3301,17 +3487,26 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                                         ],
                                                       ),
                                                     );
+
                                                   } else if (widget
                                                       .handlesWater) {
-                                                    _fetchAndOpenStatementByType(("water"));
+                                                    _fetchAndOpenStatementByType(
+                                                      "water",
+                                                      waterAcc: documentSnapshot['accountNumber'] ?? '',
+                                                      elecAcc:  documentSnapshot['electricityAccountNumber'] ?? '',
+                                                    );
                                                   } else if (widget
                                                       .handlesElectricity) {
-                                                      _fetchAndOpenStatementByType((
-                                                        "electricity"));
+                                                    _fetchAndOpenStatementByType(
+                                                      "electricity",
+                                                      waterAcc: documentSnapshot['accountNumber'] ?? '',
+                                                      elecAcc:  documentSnapshot['electricityAccountNumber'] ?? '',
+                                                    );
+
                                                   } else {
                                                     Fluttertoast.showToast(
                                                         msg:
-                                                            "⚠️ No invoice available for this property.");
+                                                        "⚠️ No invoice available for this property.");
                                                   }
                                                 },
                                                 labelText: 'Invoice',
@@ -3354,17 +3549,25 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                           ),
                                           BasicIconButtonGrey(
                                             onPress: () async {
-                                              final data = documentSnapshot.data() as Map<String, dynamic>;
+                                              final data =
+                                                  documentSnapshot.data()
+                                                      as Map<String, dynamic>;
 
                                               // Determine the correct account number based on utility type
-                                              final selectedAccountNumber = widget.handlesElectricity && !widget.handlesWater
-                                                  ? (data['electricityAccountNumber'] ?? '')
-                                                  : (data['accountNumber'] ?? '');
+                                              final selectedAccountNumber = widget
+                                                          .handlesElectricity &&
+                                                      !widget.handlesWater
+                                                  ? (data['electricityAccountNumber'] ??
+                                                      '')
+                                                  : (data['accountNumber'] ??
+                                                      '');
 
-                                              final selectedAddress = data['address'] ?? '';
+                                              final selectedAddress =
+                                                  data['address'] ?? '';
 
                                               // Save to global variables used in MapScreen
-                                              accountNumber = selectedAccountNumber;
+                                              accountNumber =
+                                                  selectedAccountNumber;
                                               locationGiven = selectedAddress;
                                               Navigator.push(
                                                   context,
@@ -3597,23 +3800,39 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
   }
 
   //pdf view loader getting file name onPress/onTap that passes pdf filename to this class.
-  void openPDF(BuildContext context, File? file, String? webUrl) {
-    if (kIsWeb) {
-      // ✅ Web: Open the PDF in a new browser tab
-      if (webUrl != null && webUrl.isNotEmpty) {
-        html.window.open(webUrl, "_blank");
-      } else {
-        Fluttertoast.showToast(msg: "Failed to open PDF: No URL available.");
+  Future<void> openPDF(BuildContext context, File? file, String? webUrl) async {
+    // Prefer opening by URL when available (works on all platforms)
+    if (webUrl != null && webUrl.isNotEmpty) {
+      final uri = Uri.parse(webUrl);
+
+      // On web: new tab. On mobile/desktop: external app.
+      final ok = await launchUrl(
+        uri,
+        mode: kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
+        webOnlyWindowName: '_blank',
+      );
+
+      if (!ok) {
+        Fluttertoast.showToast(msg: "Could not open PDF URL.");
+        // If we have a local file (mobile), try pushing an in-app viewer as a fallback.
+        if (!kIsWeb && file != null) {
+          // ignore: use_build_context_synchronously
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => PDFViewerPage(file: file)),
+          );
+        }
       }
-    } else {
-      // ✅ Mobile: Open the PDF using a viewer
-      if (file != null) {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => PDFViewerPage(file: file)),
-        );
-      } else {
-        Fluttertoast.showToast(msg: "Failed to open PDF file.");
-      }
+      return;
     }
+
+    // No URL? Try local file (mobile only).
+    if (!kIsWeb && file != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => PDFViewerPage(file: file)),
+      );
+      return;
+    }
+
+    Fluttertoast.showToast(msg: "Failed to open PDF: no URL or file.");
   }
 }

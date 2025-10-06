@@ -14,13 +14,21 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace  "www.cyberfox.co.za.Municipal_Services"
     compileSdk 35
-
+    ndkVersion "29.0.14033849"
+    packagingOptions {
+        pickFirst "lib/**/libc++_shared.so"
+    }
     defaultConfig {
         applicationId "www.cyberfox.co.za.Municipal_Services"
+        manifestPlaceholders = [
+                MAPS_API_KEY: project.findProperty("MAPS_API_KEY")
+                        ?: System.getenv("ANDROID_MAPS_API_KEY")
+                        ?: ""
+        ]
         minSdk 23
         targetSdk 35
-        versionCode 14
-        versionName "1.0.4"
+        versionCode 20
+        versionName "1.1.1"
         multiDexEnabled true
     }
 
@@ -33,10 +41,12 @@ android {
 
     signingConfigs {
         release {
-            storeFile file(keystoreProps['storeFile'])
-            storePassword keystoreProps['storePassword']
-            keyAlias keystoreProps['keyAlias']
-            keyPassword keystoreProps['keyPassword']
+            if (keystoreProperties['storeFile']) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
 
         }
     }

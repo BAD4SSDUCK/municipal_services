@@ -32,6 +32,7 @@ import '../Models/property.dart';
 import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 import 'package:file_picker/file_picker.dart';
 import 'dart:io' show Platform;
+import 'package:municipal_services/config/keys.dart';
 
 class WaterSanitationReportMenu extends StatefulWidget {
   final Property currentProperty;
@@ -1345,13 +1346,12 @@ class _WaterSanitationReportMenuState extends State<WaterSanitationReportMenu> {
   }
 
   Future<void> verifyAddress() async {
-    const apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
     final address = _addressController.text;
 
     if (address.isNotEmpty) {
       final response = await http.get(
-        Uri.parse(
-            'https://maps.googleapis.com/maps/api/geocode/json?address=$address&key=$apiKey'),
+        Uri.parse('https://maps.googleapis.com/maps/api/geocode/json'
+            '?address=$address&key=$geocodeWebKey'),
       );
 
       if (response.statusCode == 200) {

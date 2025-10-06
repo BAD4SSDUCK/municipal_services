@@ -13,6 +13,7 @@ import '../Models/property.dart';
 import 'dashboard.dart';
 import 'display_info.dart';
 import 'package:provider/provider.dart';
+import 'package:municipal_services/config/keys.dart';
 
 class PropertySelectionScreen extends StatefulWidget {
   final List<Property> properties;
@@ -108,9 +109,9 @@ class _PropertySelectionScreenState extends State<PropertySelectionScreen> {
   }
 
   Future<LatLng?> generateCoordinatesForAddress(String address) async {
-    const apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
     final encodedAddress = Uri.encodeComponent(address);
-    final url = 'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey';
+    final url = 'https://maps.googleapis.com/maps/api/geocode/json'
+        '?address=$encodedAddress&key=$geocodeWebKey';
 
     try {
       final response = await http.get(Uri.parse(url));

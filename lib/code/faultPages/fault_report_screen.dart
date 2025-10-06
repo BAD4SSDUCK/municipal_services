@@ -26,7 +26,7 @@ import 'package:municipal_services/code/MapTools/address_search.dart';
 import 'package:municipal_services/code/MapTools/location_controller.dart';
 import 'package:municipal_services/code/MapTools/location_search_dialogue.dart';
 import 'package:municipal_services/code/MapTools/place_service.dart';
-
+import 'package:municipal_services/config/keys.dart';
 import '../Models/prop_provider.dart';
 import '../Models/property.dart';
 
@@ -2122,13 +2122,12 @@ class _ReportPropertyMenuState extends State<ReportPropertyMenu> {
   }
 
   Future<void> verifyAddress() async {
-    const apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
     final address = _addressController.text;
 
     if (address.isNotEmpty) {
       final response = await http.get(
-        Uri.parse(
-            'https://maps.googleapis.com/maps/api/geocode/json?address=$address&key=$apiKey'),
+        Uri.parse('https://maps.googleapis.com/maps/api/geocode/json'
+            '?address=$address&key=$geocodeWebKey'),
       );
 
       if (response.statusCode == 200) {

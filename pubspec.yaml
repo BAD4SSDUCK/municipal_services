@@ -79,7 +79,7 @@ dependencies:
   fl_chart: ^0.71.0
   excel: ^4.0.2
   share_plus: ^11.1.0
-  flutter_pdfview: ^1.2.5
+  flutter_pdfview: ^1.4.3
   path_provider: ^2.0.15
   open_file: ^3.3.2
   file_picker: ^10.3.2
@@ -163,6 +163,7 @@ flutter:
     - assets/images/councillors/
     - assets/images/Municipal_Services_App_Logo.png
     - assets/images/umdm.png
+    - assets/images/no-image-icon.png
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

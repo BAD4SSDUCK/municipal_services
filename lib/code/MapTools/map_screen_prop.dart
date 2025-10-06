@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -11,7 +10,10 @@ import 'package:http/http.dart' as http;
 import 'map_user_badge.dart';
 import 'package:municipal_services/code/MapTools/location_controller.dart';
 import 'package:municipal_services/code/DisplayPages/display_info.dart';
-
+import 'package:municipal_services/config/keys.dart';
+import 'dart:async';
+import 'dart:js' as js;
+import 'dart:js_util' as js_util;
 
 const LatLng SOURCE_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);
 
@@ -36,38 +38,25 @@ class _MapScreenPropState extends State<MapScreenProp> {
   String Address = 'search';
 
   @override
-  void initState(){
-
-    Fluttertoast.showToast(msg: "Tap on the pin to access directions.", gravity: ToastGravity.TOP);
-
-    ///This is the circular loading widget in this future.delayed call
-    _isLoading = true;
-    Future.delayed(const Duration(seconds: 5),(){
-      if (mounted){
-      setState(() {
-        _isLoading = false;
-      });}
-    });
-
-    //Allows user's location to be captured while using the map
-    locationAllow();
-
+  void initState() {
     super.initState();
 
-    //Set camera position based on db address given
-    addressConvert();
-    //Set up initial locations
-    setInitialLocation();
+    //Fluttertoast.showToast(msg: "Tap on the pin to access directions.", gravity: ToastGravity.TOP);
 
+    _isLoading = true;
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) setState(() => _isLoading = false);
+    });
+
+    locationAllow();
+
+    // Set defaults
     setAddressLocation();
-    //Set up the marker icons
+    setInitialLocation();
     setSourceAndDestinationMarkerIcons();
-    _cameraPosition = const CameraPosition(
-      target: SOURCE_LOCATION,
-      zoom: 16,
-    );
-    // city all position for camera default (target: LatLng(-29.601505328570788, 30.379442518631805), zoom: 16);
-    //_cameraPosition = CameraPosition(target: currentLocation, zoom: 16);
+
+    // Use a harmless initial camera until we geocode
+    _cameraPosition = const CameraPosition(target: SOURCE_LOCATION, zoom: 16);
   }
 
   late GoogleMapController _mapController;
@@ -84,6 +73,29 @@ class _MapScreenPropState extends State<MapScreenProp> {
 
     }
   }
+
+
+
+  void _fallbackCamera(String reason) {
+    debugPrint("ℹ️ Fallback camera: $reason");
+    addressLocation = const LatLng(-29.601505328570788, 30.379442518631805);
+    showPinOnMap();
+    if (_mapController != null) {
+      _mapController.animateCamera(
+        CameraUpdate.newCameraPosition(
+          const CameraPosition(
+            target: LatLng(-29.601505328570788, 30.379442518631805),
+            zoom: 16,
+          ),
+        ),
+      );
+    }
+    Fluttertoast.showToast(
+      msg: "Address not found! Default map location City Hall!",
+      gravity: ToastGravity.CENTER,
+    );
+  }
+
 
   Future<Position> _getGeoLocationPosition() async {
     bool serviceEnabled;
@@ -152,78 +164,63 @@ class _MapScreenPropState extends State<MapScreenProp> {
     }
   }
 
-  void addressConvert() async {
-    ///Location change here for address conversion into lat long
-    String address = widget.propAddress;
-    if(defaultTargetPlatform == TargetPlatform.android){
+  Future<void> addressConvert() async {
+    final address = widget.propAddress;
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
       try {
-        List<Location> locations = await locationFromAddress(address);
-
+        final locations = await locationFromAddress(address);
         if (locations.isNotEmpty) {
-          Location location = locations.first;
-          addressLocation = LatLng(location.latitude, location.longitude);
-          _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
-
-          // Set the camera position as initialized.
-          if(mounted) {
-            setState(() {
-              _cameraPositionInitialized = true;
-            });
-          }
+          final loc = locations.first;
+          addressLocation = LatLng(loc.latitude, loc.longitude);
           showPinOnMap();
+          await _mapController.animateCamera(
+            CameraUpdate.newCameraPosition(
+              CameraPosition(target: addressLocation, zoom: 16),
+            ),
+          );
+          return;
         }
-
-        _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
+        _fallbackCamera("No locations from geocoder");
       } catch (e) {
-        addressLocation = const LatLng(-29.601505328570788, 30.379442518631805);
-
-        _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
-        if(mounted) {
-          setState(() {
-            _cameraPositionInitialized = true;
-          });
-        }
-        print('This is the error:::$e');
-
-        // showPinOnMap();
-
-        Fluttertoast.showToast(
-            msg: "Address not found! Default map location City Hall!",
-            gravity: ToastGravity.CENTER);
+        _fallbackCamera("Mobile geocoder error: $e");
       }
-    }else{
-      ///for web version
-      const apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
-      final encodedAddress = Uri.encodeComponent(address);
-      final url = 'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey&libraries=maps,drawing,visualization,places,routes&callback=initMap';
-
-      final response = await http.get(Uri.parse(url));
-
-      if(response.statusCode == 200){
-        final data = json.decode(response.body);
-        if (data['results'] != null && data['results'].isNotEmpty){
-          final location = data['results'][0]['geometry']['location'];
-
-          double latitude = location['lat'];
-          double longitude = location['lng'];
-
-          addressLocation = LatLng(latitude, longitude);
-
-          showPinOnMap();
-        }
-        _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
-      }else{
-        addressLocation = const LatLng(-29.601505328570788, 30.379442518631805);
-
-        _cameraPosition = CameraPosition(target: addressLocation, zoom: 16);
-
-        Fluttertoast.showToast(
-            msg: "Address not found! Default map location City Hall!",
-            gravity: ToastGravity.CENTER);
-      }
+      return;
     }
 
-    print('$addressLocation this is the location');
+    // ---- WEB BRANCH ----
+    try {
+      final encoded = Uri.encodeComponent(widget.propAddress);
+      const functionsBase =
+          'https://europe-west1-municipal-tracker-msunduzi.cloudfunctions.net';
+      final url = '$functionsBase/geocodeAddress?address=$encoded';
+
+      final response = await http.get(Uri.parse(url));
+      final body = json.decode(response.body);
+      final status = (body['status'] ?? '').toString();
+      final err = (body['error_message'] ?? '').toString();
+
+      if (response.statusCode == 200 &&
+          status == 'OK' &&
+          body['results'] != null &&
+          body['results'].isNotEmpty) {
+        final loc = body['results'][0]['geometry']['location'];
+        addressLocation = LatLng(
+          (loc['lat'] as num).toDouble(),
+          (loc['lng'] as num).toDouble(),
+        );
+        showPinOnMap();
+        await _mapController.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(target: addressLocation, zoom: 16),
+          ),
+        );
+      } else {
+        _fallbackCamera("Geocode $status ${err.isNotEmpty ? '($err)' : ''}");
+      }
+    } catch (e) {
+      _fallbackCamera("geocodeAddress exception: $e");
+    }
   }
 
   void setAddressLocation() async {
@@ -258,20 +255,22 @@ class _MapScreenPropState extends State<MapScreenProp> {
                   ///loading page component starts here
                   _isLoading
                       ? const Center(child: CircularProgressIndicator(),)
-                      : GoogleMap(
-                          myLocationEnabled: true,
-                          compassEnabled: false,
-                          tiltGesturesEnabled: false,
-                          markers: _markers,
-                          mapType: mapType,
-
-                          onMapCreated: (GoogleMapController mapController) {
-                            addressConvert();
-                            _mapController = mapController;
-                            Fluttertoast.showToast(msg: "Tap on the pin to access directions.", gravity: ToastGravity.TOP);
-                          },
-                          initialCameraPosition: _cameraPosition
-                      ),
+                      :GoogleMap(
+                    myLocationEnabled: true,
+                    compassEnabled: false,
+                    tiltGesturesEnabled: false,
+                    markers: _markers,
+                    mapType: mapType,
+                    initialCameraPosition: _cameraPosition, // <-- comma here
+                    onMapCreated: (GoogleMapController controller) {
+                      _mapController = controller;
+                      addressConvert(); // single call here
+                      Fluttertoast.showToast(
+                        msg: "Tap on the pin to access directions.",
+                        gravity: ToastGravity.TOP,
+                      );
+                    }, // <-- and a comma after this property
+                  ),
 
                   ///Positioned widget is for searching an address but will not be used in view mode
                   // Positioned(
@@ -341,16 +340,16 @@ class _MapScreenPropState extends State<MapScreenProp> {
         });
   }
 
-  void showPinOnMap(){
-    addressConvert;
-
+  void showPinOnMap() {
     setState(() {
+      _markers.removeWhere((m) => m.markerId.value == 'sourcePin');
       _markers.add(Marker(
         markerId: const MarkerId('sourcePin'),
         position: addressLocation,
-        icon: sourceIcon,
+        icon: sourceIcon, // or BitmapDescriptor.defaultMarker if not loaded yet
       ));
     });
   }
+
 
 }

@@ -22,7 +22,7 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:http/http.dart' as http;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
+import 'package:municipal_services/config/keys.dart';
 import 'package:municipal_services/code/ImageUploading/image_zoom_fault_page.dart';
 import 'package:municipal_services/code/ReportGeneration/display_fault_report.dart';
 import 'package:municipal_services/code/faultPages/fault_task_screen_archive.dart';
@@ -1348,10 +1348,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
       }
     } else {
       ///for web version
-      const apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
       final encodedAddress = Uri.encodeComponent(address);
-      final url =
-          'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey&libraries=maps,drawing,visualization,places,routes&callback=initMap';
+      final url = 'https://maps.googleapis.com/maps/api/geocode/json'
+          '?address=$encodedAddress&key=$geocodeWebKey';
 
       final response = await http.get(Uri.parse(url));
 
@@ -1392,10 +1391,9 @@ class _FaultTaskScreenState extends State<FaultTaskScreen>
       }
     } else {
       ///for web version
-      const apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
       final encodedAddress = Uri.encodeComponent(address);
-      final url =
-          'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey&libraries=maps,drawing,visualization,places,routes&callback=initMap';
+      final url = 'https://maps.googleapis.com/maps/api/geocode/json'
+          '?address=$encodedAddress&key=$geocodeWebKey';
 
       final response = await http.get(Uri.parse(url));
 

@@ -93,7 +93,7 @@ class BasicIconButtonGreen extends StatelessWidget {
 }
 
 class BasicIconButtonGrey extends StatelessWidget {
-  const BasicIconButtonGrey({Key? key, required this.onPress, required this.labelText, required this.fSize, required this.faIcon, required this.fgColor, required this.btSize, }) : super(key: key);
+  const BasicIconButtonGrey({super.key, required this.onPress, required this.labelText, required this.fSize, required this.faIcon, required this.fgColor, required this.btSize, });
 
   final Function onPress;
   final String labelText;
@@ -110,7 +110,10 @@ class BasicIconButtonGrey extends StatelessWidget {
         onPressed: (){
           onPress();
         },
-        icon: faIcon,
+        icon: IconTheme(
+          data: IconThemeData(color: fgColor),
+          child: faIcon,
+        ),
         label: Text(labelText,
           textAlign: TextAlign.center,
           style: GoogleFonts.tenorSans(

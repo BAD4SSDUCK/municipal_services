@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 
 import '../Models/prop_provider.dart';
+import '../widgets/avatar_image.dart';
 
 class EmployeeDirectoryScreen extends StatefulWidget {
   const EmployeeDirectoryScreen({super.key, });
@@ -20,10 +21,121 @@ final uid = user?.uid;
 final email = user?.email;
 String userID = uid as String;
 String userEmail = email as String;
+final Map<String, String?> _imageUrlCache = {};
+const _GLOBAL_EMP_DIR = 'files/employees';
+
+String _employeesFolder({
+  required bool isLocal,
+  String? districtId,
+  required String municipalityId,
+}) {
+  // Try the old per-municipality layout first in case some places still use it.
+  // If you KNOW you only use the global folder, you can just return _GLOBAL_EMP_DIR.
+  if (!isLocal && districtId != null && districtId.isNotEmpty) {
+    return 'files/$districtId/$municipalityId/employees';
+  }
+  // Local layout (if you ever used it):
+  // return 'files/$municipalityId/employees';
+
+  // Default/global
+  return _GLOBAL_EMP_DIR;
+}
+
+String _normalizeName(String name) {
+  final trimmed = name.trim().replaceAll(RegExp(r'\s+'), ' ');
+  return trimmed.replaceAll(RegExp(r'[\\/:*?"<>|]'), '');
+}
+
+List<String> _candidateFileNames(String name) {
+  final n  = _normalizeName(name);
+  final u  = n.replaceAll(' ', '_');
+  final lc = n.toLowerCase();
+  final lu = u.toLowerCase();
+
+  final bases = {n, u, lc, lu}.toList();
+  const exts = ['png', 'jpg', 'jpeg', 'PNG', 'JPG', 'JPEG'];
+
+  return [
+    for (final b in bases)
+      for (final e in exts) '$b.$e',
+  ];
+}
+
+Future<String?> _tryFolder(String folder, String employeeName) async {
+  final storage = FirebaseStorage.instance;
+
+  // 1) Direct file guesses (fast)
+  for (final file in _candidateFileNames(employeeName)) {
+    final ref = storage.ref('$folder/$file');
+    try {
+      final url = await ref.getDownloadURL();
+      // debugPrint('✓ Found $file in $folder');
+      return url;
+    } catch (_) {/* keep trying */}
+  }
+
+  // 2) Fallback: list & match by basename (case-insensitive, ignore spaces/_)
+  try {
+    final list = await storage.ref(folder).listAll();
+    final wanted = _normalizeName(employeeName).toLowerCase().replaceAll(' ', '');
+    for (final item in list.items) {
+      final full = item.name;               // e.g., "Cllr Sibongile Mabaso.png"
+      final dot  = full.lastIndexOf('.');
+      final base = (dot > 0 ? full.substring(0, dot) : full)
+          .toLowerCase()
+          .replaceAll(RegExp(r'\s+'), ' ')
+          .replaceAll(' ', '')
+          .replaceAll('_', '');
+      if (base == wanted) {
+        final url = await item.getDownloadURL();
+        // debugPrint('✓ Matched via listAll: ${item.name} in $folder');
+        return url;
+      }
+    }
+  } catch (e) {
+    // debugPrint('listAll failed for $folder: $e');
+  }
+
+  return null;
+}
+
+Future<String?> _resolveEmployeeImageUrl({
+  required bool isLocal,
+  required String? districtId,
+  required String municipalityId,
+  required String employeeName,
+}) async {
+  final cacheKey = '$districtId|$municipalityId|$employeeName|$isLocal';
+  if (_imageUrlCache.containsKey(cacheKey)) return _imageUrlCache[cacheKey];
+
+  // Try specific folder (old layout), then the global folder you actually use.
+  final specificFolder = _employeesFolder(
+    isLocal: isLocal,
+    districtId: districtId,
+    municipalityId: municipalityId,
+  );
+
+  String? url = await _tryFolder(specificFolder, employeeName);
+  url ??= await _tryFolder(_GLOBAL_EMP_DIR, employeeName);
+
+  // Final fallback: placeholder in global folder (if you keep it there)
+  url ??= await () async {
+    try {
+      return await FirebaseStorage.instance
+          .ref('$_GLOBAL_EMP_DIR/no-image-icon-23494.png')
+          .getDownloadURL();
+    } catch (_) {
+      return null;
+    }
+  }();
+
+  _imageUrlCache[cacheKey] = url;
+  return url;
+}
 class _EmployeeDirectoryScreenState extends State<EmployeeDirectoryScreen> {
   String? userEmail;
-   String districtId='';
-   String municipalityId='';
+   String? districtId;
+   String? municipalityId;
   bool isLocalMunicipality = false;
 
   @override
@@ -38,40 +150,38 @@ class _EmployeeDirectoryScreenState extends State<EmployeeDirectoryScreen> {
   }
 
   Future<void> fetchUserDetails() async {
-    final currentProperty =
-        Provider.of<PropertyProvider>(context, listen: false).selectedProperty;
-
     try {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        String userPhoneNumber = user.phoneNumber!;
-        String? accountNumber = currentProperty?.accountNo;
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
 
-        print('User Phone Number: $userPhoneNumber');
-        print('Account Number: $accountNumber');
+      final currentProperty =
+          Provider.of<PropertyProvider>(context, listen: false).selectedProperty;
+      final userPhoneNumber = user.phoneNumber ?? '';
+      final accountNumber   = currentProperty?.accountNo ?? '';
 
-        QuerySnapshot propertySnapshot = await FirebaseFirestore.instance
-            .collectionGroup('properties')
-            .where('cellNumber', isEqualTo: userPhoneNumber)
-            .where('accountNumber', isEqualTo: accountNumber)
-            .limit(1)
-            .get();
+      final snap = await FirebaseFirestore.instance
+          .collectionGroup('properties')
+          .where('cellNumber', isEqualTo: userPhoneNumber)
+          .where('accountNumber', isEqualTo: accountNumber)
+          .limit(1)
+          .get();
 
-        if (propertySnapshot.docs.isNotEmpty) {
-          var propertyDoc = propertySnapshot.docs.first;
-          var propertyData = propertyDoc.data() as Map<String, dynamic>;
-
-          districtId = propertyData['districtId'];
-          municipalityId = propertyData['municipalityId'];
-          isLocalMunicipality = districtId == null || districtId.isEmpty;
-            if(mounted){
-          setState(() {});} // Update UI after fetching details
-        } else {
-          print('No matching property found for the user.');
-        }
+      if (snap.docs.isEmpty) {
+        debugPrint('No matching property found for the user.');
+        return;
       }
+
+      final data = snap.docs.first.data();
+      final dId  = (data['districtId'] ?? '').toString();
+      final mId  = (data['municipalityId'] ?? '').toString();
+
+      setState(() {
+        districtId = dId.isEmpty ? null : dId;
+        municipalityId = mId.isEmpty ? null : mId;
+        isLocalMunicipality = districtId == null; // local if no district id
+      });
     } catch (e) {
-      print('Error fetching user details: $e');
+      debugPrint('Error fetching user details: $e');
     }
   }
 
@@ -88,6 +198,8 @@ class _EmployeeDirectoryScreenState extends State<EmployeeDirectoryScreen> {
         .getDownloadURL();
   }
 }
+
+
 
   Future<void> _launchDialer(String number) async {
     final Uri telUri = Uri(scheme: 'tel', path: number);
@@ -120,14 +232,14 @@ class _EmployeeDirectoryScreenState extends State<EmployeeDirectoryScreen> {
         stream: isLocalMunicipality
             ? FirebaseFirestore.instance
             .collection('localMunicipalities')
-            .doc(municipalityId) // ✅ Only use municipalityId for local municipalities
+            .doc(municipalityId!) // ✅ Only use municipalityId for local municipalities
             .collection('employees')
             .snapshots()
             : FirebaseFirestore.instance
             .collection('districts')
-            .doc(districtId) // ✅ Use districtId for district-level queries
+            .doc(districtId!) // ✅ Use districtId for district-level queries
             .collection('municipalities')
-            .doc(municipalityId)
+            .doc(municipalityId!)
             .collection('employees')
             .snapshots(),
 
@@ -153,14 +265,21 @@ class _EmployeeDirectoryScreenState extends State<EmployeeDirectoryScreen> {
             itemBuilder: (context, index) {
               final employee = employeeDocs[index];
               return FutureBuilder(
-                future: _getImageUrl(districtId, municipalityId, employee['name']),
-                builder: (context, AsyncSnapshot<String> imageSnapshot) {
+                future: _resolveEmployeeImageUrl(
+                  isLocal: isLocalMunicipality,
+                  districtId: districtId,
+                  municipalityId: municipalityId!,
+                  employeeName: (employee['name'] ?? '').toString(),
+                ),
+                builder: (context, imageSnapshot) {
                   if (imageSnapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
                       child: CircularProgressIndicator(),
                     );
                   }
-                  final imageUrl = imageSnapshot.data;
+                  final imageUrl = (imageSnapshot.hasData && imageSnapshot.data!.isNotEmpty)
+                      ? imageSnapshot.data!
+                      : '';
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                     child: ListTile(
@@ -168,14 +287,15 @@ class _EmployeeDirectoryScreenState extends State<EmployeeDirectoryScreen> {
                       title: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          CircleAvatar(
-                            radius: 40,
-                            backgroundImage: imageUrl != null
-                                ? NetworkImage(imageUrl)
-                                : const AssetImage('assets/images/no-image-icon.png')
-                            as ImageProvider,
-                            onBackgroundImageError: (_, __) => const Icon(Icons.error),
-                          ),
+                          if (imageUrl.isNotEmpty)
+                          // ✅ Web-safe image loader (Storage match)
+                            avatarImage(url: imageUrl, diameter: 80)
+                          else
+                          // ✅ Fallback asset if no image found
+                            const CircleAvatar(
+                              radius: 40,
+                              backgroundImage: AssetImage('assets/images/no-image-icon.png'),
+                            ),
                           const SizedBox(height: 10),
                           Text(
                             employee['name'],

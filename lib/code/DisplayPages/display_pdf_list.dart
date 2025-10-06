@@ -25,6 +25,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:universal_html/html.dart' as html;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_storage/firebase_storage.dart' as fs;
 //View Invoice
 class UsersPdfListViewPage extends StatefulWidget {
   final String userNumber;
@@ -316,6 +317,14 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
   //     });
   //   }
   // }
+  Future<void> _openPdfUrl(String url) async {
+    final uri = Uri.parse(url);
+    await launchUrl(
+      uri,
+      mode: kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
+      webOnlyWindowName: '_blank',
+    );
+  }
 
   Future<void> _fetchAndOpenStatementByType(String type) async {
     String monthToUse = dropdownValue == 'Select Month' ? formattedDate : dropdownValue;
@@ -335,6 +344,42 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
   }
 
 
+  Future<void> _openStatementByTypeAndMonth({
+    required String type,          // "water" | "electricity"
+    required String month,         // e.g. "September"
+    required String userNumber,    // widget.userNumber
+    required String address,       // widget.propertyAddress (trimmed)
+    required String waterAcc,      // e.g. filteredProperty['accountNumber']
+    required String elecAcc,       // e.g. filteredProperty['electricityAccountNo']
+  }) async {
+    final isElec = type.toLowerCase() == 'electricity';
+    final token  = (isElec ? elecAcc : waterAcc).trim();
+
+    if (token.isEmpty) {
+      Fluttertoast.showToast(msg: "No $type account number set.");
+      return;
+    }
+
+    final folderRef = fs.FirebaseStorage.instance
+        .ref()
+        .child('pdfs/$month/$userNumber/${address.trim()}');
+
+    final fileRef = folderRef.child('$token.pdf');
+
+    try {
+      final url = await fileRef.getDownloadURL();
+      await _openPdfUrl(url);
+      Fluttertoast.showToast(msg: "Statement opened.");
+    } on fs.FirebaseException catch (e) {
+      if (e.code == 'object-not-found') {
+        Fluttertoast.showToast(msg: "No $type statement ($token.pdf) found for $month.");
+      } else {
+        Fluttertoast.showToast(msg: "Unable to open $type statement.");
+      }
+    } catch (_) {
+      Fluttertoast.showToast(msg: "Unable to open $type statement.");
+    }
+  }
 
   void _downloadInvoice() {
     Fluttertoast.showToast(msg: "Now downloading your statement!\nPlease wait...");
@@ -513,16 +558,15 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                             const SizedBox(width: 5),
                             BasicIconButtonGrey(
                               onPress: () async {
-                                _onSubmit();
-                                SharedPreferences prefs = await SharedPreferences.getInstance();
-                                String matchedField = prefs.getString('selectedPropertyAccountField') ?? 'accountNumber';
+                                _onSubmit(); // if you need to finalize dropdownValue
 
-                                String accountNumberPDF = filteredProperty['accountNumber'];
-                                String monthToUse = dropdownValue == 'Select Month' ? formattedDate : dropdownValue;
-                                getPDFByAccMon(accountNumberPDF, monthToUse);
-                                // String accountNumberPDF = widget.accountNumber;
-                                // String monthToUse = dropdownValue == 'Select Month' ? formattedDate : dropdownValue;
-                               // getPDFByAccMon(accountNumberPDF, monthToUse);
+                                final String monthToUse =
+                                dropdownValue == 'Select Month' ? formattedDate : dropdownValue;
+
+                                // pull both account numbers from your model / snapshot
+                                final waterAcc = filteredProperty['accountNumber']?.toString() ?? '';
+                                final elecAcc  = filteredProperty['electricityAccountNumber']?.toString() ?? '';
+
                                 if (widget.handlesWater && widget.handlesElectricity) {
                                   showDialog(
                                     context: context,
@@ -533,48 +577,69 @@ class _UsersPdfListViewPageState extends State<UsersPdfListViewPage> {
                                         children: [
                                           Icon(Icons.receipt_long, color: Colors.deepPurple),
                                           SizedBox(height: 8),
-                                          Text(
-                                            "Select Statement Type",
-                                            style: TextStyle(fontWeight: FontWeight.bold),
-                                            textAlign: TextAlign.center,
-                                          ),
+                                          Text("Select Statement Type",
+                                              style: TextStyle(fontWeight: FontWeight.bold),
+                                              textAlign: TextAlign.center),
                                         ],
                                       ),
                                       content: const Text("Please choose which statement you want to view."),
-                                      actionsPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                       actionsAlignment: MainAxisAlignment.spaceEvenly,
                                       actions: [
                                         ElevatedButton.icon(
                                           onPressed: () {
                                             Navigator.pop(context);
-                                            _fetchAndOpenStatementByType(("water"));
+                                            _openStatementByTypeAndMonth(
+                                              type: 'water',
+                                              month: monthToUse,
+                                              userNumber: widget.userNumber,
+                                              address: widget.propertyAddress,
+                                              waterAcc: waterAcc,
+                                              elecAcc: elecAcc,
+                                            );
                                           },
                                           icon: const Icon(Icons.water_drop, color: Colors.white),
                                           label: const Text("Water"),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.blue,
-                                            foregroundColor: Colors.white,
-                                          ),
+                                              backgroundColor: Colors.blue, foregroundColor: Colors.white),
                                         ),
                                         ElevatedButton.icon(
                                           onPressed: () {
                                             Navigator.pop(context);
-                                            _fetchAndOpenStatementByType(("electricity"));
+                                            _openStatementByTypeAndMonth(
+                                              type: 'electricity',
+                                              month: monthToUse,
+                                              userNumber: widget.userNumber,
+                                              address: widget.propertyAddress,
+                                              waterAcc: waterAcc,
+                                              elecAcc: elecAcc,
+                                            );
                                           },
                                           icon: const Icon(Icons.bolt, color: Colors.white),
                                           label: const Text("Electricity"),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.orange,
-                                            foregroundColor: Colors.white,
-                                          ),
+                                              backgroundColor: Colors.orange, foregroundColor: Colors.white),
                                         ),
                                       ],
                                     ),
                                   );
                                 } else if (widget.handlesWater) {
-                                  _fetchAndOpenStatementByType(("water"));
+                                  _openStatementByTypeAndMonth(
+                                    type: 'water',
+                                    month: monthToUse,
+                                    userNumber: widget.userNumber,
+                                    address: widget.propertyAddress,
+                                    waterAcc: waterAcc,
+                                    elecAcc: elecAcc,
+                                  );
                                 } else if (widget.handlesElectricity) {
-                                  _fetchAndOpenStatementByType(("electricity"));
+                                  _openStatementByTypeAndMonth(
+                                    type: 'electricity',
+                                    month: monthToUse,
+                                    userNumber: widget.userNumber,
+                                    address: widget.propertyAddress,
+                                    waterAcc: waterAcc,
+                                    elecAcc: elecAcc,
+                                  );
                                 } else {
                                   Fluttertoast.showToast(msg: "⚠️ No statements available for this property.");
                                 }

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-
+import 'package:municipal_services/config/keys.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
@@ -702,10 +702,9 @@ class _FaultAttendantScreenState extends State<FaultAttendantScreen> {
       }
     } else {
       ///for web version
-      final apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
       final encodedAddress = Uri.encodeComponent(address);
-      final url =
-          'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey&libraries=maps,drawing,visualization,places,routes&callback=initMap';
+      final url = 'https://maps.googleapis.com/maps/api/geocode/json'
+          '?address=$encodedAddress&key=$geocodeWebKey';
 
       final response = await http.get(Uri.parse(url));
 
@@ -746,10 +745,9 @@ class _FaultAttendantScreenState extends State<FaultAttendantScreen> {
       }
     } else {
       ///for web version
-      final apiKey = 'AIzaSyCsOGfD-agV8u68pCfeCManNNoSs4csIbY';
       final encodedAddress = Uri.encodeComponent(address);
-      final url =
-          'https://maps.googleapis.com/maps/api/geocode/json?address=$encodedAddress&key=$apiKey&libraries=maps,drawing,visualization,places,routes&callback=initMap';
+      final url = 'https://maps.googleapis.com/maps/api/geocode/json'
+          '?address=$encodedAddress&key=$geocodeWebKey';
 
       final response = await http.get(Uri.parse(url));
 

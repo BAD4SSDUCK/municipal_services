@@ -8,6 +8,7 @@ import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:municipal_services/code/Chat/chat_screen_councillors.dart';
 import '../Chat/councillor_chatroom.dart';
+import '../widgets/avatar_image.dart';
 
 
 class CouncillorScreen extends StatefulWidget {
@@ -604,20 +605,19 @@ class _CouncillorScreenState extends State<CouncillorScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             FutureBuilder(
-              future: getImageUrl(imagePath),
-              builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
-                if (snapshot.connectionState == ConnectionState.done &&
-                    snapshot.hasData) {
-                  return CircleAvatar(
-                    backgroundImage: NetworkImage(snapshot.data!),
-                    radius: 60,
-                  );
-                } else {
-                  return const CircleAvatar(
-                    radius: 60,
-                    child: Icon(Icons.person),
-                  );
+              future: getImageUrl('files/councillors/$councillorName.jpg'),
+              builder: (context, snapshot) {
+                final url = (snapshot.connectionState == ConnectionState.done && snapshot.hasData && snapshot.data!.isNotEmpty)
+                    ? snapshot.data!
+                    : '';
+
+                if (url.isEmpty) {
+                  // fallback avatar
+                  return const CircleAvatar(radius: 60, child: Icon(Icons.person));
                 }
+
+                // Cross-platform avatar (web uses native <img> with circular clip)
+                return avatarImage(url: url, diameter: 120);
               },
             ),
             const SizedBox(height: 10),

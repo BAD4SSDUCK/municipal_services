@@ -2441,8 +2441,9 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                                                         await fetchWaterImageAndTimestamp(); // 🔁 NEW unified method
                                                         await _fetchLatestWaterMeterReading(); // Optional: refresh reading as well
 
-                                                        if (mounted)
+                                                        if (mounted) {
                                                           setState(() {});
+                                                        }
                                                       } else {
                                                         print(
                                                             "⚠️ Upload was not completed.");

@@ -1,11 +1,10 @@
 import 'dart:convert';
-
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
@@ -29,14 +28,15 @@ class _AddPropertyDetailsState extends State<AddPropertyDetails> {
   final _areaCodeController = TextEditingController();
   final _idNumberController = TextEditingController();
   final _accountNumberController = TextEditingController();
-  // final _meterNumberController = TextEditingController();
-  // final _meterReadingController = TextEditingController();
+  final _meterNumberController = TextEditingController();
+  final _meterReadingController = TextEditingController();
   final _waterMeterController = TextEditingController();
   final _waterMeterReadingController = TextEditingController();
   final _cellNumberController = TextEditingController();
   final  _wardController = TextEditingController();
   final _districtIdController=TextEditingController();
   final _municipalityIDController=TextEditingController();
+  final _electricityAccountNumberController=TextEditingController();
   final _userIDController = userID;
 
   @override
@@ -47,8 +47,8 @@ class _AddPropertyDetailsState extends State<AddPropertyDetails> {
     _areaCodeController.dispose();
     _idNumberController.dispose();
     _accountNumberController.dispose();
-    // _meterNumberController.dispose();
-    // _meterReadingController.dispose();
+    _meterNumberController.dispose();
+    _meterReadingController.dispose();
     _waterMeterController.dispose();
     _waterMeterReadingController.dispose();
     _cellNumberController.dispose();
@@ -81,13 +81,14 @@ class _AddPropertyDetailsState extends State<AddPropertyDetails> {
         int.parse(_areaCodeController.text.trim()),
         _idNumberController.text.trim(),
         _accountNumberController.text.trim(),
-        // _meterNumberController.text.trim(),
-        // _meterReadingController.text.trim(),
+        _meterNumberController.text.trim(),
+        _meterReadingController.text.trim(),
         _waterMeterController.text.trim(),
         _waterMeterReadingController.text.trim(),
         _wardController.text.trim(),
         _districtIdController.text.trim(),
         _municipalityIDController.text.trim(),
+        _electricityAccountNumberController.text.trim(),
         _userIDController,
       );
 
@@ -119,7 +120,7 @@ class _AddPropertyDetailsState extends State<AddPropertyDetails> {
     }
   }
 
-  Future<void> addPropertyDetails(String firstName, String lastName, String cellNumber,  String address, int areaCode, String idNumber, String accountNumber,  String waterMeterNumber, String waterMeterReading, String userid,String ward,String districtId,String municipalityId) async {
+  Future<void> addPropertyDetails(String firstName, String lastName, String cellNumber,  String address, int areaCode, String idNumber, String accountNumber,String electricityAccountNumber,String meterNumber,String meterReading,  String waterMeterNumber, String waterMeterReading, String userid,String ward,String districtId,String municipalityId) async {
     try {
       await FirebaseFirestore.instance
           .collection('districts')
@@ -137,8 +138,9 @@ class _AddPropertyDetailsState extends State<AddPropertyDetails> {
         'areaCode': areaCode,
         'idNumber': idNumber,
         'accountNumber': accountNumber,
-        // 'meter_number': meterNumber,
-        // 'meter_reading': meterReading,
+        'electricityAccountNumber':electricityAccountNumber,
+        'meter_number': meterNumber,
+        'meter_reading': meterReading,
         'water_meter_number': waterMeterNumber,
         'water_meter_reading': waterMeterReading,
         'ward':ward,
@@ -557,21 +559,42 @@ class _LocationAutoComp extends State<LocationAutoComp> {
   }
 
   void getSuggestion(String input) async {
-    String kPLACES_API_KEY = "AIzaSyDHFqH94PbbkBf8c397xfldWKtMAMmUVds";
-    String type = '(regions)';
-    String baseURL =
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json';
-    String request =
-        '$baseURL?input=$input&key=$kPLACES_API_KEY&sessiontoken=$_sessionToken';
-    var response = await http.get(Uri.parse(request));
+    // No Google Places on web → don't call the /place/autocomplete endpoint.
+    if (kIsWeb) {
+      if (!mounted) return;
+      setState(() => _placeList = []); // show no suggestions on web
+      return;
+    }
+
+    // --- Mobile path (Android/iOS) ---
+    // NOTE: This still hits the legacy Places Web Service endpoint.
+    // If Places API is disabled for the whole project, this will fail on mobile too.
+    // Keep only if you plan to enable Places for mobile or proxy via your server.
+    const String kPLACES_API_KEY = "YOUR_MOBILE_PLACES_KEY"; // move to secure config/env
+    final String baseURL = 'https://maps.googleapis.com/maps/api/place/autocomplete/json';
+
+    // If you use session tokens, ensure _sessionToken is set (e.g., when the user focuses the field).
+    final String sessionToken = _sessionToken ?? '';
+
+    final uri = Uri.parse(
+        '$baseURL?input=$input'
+            '&key=$kPLACES_API_KEY'
+            '&sessiontoken=$sessionToken'
+            '&components=country:za' // optional: keep results in South Africa
+    );
+
+    final response = await http.get(uri);
     if (response.statusCode == 200) {
+      final body = json.decode(response.body);
+      if (!mounted) return;
       setState(() {
-        _placeList = json.decode(response.body)['predictions'];
+        _placeList = List.from(body['predictions'] ?? []);
       });
     } else {
-      throw Exception('Failed to load predictions');
+      throw Exception('Failed to load predictions: ${response.body}');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

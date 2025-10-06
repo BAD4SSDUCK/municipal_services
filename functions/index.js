@@ -1079,3 +1079,46 @@ exports.listActionLogAddresses = functions
         throw new HttpsError("internal", err.message || "internal");
       }
     });
+
+const MAPS_SERVER_KEY = defineSecret("MAPS_SERVER_KEY");
+const ALLOWED_ORIGINS = new Set([
+  "http://localhost:5173",
+  "http://cyberfox.dedicated.co.za:83",
+  "https://municipal-tracker-msunduzi.web.app",
+]);
+
+exports.geocodeAddress = onRequest(
+    {region: "europe-west1", secrets: [MAPS_SERVER_KEY], timeoutSeconds: 30},
+    async (req, res) => {
+    // CORS
+      const origin = req.get("origin") || "";
+      const allow = ALLOWED_ORIGINS.has(origin);
+      if (allow) {
+        res.set("Access-Control-Allow-Origin", origin);
+        res.set("Vary", "Origin");
+      }
+      res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+      res.set("Access-Control-Allow-Headers", "Content-Type");
+      if (req.method === "OPTIONS") return res.status(204).send("");
+
+      try {
+        const address = (req.query.address || "").toString().trim();
+        if (!address) return res.status(400).json({error: "address required"});
+
+        const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
+        url.searchParams.set("address", address);
+        url.searchParams.set("region", "za"); // bias to South Africa (optional)
+        url.searchParams.set("key", MAPS_SERVER_KEY.value());
+
+        // Node 18 in Functions v2 has fetch built-in
+        const r = await fetch(url.toString());
+        const json = await r.json();
+
+        // Pass through the Geocoding response (status/ results / error_message)
+        res.status(r.ok ? 200 : 500).json(json);
+      } catch (e) {
+        console.error("geocodeAddress error:", e);
+        res.status(500).json({error: e.message || "internal"});
+      }
+    },
+);

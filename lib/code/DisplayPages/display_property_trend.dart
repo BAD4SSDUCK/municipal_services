@@ -210,9 +210,10 @@ class _PropertyTrendState extends State<PropertyTrend> {
                     children: [
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: !showElectricityGraph ? Colors.blue : Colors.grey.shade300,
+                          backgroundColor: !showElectricityGraph ? Colors.lightBlue : Colors.grey.shade300,
                           foregroundColor: !showElectricityGraph ? Colors.white : Colors.black,
                           elevation: !showElectricityGraph ? 4 : 1,
+                          iconColor: Colors.blue,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -235,6 +236,7 @@ class _PropertyTrendState extends State<PropertyTrend> {
                           backgroundColor: showElectricityGraph ? Colors.orange : Colors.grey.shade300,
                           foregroundColor: showElectricityGraph ? Colors.white : Colors.black,
                           elevation: showElectricityGraph ? 4 : 1,
+                          iconColor: Colors.yellow,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -334,14 +336,14 @@ class _PropertyTrendState extends State<PropertyTrend> {
                           const SizedBox(height: 10),
                           if(widget.handlesWater)...[
                           Text(
-                            'Account Number: ${documentSnapshot['accountNumber']}',
+                            'Water Account Number: ${documentSnapshot['accountNumber']}',
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w400),
                           ),
                           ],
                           if(widget.handlesElectricity)...[
                             Text(
-                              'Account Number: ${documentSnapshot['electricityAccountNumber']}',
+                              'Electricity Account Number: ${documentSnapshot['electricityAccountNumber']}',
                               style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w400),
                             ),
