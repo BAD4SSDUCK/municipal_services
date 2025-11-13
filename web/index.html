@@ -1,7 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-
+  <script src="flutter.js" defer></script>
+  <script
+          src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB9xv_XGF2wXbSpM2ovItsp8TCsUFLvjyk&v=weekly"
+          defer
+  ></script>
   <base href="$FLUTTER_BASE_HREF">
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
@@ -78,39 +82,39 @@
 <body>
 
 <script>
-    window.flutterWebRenderer = "html"
-  </script>
+  window.flutterWebRenderer = "html"
+</script>
 
 <div id="loading"></div>
 <script>
-    window.addEventListener('load', function(ev) {
-      var loading = document.querySelector('#loading');
-      loading.textContent = "Loading entrypoint...";
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
-        onEntrypointLoaded: async function(engineInitializer) {
-          loading.textContent = "Initializing engine...";
-          let appRunner = await engineInitializer.initializeEngine();
+  window.addEventListener('load', function(ev) {
+    var loading = document.querySelector('#loading');
+    loading.textContent = "Loading entrypoint...";
+    _flutter.loader.loadEntrypoint({
+      serviceWorker: {
+        serviceWorkerVersion: serviceWorkerVersion,
+      },
+      onEntrypointLoaded: async function(engineInitializer) {
+        loading.textContent = "Initializing engine...";
+        let appRunner = await engineInitializer.initializeEngine();
 
-          loading.textContent = "Loading app...";
-          await appRunner.runApp();
-        }
-      });
+        loading.textContent = "Loading app...";
+        await appRunner.runApp();
+      }
     });
-  </script>
+  });
+</script>
 <script>
 
-    // Register service worker
-     if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/firebase-messaging-sw.js')
-      .then((registration) => {
-        console.log('🔥 Service Worker registered:', registration);
-      }).catch((err) => {
-        console.log('❌ Service Worker registration failed:', err);
-      });
-  }
+  // Register service worker
+   if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/firebase-messaging-sw.js')
+    .then((registration) => {
+      console.log('🔥 Service Worker registered:', registration);
+    }).catch((err) => {
+      console.log('❌ Service Worker registration failed:', err);
+    });
+}
 </script>
 
 

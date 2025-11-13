@@ -15,6 +15,10 @@ const String kColUsers = 'users';
 const String kColNotifications = 'Notifications';
 const String kColActionLogs = 'actionLogs';
 const String kColCalendar = 'calendar';
+const String kColEmployees = 'employees';
+const String kColFaultReporting = 'faultReporting';
+const String kColProperties = 'properties';
+const String kColSuburbs = 'suburbs';
 
 /// Keys used to persist the current "admin context" selection.
 class AdminPrefsKeys {
@@ -142,6 +146,10 @@ class _CyberfoxDevPageState extends State<CyberfoxDevPage>
     Tab(text: 'Notifications', icon: Icon(Icons.notifications)),
     Tab(text: 'Action Logs', icon: Icon(Icons.list_alt)),
     Tab(text: 'Calendar', icon: Icon(Icons.calendar_month_outlined)),
+    Tab(text: 'Employees', icon: Icon(Icons.person_3_outlined)),
+    Tab(text: 'Fault Reporting', icon: Icon(Icons.report_problem_outlined)),
+    Tab(text: 'Properties', icon: Icon(Icons.home_outlined)),
+    Tab(text: 'Suburbs', icon: Icon(Icons.other_houses_outlined)),
   ];
 
   AdminContext? _activeContext;
@@ -882,9 +890,25 @@ class _CyberfoxDevPageState extends State<CyberfoxDevPage>
                   CalendarTab(contextData: _activeContext!)
                 else
                   const _DisabledTabMessage(),
+                if (tabsEnabled)
+                  EmployeesTab(contextData: _activeContext!)
+                else
+                  const _DisabledTabMessage(),
+                if (tabsEnabled)
+                  FaultReportingTab(contextData: _activeContext!)
+                else
+                  const _DisabledTabMessage(),
+                if (tabsEnabled)
+                  PropertiesTab(contextData: _activeContext!)
+                else
+                  const _DisabledTabMessage(),
+                if (tabsEnabled)
+                  SuburbsTab(contextData: _activeContext!)
+                else
+                  const _DisabledTabMessage(),
               ])),
             ]),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: (!tabsEnabled)
           ? null
           : (() {
@@ -975,6 +999,56 @@ class _CyberfoxDevPageState extends State<CyberfoxDevPage>
                           AdminScopedCollection(_fs, _activeContext!);
                       CalendarTab.openEventSheet(
                           context, scoped.col(kColCalendar));
+                    },
+                  );
+                case 9:
+                  return FloatingActionButton(
+                    heroTag: 'fabEmployees',
+                    backgroundColor: Colors.green,
+                    child: const Icon(Icons.person_add),
+                    onPressed: () {
+                      final scoped =
+                          AdminScopedCollection(_fs, _activeContext!);
+                      EmployeesTab.openEmployeeSheet(
+                          context, scoped.col(kColEmployees));
+                    },
+                  );
+                case 10:
+                  if (!tabsEnabled) return null;
+                  return FloatingActionButton(
+                    heroTag: 'fabFaults',
+                    backgroundColor: Colors.green,
+                    child: const Icon(Icons.add),
+                    onPressed: () {
+                      final scoped =
+                          AdminScopedCollection(_fs, _activeContext!);
+                      FaultReportingTab.openFaultSheet(
+                          context, scoped.col(kColFaultReporting));
+                    },
+                  );
+                case 11:
+                  if (!tabsEnabled) return null;
+                  return FloatingActionButton(
+                    heroTag: 'fabProps',
+                    backgroundColor: Colors.green,
+                    child: const Icon(Icons.add_home),
+                    onPressed: () {
+                      final scoped =
+                          AdminScopedCollection(_fs, _activeContext!);
+                      PropertiesTab.openPropertySheet(
+                          context, scoped.col(kColProperties), _activeContext!);
+                    },
+                  );
+                case 12:
+                  return FloatingActionButton(
+                    heroTag: 'fabSuburbs',
+                    backgroundColor: Colors.green,
+                    child: const Icon(Icons.add_location_alt),
+                    onPressed: () {
+                      final scoped =
+                          AdminScopedCollection(_fs, _activeContext!);
+                      SuburbsTab._openSuburbSheet(
+                          context, scoped.col(kColSuburbs), _activeContext!);
                     },
                   );
                 default:
@@ -3850,6 +3924,1296 @@ class CalendarTab extends StatelessWidget {
                           final ok =
                               await _confirm(context, 'Delete this event?');
                           if (ok) await calRef.doc(d.id).delete();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+//================ Employees ======================================
+class EmployeesTab extends StatelessWidget {
+  final AdminContext contextData;
+  const EmployeesTab({super.key, required this.contextData});
+
+  static Future<void> openEmployeeSheet(
+    BuildContext context,
+    CollectionReference<Map<String, dynamic>> empRef, {
+    String? docId,
+    Map<String, dynamic>? existing,
+  }) async {
+    final nameCtrl =
+        TextEditingController(text: (existing?['name'] as String?) ?? '');
+    final posCtrl =
+        TextEditingController(text: (existing?['position'] as String?) ?? '');
+    final emailCtrl =
+        TextEditingController(text: (existing?['email'] as String?) ?? '');
+    final numberCtrl =
+        TextEditingController(text: (existing?['number'] as String?) ?? '');
+    final altNumberCtrl = TextEditingController(
+        text: (existing?['alternate_number'] as String?) ?? '');
+
+    await showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      builder: (ctx) {
+        return SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: 20,
+              left: 20,
+              right: 20,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Text(
+                    docId == null ? 'Create Employee' : 'Edit Employee',
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Name *'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: posCtrl,
+                  decoration: const InputDecoration(labelText: 'Position *'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(labelText: 'Email'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: numberCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration:
+                      const InputDecoration(labelText: 'Primary number'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: altNumberCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration:
+                      const InputDecoration(labelText: 'Alternate number'),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.save),
+                  label: const Text('Save'),
+                  onPressed: () async {
+                    final name = nameCtrl.text.trim();
+                    final pos = posCtrl.text.trim();
+                    if (name.isEmpty || pos.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Name and position are required.'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final payload = <String, dynamic>{
+                      'name': name,
+                      'position': pos,
+                      'email': emailCtrl.text.trim(),
+                      'number': numberCtrl.text.trim(),
+                      'alternate_number': altNumberCtrl.text.trim(),
+                      'updatedAt': FieldValue.serverTimestamp(),
+                    };
+
+                    if (docId == null) {
+                      await empRef.add({
+                        ...payload,
+                        'createdAt': FieldValue.serverTimestamp(),
+                      });
+                    } else {
+                      await empRef
+                          .doc(docId)
+                          .set(payload, SetOptions(merge: true));
+                    }
+                    if (context.mounted) Navigator.of(ctx).pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scoped =
+        AdminScopedCollection(FirebaseFirestore.instance, contextData);
+    final empRef = scoped.col(kColEmployees);
+
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: empRef.orderBy('name').snapshots(),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            return Center(child: Text('Error: ${snap.error}'));
+          }
+
+          final docs = snap.data?.docs ?? [];
+          if (docs.isEmpty) {
+            return Center(
+              child: Card(
+                margin: const EdgeInsets.all(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('No employees found for this municipality.',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      Text('Path: ${empRef.path}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.grey)),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: const Text('Create first employee'),
+                        onPressed: () => openEmployeeSheet(context, empRef),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return ListView.separated(
+            itemCount: docs.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 6),
+            itemBuilder: (context, i) {
+              final d = docs[i];
+              final data = d.data();
+              final name = (data['name'] as String?) ?? '';
+              final pos = (data['position'] as String?) ?? '';
+              final email = (data['email'] as String?) ?? '';
+              final number = (data['number'] as String?) ?? '';
+              final alt = (data['alternate_number'] as String?) ?? '';
+
+              return Card(
+                child: ListTile(
+                  leading: const Icon(Icons.badge),
+                  title: Text(name.isEmpty ? '(No name)' : name),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (pos.isNotEmpty) Text('Position: $pos'),
+                      if (email.isNotEmpty) Text('Email: $email'),
+                      if (number.isNotEmpty) Text('Number: $number'),
+                      if (alt.isNotEmpty) Text('Alternate: $alt'),
+                    ],
+                  ),
+                  trailing: Wrap(
+                    spacing: 4,
+                    children: [
+                      IconButton(
+                        tooltip: 'Edit',
+                        icon: const Icon(Icons.edit, color: Colors.green),
+                        onPressed: () => openEmployeeSheet(context, empRef,
+                            docId: d.id, existing: data),
+                      ),
+                      IconButton(
+                        tooltip: 'Delete',
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () async {
+                          final ok =
+                              await _confirm(context, 'Delete this employee?');
+                          if (ok) await empRef.doc(d.id).delete();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+//======================= Fault Reporting ==========================
+class FaultReportingTab extends StatelessWidget {
+  final AdminContext contextData;
+  const FaultReportingTab({super.key, required this.contextData});
+
+  // ---------- date helpers ----------
+  static String _two(int n) => n.toString().padLeft(2, '0');
+
+  static String _fmtDatePretty(DateTime dt) =>
+      '${dt.year}-${_two(dt.month)}-${_two(dt.day)} – ${_two(dt.hour)}:${_two(dt.minute)}';
+
+  static DateTime? _tryParseDate(String s) {
+    final cleaned = s.trim().replaceAll('–', '-');
+    final rx = RegExp(r'^(\d{4})-(\d{2})-(\d{2}).*?(\d{1,2}):(\d{2})$');
+    final m = rx.firstMatch(cleaned);
+    if (m == null) return null;
+    final y = int.tryParse(m.group(1)!);
+    final mo = int.tryParse(m.group(2)!);
+    final d = int.tryParse(m.group(3)!);
+    final h = int.tryParse(m.group(4)!);
+    final mi = int.tryParse(m.group(5)!);
+    if (y == null || mo == null || d == null || h == null || mi == null)
+      return null;
+    return DateTime(y, mo, d, h, mi);
+  }
+
+  // ---------- bottom sheet (create / edit) ----------
+  static Future<void> openFaultSheet(
+    BuildContext context,
+    CollectionReference<Map<String, dynamic>> faultsRef, {
+    String? docId,
+    Map<String, dynamic>? existing,
+  }) async {
+    // controllers
+    final accountNumber = TextEditingController(
+        text: (existing?['accountNumber'] as String?) ?? '');
+    final address =
+        TextEditingController(text: (existing?['address'] as String?) ?? '');
+    final adminComment = TextEditingController(
+        text: (existing?['adminComment'] as String?) ?? '');
+    final attendeeAllocated = TextEditingController(
+        text: (existing?['attendeeAllocated'] as String?) ?? '');
+    final attendeeCom1 = TextEditingController(
+        text: (existing?['attendeeCom1'] as String?) ?? '');
+    final attendeeCom2 = TextEditingController(
+        text: (existing?['attendeeCom2'] as String?) ?? '');
+    final attendeeCom3 = TextEditingController(
+        text: (existing?['attendeeCom3'] as String?) ?? '');
+    final attendeeReturnCom = TextEditingController(
+        text: (existing?['attendeeReturnCom'] as String?) ?? '');
+    final depAllocated = TextEditingController(
+        text: (existing?['depAllocated'] as String?) ?? '');
+    final departmentSwitchComment = TextEditingController(
+        text: (existing?['departmentSwitchComment'] as String?) ?? '');
+    final faultDescription = TextEditingController(
+        text: (existing?['faultDescription'] as String?) ?? '');
+    final faultType =
+        TextEditingController(text: (existing?['faultType'] as String?) ?? '');
+    final managerAllocated = TextEditingController(
+        text: (existing?['managerAllocated'] as String?) ?? '');
+    final managerCom1 = TextEditingController(
+        text: (existing?['managerCom1'] as String?) ?? '');
+    final managerCom2 = TextEditingController(
+        text: (existing?['managerCom2'] as String?) ?? '');
+    final managerCom3 = TextEditingController(
+        text: (existing?['managerCom3'] as String?) ?? '');
+    final managerReturnCom = TextEditingController(
+        text: (existing?['managerReturnCom'] as String?) ?? '');
+    final reallocationComment = TextEditingController(
+        text: (existing?['reallocationComment'] as String?) ?? '');
+    final refCtrl =
+        TextEditingController(text: (existing?['ref'] as String?) ?? '');
+    final reporterContact = TextEditingController(
+        text: (existing?['reporterContact'] as String?) ?? '');
+    final uidCtrl =
+        TextEditingController(text: (existing?['uid'] as String?) ?? '');
+    final dateReportedCtrl = TextEditingController(
+      text: (existing?['dateReported'] as String?) ??
+          _fmtDatePretty(DateTime.now()),
+    );
+
+    bool faultResolved = (existing?['faultResolved'] as bool?) ?? false;
+    int faultStage = (existing?['faultStage'] as num?)?.toInt() ?? 1;
+
+    DateTime initDate = _tryParseDate(dateReportedCtrl.text) ?? DateTime.now();
+    TimeOfDay initTime =
+        TimeOfDay(hour: initDate.hour, minute: initDate.minute);
+
+    await showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      builder: (ctx) {
+        return SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: 20,
+              left: 20,
+              right: 20,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+            ),
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                Future<void> pickDateTime() async {
+                  final pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: initDate,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                  );
+                  if (pickedDate == null) return;
+                  final pickedTime = await showTimePicker(
+                    context: context,
+                    initialTime: initTime,
+                  );
+                  final t = pickedTime ?? initTime;
+                  initDate = DateTime(pickedDate.year, pickedDate.month,
+                      pickedDate.day, t.hour, t.minute);
+                  initTime = TimeOfDay(hour: t.hour, minute: t.minute);
+                  setState(
+                      () => dateReportedCtrl.text = _fmtDatePretty(initDate));
+                }
+
+                Future<void> save() async {
+                  final dStr = dateReportedCtrl.text.trim();
+                  final dt = _tryParseDate(dStr) ?? initDate;
+                  final payload = <String, dynamic>{
+                    'accountNumber': accountNumber.text.trim(),
+                    'address': address.text.trim(),
+                    'adminComment': adminComment.text.trim(),
+                    'attendeeAllocated': attendeeAllocated.text.trim(),
+                    'attendeeCom1': attendeeCom1.text.trim(),
+                    'attendeeCom2': attendeeCom2.text.trim(),
+                    'attendeeCom3': attendeeCom3.text.trim(),
+                    'attendeeReturnCom': attendeeReturnCom.text.trim(),
+                    'dateReported': dStr,
+                    'depAllocated': depAllocated.text.trim(),
+                    'departmentSwitchComment':
+                        departmentSwitchComment.text.trim(),
+                    'faultDescription': faultDescription.text.trim(),
+                    'faultResolved': faultResolved,
+                    'faultStage': faultStage,
+                    'faultType': faultType.text.trim(),
+                    'managerAllocated': managerAllocated.text.trim(),
+                    'managerCom1': managerCom1.text.trim(),
+                    'managerCom2': managerCom2.text.trim(),
+                    'managerCom3': managerCom3.text.trim(),
+                    'managerReturnCom': managerReturnCom.text.trim(),
+                    'reallocationComment': reallocationComment.text.trim(),
+                    'ref': refCtrl.text.trim(),
+                    'reporterContact': reporterContact.text.trim(),
+                    'uid': uidCtrl.text.trim(),
+                    'dateTs': Timestamp.fromDate(dt),
+                    'updatedAt': FieldValue.serverTimestamp(),
+                  };
+
+                  if (docId == null) {
+                    await faultsRef.add({
+                      ...payload,
+                      'createdAt': FieldValue.serverTimestamp(),
+                    });
+                  } else {
+                    await faultsRef
+                        .doc(docId)
+                        .set(payload, SetOptions(merge: true));
+                  }
+                  if (context.mounted) Navigator.of(ctx).pop();
+                }
+
+                InputDecoration _dec(String label) =>
+                    InputDecoration(labelText: label);
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Center(
+                      child: Text(
+                        docId == null
+                            ? 'Create Fault Report'
+                            : 'Edit Fault Report',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                        controller: refCtrl,
+                        decoration: _dec('Reference (e.g., [#6610d])')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: faultType,
+                        decoration:
+                            _dec('Fault Type (e.g., Water & Sanitation)')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: faultDescription,
+                        decoration: _dec('Fault Description')),
+                    const SizedBox(height: 8),
+                    TextField(controller: address, decoration: _dec('Address')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: accountNumber,
+                        decoration: _dec('Account Number')),
+                    const SizedBox(height: 8),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<int>(
+                            value: faultStage,
+                            items: const [1, 2, 3, 4, 5]
+                                .map((v) => DropdownMenuItem(
+                                    value: v, child: Text('Stage $v')))
+                                .toList(),
+                            onChanged: (v) =>
+                                setState(() => faultStage = v ?? 1),
+                            decoration: _dec('Fault Stage'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SwitchListTile(
+                            title: const Text('Resolved'),
+                            value: faultResolved,
+                            onChanged: (v) => setState(() => faultResolved = v),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    TextField(
+                      controller: dateReportedCtrl,
+                      readOnly: true,
+                      decoration:
+                          _dec('Date Reported (YYYY-MM-DD – HH:mm)').copyWith(
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.calendar_month),
+                          onPressed: pickDateTime,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // allocations/comments (manager/attendee/dep)
+                    TextField(
+                        controller: depAllocated,
+                        decoration: _dec('Department Allocated')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: managerAllocated,
+                        decoration: _dec('Manager Allocated')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: attendeeAllocated,
+                        decoration: _dec('Attendee Allocated')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: managerCom1,
+                        decoration: _dec('Manager Comment 1')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: managerCom2,
+                        decoration: _dec('Manager Comment 2')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: managerCom3,
+                        decoration: _dec('Manager Comment 3')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: managerReturnCom,
+                        decoration: _dec('Manager Return Comment')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: attendeeCom1,
+                        decoration: _dec('Attendee Comment 1')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: attendeeCom2,
+                        decoration: _dec('Attendee Comment 2')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: attendeeCom3,
+                        decoration: _dec('Attendee Comment 3')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: attendeeReturnCom,
+                        decoration: _dec('Attendee Return Comment')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: reallocationComment,
+                        decoration: _dec('Reallocation Comment')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: departmentSwitchComment,
+                        decoration: _dec('Department Switch Comment')),
+                    const SizedBox(height: 8),
+
+                    TextField(
+                        controller: reporterContact,
+                        decoration: _dec('Reporter Contact (+27...)')),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: uidCtrl, decoration: _dec('Reporter UID')),
+                    const SizedBox(height: 16),
+
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.save),
+                      label: const Text('Save'),
+                      onPressed: save,
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scoped =
+        AdminScopedCollection(FirebaseFirestore.instance, contextData);
+    final faultsRef = scoped.col(kColFaultReporting);
+
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: faultsRef.snapshots(), // sort in memory by dateTs
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            return Center(child: Text('Error: ${snap.error}'));
+          }
+
+          final docs = [...(snap.data?.docs ?? const [])];
+
+          // sort by dateTs (desc), fallback to dateReported parse
+          docs.sort((a, b) {
+            final at = a.data()['dateTs'];
+            final bt = b.data()['dateTs'];
+            if (at is Timestamp && bt is Timestamp) {
+              return bt.compareTo(at);
+            }
+            final ad =
+                _tryParseDate((a.data()['dateReported'] as String?) ?? '') ??
+                    DateTime.fromMillisecondsSinceEpoch(0);
+            final bd =
+                _tryParseDate((b.data()['dateReported'] as String?) ?? '') ??
+                    DateTime.fromMillisecondsSinceEpoch(0);
+            return bd.compareTo(ad);
+          });
+
+          if (docs.isEmpty) {
+            return Center(
+              child: Card(
+                margin: const EdgeInsets.all(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                          'No fault reports found for this municipality.',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      Text('Path: ${faultsRef.path}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.grey)),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: const Text('Create first fault'),
+                        onPressed: () => openFaultSheet(context, faultsRef),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return ListView.separated(
+            itemCount: docs.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 6),
+            itemBuilder: (context, i) {
+              final d = docs[i];
+              final data = d.data();
+
+              final refStr = (data['ref'] as String?) ?? '';
+              final type = (data['faultType'] as String?) ?? '';
+              final address = (data['address'] as String?) ?? '';
+              final stage = (data['faultStage'] as num?)?.toInt() ?? 0;
+              final resolved = (data['faultResolved'] as bool?) ?? false;
+              final when = (data['dateReported'] as String?) ?? '';
+
+              return Card(
+                child: ListTile(
+                  leading: Icon(
+                    resolved ? Icons.check_circle : Icons.report,
+                    color: resolved ? Colors.green : Colors.orange,
+                  ),
+                  title: Text(refStr.isEmpty ? '(No ref)' : refStr),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (type.isNotEmpty) Text('Type: $type'),
+                      if (address.isNotEmpty) Text('Address: $address'),
+                      Text(
+                          'Stage: $stage   Resolved: ${resolved ? 'Yes' : 'No'}'),
+                      if (when.isNotEmpty) Text('Reported: $when'),
+                    ],
+                  ),
+                  trailing: Wrap(
+                    spacing: 4,
+                    children: [
+                      IconButton(
+                        tooltip: 'Edit',
+                        icon: const Icon(Icons.edit, color: Colors.green),
+                        onPressed: () => openFaultSheet(context, faultsRef,
+                            docId: d.id, existing: data),
+                      ),
+                      IconButton(
+                        tooltip: 'Delete',
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () async {
+                          final ok = await _confirm(
+                              context, 'Delete this fault report?');
+                          if (ok) await faultsRef.doc(d.id).delete();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+//========================== Properties =====================
+
+class PropertiesTab extends StatelessWidget {
+  final AdminContext contextData;
+  const PropertiesTab({super.key, required this.contextData});
+
+  // ---------- bottom sheet (create / edit) ----------
+  static Future<void> openPropertySheet(
+    BuildContext context,
+    CollectionReference<Map<String, dynamic>> propsRef,
+    AdminContext ctx, {
+    String? docId,
+    Map<String, dynamic>? existing,
+  }) async {
+    // controllers
+    final accountCtrl = TextEditingController(
+        text: (existing?['accountNumber'] as String?) ?? '');
+    final eAccCtrl = TextEditingController(
+        text: (existing?['electricityAccountNumber'] as String?) ?? '');
+    final addressCtrl =
+        TextEditingController(text: (existing?['address'] as String?) ?? '');
+    final areaCodeCtrl = TextEditingController(
+        text:
+            (existing?['areaCode'] != null) ? '${existing?['areaCode']}' : '');
+    final wardCtrl =
+        TextEditingController(text: (existing?['ward'] as String?) ?? '');
+    final firstCtrl =
+        TextEditingController(text: (existing?['firstName'] as String?) ?? '');
+    final lastCtrl =
+        TextEditingController(text: (existing?['lastName'] as String?) ?? '');
+    final idCtrl =
+        TextEditingController(text: (existing?['idNumber'] as String?) ?? '');
+    final tokenCtrl =
+        TextEditingController(text: (existing?['token'] as String?) ?? '');
+    final userIdCtrl =
+        TextEditingController(text: (existing?['userID'] as String?) ?? '');
+
+    // phone helpers
+    String _digits(String s) => s.replaceAll(RegExp(r'\D'), '');
+    String _toLocalDigits(String raw) {
+      var d = _digits(raw);
+      if (d.startsWith('27')) d = d.substring(2);
+      if (d.startsWith('0')) d = d.substring(1);
+      return d;
+    }
+
+    final phoneCtrl = TextEditingController(
+        text: _toLocalDigits((existing?['cellNumber'] as String?) ?? ''));
+
+    final latCtrl = TextEditingController(
+        text:
+            (existing?['latitude'] != null) ? '${existing?['latitude']}' : '');
+    final lngCtrl = TextEditingController(
+        text: (existing?['longitude'] != null)
+            ? '${existing?['longitude']}'
+            : '');
+
+    final wMeterCtrl = TextEditingController(
+        text: (existing?['water_meter_number'] as String?) ?? '');
+    final wReadCtrl = TextEditingController(
+        text: (existing?['water_meter_reading'] as String?) ?? '');
+    final eMeterCtrl = TextEditingController(
+        text: (existing?['meter_number'] as String?) ?? '');
+    final eReadCtrl = TextEditingController(
+        text: (existing?['meter_reading'] as String?) ?? '');
+
+    bool isAddressConfirmed =
+        (existing?['isAddressConfirmed'] as bool?) ?? false;
+    bool imgStateW = (existing?['imgStateW'] as bool?) ?? false;
+    bool imgStateE = (existing?['imgStateE'] as bool?) ?? false;
+
+    int _toInt(String s) => int.tryParse(s.trim()) ?? 0;
+    double? _toDouble(String s) => double.tryParse(s.trim());
+
+    await showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      builder: (ctxSheet) {
+        return SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: 20,
+              left: 20,
+              right: 20,
+              bottom: MediaQuery.of(ctxSheet).viewInsets.bottom + 20,
+            ),
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                Future<void> _save() async {
+                  // phone normalize to +27
+                  var local = _digits(phoneCtrl.text);
+                  if (local.startsWith('0')) local = local.substring(1);
+                  if (local.length != 9) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Enter SA phone: 9 digits after +27')),
+                    );
+                    return;
+                  }
+                  final e164 = '+27$local';
+
+                  final payload = <String, dynamic>{
+                    // identity
+                    'accountNumber': accountCtrl.text.trim(),
+                    'electricityAccountNumber': eAccCtrl.text.trim(),
+                    'address': addressCtrl.text.trim(),
+                    'areaCode': _toInt(areaCodeCtrl.text),
+                    'ward': wardCtrl.text.trim(),
+                    // people
+                    'firstName': firstCtrl.text.trim(),
+                    'lastName': lastCtrl.text.trim(),
+                    'idNumber': idCtrl.text.trim(),
+                    'userID': userIdCtrl.text.trim(),
+                    'cellNumber': e164,
+                    'token': tokenCtrl.text.trim(),
+                    // coords
+                    'latitude': _toDouble(latCtrl.text),
+                    'longitude': _toDouble(lngCtrl.text),
+                    // meters
+                    'water_meter_number': wMeterCtrl.text.trim(),
+                    'water_meter_reading': wReadCtrl.text.trim(),
+                    'meter_number': eMeterCtrl.text.trim(),
+                    'meter_reading': eReadCtrl.text.trim(),
+                    // flags
+                    'isAddressConfirmed': isAddressConfirmed,
+                    'imgStateW': imgStateW,
+                    'imgStateE': imgStateE,
+                    // context
+                    'isLocalMunicipality': ctx.isLocalMunicipality,
+                    'districtId':
+                        ctx.isLocalMunicipality ? null : ctx.districtId,
+                    'municipalityId': ctx.municipalityId,
+                    'updatedAt': FieldValue.serverTimestamp(),
+                  };
+
+                  if (docId == null) {
+                    await propsRef.add({
+                      ...payload,
+                      'createdAt': FieldValue.serverTimestamp(),
+                    });
+                  } else {
+                    await propsRef
+                        .doc(docId)
+                        .set(payload, SetOptions(merge: true));
+                  }
+                  if (context.mounted) Navigator.of(ctxSheet).pop();
+                }
+
+                InputDecoration _dec(String label) =>
+                    InputDecoration(labelText: label);
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Center(
+                      child: Text(
+                        docId == null ? 'Create Property' : 'Edit Property',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Address + ward
+                    TextField(
+                        controller: addressCtrl, decoration: _dec('Address')),
+                    const SizedBox(height: 8),
+                    Row(children: [
+                      Expanded(
+                          child: TextField(
+                        controller: wardCtrl,
+                        decoration: _dec('Ward (e.g. 07)'),
+                      )),
+                      const SizedBox(width: 12),
+                      Expanded(
+                          child: TextField(
+                        controller: areaCodeCtrl,
+                        decoration: _dec('Area Code'),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                      )),
+                    ]),
+                    const SizedBox(height: 8),
+
+                    // Accounts
+                    Row(children: [
+                      Expanded(
+                          child: TextField(
+                        controller: accountCtrl,
+                        decoration: _dec('Water Account Number'),
+                      )),
+                      const SizedBox(width: 12),
+                      Expanded(
+                          child: TextField(
+                        controller: eAccCtrl,
+                        decoration: _dec('Electricity Account Number'),
+                      )),
+                    ]),
+                    const SizedBox(height: 8),
+
+                    // Names / ID
+                    Row(children: [
+                      Expanded(
+                          child: TextField(
+                              controller: firstCtrl,
+                              decoration: _dec('First Name'))),
+                      const SizedBox(width: 12),
+                      Expanded(
+                          child: TextField(
+                              controller: lastCtrl,
+                              decoration: _dec('Last Name'))),
+                    ]),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: idCtrl, decoration: _dec('ID Number')),
+                    const SizedBox(height: 8),
+
+                    // Phone/token
+                    Row(children: [
+                      Expanded(
+                          child: TextField(
+                        controller: phoneCtrl,
+                        keyboardType: TextInputType.phone,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        decoration: const InputDecoration(
+                            labelText: 'Phone Number', prefixText: '+27 '),
+                      )),
+                      const SizedBox(width: 12),
+                      Expanded(
+                          child: TextField(
+                              controller: tokenCtrl,
+                              decoration: _dec('FCM Token (optional)'))),
+                    ]),
+                    const SizedBox(height: 8),
+                    TextField(
+                        controller: userIdCtrl,
+                        decoration: _dec('User UID (optional)')),
+                    const SizedBox(height: 8),
+
+                    // Coords
+                    Row(children: [
+                      Expanded(
+                          child: TextField(
+                        controller: latCtrl,
+                        decoration: _dec('Latitude'),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true, signed: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[-0-9.]'))
+                        ],
+                      )),
+                      const SizedBox(width: 12),
+                      Expanded(
+                          child: TextField(
+                        controller: lngCtrl,
+                        decoration: _dec('Longitude'),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true, signed: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[-0-9.]'))
+                        ],
+                      )),
+                    ]),
+                    const SizedBox(height: 8),
+
+                    // Meters
+                    const Text('Water Meter',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    Row(children: [
+                      Expanded(
+                          child: TextField(
+                              controller: wMeterCtrl,
+                              decoration: _dec('Number'))),
+                      const SizedBox(width: 12),
+                      Expanded(
+                          child: TextField(
+                              controller: wReadCtrl,
+                              decoration: _dec('Reading'))),
+                    ]),
+                    const SizedBox(height: 8),
+
+                    const Text('Electricity Meter',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    Row(children: [
+                      Expanded(
+                          child: TextField(
+                              controller: eMeterCtrl,
+                              decoration: _dec('Number'))),
+                      const SizedBox(width: 12),
+                      Expanded(
+                          child: TextField(
+                              controller: eReadCtrl,
+                              decoration: _dec('Reading'))),
+                    ]),
+                    const SizedBox(height: 8),
+
+                    // Flags
+                    SwitchListTile(
+                      value: isAddressConfirmed,
+                      onChanged: (v) => setState(() => isAddressConfirmed = v),
+                      title: const Text('Address Confirmed'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    Row(children: [
+                      Expanded(
+                          child: SwitchListTile(
+                        value: imgStateW,
+                        onChanged: (v) => setState(() => imgStateW = v),
+                        title: const Text('Water Image Uploaded'),
+                        contentPadding: EdgeInsets.zero,
+                      )),
+                      Expanded(
+                          child: SwitchListTile(
+                        value: imgStateE,
+                        onChanged: (v) => setState(() => imgStateE = v),
+                        title: const Text('Electricity Image Uploaded'),
+                        contentPadding: EdgeInsets.zero,
+                      )),
+                    ]),
+                    const SizedBox(height: 12),
+
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.save),
+                      label: const Text('Save'),
+                      onPressed: _save,
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scoped =
+        AdminScopedCollection(FirebaseFirestore.instance, contextData);
+    final propsRef = scoped.col(kColProperties);
+
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: propsRef.orderBy('address').snapshots(),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            return Center(child: Text('Error: ${snap.error}'));
+          }
+          final docs = snap.data?.docs ?? [];
+          if (docs.isEmpty) {
+            return Center(
+              child: Card(
+                margin: const EdgeInsets.all(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('No properties found for this municipality.',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      Text('Path: ${propsRef.path}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.grey)),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: const Text('Create first property',
+                            style: TextStyle(color: Colors.black)),
+                        onPressed: () =>
+                            openPropertySheet(context, propsRef, contextData),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return ListView.separated(
+            itemCount: docs.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 6),
+            itemBuilder: (context, i) {
+              final d = docs[i];
+              final data = d.data();
+              final address = (data['address'] as String?) ?? '';
+              final accW = (data['accountNumber'] as String?) ?? '';
+              final accE = (data['electricityAccountNumber'] as String?) ?? '';
+              final ward = (data['ward'] as String?) ?? '';
+              final confirmed = (data['isAddressConfirmed'] as bool?) ?? false;
+
+              return Card(
+                child: ListTile(
+                  leading: Icon(confirmed ? Icons.home : Icons.home_outlined,
+                      color: confirmed ? Colors.green : Colors.grey),
+                  title: Text(address.isEmpty ? '(no address)' : address),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (accW.isNotEmpty) Text('Water Acct: $accW'),
+                      if (accE.isNotEmpty) Text('Elec Acct: $accE'),
+                      if (ward.isNotEmpty) Text('Ward: $ward'),
+                    ],
+                  ),
+                  trailing: Wrap(
+                    spacing: 4,
+                    children: [
+                      IconButton(
+                        tooltip: 'Edit',
+                        icon: const Icon(Icons.edit, color: Colors.green),
+                        onPressed: () => openPropertySheet(
+                            context, propsRef, contextData,
+                            docId: d.id, existing: data),
+                      ),
+                      IconButton(
+                        tooltip: 'Delete',
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () async {
+                          final ok =
+                              await _confirm(context, 'Delete this property?');
+                          if (ok) await propsRef.doc(d.id).delete();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+//========================= Suburbs =================================
+class SuburbsTab extends StatelessWidget {
+  final AdminContext contextData;
+  const SuburbsTab({super.key, required this.contextData});
+
+  static Future<void> _openSuburbSheet(
+    BuildContext context,
+    CollectionReference<Map<String, dynamic>> suburbsRef,
+    AdminContext ctx, {
+    String? docId,
+    Map<String, dynamic>? existing,
+  }) async {
+    final ctrl =
+        TextEditingController(text: (existing?['suburb'] as String?) ?? '');
+
+    await showModalBottomSheet(
+      isScrollControlled: true,
+      context: context,
+      builder: (sheetCtx) {
+        return SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: 20,
+              left: 20,
+              right: 20,
+              bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Text(
+                    docId == null ? 'Create Suburb' : 'Edit Suburb',
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: ctrl,
+                  decoration: const InputDecoration(labelText: 'Suburb *'),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.save),
+                  label:
+                      const Text('Save', style: TextStyle(color: Colors.black)),
+                  onPressed: () async {
+                    final name = ctrl.text.trim();
+                    if (name.isEmpty) return;
+
+                    final payload = <String, dynamic>{'suburb': name};
+                    if (docId == null) {
+                      await suburbsRef.add(payload);
+                    } else {
+                      await suburbsRef
+                          .doc(docId)
+                          .set(payload, SetOptions(merge: true));
+                    }
+                    if (context.mounted) Navigator.of(sheetCtx).pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scoped =
+        AdminScopedCollection(FirebaseFirestore.instance, contextData);
+    final suburbsRef = scoped.col(kColSuburbs);
+
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: suburbsRef.orderBy('suburb').snapshots(),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            return Center(child: Text('Error: ${snap.error}'));
+          }
+
+          final docs = snap.data?.docs ?? [];
+          if (docs.isEmpty) {
+            // Empty collection state — allow creating the first doc
+            return Center(
+              child: Card(
+                margin: const EdgeInsets.all(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('No suburbs found for this municipality.',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      Text('Path: ${suburbsRef.path}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.grey)),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: const Text('Create first suburb',
+                            style: TextStyle(color: Colors.black)),
+                        onPressed: () =>
+                            _openSuburbSheet(context, suburbsRef, contextData),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return ListView.separated(
+            itemCount: docs.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 6),
+            itemBuilder: (context, i) {
+              final d = docs[i];
+              final name =
+                  (d.data()['suburb'] as String?)?.trim() ?? '(unnamed)';
+
+              return Card(
+                child: ListTile(
+                  leading: const Icon(Icons.location_city),
+                  title: Text(name),
+                  trailing: Wrap(
+                    spacing: 4,
+                    children: [
+                      IconButton(
+                        tooltip: 'Edit',
+                        icon: const Icon(Icons.edit, color: Colors.green),
+                        onPressed: () => _openSuburbSheet(
+                          context,
+                          suburbsRef,
+                          contextData,
+                          docId: d.id,
+                          existing: d.data(),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Delete',
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () async {
+                          final ok =
+                              await _confirm(context, 'Delete suburb "$name"?');
+                          if (ok) await suburbsRef.doc(d.id).delete();
                         },
                       ),
                     ],

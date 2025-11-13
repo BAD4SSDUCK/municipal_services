@@ -820,10 +820,12 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
       );
 
       if (timestamp != null) {
-        setState(() {
-          _electricityUploadTimestamp = timestamp;
-          _hasFetchedElectricityTimestamp = true;
-        });
+        if(mounted) {
+          setState(() {
+            _electricityUploadTimestamp = timestamp;
+            _hasFetchedElectricityTimestamp = true;
+          });
+        }
         print(
             "✅ Electricity upload timestamp found: $_electricityUploadTimestamp");
 
@@ -834,10 +836,12 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
             await _getImageE(context, imagePath, propertyAddress);
         print("✅ Electricity image URL fetched.");
       } else {
-        setState(() {
-          _electricityUploadTimestamp = null;
-          _hasFetchedElectricityTimestamp = true;
-        });
+        if(mounted) {
+          setState(() {
+            _electricityUploadTimestamp = null;
+            _hasFetchedElectricityTimestamp = true;
+          });
+        }
         print("❌ No electricity timestamp found.");
       }
     } catch (e) {
@@ -2859,7 +2863,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                                               MainAxisSize.min,
                                                           children: [
                                                             Text(
-                                                                'Could not display image.'),
+                                                                'No image uploaded.'),
                                                             SizedBox(
                                                                 height: 10),
                                                             Icon(Icons
@@ -3241,7 +3245,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                                                       .min,
                                                               children: [
                                                                 Text(
-                                                                    'Could not display image.'),
+                                                                    'No image uploaded.'),
                                                                 SizedBox(
                                                                     height: 10),
                                                                 Icon(Icons
@@ -3587,6 +3591,7 @@ class _UsersTableViewPageState extends State<UsersTableViewPage> {
                                                                 documentSnapshot[
                                                                         'municipalityId'] ??
                                                                     '',
+                                                            propAddress: selectedAddress,
                                                           )
                                                       //MapPage()
                                                       ));

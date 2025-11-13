@@ -1,7 +1,7 @@
 plugins {
     id "com.android.application"
     id "org.jetbrains.kotlin.android"
-    id "com.google.gms.google-services"   // if you use Firebase
+    id "com.google.gms.google-services"
     id "dev.flutter.flutter-gradle-plugin"
 }
 
@@ -10,24 +10,20 @@ def keystoreProperties = new Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
+def hasReleaseKeystore = keystorePropertiesFile.exists() && keystoreProperties['storeFile']
 
 android {
-    namespace  "www.cyberfox.co.za.Municipal_Services"
+    namespace "www.cyberfox.co.za.Municipal_Services"
     compileSdk 35
     ndkVersion "29.0.14033849"
-    packagingOptions {
-        pickFirst "lib/**/libc++_shared.so"
-    }
+
+    packagingOptions { pickFirst "lib/**/libc++_shared.so" }
+
     defaultConfig {
         applicationId "www.cyberfox.co.za.Municipal_Services"
-        manifestPlaceholders = [
-                MAPS_API_KEY: project.findProperty("MAPS_API_KEY")
-                        ?: System.getenv("ANDROID_MAPS_API_KEY")
-                        ?: ""
-        ]
         minSdk 23
         targetSdk 35
-        versionCode 20
+        versionCode 22
         versionName "1.1.1"
         multiDexEnabled true
     }
@@ -40,28 +36,45 @@ android {
     kotlinOptions { jvmTarget = '17' }
 
     signingConfigs {
+        debug { /* default debug keystore */ }
         release {
-            if (keystoreProperties['storeFile']) {
+            // Always define it; only populate when we actually have a keystore.
+            if (hasReleaseKeystore) {
                 storeFile file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']
                 keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']
             }
-
         }
     }
+
     buildTypes {
+        debug {
+            // Use a debug Maps key so tiles/places work in debug builds.
+            manifestPlaceholders = [
+                    MAPS_API_KEY: (keystoreProperties['MAPS_API_KEY_DEBUG']
+                            ?: System.getenv("ANDROID_MAPS_API_KEY_DEBUG") ?: "")
+            ]
+            signingConfig signingConfigs.debug
+        }
         release {
             minifyEnabled true
+            shrinkResources true
             debuggable false
-            signingConfig signingConfigs.release
+
+            // Fall back to debug signing if no release keystore is configured.
+            signingConfig hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
+
+            // Use a locked-down release Maps key for Play builds.
+            manifestPlaceholders = [
+                    MAPS_API_KEY: (keystoreProperties['MAPS_API_KEY_RELEASE']
+                            ?: System.getenv("ANDROID_MAPS_API_KEY_RELEASE") ?: "")
+            ]
         }
     }
 }
 
-flutter {
-    source = "../.."
-}
+flutter { source = "../.." }
 
 dependencies {
     implementation 'androidx.multidex:multidex:2.0.1'

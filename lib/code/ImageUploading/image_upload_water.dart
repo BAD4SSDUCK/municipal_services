@@ -344,49 +344,59 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
   }
 
   Future<void> _showMeterReadingUpdateUI(BuildContext parentContext) async {
-    String currentYear = DateFormat('yyyy').format(DateTime.now());
-    String currentMonth = DateFormat.MMMM().format(DateTime.now()); // Example: February
-    String initialReading = "0"; // Default if no previous reading is found
+    // Work out previous month (handles Jan -> previous year's Dec)
+    final now = DateTime.now();
+    final prev = DateTime(now.year, now.month - 1, 1);
+    final String prevYear = DateFormat('yyyy').format(prev);
+    final String prevMonth = DateFormat.MMMM().format(prev);
+
+    String previousReading = "0"; // default fallback
 
     try {
-      // ✅ Define Firestore path based on municipality type
-      CollectionReference consumptionCollection;
+      // Pick the correct base path
+      CollectionReference<Map<String, dynamic>> monthCollection;
       if (widget.isLocalMunicipality) {
-        consumptionCollection = FirebaseFirestore.instance
+        monthCollection = FirebaseFirestore.instance
             .collection('localMunicipalities')
             .doc(widget.municipalityId)
             .collection('consumption')
-            .doc(currentYear)
-            .collection(currentMonth);
+            .doc(prevYear)
+            .collection(prevMonth);
       } else {
-        consumptionCollection = FirebaseFirestore.instance
+        monthCollection = FirebaseFirestore.instance
             .collection('districts')
             .doc(widget.districtId)
             .collection('municipalities')
             .doc(widget.municipalityId)
             .collection('consumption')
-            .doc(currentYear)
-            .collection(currentMonth);
+            .doc(prevYear)
+            .collection(prevMonth);
       }
 
-      // ✅ Fetch the latest reading for the current month
-      QuerySnapshot querySnapshot = await consumptionCollection
-          .where('address', isEqualTo: widget.propertyAddress)
-          .limit(1)
-          .get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        var data = querySnapshot.docs.first.data() as Map<String, dynamic>;
-        initialReading = data['water_meter_reading'] ?? "0"; // Set initial value
+      // Try reading by document id (address) first (common pattern in your app)
+      final byId = await monthCollection.doc(widget.propertyAddress.trim()).get();
+      if (byId.exists) {
+        final data = byId.data();
+        if (data != null) {
+          previousReading = (data['water_meter_reading'] ?? "0").toString();
+        }
+      } else {
+        // Fallback: query by 'address' field (covers older data shape)
+        final qs = await monthCollection
+            .where('address', isEqualTo: widget.propertyAddress)
+            .limit(1)
+            .get();
+        if (qs.docs.isNotEmpty) {
+          final data = qs.docs.first.data();
+          previousReading = (data['water_meter_reading'] ?? "0").toString();
+        }
       }
-
     } catch (e) {
-      print("❌ Error fetching consumption reading: $e");
+      debugPrint("❌ Error fetching previous month's reading: $e");
     }
 
-    // ✅ Create the text controller using the fetched value
-    final TextEditingController waterMeterReadingController =
-    TextEditingController(text: initialReading);
+    // Empty controller (user enters current reading); previous is shown as hint/helper
+    final TextEditingController waterMeterReadingController = TextEditingController();
 
     await showModalBottomSheet(
       isScrollControlled: true,
@@ -416,7 +426,22 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                         'Update Water Meter Reading',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 12),
+
+                      // Small chip showing which month we’re referencing
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        // child: Text(
+                        //   'Previous (${prevMonth} ${prevYear}): $previousReading kL',
+                        //   style: const TextStyle(fontSize: 12, color: Colors.black87),
+                        // ),
+                      ),
+
+                      const SizedBox(height: 12),
                       TextField(
                         maxLength: 8,
                         maxLengthEnforcement: MaxLengthEnforcement.enforced,
@@ -429,6 +454,10 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
+                          hintText: 'Previous: $previousReading', // ← grey hint
+                          hintStyle: const TextStyle(color: Colors.grey),
+                          helperText: 'Enter the current month reading (kL).',
+                          suffixText: 'kL',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -439,7 +468,8 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                         ),
                         cursorColor: Colors.green,
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 10),
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -452,9 +482,7 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                               ),
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                             ),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
+                            onPressed: () => Navigator.of(context).pop(),
                             child: const Text('Cancel'),
                           ),
                           const SizedBox(width: 10),
@@ -470,34 +498,22 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                             ),
                             onPressed: () async {
-                              final String waterMeterReading = waterMeterReadingController.text;
+                              final String waterMeterReading = waterMeterReadingController.text.trim();
 
                               if (waterMeterReading.isNotEmpty) {
-                                if (mounted) {
-                                  setState(() {
-                                    isLoadingMeter = true;
-                                  });
-                                }
+                                if (mounted) setState(() => isLoadingMeter = true);
                                 try {
-                                  // ✅ Update the reading in the `consumption` collection
-                                  String updatedReading = await _callMeterReadingServiceAfterUpload(waterMeterReading);
-
-                                  // ✅ Immediately update the UI with the new value
-                                  if (mounted) {
-                                    setState(() {
-                                      currentMonthReading = updatedReading; // ✅ Update displayed value
-                                    });
-                                  }
-
+                                  final updatedReading = await _callMeterReadingServiceAfterUpload(waterMeterReading);
+                                  if (mounted) setState(() => currentMonthReading = updatedReading);
                                   Navigator.pop(ctx);
                                   ScaffoldMessenger.of(parentContext).showSnackBar(
                                     const SnackBar(
-                                      content: Text("Meter readings updated successfully"),
+                                      content: Text("Meter reading updated successfully"),
                                       duration: Duration(seconds: 2),
                                     ),
                                   );
                                 } catch (e) {
-                                  print("Error updating water meter reading: $e");
+                                  debugPrint("Error updating water meter reading: $e");
                                   ScaffoldMessenger.of(parentContext).showSnackBar(
                                     const SnackBar(
                                       content: Text("Failed to update meter reading"),
@@ -505,11 +521,7 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
                                     ),
                                   );
                                 } finally {
-                                  if (mounted) {
-                                    setState(() {
-                                      isLoadingMeter = false;
-                                    });
-                                  }
+                                  if (mounted) setState(() => isLoadingMeter = false);
                                 }
                               } else {
                                 ScaffoldMessenger.of(parentContext).showSnackBar(
@@ -534,6 +546,7 @@ class _ImageUploadWaterState extends State<ImageUploadWater> {
       },
     );
   }
+
 
 
 

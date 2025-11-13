@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:easy_image_viewer/easy_image_viewer.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,6 @@ import 'package:municipal_services/code/DisplayPages/dashboard_official.dart';
 import 'package:municipal_services/code/DisplayPages/display_all_capture.dart';
 import 'package:municipal_services/code/DisplayPages/display_all_meters.dart';
 import 'package:municipal_services/code/DisplayPages/display_info_all_users.dart';
-
 import 'package:municipal_services/code/ImageUploading/image_upload_meter.dart';
 import 'package:municipal_services/code/ImageUploading/image_upload_water.dart';
 import 'package:municipal_services/code/MapTools/map_screen_prop.dart';
@@ -23,8 +23,9 @@ import 'package:municipal_services/code/MapTools/map_screen.dart';
 import 'package:municipal_services/code/PDFViewer/pdf_api.dart';
 import 'package:municipal_services/code/PDFViewer/view_pdf.dart';
 import 'package:municipal_services/code/Reusable/icon_elevated_button.dart';
-
+import 'package:municipal_services/code/widgets/meter_image.dart';
 import '../DisplayPages/log_screen.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ImageZoomPage extends StatefulWidget {
   const ImageZoomPage({
@@ -1142,6 +1143,59 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
         "⚡ Updated Electricity Readings - Previous: $previousElectricityReading | Current: $currentElectricityReading");
   }
 
+  Future<void> showMeterImageViewer(BuildContext context, String url) {
+    return showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.85),
+      builder: (ctx) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          backgroundColor: Colors.transparent,
+          child: LayoutBuilder(
+            builder: (_, constraints) {
+              final w = constraints.maxWidth.clamp(0, 1000);
+              final h = constraints.maxHeight.clamp(0, 800);
+              return Stack(
+                children: [
+                  Center(
+                    child: AspectRatio(
+                      aspectRatio: 4 / 3, // or compute dynamically if you prefer
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.black12,
+                        ),
+                        child: meterImage(
+                          url: url,
+                          width: double.infinity,
+                          height: double.infinity,
+                          borderRadius: 12,
+                          fit: BoxFit.contain,
+
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: IconButton(
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.all(Colors.black54),
+                      ),
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _create([DocumentSnapshot? documentSnapshot]) async {
     _accountNumberController.text = '';
     _addressController.text = '';
@@ -2094,10 +2148,16 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                               const SizedBox(height: 5),
                               if (_electricityImageUrl != null)
                                 GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
                                   onTap: () {
-                                    final imageProvider =
-                                        NetworkImage(_electricityImageUrl!);
-                                    showImageViewer(context, imageProvider);
+                                    if (kIsWeb) {
+                                      // Web: use our own simple viewer that embeds meterImage (no codec issues)
+                                      showMeterImageViewer(context, _electricityImageUrl!);
+                                    } else {
+                                      // Mobile/desktop: your existing viewer with an ImageProvider
+                                      final imageProvider = NetworkImage(_electricityImageUrl!);
+                                      showImageViewer(context, imageProvider);
+                                    }
                                   },
                                   child: Container(
                                     margin: const EdgeInsets.only(bottom: 5),
@@ -2107,15 +2167,19 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                                       semanticContainer: true,
                                       clipBehavior: Clip.antiAliasWithSaveLayer,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10.0),
+                                        borderRadius: BorderRadius.circular(10.0),
                                       ),
                                       elevation: 0,
                                       margin: const EdgeInsets.all(10.0),
                                       child: Center(
-                                        child: Image.network(
-                                            _electricityImageUrl!,
-                                            fit: BoxFit.cover),
+                                        // ⬇️ Meter image fills the card and handles web via HtmlElementView
+                                        child: meterImage(
+                                          url: _electricityImageUrl!,
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          borderRadius: 10,
+                                          fit: BoxFit.cover,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -2275,16 +2339,26 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                                 Padding(
                                   padding: const EdgeInsets.only(top: 8.0),
                                   child: Center(
-                                    child: Text(
-                                      _electricityUploadTimestamp != null
-                                          ? "⚡ Electricity image uploaded on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(_electricityUploadTimestamp!.toDate())}"
-                                          : "⚡ No electricity upload history available.",
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w400,
-                                        color: Colors.blueGrey,
-                                      ),
+                                    child:RichText(
                                       textAlign: TextAlign.center,
+                                      text: TextSpan(
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w400,
+                                          color: Colors.blueGrey,
+                                        ),
+                                        children: [
+                                          WidgetSpan(
+                                            alignment: PlaceholderAlignment.middle,
+                                            child: Icon(Icons.electric_bolt, color: Colors.yellow, size: 16),
+                                          ),
+                                          TextSpan(
+                                            text:   _electricityUploadTimestamp != null
+                                                ? "  Electricity image uploaded on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(_electricityUploadTimestamp!.toDate())}"
+                                                : "  No electricity upload history available.",
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -2325,9 +2399,14 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                               if (waterImageUrl != null)
                                 GestureDetector(
                                   onTap: () {
-                                    final imageProvider =
-                                        NetworkImage(waterImageUrl!);
-                                    showImageViewer(context, imageProvider);
+                                    if (kIsWeb) {
+                                      // Web: use our own simple viewer that embeds meterImage (no codec issues)
+                                      showMeterImageViewer(context, waterImageUrl!);
+                                    } else {
+                                      // Mobile/desktop: your existing viewer with an ImageProvider
+                                      final imageProvider = NetworkImage(waterImageUrl!);
+                                      showImageViewer(context, imageProvider);
+                                    }
                                   },
                                   child: Container(
                                     margin: const EdgeInsets.only(bottom: 5),
@@ -2337,14 +2416,17 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                                       semanticContainer: true,
                                       clipBehavior: Clip.antiAliasWithSaveLayer,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(10.0),
+                                        borderRadius: BorderRadius.circular(10.0),
                                       ),
                                       elevation: 0,
                                       margin: const EdgeInsets.all(10.0),
                                       child: Center(
-                                        child: Image.network(
-                                          waterImageUrl!,
+                                        // ⬇️ Meter image fills the card and handles web via HtmlElementView
+                                        child: meterImage(
+                                          url: waterImageUrl!,
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          borderRadius: 10,
                                           fit: BoxFit.cover,
                                         ),
                                       ),
@@ -2505,16 +2587,26 @@ class _ImageZoomPageState extends State<ImageZoomPage> {
                               ),
                               const SizedBox(height: 10),
                               Center(
-                                child: Text(
-                                  latestWaterUploadTimestamp != null
-                                      ? "💧 Water image uploaded on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(latestWaterUploadTimestamp!)}"
-                                      : "💧 No water upload history available.",
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w400,
-                                    color: Colors.blueGrey,
-                                  ),
+                                child: RichText(
                                   textAlign: TextAlign.center,
+                                  text: TextSpan(
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.blueGrey,
+                                    ),
+                                    children: [
+                                      WidgetSpan(
+                                        alignment: PlaceholderAlignment.middle,
+                                        child: Icon(Icons.water_drop, color: Colors.blue, size: 16),
+                                      ),
+                                      TextSpan(
+                                        text: latestWaterUploadTimestamp != null
+                                            ? "  Water image uploaded on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(latestWaterUploadTimestamp!)}"
+                                            : "  No water upload history available.",
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 5),

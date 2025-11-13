@@ -21,7 +21,10 @@ class ElevatedIconButton extends StatelessWidget {
         onPressed: (){
           onPress();
         },
-        icon: faIcon,
+        icon: IconTheme(
+          data: IconThemeData(color: fgColor, size: faIcon.size ?? 28),
+          child: faIcon,
+        ),
         label: Text(labelText,
           textAlign: TextAlign.center,
           style: GoogleFonts.tenorSans(
@@ -30,18 +33,14 @@ class ElevatedIconButton extends StatelessWidget {
             fontSize: fSize,
           ),
         ),
-        style: IconButton.styleFrom(
-          foregroundColor: fgColor,
-          minimumSize: Size(140.w, 120.h),
-          disabledForegroundColor: Colors.red.withOpacity(0.38), //foreground
+        style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white70,
+          minimumSize: Size(140.w, 120.h),
           shadowColor: Colors.black,
-          side: const BorderSide(
-            width: 5,
-            color: Colors.black54,
-          ),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(100)),
+          side: const BorderSide( width: 5, color: Colors.black54, ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+          // optional: control pressed overlay so it’s not purple
+          //overlayColor: MaterialStatePropertyAll(fgColor.withOpacity(0.08)),
         ),
       ),
     );
@@ -49,7 +48,7 @@ class ElevatedIconButton extends StatelessWidget {
 }
 
 class BasicIconButtonGreen extends StatelessWidget {
-  const BasicIconButtonGreen({Key? key, required this.onPress, required this.labelText, required this.fSize, required this.faIcon, required this.fgColor, required this.btSize, }) : super(key: key);
+  const BasicIconButtonGreen({super.key, required this.onPress, required this.labelText, required this.fSize, required this.faIcon, required this.fgColor, required this.btSize, });
 
   final Function onPress;
   final String labelText;

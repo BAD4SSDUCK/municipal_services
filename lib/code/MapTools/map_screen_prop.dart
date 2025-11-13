@@ -12,14 +12,14 @@ import 'package:municipal_services/code/MapTools/location_controller.dart';
 import 'package:municipal_services/code/DisplayPages/display_info.dart';
 import 'package:municipal_services/config/keys.dart';
 import 'dart:async';
-import 'dart:js' as js;
-import 'dart:js_util' as js_util;
+import 'maps_js_loader_stub.dart'
+    if (dart.library.js) 'maps_js_loader_web.dart';
 
 const LatLng SOURCE_LOCATION = LatLng(-29.601505328570788, 30.379442518631805);
 
-
 class MapScreenProp extends StatefulWidget {
-  const MapScreenProp({Key? key, required this.propAddress, required this.propAccNumber}) : super(key: key);
+  const MapScreenProp(
+      {super.key, required this.propAddress, required this.propAccNumber});
 
   final String propAccNumber;
   final String propAddress;
@@ -34,7 +34,7 @@ class _MapScreenPropState extends State<MapScreenProp> {
   late LatLng addressLocation;
   late bool _isLoading;
   bool _cameraPositionInitialized = false;
-  String location ='Null, Press Button';
+  String location = 'Null, Press Button';
   String Address = 'search';
 
   @override
@@ -67,35 +67,28 @@ class _MapScreenPropState extends State<MapScreenProp> {
   ///This checks current users location
   Future<void> locationAllow() async {
     Position position = await _getGeoLocationPosition();
-    location ='Lat: ${position.latitude} , Long: ${position.longitude}';
+    location = 'Lat: ${position.latitude} , Long: ${position.longitude}';
     GetAddressFromLatLong(position);
-    if(_getGeoLocationPosition.isBlank == false){
-
-    }
+    if (_getGeoLocationPosition.isBlank == false) {}
   }
-
-
 
   void _fallbackCamera(String reason) {
     debugPrint("ℹ️ Fallback camera: $reason");
     addressLocation = const LatLng(-29.601505328570788, 30.379442518631805);
     showPinOnMap();
-    if (_mapController != null) {
-      _mapController.animateCamera(
-        CameraUpdate.newCameraPosition(
-          const CameraPosition(
-            target: LatLng(-29.601505328570788, 30.379442518631805),
-            zoom: 16,
-          ),
+    _mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        const CameraPosition(
+          target: LatLng(-29.601505328570788, 30.379442518631805),
+          zoom: 16,
         ),
-      );
-    }
-    Fluttertoast.showToast(
+      ),
+    );
+      Fluttertoast.showToast(
       msg: "Address not found! Default map location City Hall!",
       gravity: ToastGravity.CENTER,
     );
   }
-
 
   Future<Position> _getGeoLocationPosition() async {
     bool serviceEnabled;
@@ -113,7 +106,6 @@ class _MapScreenPropState extends State<MapScreenProp> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-
         return Future.error('Location permissions are denied');
       }
     }
@@ -125,18 +117,21 @@ class _MapScreenPropState extends State<MapScreenProp> {
 
     // When we reach here, permissions are granted and we can
     // continue accessing the position of the device.
-    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
   }
 
   Future<void> GetAddressFromLatLong(Position position) async {
     try {
       // Attempt to retrieve the placemarks based on the position coordinates.
-      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+      List<Placemark> placemarks =
+          await placemarkFromCoordinates(position.latitude, position.longitude);
 
       // Check if any placemarks were found, otherwise use a default value.
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-        Address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
+        Address =
+            '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}';
       } else {
         Address = "Address not available";
         print("No placemarks found for the provided coordinates.");
@@ -150,17 +145,15 @@ class _MapScreenPropState extends State<MapScreenProp> {
 
   ///End of current user location check
 
-  void setSourceAndDestinationMarkerIcons() async{
-    if(defaultTargetPlatform == TargetPlatform.android){
-    sourceIcon = await BitmapDescriptor.fromAssetImage(
-        const ImageConfiguration(devicePixelRatio: 2.0),
-        'assets/images/location/source_pin_android.png'
-    );
+  void setSourceAndDestinationMarkerIcons() async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      sourceIcon = await BitmapDescriptor.fromAssetImage(
+          const ImageConfiguration(devicePixelRatio: 2.0),
+          'assets/images/location/source_pin_android.png');
     } else {
       sourceIcon = await BitmapDescriptor.fromAssetImage(
-          const ImageConfiguration(devicePixelRatio: 0.5,size: Size(35, 50)),
-          'assets/images/location/source_pin_android.png'
-      );
+          const ImageConfiguration(devicePixelRatio: 0.5, size: Size(35, 50)),
+          'assets/images/location/source_pin_android.png');
     }
   }
 
@@ -224,38 +217,37 @@ class _MapScreenPropState extends State<MapScreenProp> {
   }
 
   void setAddressLocation() async {
-    addressLocation = LatLng(
-        SOURCE_LOCATION.latitude,
-        SOURCE_LOCATION.longitude
-    );
+    addressLocation =
+        LatLng(SOURCE_LOCATION.latitude, SOURCE_LOCATION.longitude);
   }
 
-  void setInitialLocation() async{
-    currentLocation = LatLng(
-        SOURCE_LOCATION.latitude,
-        SOURCE_LOCATION.longitude
-    );
+  void setInitialLocation() async {
+    currentLocation =
+        LatLng(SOURCE_LOCATION.latitude, SOURCE_LOCATION.longitude);
   }
 
   var mapType = MapType.normal;
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<LocationController>(
-        builder: (locationController) {
-          return Scaffold(
-              appBar: AppBar(
-                title: const Text('Map View',style: TextStyle(color: Colors.white),),
-                iconTheme: const IconThemeData(color: Colors.white),
-                backgroundColor: Colors.green[700],
-              ),
-              body: Stack(
-                children: <Widget>[
-
-                  ///loading page component starts here
-                  _isLoading
-                      ? const Center(child: CircularProgressIndicator(),)
-                      :GoogleMap(
+    return GetBuilder<LocationController>(builder: (locationController) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            'Map View',
+            style: TextStyle(color: Colors.white),
+          ),
+          iconTheme: const IconThemeData(color: Colors.white),
+          backgroundColor: Colors.green[700],
+        ),
+        body: Stack(
+          children: <Widget>[
+            ///loading page component starts here
+            _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : GoogleMap(
                     myLocationEnabled: true,
                     compassEnabled: false,
                     tiltGesturesEnabled: false,
@@ -265,79 +257,84 @@ class _MapScreenPropState extends State<MapScreenProp> {
                     onMapCreated: (GoogleMapController controller) {
                       _mapController = controller;
                       addressConvert(); // single call here
-                      Fluttertoast.showToast(
-                        msg: "Tap on the pin to access directions.",
-                        gravity: ToastGravity.TOP,
-                      );
+                      // Fluttertoast.showToast(
+                      //   msg: "Tap on the pin to access directions.",
+                      //   gravity: ToastGravity.TOP,
+                      // );
                     }, // <-- and a comma after this property
                   ),
 
-                  ///Positioned widget is for searching an address but will not be used in view mode
-                  // Positioned(
-                  //     top: 100,
-                  //     left: 25, right: 25,
-                  //     child: GestureDetector(
-                  //
-                  //       onTap: () => Get.dialog(LocationSearchDialogue(mapController: _mapController)),
-                  //
-                  //       child: Container(
-                  //         height: 50,
-                  //         padding: EdgeInsets.symmetric(horizontal: 5),
-                  //         decoration: BoxDecoration(color: Theme
-                  //             .of(context)
-                  //             .cardColor,
-                  //             borderRadius: BorderRadius.circular(10)),
-                  //         child: Row(children: [
-                  //           Icon(Icons.location_on, size: 25, color: Colors.green[700],
-                  //           ),
-                  //           SizedBox(width: 5,),
-                  //           Expanded(
-                  //             child: Text(
-                  //               '${locationController.pickPlaceMark.name ?? ''}'
-                  //                   '${locationController.pickPlaceMark.locality ?? ''}'
-                  //                   '${locationController.pickPlaceMark.postalCode ?? ''}'
-                  //                   '${locationController.pickPlaceMark.country ?? ''}',
-                  //               style: TextStyle(fontSize: 20),
-                  //               maxLines: 1, overflow: TextOverflow.ellipsis,
-                  //             ),
-                  //           ),
-                  //           SizedBox(width: 10),
-                  //           Icon(Icons.search, size: 25, color: Theme.of(context).textTheme.bodyText1!.color),
-                  //         ],),
-                  //       ),
-                  //     )),
+            ///Positioned widget is for searching an address but will not be used in view mode
+            // Positioned(
+            //     top: 100,
+            //     left: 25, right: 25,
+            //     child: GestureDetector(
+            //
+            //       onTap: () => Get.dialog(LocationSearchDialogue(mapController: _mapController)),
+            //
+            //       child: Container(
+            //         height: 50,
+            //         padding: EdgeInsets.symmetric(horizontal: 5),
+            //         decoration: BoxDecoration(color: Theme
+            //             .of(context)
+            //             .cardColor,
+            //             borderRadius: BorderRadius.circular(10)),
+            //         child: Row(children: [
+            //           Icon(Icons.location_on, size: 25, color: Colors.green[700],
+            //           ),
+            //           SizedBox(width: 5,),
+            //           Expanded(
+            //             child: Text(
+            //               '${locationController.pickPlaceMark.name ?? ''}'
+            //                   '${locationController.pickPlaceMark.locality ?? ''}'
+            //                   '${locationController.pickPlaceMark.postalCode ?? ''}'
+            //                   '${locationController.pickPlaceMark.country ?? ''}',
+            //               style: TextStyle(fontSize: 20),
+            //               maxLines: 1, overflow: TextOverflow.ellipsis,
+            //             ),
+            //           ),
+            //           SizedBox(width: 10),
+            //           Icon(Icons.search, size: 25, color: Theme.of(context).textTheme.bodyText1!.color),
+            //         ],),
+            //       ),
+            //     )),
 
-                  const SizedBox(height: 10,),
-
-                  ///Positioned badge that shows account number and address shown on the pin
-                  Positioned(
-                      top: 10, left: 0, right: 0,
-                      child: MapUserBadge(locationGivenGet: widget.propAddress, accountNumberGet: widget.propAccNumber,
-                      )
-                  ),
-                ],
-              ),
-            floatingActionButton: FloatingActionButton.small(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
-              child: const Icon(Icons.broken_image_rounded),
-              onPressed: () {
-                setState(() {
-                  if(mapType == MapType.normal){
-                    mapType=MapType.satellite;
-                  } else if(mapType == MapType.satellite){
-                    mapType=MapType.terrain;
-                  } else if(mapType == MapType.terrain){
-                    mapType=MapType.hybrid;
-                  } else if(mapType == MapType.hybrid){
-                    mapType=MapType.normal;
-                  }
-                });
-              },
+            const SizedBox(
+              height: 10,
             ),
-            floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
-          );
-        });
+
+            ///Positioned badge that shows account number and address shown on the pin
+            Positioned(
+                top: 10,
+                left: 0,
+                right: 0,
+                child: MapUserBadge(
+                  locationGivenGet: widget.propAddress,
+                  accountNumberGet: widget.propAccNumber,
+                )),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton.small(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          child: const Icon(Icons.broken_image_rounded),
+          onPressed: () {
+            setState(() {
+              if (mapType == MapType.normal) {
+                mapType = MapType.satellite;
+              } else if (mapType == MapType.satellite) {
+                mapType = MapType.terrain;
+              } else if (mapType == MapType.terrain) {
+                mapType = MapType.hybrid;
+              } else if (mapType == MapType.hybrid) {
+                mapType = MapType.normal;
+              }
+            });
+          },
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+      );
+    });
   }
 
   void showPinOnMap() {
@@ -350,6 +347,4 @@ class _MapScreenPropState extends State<MapScreenProp> {
       ));
     });
   }
-
-
 }
